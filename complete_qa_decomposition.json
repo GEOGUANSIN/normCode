@@ -1,0 +1,33 @@
+﻿{
+  "complete_qa_decomposition": {
+    "metadata": {
+      "description": "Complete Q&A pairs from question sequence deconstruction examples for norm-text translation analysis",
+      "total_examples": 6,
+      "total_qa_pairs": 45,
+      "format_version": "1.0"
+    },
+    "examples": [
+      {
+        "example_id": 1,
+        "title": "User Account Creation",
+        "original_norm_text": "Create a user account with email and password. The account has admin privileges and is active by default.",
+        "qa_pairs": [
+          {
+            "level": 1,
+            "question_type": "Main Process",
+            "formal_question": "$how?(::(do), @by)",
+            "natural_question": "How to do?",
+            "natural_answer": "Create a user account with email and password."
+          },
+          {
+            "level": 1,
+            "question_type": "Consequence",
+            "formal_question": "$when?(::(do)@by, @onlyIf)",
+            "natural_question": "Given it is done by the method, then it makes what happen?",
+            "natural_answer": "The account has admin privileges and is active by default."
+          }
+        ]
+      }
+    ]
+  }
+}
