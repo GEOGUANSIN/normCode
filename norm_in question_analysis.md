@@ -366,6 +366,13 @@ The ingredients form a compound object:
 - They form a set `[{flour}, {sugar}, {butter}]`
 - The condition `{creamy}` represents the desired state
 
+### Step 8: Process Logic Analysis
+The step involves a conditional process:
+- **Agent relationship**: `@by(:S:^({1}<:{1}>, {2}<:{2}>))` shows the agent works with both ingredients and condition
+- **Core action**: `:S:(mix {1}<$={ingredients}>)` - the basic mixing action
+- **Conditional logic**: `@onlyIf(S.^({1}<:{1}>, {2}<:{2}>))` - the condition that must be met
+- **State transition**: `S.<{1}<$={ingredients} not {2}<$={condition}>>` - shows the initial state (ingredients not yet creamy)
+
 "Step 2 does mix flour, sugar, and butter until creamy."：
 main structure: declarative (step description)
 ::(step 2 does mix flour, sugar, and butter until creamy)
@@ -379,22 +386,12 @@ further decomposable object: {flour, sugar, and butter}
 which is [{flour}, {sugar}, {butter}] with components {flour}, {sugar}, and {butter}
 under &in({flour}:{flour}; {sugar}:{sugar}; {butter}:{butter})
 notice that this describes a specific step in a larger process with multiple ingredients and a completion condition
+the process logic shows: agent relationship (@by), core mixing action, conditional completion (@onlyIf), and state transition from "not creamy" to "creamy"
 
 Combining all these analysis and the question we get:
 
 ### NormCode
 ```NormCode
-{step_2}
-    <= $::(:S:)
-    <- :S:(mix {1}<$={ingredients}> until {2}<$={condition}>)
-    <- [{flour}, {sugar}, {butter}]<:{1}>
-        <= &in({flour}:{flour}; {sugar}:{sugar}; {butter}:{butter})
-        <- {flour}
-        <- {sugar}
-        <- {butter}
-    <- {creamy}<:{2}>
-
-
 {step_2}
     <= $::(:S:)
     <- :S:(mix {1}<$={ingredients}> until {2}<$={condition}>)
