@@ -30,8 +30,8 @@ Replace specific terms with numbered placeholders:
 - `:S:(create {1} with {2})` where `:S:` represents the subject (agent performing the action)
 
 ### Step 4: Add Concept Typing
-Add semantic type annotations using `<$={concept_type}>`:
-- `:S:(create {1}<$={account}> with {2}<$={information}>)`
+Add semantic type annotations using `<$({concept_type})%_>`:
+- `:S:(create {1}<$({account})%_> with {2}<$({information})%_>)`
 - This indicates that {1} is of type "account" and {2} is of type "information"
 
 ### Step 5: Decompose Complex Elements
@@ -51,7 +51,7 @@ obejct elements
 {user account} {email and password}
 with the object elements removed and subject added (presuming the subject is S)
 :S:(create {1} with {2}) 
-with concept typing for arguments this will be :S:(create {1}<$={account}> with {2}<$={information}>) 
+with concept typing for arguments this will be `:S:(create {1}<$({account})%_> with {2}<$({information})%_>)`
 further decomposable object: {email and password}
 which is [{email} and {password}] with component {email} and {password}
 under &in({email}: {email}; {password}: {password})
@@ -63,7 +63,7 @@ Combining all these analysis and the question we get:
 ```NormCode
 ::(do)
     <= @by(:S:)
-    <- :S:(create {1}<$={account}> with {2}<$={information}>)
+    <- :S:(create {1}<$({account})%_> with {2}<$({information})%_>)
     <- {user account}?<:{1}>
     <- [{email} and {password}]<:{2}>
         <= &in({email}:{email}; {password}:{password})
@@ -95,13 +95,13 @@ This example shows how to handle declarative statements that describe the result
 - **Predicates**: has admin privileges, is active by default
 
 ### Step 3: Create Template with Placeholders
-- `S.<{1}<$={account}> has {2}<$={privileges}> and is {3}<$={status}>>`
+- `S.<{1}<$({account})%_> has {2}<$({privileges})%_> and is {3}<$({status})%_>>`
 - `S.` indicates the subject, `<...>` groups related predicates
 
 ### Step 4: Decompose Complex Predicate
 Break the compound predicate into simpler ones:
-- `S.<{1}<$={account}> has {2}<$={privileges}>>`
-- `S.<{1}<$={account}> is {3}<$={status}>>`
+- `S.<{1}<$({account})%_> has {2}<$({privileges})%_>>`
+- `S.<{1}<$({account})%_> is {3}<$({status})%_>>`
 
 ### Step 5: Use @onlyIf for Conditional Relationship
 The `@onlyIf` operator indicates this is a consequence that follows from the main action.
@@ -115,10 +115,10 @@ The `@onlyIf` operator indicates this is a consequence that follows from the mai
 ```NormCode
 ::(do)@by
     <= @onlyIf
-    <- S.<{1}<$={account}> has {2}<$={privileges}> and is {3}<$={status}>>
+    <- S.<{1}<$({account})%_> has {2}<$({privileges})%_> and is {3}<$({status})%_>>
         <= &in(S.^({1}<:{1}>, {2}<:{2}>, {3}<:{3}>))
-        <- S.<{1}<$={account}> has {2}<$={privileges}>>
-        <- S.<{1}<$={account}> is {3}<$={status}>>
+        <- S.<{1}<$({account})%_> has {2}<$({privileges})%_>>
+        <- S.<{1}<$({account})%_> is {3}<$({status})%_>>
     <- {account}<:{1}>
     <- {privileges}<:{2}>
     <- {status}<:{3}>
@@ -149,7 +149,7 @@ This example shows how to handle causal relationships where one entity produces 
 - **Result**: caterpillars
 
 ### Step 3: Create Template with Placeholders
-- `S.<{1}<$={organism} hatch into {2}<$={organism}>>` where both entities are organisms
+- `S.<{1}<$({organism})%_> hatch into {2}<$({organism})%_>>` where both entities are organisms
 - This captures the transformation from one organism type to another
 
 ### Step 4: Identify Causal Relationship
@@ -179,7 +179,7 @@ subject element: {butterfly eggs}
 action element: hatch
 result element: {caterpillars}
 with subject element as precursor and result as output
-S.<{1}<$={organism} hatch into {2}<$={organism}>>
+`S.<{1}<$({organism})%_> hatch into {2}<$({organism})%_>>`
 notice that this describes a transformation process where one entity becomes another, and the precursor has a compositional relationship with the target entity
 
 Combining all these analysis and the question we get:
@@ -188,7 +188,7 @@ Combining all these analysis and the question we get:
 ```NormCode
 ({butterfly})$=
     <= @If
-    <- S.<{1}<$={organism} hatch into {2}<$={organism}>>
+    <- S.<{1}<$({organism})%_> hatch into {2}<$({organism})%_>>
     <- {butterfly eggs}<:{1}>
         <= $.({1}:{butterfly eggs}?)
         <- ::({eggs}? of {butterfly})
@@ -345,7 +345,7 @@ This example shows how to handle questions about specific steps in a process:
 - **Condition**: until creamy
 
 ### Step 3: Create Template with Placeholders
-- `:S:(mix {1}<$={ingredients}> until {2}<$={condition}>)` where `:S:` represents the agent performing the action
+- `:S:(mix {1}<$({ingredients})%_> until {2}<$({condition})%_>)` where `:S:` represents the agent performing the action
 - This captures the mixing action with ingredients and a completion condition
 
 ### Step 4: Decompose Complex Object
@@ -369,9 +369,9 @@ The ingredients form a compound object:
 ### Step 8: Process Logic Analysis
 The step involves a conditional process:
 - **Agent relationship**: `@by(:S:^({1}<:{1}>, {2}<:{2}>))` shows the agent works with both ingredients and condition
-- **Core action**: `:S:(mix {1}<$={ingredients}>)` - the basic mixing action
+- **Core action**: `:S:(mix {1}<$({ingredients})%_>)` - the basic mixing action
 - **Conditional logic**: `@onlyIf(S.^({1}<:{1}>, {2}<:{2}>))` - the condition that must be met
-- **State transition**: `S.<{1}<$={ingredients} not {2}<$={condition}>>` - shows the initial state (ingredients not yet creamy)
+- **State transition**: `S.<{1}<$({ingredients})%_> not {2}<$({condition})%_>>` - shows the initial state (ingredients not yet creamy)
 
 "Step 2 does mix flour, sugar, and butter until creamy."：
 main structure: declarative (step description)
@@ -381,7 +381,7 @@ action element: mix
 object elements: {flour, sugar, and butter}
 condition element: {creamy}
 with subject being a process step and objects being ingredients
-:S:(mix {1}<$={ingredients}> until {2}<$={condition}>)
+`:S:(mix {1}<$({ingredients})%_> until {2}<$({condition})%_>)`
 further decomposable object: {flour, sugar, and butter}
 which is [{flour}, {sugar}, {butter}] with components {flour}, {sugar}, and {butter}
 under &in({flour}:{flour}; {sugar}:{sugar}; {butter}:{butter})
@@ -394,11 +394,11 @@ Combining all these analysis and the question we get:
 ```NormCode
 {step_2}
     <= $::(:S:)
-    <- :S:(mix {1}<$={ingredients}> until {2}<$={condition}>)
+    <- :S:(mix {1}<$({ingredients})%_> until {2}<$({condition})%_>)
         <= @by(:S:^({1}<:{1}>, {2}<:{2}>))
-        <- :S:(mix {1}<$={ingredients}>)
+        <- :S:(mix {1}<$({ingredients})%_>)
             <= @onlyIf(S.^({1}<:{1}>, {2}<:{2}>))
-            <- S.<{1}<$={ingredients} not {2}<$={condition}>
+            <- S.<{1}<$({ingredients})%_> not {2}<$({condition})%_>>
     <- [{flour}, {sugar}, {butter}]<:{1}>
         <= &in({flour}:{flour}; {sugar}:{sugar}; {butter}:{butter})
         <- {flour}
@@ -416,7 +416,7 @@ Combining all these analysis and the question we get:
 - `$what?({entity}, $=)` - Entity definition question
 - `$=` - Identity/definition operator
 - `:S:` - Subject placeholder
-- `{n}<$={type}>` - Typed placeholder where n is position, type is semantic category
+- `{n}<$({type})%_>` - Typed placeholder where n is position, type is semantic category
 - `<:{n}>` - Reference mapping from concrete term to placeholder position
 - `{..}` - **Object/Concept** (represents an actual object or concept)
 - `{..}?` - **Object Placeholder** (placeholder for an object/concept)

@@ -1,0 +1,158 @@
+{
+  "detailed_qa_processing_example": {
+    "metadata": {
+      "description": "Detailed three-phase analysis of a Q&A pair demonstrating the NormCode In-Question Analysis Algorithm",
+      "source_example": "Chocolate Chip Cookie Recipe - Step 2",
+      "processing_date": "2024-01-01",
+      "algorithm_version": "1.0"
+    },
+    "input_qa_pair": {
+      "level": 2,
+      "question_type": "Step 2",
+      "formal_question": "$what?({step_2}, $::)",
+      "natural_question": "What step 2 does?",
+      "natural_answer": "Step 2 does mix flour, sugar, and butter until creamy."
+    },
+    "phase_analysis": {
+      "phase_1": {
+        "name": "Question Analysis",
+        "description": "Parse formal question structure and create basic NormCode inference ground",
+        "input": "$what?({step_2}, $::)",
+        "analysis_steps": [
+          {
+            "step": "Parse Question Structure",
+            "components": {
+              "question_marker": "$what?",
+              "question_target": "{step_2}",
+              "question_condition": "$::"
+            }
+          }
+        ],
+        "output": {
+          "normcode_draft": {
+            "vertical_layout": "{step_2}\n    <= $::",
+            "horizontal_layout": "|1|{step_2} |1.1|<= $:: |/1.1||/1|"
+          },
+          "explanation": "Basic NormCode structure established with step_2 as root entity and $:: relationship operator indicating definition relationship"
+        }
+      },
+      "phase_2": {
+        "name": "Clause Analysis",
+        "description": "Analyze natural language answer and translate into NormCode syntax",
+        "input": "Step 2 does mix flour, sugar, and butter until creamy.",
+        "analysis_steps": [
+          {
+            "step": "Identify Sentence Structure Type",
+            "structure_type": "imperative",
+            "reasoning": "Contains action verb 'mix' and describes a process"
+          },
+          {
+            "step": "Identify and Separate Clauses",
+            "clause_count": 2,
+            "reasoning": "Main imperative clause 'mix flour, sugar, and butter' with conditional clause 'until creamy'"
+          },
+          {
+            "step": "Classify Clause Types",
+            "clauses": [
+                {
+                    "clause_type": "main_clause",
+                    "clause_content": "mix flour, sugar, and butter"
+                },
+                {
+                    "clause_type": "conditional_clause",
+                    "clause_content": "until creamy"
+                }
+            ]
+          },
+          {
+            "step": "Translate to NormCode",
+            "clauses": [
+                {
+                    "clause_type": "main_clause",
+                    "clause_content": "::(mix flour, sugar, and butter)"
+                },
+                {
+                    "clause_type": "conditional_clause",
+                    "clause_connection": "@until",
+                    "clause_content": "<mixture is creamy>"
+                }
+            ]
+          }
+        ],
+        "output": {
+          "normcode_draft": {
+            "vertical_layout": "{step_2}\n    <= $::\n    <- ::(mix flour, sugar, and butter until creamy)\n        <= @until\n        <- <mixture is creamy>",
+            "horizontal_layout": "|1|{step_2} |1.1|<= $:: |/1.1||1.2|<- ::(mix flour, sugar, and butter until creamy) |1.2.1|<= @until |/1.2.1||1.2.2|<- <mixture is creamy> |/1.2.2||/1.2||/1|"
+          },
+          "explanation": "Imperative clause translated to NormCode with action, coordinate objects, and condition relationship. The 'until creamy' condition creates a prerequisite relationship using @until operator."
+        }
+      },
+      "phase_3": {
+        "name": "Template Creation",
+        "description": "Add template abstractions and create reference mappings",
+        "input": "Phase 2 NormCodeDraft",
+        "analysis_steps": [
+          {
+            "step": "Add Template Abstractions",
+            "abstractions": [
+              {
+                "concrete": "flour, sugar, and butter",
+                "abstract": "{1}<$({ingredients})%_>",
+                "type": "ingredients"
+              }
+            ]
+          },
+          {
+            "step": "Sub-Element Analysis",
+            "level_1": [
+              {
+                "element": "flour, sugar, and butter",
+                "relation": "compounded object",
+                "sub_elements": ["{flour}", "{sugar}", "{butter}"],
+                "normCode_operator": "&across"
+              }
+            ]
+          },
+          {
+            "step": "Variable Index Pairing",
+            "pairings": [
+              {
+                "abstract_index": "{1}",
+                "concrete_elements": ["flour", "sugar", "butter"],
+                "type": "ingredients",
+                "reference_mapping": "{1}<$({ingredients})%_>"
+              },
+              {
+                "abstract_index": "{2}",
+                "concrete_elements": ["mixture"],
+                "type": "mixture",
+                "reference_mapping": "{2}<$({mixture})%_>"
+              }
+            ],
+            "validation": {
+              "self_reference": "^({1}:{2}?)",
+              "cross_references": [
+                "{1} -> ingredients list",
+                "{2} -> mixture entity"
+              ],
+              "predicates": {
+                "creamy": "descriptor for mixture state, not extracted as concrete object"
+              }
+            }
+          }
+        ],
+        "output": {
+          "normcode_draft": {
+            "vertical_layout": "{step_2}\n    <= $::\n    <- ::(mix {1}<$({ingredients})%_>)\n        <= @until(^({1}:{2}?))\n        <- <{2}<$({mixture})%_> is creamy>\n    <- [{flour}, {sugar}, and {butter}]<:{1}>\n        <= &across({flour}:_;{sugar}:_;{butter}:_)\n        <- {flour}\n        <- {sugar}\n        <- {butter}",
+            "horizontal_layout": "|1|{step_2} |1.1|<= $:: |/1.1||1.2|<- ::(mix {1}<$({ingredients})%_>) |1.2.1|<= @until(^({1}:{2}?)) |/1.2.1||1.2.2|<- <{2}<$({mixture})%_> is creamy> |/1.2.2||/1.2||1.3|<- [{flour}, {sugar}, and {butter}]<:{1}> |1.3.1|<= &across({flour}:_;{sugar}:_;{butter}:_) |/1.3.1||1.3.2|<- {flour} |/1.3.2||1.3.3|<- {sugar} |/1.3.3||1.3.4|<- {butter} |/1.3.4||/1.3||/1|"
+          },
+          "explanation": "Template created with proper variable index pairing where {1} maps to ingredients list and {2} maps to mixture entity. The predicate 'creamy' remains as a literal descriptor rather than being abstracted. The @until operator validates the relationship between ingredients and mixture."
+        }
+      }
+    },
+    "summary": {
+      "depth": 3,
+      "total_steps": 7
+    }
+  }
+} 
