@@ -129,11 +129,24 @@
                 "reference_mapping": "{2}<$({mixture})%_>"
               }
             ],
-            "validation": {
-              "self_reference": "^({1}:{2}?)",
-              "cross_references": [
-                "{1} -> ingredients list",
-                "{2} -> mixture entity"
+            "reference_establishment": {
+              "index_references": [
+                {
+                  "index": "{1}",
+                  "target": "ingredients list",
+                  "type": "list_reference"
+                },
+                {
+                  "index": "{2}",
+                  "target": "mixture entity",
+                  "type": "entity_reference"
+                }
+              ],
+              "self_references": [
+                {
+                  "pattern": "^({1}:{2}?)",
+                  "description": "ingredients to mixture relationship validation"
+                }
               ],
               "predicates": {
                 "creamy": "descriptor for mixture state, not extracted as concrete object"
