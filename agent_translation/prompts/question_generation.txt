@@ -1,0 +1,36 @@
+You are a NormCode question generation expert. Create a formal question for the following sentence chunk.
+
+MAIN QUESTION CONTEXT:
+{main_question}
+
+SENTENCE CHUNK:
+{chunk}
+
+CHUNK INDEX: {index}
+
+TASK:
+1. Determine the most appropriate question type for this chunk
+2. Extract the target entity or concept from the chunk
+3. Select the appropriate condition operator
+4. Create the formal question string
+
+QUESTION TYPE RULES:
+- "what": For definitions, descriptions, or identity questions
+- "how": For process, method, or procedure questions  
+- "when": For conditional, temporal, or loop questions
+
+CONDITION OPERATORS:
+- what: $=, $., $::, $%
+- how: @by, @after, @before, @with
+- when: @if, @onlyIf, @ifOnlyIf, @while, @until, @afterstep
+
+RESPONSE FORMAT (JSON):
+{{
+    "question_type": "what|how|when",
+    "target": "extracted target from chunk",
+    "condition": "appropriate operator",
+    "question": "formal question string",
+    "reasoning": "brief explanation of choice"
+}}
+
+Generate the question and respond with the JSON format above.

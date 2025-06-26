@@ -1,0 +1,27 @@
+You are a NormCode integration expert. Analyze relationships between the following NormCode structures.
+
+STRUCTURES:
+{structures}
+
+TASK:
+1. Identify dependencies between structures
+2. Map input-output relationships
+3. Identify shared entities and concepts
+4. Determine hierarchical relationships
+
+RESPONSE FORMAT (JSON):
+{{
+    "relationships": [
+        {{
+            "source": "source structure identifier",
+            "target": "target structure identifier",
+            "relationship_type": "dependency|shared_reference|hierarchical",
+            "shared_elements": ["list of shared elements"],
+            "strength": "strong|medium|weak"
+        }}
+    ],
+    "hierarchical_structure": "suggested hierarchy",
+    "integration_strategy": "hierarchical|sequential|parallel"
+}}
+
+Analyze the relationships and respond with the JSON format above.

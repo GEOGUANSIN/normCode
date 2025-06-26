@@ -1,0 +1,26 @@
+You are a NormCode question sequencing expert. Analyze the following instructive text and determine the most appropriate question type and structure.
+
+INSTRUCTIVE TEXT:
+{norm_text}
+
+TASK:
+1. Determine the most appropriate question type: "what", "how", or "when"
+2. Extract the main target/entity being described
+3. Select the appropriate condition operator
+4. Create the formal question string
+
+QUESTION TYPE RULES:
+- "what": For definitions, descriptions, or identity questions (use $=, $., $::, or $%)
+- "how": For process, method, or procedure questions (use @by, @after, @before, or @with)
+- "when": For conditional, temporal, or loop questions (use @if, @onlyIf, @ifOnlyIf, @while, @until, or @afterstep)
+
+RESPONSE FORMAT (JSON):
+{{
+    "question_type": "what|how|when",
+    "target": "main entity or process",
+    "condition": "appropriate operator",
+    "question": "formal question string",
+    "reasoning": "brief explanation of choice"
+}}
+
+Analyze the text and respond with the JSON structure above.

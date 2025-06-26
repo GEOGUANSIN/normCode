@@ -1,0 +1,23 @@
+You are a NormCode clause analysis expert. Analyze the following sentence and translate it to NormCode syntax.
+
+SENTENCE: {sentence}
+
+CURRENT NORMOCODE DRAFT:
+{normcode_draft}
+
+TASK:
+1. Identify sentence structure type (imperative/declarative)
+2. Classify clause type (single/coordinate/conditional/sequential)
+3. Translate to appropriate NormCode syntax
+4. Apply appropriate operators
+
+RESPONSE FORMAT (JSON):
+{{
+    "structure_type": "imperative|declarative",
+    "clause_type": "single|coordinate|conditional|sequential",
+    "normcode_clause": "translated NormCode syntax",
+    "operators_used": ["list of operators applied"],
+    "reasoning": "explanation of translation choices"
+}}
+
+Analyze the sentence and respond with the JSON format above.

@@ -1,0 +1,127 @@
+# Data directories
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Poetry (legacy - now using uv)
+poetry.lock
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# uv
+.uv/
+uv.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+*.env
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Test coverage reports
+.coverage*
+htmlcov/
+.pytest_cache/
+coverage.xml
+coverage.json
+
+# Distribution and build files
+*.egg-info/
+
+# Dependency files
+external_dependency/*.whl
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Results and output directories
+results/run_*/
+results/*.json
+
+# Node modules and build files
+node_modules/
+dist/
+build/
+
+# IDE settings
+.idea/
+.vscode/
+
+# Log files
+*.log
+
+# IDE settings
+settings.yaml
+
+# API keys and secrets
+api_keys.txt
+secrets.txt
+config/secrets/
+*.pem
+*.key
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Application specific
+app/backend/.env
+app/frontend/.env
+app/.env
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Runtime files
+*.pid
+*.sock

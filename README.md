@@ -82,6 +82,9 @@ These four linguistic action types provide the structural framework for how conc
 - `*some` - Existential quantification
 - `*count` - Cardinal quantification
 
+**8. Inference** `*<=*` and `*<-*`
+- `<=` - Functional operator (establishes functional relationships and definitions)
+- `<-` - Value operator (establishes value relationships and derived instances)
 
 ## Purpose
 
@@ -142,6 +145,60 @@ The translation process follows these steps:
 - Maintain logical flow and dependency relationships
 
 This deconstruction step serves as the foundation for the subsequent translation phases, ensuring that all instructional elements are properly identified and structured before being transformed into the final output format.
+
+### In-question NormCodeDraft Analysis
+
+Following the question sequencing deconstruction, the next step is **"In-question NormCodeDraft analysis"** - a systematic three-phase algorithm that transforms natural language questions and answers into formal NormCode structures.
+
+#### Algorithm Overview
+
+The In-question analysis follows a structured three-phase approach:
+
+**Phase 1: Question Analysis**
+- **Input**: Formal question in format `"question_marker(question_target, question_condition)"`
+- **Process**: Parse question marker (`$what?`, `$how?`, `$when?`), target, and condition; validate structure compatibility
+- **Output**: Basic NormCode inference ground with target and relationship operator
+
+**Phase 2: Clause Analysis**
+- **Input**: Natural language answer + Phase 1 NormCodeDraft
+- **Process**: Analyze sentence structure (imperative/declarative); identify and classify clauses (single, coordinate, conditional, sequential); translate into NormCode syntax
+- **Output**: Clause-analyzed NormCodeDraft with concrete content and logical operators
+
+**Phase 3: Template Creation**
+- **Input**: Phase 2 NormCodeDraft
+- **Process**: Add template abstractions with typed placeholders; create reference mappings between concrete and abstract levels; preserve logical structure
+- **Output**: Complete NormCode structure with templates, references, and validation
+
+#### Key Features
+
+- **Incremental Building**: Each phase builds on the previous phase's output
+- **Preservation of Logic**: All logical operators and relationships are maintained throughout
+- **Reference Mapping**: Bidirectional links between concrete terms and abstract templates
+- **Type Safety**: Semantic typing ensures consistency across elements
+- **Modular Design**: Each phase has a distinct, focused responsibility
+
+#### Question Structure Schema
+
+Questions follow a formal structure:
+```
+"_question_marker_(_question_target_, _question_condition_)"
+```
+
+Where:
+- **question_marker**: `$what?` | `$how?` | `$when?`
+- **question_target**: The entity, imperative, or judgement being questioned
+- **question_condition**: The relationship type (`$=`, `$::`, `@by`, `@onlyIf`, `@If`, etc.)
+
+#### Clause Translation Rules
+
+The algorithm handles different clause types with specific NormCode operators:
+
+- **Coordinate clauses** (and/or): Use `across()` operator for simultaneous conditions
+- **Conditional clauses** (if/when): Use `@if` operator for prerequisite relationships  
+- **Sequential clauses** (first/then): Use `&in()` operator with ordered lists
+- **Single clauses**: Direct translation to imperative or declarative structures
+
+This analysis step ensures systematic, consistent transformation from natural language to formal NormCode structures while maintaining semantic accuracy and logical completeness.
 
 ## Getting Started
 
