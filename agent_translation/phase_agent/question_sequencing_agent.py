@@ -121,7 +121,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
             prompt_params["prompt_context"] = prompt_context
             
         request = self.create_llm_request(
-            prompt_type="question_type_analysis",
+            prompt_type="ntd_1_establishing_main_question",
             prompt_params=prompt_params,
             response_parser=self._parse_main_question_response,
             fallback_handler=lambda: self._fallback_main_question(norm_text, question_type, prompt_context)
@@ -142,7 +142,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
             prompt_params["prompt_context"] = prompt_context
             
         request = self.create_llm_request(
-            prompt_type="sentence_chunking",
+            prompt_type="ntd_2_sentence_chunking",
             prompt_params=prompt_params,
             response_parser=self._parse_sentence_chunks_response,
             fallback_handler=lambda: self._fallback_sentence_chunks(norm_text, prompt_context)
@@ -177,7 +177,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
             prompt_params["prompt_context"] = prompt_context
             
         request = self.create_llm_request(
-            prompt_type="question_generation",
+            prompt_type="ntd_3_question_generation",
             prompt_params=prompt_params,
             response_parser=self._parse_question_generation_response,
             fallback_handler=lambda: self._fallback_question_generation(chunk, index, prompt_context)
@@ -220,15 +220,15 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
     # Fallback handlers
     def _create_fallback_handler(self, request: LLMRequest) -> Callable[[], Any]:
         """Create fallback handler based on request type"""
-        if request.prompt_type == "question_type_analysis":
+        if request.prompt_type == "ntd_1_question_type_analysis":
             norm_text = request.prompt_params.get("norm_text", "")
             prompt_context = request.prompt_params.get("prompt_context")
             return lambda: self._fallback_main_question(norm_text, prompt_context=prompt_context)
-        elif request.prompt_type == "sentence_chunking":
+        elif request.prompt_type == "ntd_2_sentence_chunking":
             norm_text = request.prompt_params.get("norm_text", "")
             prompt_context = request.prompt_params.get("prompt_context")
             return lambda: self._fallback_sentence_chunks(norm_text, prompt_context)
-        elif request.prompt_type == "question_generation":
+        elif request.prompt_type == "ntd_3_question_generation":
             chunk = request.prompt_params.get("chunk", "")
             index = request.prompt_params.get("index", 0)
             prompt_context = request.prompt_params.get("prompt_context")
@@ -239,7 +239,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
     def _create_mock_response_generator(self, request: LLMRequest) -> Callable[[str], str]:
         """Create mock response generator based on request type"""
         def generate_mock_response(prompt: str) -> str:
-            if request.prompt_type == "question_type_analysis":
+            if request.prompt_type == "ntd_1_question_type_analysis":
                 # Analyze the input text to determine question type
                 norm_text = request.prompt_params.get("norm_text", "")
                 question_type = self._analyze_question_type_simple(norm_text)
@@ -254,7 +254,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
                     "question": question,
                     "reasoning": f"Mock response: analyzed text and determined {question_type} type"
                 })
-            elif request.prompt_type == "sentence_chunking":
+            elif request.prompt_type == "ntd_2_sentence_chunking":
                 # Split text into sentences for chunking
                 norm_text = request.prompt_params.get("norm_text", "")
                 sentences = [s.strip() for s in norm_text.split('.') if s.strip()]
@@ -265,7 +265,7 @@ class QuestionSequencingAgent(BaseAgent[QuestionDecomposition]):
                     "sentence_chunks": sentences,
                     "reasoning": f"Mock chunking: split into {len(sentences)} chunks"
                 })
-            elif request.prompt_type == "question_generation":
+            elif request.prompt_type == "ntd_3_question_generation":
                 # Generate appropriate question for the chunk
                 chunk = request.prompt_params.get("chunk", "")
                 index = request.prompt_params.get("index", 0)

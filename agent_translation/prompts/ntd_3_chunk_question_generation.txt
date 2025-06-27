@@ -1,0 +1,140 @@
+You are a NormCode question generation expert. Create a formal question for the following sentence chunk using NormCode syntax and principles.
+
+NORMOCODE CONTEXT:
+{prompt_context}
+
+ORIGINAL INSTRUCTIVE TEXT (INPUT CONTEXT):
+{norm_text}
+
+MAIN QUESTION CONTEXT:
+{main_question}
+
+SENTENCE CHUNK (INPUT TO ANALYZE):
+{chunk}
+
+CHUNK INDEX: {index}
+
+TASK:
+1. Determine the most appropriate question type for this chunk: "what", "how", or "when"
+2. Extract the target entity or concept from the chunk that bridges to the main question
+3. Select the appropriate condition operator from NormCode syntax
+4. Create the formal question string in NormCode format that answers a sub-question of the main question
+
+QUESTION TYPE RULES:
+- "what": For definitions, descriptions, identity questions, or assignment operations
+  - Use operators: $= (identity), $. (specification), $:: (nominalization), $% (abstraction)
+  - Focus: Entity definition, step identification, specification, abstraction
+  - Examples: "What is a user account?" (identity), "What are cake after baking?" (specification), "What does step one do?" (nominalization), "What is the conceptual meaning of ingredients?" (abstraction)
+
+- "how": For process, method, procedure questions, or imperative sequences
+  - Use operators: @by (by means of), @after (future imperative), @before (past imperative), @with (current imperative)
+  - Focus: Process analysis, method identification, procedural steps
+  - Examples: "How to create an account?", "How to perform the steps?"
+
+- "when": For conditional, temporal, loop questions, or judgement sequences
+  - Use operators: @If (conditional), @OnlyIf (restrictive), @IfOnlyIf (biconditional), @while (loop while), @until (loop until), @afterstep (loop after step)
+  - Focus: Conditional analysis, consequence analysis, antecedent analysis
+  - Examples: "When does this happen?", "When is the condition met?"
+
+TARGET EXTRACTION GUIDELINES:
+- Extract the main entity, process, condition, or concept that the chunk is asking about
+- The target can be any type: imperative (::(action)), judgement (<condition>), object ({entity}), etc.
+- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{user_account}" (object)
+- Consider how this chunk relates to the main question context and what sub-question it answers
+- Use descriptive but concise names that capture the essence of what's being asked
+- Avoid generic terms like "it" or "this" - be specific about what the chunk is actually describing
+
+CONDITION SELECTION GUIDELINES:
+- Choose the operator that best matches the relationship described in the chunk
+- Consider the context provided by the main question and original text
+- For definitions: prefer $= for basic identity, $. for detailed specification, $:: for nominalization, $% for abstraction
+- For processes: prefer @by for method specification, @after/@before for sequencing, @with for concurrent actions
+- For conditions: prefer @If for simple conditions, @OnlyIf for restrictions, @IfOnlyIf for bidirectional conditions
+- For loops: prefer @while for continuous loops, @until for termination loops, @afterstep for post-iteration actions
+- The condition operator should reflect the semantic relationship between the target and the context
+- Consider whether the relationship is about identity, method, timing, or logical conditions
+
+RESPONSE FORMAT (JSON):
+{{
+    "question_type": "what|how|when",
+    "target": "extracted target from chunk (be specific)",
+    "condition": "appropriate NormCode operator",
+    "question": "formal NormCode question string",
+    "reasoning": "brief explanation of choice including why this question type and operator were selected for this specific chunk"
+}}
+
+EXAMPLES:
+
+Example 1 - Process Chunk:
+Original Text: "Create a user account with email and password. The account has admin privileges and is active by default."
+Main Question: "$how?(::(do now), @by)"
+Chunk: "Create a user account with email and password"
+Output: {{
+    "question_type": "how",
+    "target": "account_creation_method",
+    "condition": "@by",
+    "question": "$how?(::(do now), @by)",
+    "reasoning": "This chunk directly answers the main question - it describes the method for creating accounts, so the chunk question is the same as the main question with 'how' type and @by operator for method specification"
+}}
+
+Example 2 - Loop Condition Chunk:
+Original Text: "To sort a list of numbers, repeatedly compare adjacent elements and swap them if they are in wrong order. Continue this process until no more swaps are needed. The algorithm terminates when the list is fully sorted."
+Main Question: "$when?(::(compare and swap), @while)"
+Chunk: "Continue this process until no more swaps are needed"
+Output: {{
+    "question_type": "when",
+    "target": "::(compare and swap)",
+    "condition": "@until",
+    "question": "$when?(::(compare and swap), @until)",
+    "reasoning": "This chunk answers the sub-question: when does the compare and swap process stop? This helps answer the main question about when the compare and swap process occurs by establishing the termination condition"
+}}
+
+Example 3 - Conditional Action Chunk:
+Original Text: "If the temperature exceeds 100°C, check if the cooling system is active. If the cooling system is not active, activate it immediately. If the cooling system is already active, increase the cooling rate by 50%. Monitor the temperature every 30 seconds until it drops below 80°C."
+Main Question: "$when?(<the alarm will sound>, @If)"
+Chunk: "If the cooling system is not active, activate it immediately"
+Output: {{
+    "question_type": "when",
+    "target": "::(activate cooling system)",
+    "condition": "@If",
+    "question": "$when?(::(activate cooling system), @If)",
+    "reasoning": "This chunk answers the sub-question: when should the cooling system be activated? This helps answer the main question about when the alarm sounds by establishing one of the conditions that prevents alarm activation"
+}}
+
+Example 4 - Process Implementation Chunk:
+Original Text: "A recursive function is a function that calls itself. To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters. The function continues calling itself until the base case is reached."
+Main Question: "$what?({recursive_function}, $=)"
+Chunk: "To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters"
+Output: {{
+    "question_type": "how",
+    "target": "::(implement recursion)",
+    "condition": "@by",
+    "question": "$how?(::(implement recursion), @by)",
+    "reasoning": "This chunk answers the sub-question: how is recursion implemented? This helps answer the main question about what a recursive function is by explaining the implementation method"
+}}
+
+Example 5 - Object Definition Chunk:
+Original Text: "A butterfly is an insect that undergoes metamorphosis. Butterfly eggs hatch into caterpillars. The caterpillars form chrysalises and emerge as adult butterflies."
+Main Question: "$what?({butterfly}, $=)"
+Chunk: "A butterfly is an insect"
+Output: {{
+    "question_type": "what",
+    "target": "{butterfly}",
+    "condition": "$=",
+    "question": "$what?({butterfly}, $=)",
+    "reasoning": "This chunk answers the sub-question: what is a butterfly? This directly answers the main question about the identity of butterfly by establishing its basic classification"
+}}
+
+Example 6 - Judgement Condition Chunk:
+Original Text: "If the temperature exceeds 100°C, then the alarm will sound. The system will shut down automatically if the temperature reaches 120°C."
+Main Question: "$when?(<the alarm will sound>, @If)"
+Chunk: "The system will shut down automatically if the temperature reaches 120°C"
+Output: {{
+    "question_type": "when",
+    "target": "<system shuts down>",
+    "condition": "@If",
+    "question": "$when?(<system shuts down>, @If)",
+    "reasoning": "This chunk answers the sub-question: when does the system shut down? This helps answer the main question about when the alarm sounds by establishing a more severe condition that triggers system shutdown"
+}}
+
+Generate the question and respond with the JSON format above. Ensure your reasoning explains both the question type choice and the specific operator selection for this chunk.
