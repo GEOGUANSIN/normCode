@@ -1,0 +1,86 @@
+You are a NormCode text analysis expert. Break down the following instructive text into meaningful sentence chunks for question generation using NormCode principles.
+
+NORMOCODE CONTEXT:
+{prompt_context}
+
+INSTRUCTIVE TEXT (INPUT TO ANALYZE):
+{norm_text}
+
+TASK:
+1. Identify and separate distinct ideas, actions, or conditions
+2. Group related information together logically
+3. Create chunks that can be individually questioned using NormCode syntax
+4. Maintain the original meaning and relationships between chunks
+
+CHUNKING GUIDELINES:
+- Each chunk should represent a single concept, action, condition, or relationship
+- Preserve logical relationships and dependencies between chunks
+- Handle complex sentences by breaking them into logical parts
+- Consider what NormCode questions each chunk would answer
+- Focus on creating chunks that align with NormCode question types (what, how, when)
+- Ensure each chunk has a clear, identifiable target entity or process
+
+CHUNKING PRINCIPLES:
+- **Entity chunks**: For definitions, descriptions, or identity statements
+- **Process chunks**: For actions, methods, or procedural steps
+- **Conditional chunks**: For if/then relationships, timing, or loop conditions
+- **Sequential chunks**: For ordered steps or temporal relationships
+
+RESPONSE FORMAT (JSON):
+{{
+    "sentence_chunks": [
+        "first logical chunk",
+        "second logical chunk", 
+        "third logical chunk"
+    ],
+    "reasoning": "explanation of chunking decisions including why each chunk was separated and how they relate to NormCode question types"
+}}
+
+EXAMPLES:
+
+Example 1 - Process Instructions:
+Input: "Create a user account with email and password. The account has admin privileges and is active by default."
+Chunks: [
+    "Create a user account with email and password",
+    "The account has admin privileges and is active by default"
+]
+Reasoning: "Separated into process chunk (how to create) and consequence chunk (what happens when created)"
+
+Example 2 - Definition with Process:
+Input: "A butterfly is an insect. Butterfly eggs hatch into caterpillars. The caterpillars form chrysalises and emerge as adult butterflies."
+Chunks: [
+    "A butterfly is an insect",
+    "Butterfly eggs hatch into caterpillars", 
+    "The caterpillars form chrysalises and emerge as adult butterflies"
+]
+Reasoning: "Separated into identity chunk (what is butterfly), antecedent chunk (what makes butterfly), and consequence chunk (what happens in the process)"
+
+Example 3 - Complex Algorithm with Loops:
+Input: "To sort a list of numbers, repeatedly compare adjacent elements and swap them if they are in wrong order. Continue this process until no more swaps are needed. The algorithm terminates when the list is fully sorted."
+Chunks: [
+    "To sort a list of numbers, repeatedly compare adjacent elements and swap them if they are in wrong order",
+    "Continue this process until no more swaps are needed",
+    "The algorithm terminates when the list is fully sorted"
+]
+Reasoning: "Separated into main process chunk (how to sort with comparison/swapping), loop condition chunk (when to continue), and termination condition chunk (when to stop)"
+
+Example 4 - Conditional Process with Multiple Steps:
+Input: "If the temperature exceeds 100°C, check if the cooling system is active. If the cooling system is not active, activate it immediately. If the cooling system is already active, increase the cooling rate by 50%. Monitor the temperature every 30 seconds until it drops below 80°C."
+Chunks: [
+    "If the temperature exceeds 100°C, check if the cooling system is active",
+    "If the cooling system is not active, activate it immediately",
+    "If the cooling system is already active, increase the cooling rate by 50%",
+    "Monitor the temperature every 30 seconds until it drops below 80°C"
+]
+Reasoning: "Separated into initial condition chunk (when to start), conditional action chunks (what to do based on system state), and monitoring loop chunk (continuous monitoring with termination condition)"
+
+Example 5 - Multi-Level Definition with Process:
+Input: "A recursive function is a function that calls itself. To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters. The function continues calling itself until the base case is reached."
+Chunks: [
+    "A recursive function is a function that calls itself",
+    "To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters",
+    "The function continues calling itself until the base case is reached"
+]
+Reasoning: "Separated into definition chunk (what is recursion), implementation chunk (how to implement), and termination condition chunk (when recursion stops)"
+
+Break down the text into logical chunks and respond with the JSON format above. Ensure your reasoning explains the chunking strategy and how each chunk relates to NormCode question types.

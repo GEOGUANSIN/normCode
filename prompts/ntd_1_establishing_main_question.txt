@@ -30,8 +30,8 @@ QUESTION TYPE RULES:
 
 TARGET EXTRACTION GUIDELINES:
 - Extract the main entity, process, condition, or concept that the text is asking about
-- The target can be any type: imperative (::(action)), judgement (<condition>), object ({entity}), etc.
-- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{user_account}" (object)
+- The target can be any type: imperative (::(action)), judgement (<condition>), object ({{entity}}), etc.
+- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{{user_account}}" (object)
 - Use descriptive but concise names that capture the essence of what's being asked
 - Avoid generic terms like "it" or "this" - be specific about what the text is actually describing
 
@@ -74,7 +74,7 @@ Output: {{
     "question_type": "what",
     "target": "butterfly",
     "condition": "$=",
-    "question": "$what?({butterfly}, $=)",
+    "question": "$what?({{butterfly}}, $=)",
     "reasoning": "Text defines what a butterfly is, so 'what' type with $= operator for identity assignment"
 }}
 

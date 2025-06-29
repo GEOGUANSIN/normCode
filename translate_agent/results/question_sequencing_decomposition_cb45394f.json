@@ -1,0 +1,44 @@
+{
+  "agent_type": "question_sequencing",
+  "result_type": "decomposition",
+  "session_id": "cb45394f",
+  "input_hash": "cb45394fbb50f6ebea5e1adcff4c8a9c",
+  "result_data": {
+    "main_question": {
+      "type": "what",
+      "target": "{password}",
+      "condition": "$=",
+      "question": "$what?({password}, $=)"
+    },
+    "ensuing_questions": [
+      {
+        "question": "$what?({password}, $=)",
+        "answer": "Create a password for a new user account",
+        "chunk_index": 0
+      },
+      {
+        "question": "$what?({password_length}, $=)",
+        "answer": "The password should be at least 8 characters long",
+        "chunk_index": 1
+      },
+      {
+        "question": "$what?({password_requirements}, $=)",
+        "answer": "The password should include a mix of uppercase and lowercase letters, numbers, and special characters",
+        "chunk_index": 2
+      }
+    ],
+    "decomposition_metadata": {
+      "original_text": "Create a password for a new user account. The password should be at least 8 characters long and include a mix of uppercase and lowercase letters, numbers, and special characters.",
+      "text_length": 178,
+      "chunk_count": 3,
+      "main_question_type": "what",
+      "processing_timestamp": "2024-01-01T00:00:00Z"
+    }
+  },
+  "metadata": {
+    "text_length": 178,
+    "chunk_count": 3,
+    "main_question_type": "what"
+  },
+  "created_at": "2025-06-29T17:46:09.861393"
+}

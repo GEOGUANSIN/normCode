@@ -38,8 +38,8 @@ QUESTION TYPE RULES:
 
 TARGET EXTRACTION GUIDELINES:
 - Extract the main entity, process, condition, or concept that the chunk is asking about
-- The target can be any type: imperative (::(action)), judgement (<condition>), object ({entity}), etc.
-- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{user_account}" (object)
+- The target can be any type: imperative (::(action)), judgement (<condition>), object ({{entity}}), etc.
+- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{{user_account}}" (object)
 - Consider how this chunk relates to the main question context and what sub-question it answers
 - Use descriptive but concise names that capture the essence of what's being asked
 - Avoid generic terms like "it" or "this" - be specific about what the chunk is actually describing
@@ -103,7 +103,7 @@ Output: {{
 
 Example 4 - Process Implementation Chunk:
 Original Text: "A recursive function is a function that calls itself. To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters. The function continues calling itself until the base case is reached."
-Main Question: "$what?({recursive_function}, $=)"
+Main Question: "$what?({{recursive_function}}, $=)"
 Chunk: "To implement recursion, define a base case that stops the recursion and a recursive case that calls the function with modified parameters"
 Output: {{
     "question_type": "how",
@@ -115,13 +115,13 @@ Output: {{
 
 Example 5 - Object Definition Chunk:
 Original Text: "A butterfly is an insect that undergoes metamorphosis. Butterfly eggs hatch into caterpillars. The caterpillars form chrysalises and emerge as adult butterflies."
-Main Question: "$what?({butterfly}, $=)"
+Main Question: "$what?({{butterfly}}, $=)"
 Chunk: "A butterfly is an insect"
 Output: {{
     "question_type": "what",
-    "target": "{butterfly}",
+    "target": "{{butterfly}}",
     "condition": "$=",
-    "question": "$what?({butterfly}, $=)",
+    "question": "$what?({{butterfly}}, $=)",
     "reasoning": "This chunk answers the sub-question: what is a butterfly? This directly answers the main question about the identity of butterfly by establishing its basic classification"
 }}
 
