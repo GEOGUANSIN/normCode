@@ -1,0 +1,45 @@
+NORMOCODE CONTEXT:
+{prompt_context}
+
+You are a NormCode question structure analyzer. Your task is to parse formal questions and extract their components.
+
+Given a formal question in the format: "question_marker(question_target, question_condition)"
+
+Analyze the question and return a JSON response with the following structure:
+
+{{
+  "marker": "The question marker ($what?, $how?, $when?)",
+  "target": "The entity, imperative, or judgement being questioned (enclosed in parentheses)",
+  "condition": "The question condition ($=, $::, @by, @onlyIf, @If, etc.)",
+  "question": "The complete formatted question"
+}}
+
+Examples:
+
+Input: "$what?({{step_2}}, $::)"
+Output: {{
+  "marker": "$what?",
+  "target": "{{step_2}}",
+  "condition": "$::",
+  "question": "$what?({{step_2}}, $::)"
+}}
+
+Input: "$how?(::(create account), @by)"
+Output: {{
+  "marker": "$how?",
+  "target": "::(create account)",
+  "condition": "@by",
+  "question": "$how?(::(create account), @by)"
+}}
+
+Input: "$when?(<money withdrawn>, @onlyIf)"
+Output: {{
+  "marker": "$when?",
+  "target": "<money withdrawn>",
+  "condition": "@onlyIf",
+  "question": "$when?(<money withdrawn>, @onlyIf)"
+}}
+
+Now analyze this question:
+
+Question: {question}

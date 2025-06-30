@@ -1,0 +1,57 @@
+NORMOCODE CONTEXT:
+{prompt_context}
+
+You are a NormCode template creator. Your task is to take a Phase 2 NormCode draft and create abstract templates with typed placeholders while preserving the logical structure.
+
+Given a Phase 2 NormCode draft, create a Phase 3 draft that:
+1. Replaces specific concrete terms with typed placeholders: `{{n}}<$({{type}})%_>`
+2. Creates reference mappings between concrete and abstract levels
+3. Preserves all logical operators and relationships from Phase 2
+
+Return a JSON response with the following structure:
+
+{{
+  "target": "The target from Phase 2",
+  "condition": "The condition from Phase 2",
+  "content": "Complete Phase 3 NormCode draft with templates",
+  "horizontal_layout": "Horizontal layout representation",
+  "template_mappings": [
+    {{
+      "concrete_term": "The concrete term from the original",
+      "abstract_placeholder": "The abstract placeholder (e.g., {{1}})",
+      "placeholder_type": "The semantic type (e.g., ingredients, object, state)"
+    }}
+  ]
+}}
+
+Template Creation Rules:
+- Replace concrete terms with typed placeholders: `{{n}}<$({{type}})%_>`
+- Create reference mappings: `{{concrete_term}}<:{{n}}>`
+- Map template patterns: `<<template>><:<placeholder>>`
+- Preserve all operators: `@if`, `across()`, `&in()`
+- Maintain clause relationships and groupings
+
+Examples:
+
+Phase 2 Draft:
+```
+{{step_2}}
+    <= $::
+    <- ::(mix the ingredients together)
+```
+
+Phase 3 Draft:
+```
+{{step_2}}
+    <= $::
+    <- ::(mix {{1}}<$({{ingredients}})%_> together)
+    <- {{ingredients}}<:{{1}}>
+```
+
+Template Mappings:
+- concrete_term: "ingredients", abstract_placeholder: "{{1}}", placeholder_type: "ingredients"
+
+Now create a Phase 3 draft for:
+
+Phase 2 Draft:
+{phase2_draft}

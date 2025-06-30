@@ -54,7 +54,7 @@ class PromptDatabase:
 class PromptManager:
     """Simple prompt manager with two modes"""
     
-    def __init__(self, mode: str = "database", db_path: str = "sequence/normcode_prompts.db", prompts_dir: str = "sequence/phase_agent/prompts"):
+    def __init__(self, mode: str = "database", db_path: str = "sequence/normcode_prompts.db", prompts_dir: str = "translate_agent/phase_agent/prompts"):
         self.mode = mode
         self.db = PromptDatabase(db_path) if mode == "database" else None
         self.prompts_dir = prompts_dir
@@ -64,6 +64,10 @@ class PromptManager:
             "ntd_1_establishing_main_question.txt": ("question_sequencing", "question_type_analysis"),
             "ntd_2_sentence_chunking.txt": ("question_sequencing", "sentence_chunking"),
             "ntd_3_chunk_question_generation.txt": ("question_sequencing", "chunk_question_generation"),
+            "iqa_1_question_structure_analysis.txt": ("in_question_analysis", "question_structure_analysis"),
+            "iqa_2_clause_analysis.txt": ("in_question_analysis", "clause_analysis"),
+            "iqa_2b_phase2_draft_creation.txt": ("in_question_analysis", "phase2_draft_creation"),
+            "iqa_3_template_creation.txt": ("in_question_analysis", "template_creation"),
             "normcode_context.txt": ("general", "context"),
             "direct_prompt.txt": ("general", "direct")
         }
@@ -110,7 +114,7 @@ class PromptManager:
 class PromptSyncer:
     """Simple sync between files and database"""
     
-    def __init__(self, db_path: str = "sequence/normcode_prompts.db", prompts_dir: str = "sequence/phase_agent/prompts"):
+    def __init__(self, db_path: str = "sequence/normcode_prompts.db", prompts_dir: str = "translate_agent/phase_agent/prompts"):
         self.db = PromptDatabase(db_path)
         self.prompts_dir = prompts_dir
         
@@ -118,6 +122,10 @@ class PromptSyncer:
             "ntd_1_establishing_main_question.txt": ("question_sequencing", "question_type_analysis"),
             "ntd_2_sentence_chunking.txt": ("question_sequencing", "sentence_chunking"),
             "ntd_3_chunk_question_generation.txt": ("question_sequencing", "chunk_question_generation"),
+            "iqa_1_question_structure_analysis.txt": ("in_question_analysis", "question_structure_analysis"),
+            "iqa_2_clause_analysis.txt": ("in_question_analysis", "clause_analysis"),
+            "iqa_2b_phase2_draft_creation.txt": ("in_question_analysis", "phase2_draft_creation"),
+            "iqa_3_template_creation.txt": ("in_question_analysis", "template_creation"),
             "normcode_context.txt": ("general", "context"),
             "direct_prompt.txt": ("general", "direct")
         }
@@ -163,7 +171,7 @@ if __name__ == "__main__":
     print("=== NormCode Prompt Database Demo ===\n")
     
     # Use existing prompts directory
-    prompts_dir = "sequence/phase_agent/prompts"
+    prompts_dir = "translate_agent/phase_agent/prompts"
     
     if not os.path.exists(prompts_dir):
         print(f"Error: Prompts directory '{prompts_dir}' not found!")

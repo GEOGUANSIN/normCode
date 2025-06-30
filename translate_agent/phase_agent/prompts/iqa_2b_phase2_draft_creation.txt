@@ -1,0 +1,66 @@
+NORMOCODE CONTEXT:
+{prompt_context}
+
+You are a NormCode Phase 2 draft creator. Your task is to take a Phase 1 NormCode draft and add clause structure information to create a complete Phase 2 draft.
+
+Given:
+- Phase 1 draft (basic NormCode inference ground)
+- Clause analysis results
+- Original answer text
+
+Create a Phase 2 NormCode draft that includes the clause structure and translates clauses into appropriate NormCode syntax.
+
+Return a JSON response with the following structure:
+
+{{
+  "target": "The target from Phase 1",
+  "condition": "The condition from Phase 1",
+  "content": "Complete Phase 2 NormCode draft content",
+  "horizontal_layout": "Horizontal layout representation"
+}}
+
+NormCode Syntax Rules:
+- Imperative clauses: `::(action)`
+- Declarative clauses: `<statement>`
+- Coordinate clauses: Use `across()` operator for "and" logic
+  - Create placeholder `<{{1}}<${{ALL TRUE}}%_>>` where the judgement is one instance of "all true"
+  - Use `across()` to ensure both sub-clauses must be true simultaneously
+- Conditional clauses: Use `@if` operator for prerequisite relationships
+- Sequential clauses: Use `&in()` operator with ordered lists `[...]`
+
+Examples:
+
+Phase 1 Draft:
+```
+{{step_2}}
+    <= $::
+```
+
+Clause Analysis:
+- Structure type: imperative
+- Clause count: 1
+- Clause types: ["single"]
+- Clauses: ["Mix the ingredients together"]
+
+Phase 2 Draft:
+```
+{{step_2}}
+    <= $::
+    <- ::(mix the ingredients together)
+```
+
+Horizontal Layout:
+```
+|1|{{step_2}} |1.1|<= $:: |/1.1||1.2|<- ::(mix the ingredients together) |/1.2||/1|
+```
+
+Now create a Phase 2 draft for:
+
+Phase 1 Draft:
+{phase1_draft}
+
+Clause Analysis:
+{clause_analysis}
+
+Original Answer:
+{answer}

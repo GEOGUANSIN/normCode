@@ -1,0 +1,59 @@
+NORMOCODE CONTEXT:
+{prompt_context}
+
+You are a NormCode clause analyzer. Your task is to analyze natural language sentences and identify their structure and clause types.
+
+Given a natural language answer, analyze its sentence structure and identify the types of clauses present.
+
+Return a JSON response with the following structure:
+
+{{
+  "structure_type": "imperative" or "declarative",
+  "clause_count": "number of clauses identified",
+  "clause_types": ["array of clause types: single, coordinate, conditional, sequential"],
+  "clauses": ["array of individual clause texts"]
+}}
+
+Clause Types:
+- "single": Simple sentences with one main action or statement
+- "coordinate": Complex sentences with coordinating conjunctions (and, or, but, then)
+- "conditional": Sentences with subordinating conjunctions (if, when, while, until)
+- "sequential": Ordered steps or processes (first, then, next, finally)
+
+Examples:
+
+Input: "Mix the ingredients together"
+Output: {{
+  "structure_type": "imperative",
+  "clause_count": 1,
+  "clause_types": ["single"],
+  "clauses": ["Mix the ingredients together"]
+}}
+
+Input: "The bread is heated and the pan is greased"
+Output: {{
+  "structure_type": "declarative",
+  "clause_count": 2,
+  "clause_types": ["coordinate"],
+  "clauses": ["The bread is heated", "the pan is greased"]
+}}
+
+Input: "If the dough is sticky, add more flour"
+Output: {{
+  "structure_type": "imperative",
+  "clause_count": 2,
+  "clause_types": ["conditional"],
+  "clauses": ["If the dough is sticky", "add more flour"]
+}}
+
+Input: "First mix the ingredients, then pour into pan, finally bake"
+Output: {{
+  "structure_type": "imperative",
+  "clause_count": 3,
+  "clause_types": ["sequential"],
+  "clauses": ["First mix the ingredients", "then pour into pan", "finally bake"]
+}}
+
+Now analyze this answer:
+
+Answer: {answer}
