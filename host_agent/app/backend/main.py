@@ -8,14 +8,14 @@ from datetime import datetime
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
-
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://192.168.113.18:3000"],  # React app's addresses
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://192.168.113.18:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Data models

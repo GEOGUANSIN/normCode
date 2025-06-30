@@ -76,8 +76,8 @@ export interface NodeContextType {
 }
 
 export interface ControlPanelProps {
-  newNodeType: string;
-  setNewNodeType: (type: string) => void;
+  newNodeType: NodeType;
+  setNewNodeType: (type: NodeType) => void;
   newNodeLabel: string;
   setNewNodeLabel: (label: string) => void;
   addNewNode: () => void;

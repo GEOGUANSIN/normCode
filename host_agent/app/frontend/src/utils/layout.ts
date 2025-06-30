@@ -1,6 +1,7 @@
-import { CustomNode, CustomEdge } from '../types';
+import { Node, Edge } from 'reactflow';
+import { NodeData, EdgeData } from '../types';
 
-export const calculateHierarchicalLayout = (nodes: CustomNode[], edges: CustomEdge[]): CustomNode[] => {
+export const calculateHierarchicalLayout = (nodes: Node<NodeData>[], edges: Edge<EdgeData>[]): Node<NodeData>[] => {
   // Create adjacency list
   const adjacencyList: Record<string, string[]> = {};
   const inDegree: Record<string, number> = {};
@@ -21,11 +22,11 @@ export const calculateHierarchicalLayout = (nodes: CustomNode[], edges: CustomEd
   const leafNodes = nodes.filter(node => adjacencyList[node.id].length === 0);
   
   // Calculate levels using BFS starting from leaf nodes
-  const levels: CustomNode[][] = [];
+  const levels: Node<NodeData>[][] = [];
   const visited = new Set<string>();
   
-  const bfs = (startNode: CustomNode) => {
-    const queue: Array<{ node: CustomNode; level: number }> = [{ node: startNode, level: 0 }];
+  const bfs = (startNode: Node<NodeData>) => {
+    const queue: Array<{ node: Node<NodeData>; level: number }> = [{ node: startNode, level: 0 }];
     visited.add(startNode.id);
     
     while (queue.length > 0) {

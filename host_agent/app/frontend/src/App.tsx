@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -6,6 +6,12 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
+  Node,
+  Edge,
+  EdgeChange as ReactFlowEdgeChange,
+  Connection as ReactFlowConnection,
+  PanOnScrollMode,
+  BackgroundVariant,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import styled, { createGlobalStyle } from 'styled-components';
@@ -15,6 +21,7 @@ import { calculateHierarchicalLayout } from './utils/layout';
 import CustomNode from './components/nodes/CustomNode';
 import CustomEdge from './components/edges/CustomEdge';
 import ControlPanel from './components/ControlPanel';
+import { NodeData, EdgeData, NodeType, EdgeStyleConfig } from './types';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -86,11 +93,11 @@ const Container = styled.div`
   background: #f5f6fa;
 `;
 
-const VALID_NODE_TYPES = ['red', 'pink', 'purple', 'blue', 'teal', 'green', 'yellow', 'orange', 'brown', 'grey'];
+const VALID_NODE_TYPES: NodeType[] = ['red', 'pink', 'purple', 'blue', 'teal', 'green', 'yellow', 'orange', 'brown', 'grey'];
 
 // Create a stable reference for node types
-const createNodeType = (type, color) => {
-  const NodeComponent = React.memo((props) => {
+const createNodeType = (type: NodeType, color: string) => {
+  const NodeComponent = React.memo((props: any) => {
     const memoizedProps = React.useMemo(() => ({
       ...props,
       color
@@ -106,7 +113,7 @@ const nodeTypes = Object.freeze(
   Object.fromEntries(
     VALID_NODE_TYPES.map((type, index) => [
       type,
-      createNodeType(type, nodeColors[index])
+      createNodeType(type, nodeColors[type])
     ])
   )
 );
@@ -120,15 +127,15 @@ const edgeTypes = Object.freeze({
 });
 
 // Helper function to convert numeric type to string type - moved outside component
-const getNodeTypeString = (type) => {
+const getNodeTypeString = (type: string | number): NodeType => {
   // If type is already a valid string type, return it
-  if (VALID_NODE_TYPES.includes(type)) {
-    return type;
+  if (VALID_NODE_TYPES.includes(type as NodeType)) {
+    return type as NodeType;
   }
 
   // Handle numeric types
   const typeValue = typeof type === 'string' ? parseInt(type, 10) : type;
-  const typeMap = {
+  const typeMap: Record<number, NodeType> = {
     0: 'red',
     1: 'pink',
     2: 'purple',
@@ -151,18 +158,18 @@ const getNodeTypeString = (type) => {
 };
 
 function App() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [newNodeType, setNewNodeType] = useState('red');
+  const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<EdgeData>([]);
+  const [newNodeType, setNewNodeType] = useState<NodeType>('red');
   const [newNodeLabel, setNewNodeLabel] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [autoSave, setAutoSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Edge style configurations
-  const edgeStyles = React.useMemo(() => ({
+  const edgeStyles: Record<'solid' | 'dashed', EdgeStyleConfig> = React.useMemo(() => ({
     solid: {
       stroke: '#34495e',
       strokeWidth: 10,
@@ -177,10 +184,10 @@ function App() {
     }
   }), []);
 
-  const [edgeStyleType, setEdgeStyleType] = useState('solid');
+  const [edgeStyleType, setEdgeStyleType] = useState<'solid' | 'dashed'>('solid');
 
   // Add a ref to track if changes are from a save operation
-  const isFromSave = React.useRef(false);
+  const isFromSave = useRef(false);
 
   const saveGraph = useCallback(async () => {
     try {
@@ -216,7 +223,7 @@ function App() {
         const edgesData = await edgesResponse.json();
         console.log('Fetched updated state:', { nodes: nodesData.length, edges: edgesData.length });
         
-        const nodesWithTypes = nodesData.map(node => ({
+        const nodesWithTypes = nodesData.map((node: any) => ({
           ...node,
           type: getNodeTypeString(node.type),
           data: {
@@ -252,7 +259,7 @@ function App() {
     }
   }, [setNodes, setEdges, setError, setHasUnsavedChanges, autoSave]);
 
-  const handleEdgesChange = useCallback(async (changes) => {
+  const handleEdgesChange = useCallback(async (changes: ReactFlowEdgeChange[]) => {
     // Handle edge deletions
     const deletedEdges = changes.filter(change => change.type === 'remove');
     if (deletedEdges.length > 0) {
@@ -274,7 +281,7 @@ function App() {
   }, [onEdgesChange, autoSave, saveGraph]);
 
   const onConnect = useCallback(
-    async (params) => {
+    async (params: ReactFlowConnection) => {
       try {
         const sourceNode = nodes.find(n => n.id === params.source);
         const targetNode = nodes.find(n => n.id === params.target);
@@ -283,10 +290,10 @@ function App() {
           throw new Error('Source or target node does not exist');
         }
 
-        const newEdge = {
+        const newEdge: Edge<EdgeData> = {
           id: `e${params.source}-${params.target}`,
-          source: params.source,
-          target: params.target,
+          source: params.source!,
+          target: params.target!,
           type: 'custom',
           style: {
             strokeDasharray: edgeStyleType === 'dashed' ? '10,5' : 'none',
@@ -311,8 +318,8 @@ function App() {
         } else {
           const responseData = await response.json();
           if (responseData.detail === "Edge already exists") {
-            const sourceLabel = sourceNode.data.label;
-            const targetLabel = targetNode.data.label;
+            const sourceLabel = sourceNode.data?.label;
+            const targetLabel = targetNode.data?.label;
             alert(`A connection already exists between "${sourceLabel}" and "${targetLabel}"`);
           } else {
             throw new Error(responseData.detail || 'Failed to create edge');
@@ -320,13 +327,13 @@ function App() {
         }
       } catch (error) {
         console.error('Error creating edge:', error);
-        alert(`Failed to create edge: ${error.message}`);
+        alert(`Failed to create edge: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
     [nodes, setEdges, autoSave, saveGraph, edgeStyleType]
   );
 
-  const onKeyDown = useCallback(async (event) => {
+  const onKeyDown = useCallback(async (event: React.KeyboardEvent) => {
     if (event.key === 'Delete') {
       const selectedNodes = nodes.filter((node) => node.selected);
       
@@ -405,7 +412,7 @@ function App() {
         const edgesData = await edgesResponse.json();
         
         // Ensure each node has the correct type string
-        const nodesWithTypes = nodesData.map(node => {
+        const nodesWithTypes = nodesData.map((node: any) => {
           // Convert the type to string format and validate
           const typeString = getNodeTypeString(node.type || node.data?.type);
           return {
@@ -422,13 +429,13 @@ function App() {
         const nodesWithPositions = calculateHierarchicalLayout(nodesWithTypes, edgesData);
         setNodes(nodesWithPositions);
         
-        const processedEdges = edgesData.map(edge => ({
+        const processedEdges = edgesData.map((edge: any) => ({
           ...edge,
           type: 'custom',
-          style: edgeStyles[edge.data?.styleType || 'solid'],
+          style: edgeStyles[(edge.data?.styleType || 'solid') as 'solid' | 'dashed'],
           data: { 
             ...edge.data,
-            styleType: edge.data?.styleType || 'solid'
+            styleType: (edge.data?.styleType || 'solid') as 'solid' | 'dashed'
           }
         }));
         
@@ -456,7 +463,7 @@ function App() {
     const newNodeId = (highestId + 1).toString();
     
     const validatedType = getNodeTypeString(newNodeType);
-    const newNode = {
+    const newNode: Node<NodeData> = {
       id: newNodeId,
       type: validatedType,
       data: { 
@@ -508,8 +515,13 @@ function App() {
   const loadGraph = async () => {
     try {
       setError(null);
+      setIsLoading(true);
+      
       const response = await fetch(`${API_BASE_URL}/load`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       if (!response.ok) {
@@ -518,8 +530,10 @@ function App() {
       }
       
       const data = await response.json();
+      console.log('Load response:', data);
+      
       // Process the loaded data
-      const nodesWithTypes = data.nodes.map(node => ({
+      const nodesWithTypes = data.nodes.map((node: any) => ({
         ...node,
         type: getNodeTypeString(node.type),
         data: {
@@ -535,12 +549,14 @@ function App() {
     } catch (error) {
       console.error('Error loading graph:', error);
       setError('Failed to load graph. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Add this useEffect near the other useEffect hooks
   useEffect(() => {
-    const handleResizeObserverError = (e) => {
+    const handleResizeObserverError = (e: ErrorEvent) => {
       if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
         e.stopPropagation();
         e.preventDefault();
@@ -668,7 +684,7 @@ function App() {
             nodesDraggable={true}
             zoomOnScroll={true}
             panOnScroll={true}
-            panOnScrollMode="vertical"
+            panOnScrollMode={PanOnScrollMode.Vertical}
             zoomOnDoubleClick={true}
             minZoom={0.1}
             maxZoom={4}
@@ -676,14 +692,14 @@ function App() {
           >
             <Controls />
             <MiniMap 
-              nodeColor={n => {
+              nodeColor={(n: any) => {
                 const type = n.type || n.data?.type;
                 const typeIndex = Object.keys(nodeTypes).indexOf(type);
-                return typeIndex >= 0 ? nodeColors[typeIndex] : '#95a5a6';
+                return typeIndex >= 0 ? nodeColors[VALID_NODE_TYPES[typeIndex]] : '#95a5a6';
               }}
               style={{ background: 'white' }}
             />
-            <Background variant="dots" gap={24} size={1} color="#e0e0e0" />
+            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#e0e0e0" />
           </ReactFlow>
         </div>
       </Container>
@@ -691,4 +707,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 
