@@ -4,7 +4,7 @@ from openai import OpenAI
 from constants import CURRENT_DIR, PROJECT_ROOT
 
 
-class LLMFactory:
+class LanguageModel:
     """
     Factory class to create LLM instances based on model name and configuration
     """
@@ -63,5 +63,37 @@ class LLMFactory:
                       {"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
+
+        return response.choices[0].message.content
+
+    def generate(self, prompt, system_message="You are a helpful assistant.", response_format=None):
+        """
+        Generate a response from the LLM using a direct prompt
+
+        Args:
+            prompt (str): The prompt to send to the LLM
+            system_message (str): Optional system message to set context
+            response_format (dict): Optional response format specification
+
+        Returns:
+            str: The LLM response
+        """
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt}
+        ]
+
+        # Prepare request parameters
+        request_params = {
+            "model": self.model_name,
+            "messages": messages
+        }
+
+        # Add response format if specified
+        if response_format:
+            request_params["response_format"] = response_format
+
+        # Run the prompt through the LLM
+        response = self.client.chat.completions.create(**request_params)
 
         return response.choices[0].message.content
