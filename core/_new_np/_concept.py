@@ -1,12 +1,6 @@
-# from ._reference import Reference
+from _reference import Reference
 from typing import Optional
-
-class Reference:
-    def __init__(self, name, type, context):
-        self.name = name
-        self.type = type
-        self.context = context
-
+import uuid
 
 # Type classification
 TYPE_CLASS_SYNTACTICAL = "syntactical"
@@ -71,250 +65,147 @@ CONCEPT_TYPES = {
     "<:_>": {"description": "position_reference", "type_class": TYPE_CLASS_SYNTACTICAL},
 }
 
+
 class Concept:
-    def __init__(self, name, context="", reference=None, type="{}"):
+    def __init__(self, name, context="", reference: Optional[Reference] = None, type="{}"):
         if type not in CONCEPT_TYPES:
             raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
             
-        self._name = name      # Private storage for the name
-        self._type = type      # Private storage for the type
-        self._context = context # Private storage for the context
-        self.reference: Reference = reference
-    
-    # Name properties
-    @property
-    def contribute_name(self):
-        """Get the contribute name (always same as comprehension name)"""
-        return self._name
-    
-    @contribute_name.setter
-    def contribute_name(self, value):
-        """Set the contribute name (updates both contribute_name and comprehension name)"""
-        self._name = value
-    
-    @property
-    def comprehension_name(self):
-        """Get the name from comprehension (always same as contribute_name)"""
-        return self._name
-    
-    @comprehension_name.setter
-    def comprehension_name(self, value):
-        """Set the name in comprehension (updates both contribute_name and comprehension name)"""
-        self._name = value
-    
-    # Type properties
-    @property
-    def contribute_type(self):
-        """Get the contribute type (always same as comprehension type)"""
-        return self._type
-    
-    @contribute_type.setter
-    def contribute_type(self, value):
-        """Set the contribute type (updates both contribute_type and comprehension type)"""
-        if value not in CONCEPT_TYPES:
-            raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
-        self._type = value
-    
-    @property
-    def comprehension_type(self):
-        """Get the type from comprehension (always same as contribute_type)"""
-        return self._type
-    
-    @comprehension_type.setter
-    def comprehension_type(self, value):
-        """Set the type in comprehension (updates both contribute_type and comprehension type)"""
-        if value not in CONCEPT_TYPES:
-            raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
-        self._type = value
-    
-    # Context properties
-    @property
-    def contribute_context(self):
-        """Get the contribute context (always same as comprehension context)"""
-        return self._context
-    
-    @contribute_context.setter
-    def contribute_context(self, value):
-        """Set the contribute context (updates both contribute_context and comprehension context)"""
-        self._context = value
-    
-    @property
-    def comprehension_context(self):
-        """Get the context from comprehension (always same as contribute_context)"""
-        return self._context
-    
-    @comprehension_context.setter
-    def comprehension_context(self, value):
-        """Set the context in comprehension (updates both contribute_context and comprehension context)"""
-        self._context = value
+        self.name = name
+        self.type = type
+        self.context = context
+        self.reference: Optional[Reference] = reference
+        self.id = str(uuid.uuid4())  # Generate unique identification number
     
     def is_syntactical(self) -> bool:
-        return CONCEPT_TYPES[self._type]["type_class"] == TYPE_CLASS_SYNTACTICAL
+        return CONCEPT_TYPES[self.type]["type_class"] == TYPE_CLASS_SYNTACTICAL
     
     def is_semantical(self) -> bool:
-        return CONCEPT_TYPES[self._type]["type_class"] == TYPE_CLASS_SEMANTICAL
+        return CONCEPT_TYPES[self.type]["type_class"] == TYPE_CLASS_SEMANTICAL
     
     def get_type_class(self) -> str:
-        return CONCEPT_TYPES[self._type]["type_class"]
+        return CONCEPT_TYPES[self.type]["type_class"]
     
     def comprehension(self) -> dict:
         """Return all concept attributes in a dictionary format"""
         return {
-            "name": self._name,
-            "type": self._type,
-            "context": self._context,
-            "type_description": CONCEPT_TYPES[self._type]["description"],
-            "type_class": CONCEPT_TYPES[self._type]["type_class"],
+            "id": self.id,
+            "name": self.name,
+            "type": self.type,
+            "context": self.context,
+            "type_description": CONCEPT_TYPES[self.type]["description"],
+            "type_class": CONCEPT_TYPES[self.type]["type_class"],
         }
     
-    # For backward compatibility - accessing comprehension directly
+    # Dictionary-like access for backward compatibility
     def __getitem__(self, key):
-        if key == "name":
-            return self._name
+        if key == "id":
+            return self.id
+        elif key == "name":
+            return self.name
         elif key == "type":
-            return self._type
+            return self.type
         elif key == "context":
-            return self._context
+            return self.context
         elif key == "type_description":
-            return CONCEPT_TYPES[self._type]["description"]
+            return CONCEPT_TYPES[self.type]["description"]
         elif key == "type_class":
-            return CONCEPT_TYPES[self._type]["type_class"]
+            return CONCEPT_TYPES[self.type]["type_class"]
         else:
             raise KeyError(f"Key '{key}' not found")
     
     def __setitem__(self, key, value):
-        if key == "name":
-            self._name = value
+        if key == "id":
+            self.id = value
+        elif key == "name":
+            self.name = value
         elif key == "type":
             if value not in CONCEPT_TYPES:
                 raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
-            self._type = value
+            self.type = value
         elif key == "context":
-            self._context = value
+            self.context = value
         else:
             raise KeyError(f"Key '{key}' not found")
 
+
 if __name__ == "__main__":
-    def test_concept_synchronization():
-        print("=== Testing Concept Synchronization ===\n")
+    def test_concept_simplified():
+        print("=== Testing Simplified Concept ===\n")
         
         # Test 1: Basic initialization
         print("1. Basic initialization:")
         concept = Concept("test_concept", "test context", type="{}")
-        print(f"   contribute_name: {concept.contribute_name}")
-        print(f"   comprehension_name: {concept.comprehension_name}")
-        print(f"   contribute_type: {concept.contribute_type}")
-        print(f"   comprehension_type: {concept.comprehension_type}")
-        print(f"   contribute_context: {concept.contribute_context}")
-        print(f"   comprehension_context: {concept.comprehension_context}")
+        print(f"   id: {concept.id}")
+        print(f"   name: {concept.name}")
+        print(f"   type: {concept.type}")
+        print(f"   context: {concept.context}")
         print()
         
-        # Test 2: Name synchronization
-        print("2. Name synchronization:")
-        concept.contribute_name = "new_name"
-        print(f"   After setting contribute_name='new_name':")
-        print(f"   contribute_name: {concept.contribute_name}")
-        print(f"   comprehension_name: {concept.comprehension_name}")
-        print(f"   Dictionary access: {concept['name']}")
+        # Test 2: Direct attribute access
+        print("2. Direct attribute access:")
+        concept.name = "new_name"
+        concept.type = "::"
+        concept.context = "new context"
+        print(f"   id: {concept.id}")
+        print(f"   name: {concept.name}")
+        print(f"   type: {concept.type}")
+        print(f"   context: {concept.context}")
         print()
         
-        concept.comprehension_name = "another_name"
-        print(f"   After setting comprehension_name='another_name':")
-        print(f"   contribute_name: {concept.contribute_name}")
-        print(f"   comprehension_name: {concept.comprehension_name}")
-        print(f"   Dictionary access: {concept['name']}")
-        print()
-        
-        # Test 3: Type synchronization
-        print("3. Type synchronization:")
-        concept.contribute_type = "::"
-        print(f"   After setting contribute_type='::':")
-        print(f"   contribute_type: {concept.contribute_type}")
-        print(f"   comprehension_type: {concept.comprehension_type}")
-        print(f"   Dictionary access: {concept['type']}")
-        print(f"   type_description: {concept['type_description']}")
-        print(f"   type_class: {concept['type_class']}")
-        print()
-        
-        concept.comprehension_type = "[]"
-        print(f"   After setting comprehension_type='[]':")
-        print(f"   contribute_type: {concept.contribute_type}")
-        print(f"   comprehension_type: {concept.comprehension_type}")
-        print(f"   Dictionary access: {concept['type']}")
-        print(f"   type_description: {concept['type_description']}")
-        print(f"   type_class: {concept['type_class']}")
-        print()
-        
-        # Test 4: Context synchronization
-        print("4. Context synchronization:")
-        concept.contribute_context = "new context"
-        print(f"   After setting contribute_context='new context':")
-        print(f"   contribute_context: {concept.contribute_context}")
-        print(f"   comprehension_context: {concept.comprehension_context}")
-        print(f"   Dictionary access: {concept['context']}")
-        print()
-        
-        concept.comprehension_context = "another context"
-        print(f"   After setting comprehension_context='another context':")
-        print(f"   contribute_context: {concept.contribute_context}")
-        print(f"   comprehension_context: {concept.comprehension_context}")
-        print(f"   Dictionary access: {concept['context']}")
-        print()
-        
-        # Test 5: Dictionary access
-        print("5. Dictionary access:")
+        # Test 3: Dictionary access
+        print("3. Dictionary access:")
         concept["name"] = "dict_name"
         concept["type"] = "<>"
         concept["context"] = "dict_context"
-        print(f"   After setting via dictionary:")
-        print(f"   contribute_name: {concept.contribute_name}")
-        print(f"   contribute_type: {concept.contribute_type}")
-        print(f"   contribute_context: {concept.contribute_context}")
+        print(f"   id: {concept['id']}")
+        print(f"   name: {concept.name}")
+        print(f"   type: {concept.type}")
+        print(f"   context: {concept.context}")
         print()
         
-        # Test 6: Type validation
-        print("6. Type validation:")
+        # Test 4: Type validation
+        print("4. Type validation:")
         try:
-            concept.contribute_type = "invalid_type"
+            concept.type = "invalid_type"
             print("   ERROR: Should have raised ValueError")
         except ValueError as e:
             print(f"   ✓ Correctly raised ValueError: {e}")
         print()
         
-        # Test 7: Type class methods
-        print("7. Type class methods:")
-        concept.contribute_type = "{}"  # semantical
-        print(f"   Type '{concept.contribute_type}':")
+        # Test 5: Type class methods
+        print("5. Type class methods:")
+        concept.type = "{}"  # semantical
+        print(f"   Type '{concept.type}':")
         print(f"   is_syntactical: {concept.is_syntactical()}")
         print(f"   is_semantical: {concept.is_semantical()}")
         print(f"   get_type_class: {concept.get_type_class()}")
         print()
         
-        concept.contribute_type = "<="  # syntactical
-        print(f"   Type '{concept.contribute_type}':")
+        concept.type = "<="  # inferential
+        print(f"   Type '{concept.type}':")
         print(f"   is_syntactical: {concept.is_syntactical()}")
         print(f"   is_semantical: {concept.is_semantical()}")
         print(f"   get_type_class: {concept.get_type_class()}")
         print()
         
-        # Test 8: All concept types
-        print("8. All concept types:")
-        for concept_type, info in CONCEPT_TYPES.items():
-            test_concept = Concept("test", type=concept_type)
-            print(f"   {concept_type}: {info['description']} ({info['type_class']})")
+        # Test 6: Comprehension method
+        print("6. Comprehension method:")
+        comp = concept.comprehension()
+        print(f"   comprehension(): {comp}")
         print()
         
-        # Test 9: Comprehension method
-        print("9. Comprehension method:")
-        test_ref = Reference("ref_name", "ref_type", "ref_context")
-        concept_with_ref = Concept("test_concept", "test context", test_ref, "::")
-        comprehension_dict = concept_with_ref.comprehension()
-        print(f"   Comprehension dictionary:")
-        for key, value in comprehension_dict.items():
-            print(f"     {key}: {value}")
+        # Test 7: Unique ID generation
+        print("7. Unique ID generation:")
+        concept1 = Concept("concept1", type="{}")
+        concept2 = Concept("concept2", type="::")
+        concept3 = Concept("concept3", type="<>")
+        print(f"   concept1 id: {concept1.id}")
+        print(f"   concept2 id: {concept2.id}")
+        print(f"   concept3 id: {concept3.id}")
+        print(f"   IDs are unique: {concept1.id != concept2.id != concept3.id}")
         print()
 
-    test_concept_synchronization()
-
+    test_concept_simplified()
 
 

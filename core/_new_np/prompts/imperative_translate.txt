@@ -1,0 +1,28 @@
+Translate the following NormCode imperative into natural language terms using the specified input placeholders.
+
+Input imperative: $input_normcode
+
+Instructions:
+- Convert the imperative syntax to clear natural language
+- Use $input_1, $input_2, etc. for input placeholders
+- Use $output for the result/outcome
+- Maintain the logical flow and relationships
+- Keep the translation concise and clear
+
+Examples:
+- Input: ::({1}<$({matrix})%_> transpose)
+  Output: transpose matrix (being $input_1) and obtain $output
+
+- Input: ::({1}<$({image})%_> enhance {2}<$({filter})%_> {3}<$({intensity})%_>)
+  Output: enhance image (being $input_1) using filter (being $input_2) with intensity (being $input_3) and obtain $output
+
+- Input: ::({1}<$({dataset})%_> cluster {2}<$({algorithm})%_> {3}<$({parameters})%_> {4}<$({threshold})%_>)
+  Output: cluster dataset (being $input_1) with algorithm (being $input_2) using parameters (being $input_3) at threshold (being $input_4) and obtain $output
+
+- Input: ::({1}<$({code})%_> optimize)
+  Output: optimize code (being $input_1) and obtain $output
+
+- Input: ::({1}<$({text})%_> translate {2}<$({source_language})%_> {3}<$({target_language})%_>)
+  Output: translate text (being $input_1) from source language (being $input_2) to target language (being $input_3) and obtain $output
+
+Translation:

@@ -1,168 +1,166 @@
-import os
+"""
+Abstract Sequence Configuration - Demonstrates the core logic pattern
+"""
+
+from typing import Dict, Any, Callable
+import inspect
 import logging
-from core._agentframe._agent_main import _get_default_working_config
-from ._reference import Reference, cross_action, cross_product, element_action
-from ._concept import Concept
-from typing import Optional, List, Union
+import sys
+from _concept import Concept
+from _reference import Reference
 
-import logging 
 # Configure logging
+def setup_logging(level=logging.INFO, log_file=None):
+    """Setup logging configuration for the inference module"""
+    # Create formatter
+    # formatter = logging.Formatter(
+    #     '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+    # )
+    formatter = logging.Formatter(
+        '[%(levelname)s] %(message)s - %(asctime)s - %(name)s'
+    )
+
+    # Setup root logger
+    logger = logging.getLogger()
+    logger.setLevel(level)
+    
+    # Clear any existing handlers
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    
+    # File handler (optional)
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    
+    return logger
+
+# Initialize logging
+setup_logging()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-def _get_default_working_config(concept_type):
-    """Get default actuation configuration based on concept type."""
-    func_name = "_get_default_working_config"
-    logger.debug(f"[{func_name}] Getting default config for concept type: {concept_type}")
-    
-    perception_config = {
-        "mode": "memory_retrieval"
-    }
-    cognition_config = {}
-
-    default_variable_definition_dict = {
-        "cog_n": "cog_n",
-        "cog_cn": "cog_cn",
-        "cog_cn_classification_base": "cog_cn[:-1]",
-        "cog_v": "cog_v",
-        "perc_n": "perc_n",
-        "perc_cn": "perc_cn",
-        "perc_v": "perc_v",
-        "perc_cn_n_v_bullets": "cn_list, n_list, v_list = _safe_eval(perc_cn), _safe_eval(perc_n), _safe_eval(perc_v); perc_cn_n_v_bullets = _format_bullet_points(cn_list, n_list, v_list)",
-        "cog_n_with_perc_n": "name_elements = _safe_eval(perc_n); cog_n_with_perc_n = _replace_placeholders_with_values(cog_n, name_elements)",
-        "cog_v_with_perc_n": "name_elements = _safe_eval(perc_n); cog_v_with_perc_n = _replace_placeholders_with_values(cog_v, name_elements)"
-    }
-
-    if concept_type == "?":
-        logger.debug(f"[{func_name}] Creating classification prompt template")
-        classification_prompt = Template("""Your task is to find instances of "$cog_cn_classification_base" from a specific text about an instance of "$perc_cn".
-    
-What finding "$cog_cn_classification_base" means: "$cog_v"
-
-**Find from "$perc_cn": "$perc_n"**
-
-(context for "$perc_n": "$perc_v")
-
-Your output should start with some context, reasonings and explanations of the existence of the instance. Your summary key should be an instance of "$cog_n".""")
-        
-        cognition_config = {
-            "mode": "llm_prompt_two_replacement",
-            "llm": "structured_llm",
-            "prompt_template": classification_prompt,
-            "template_variable_definition_dict": default_variable_definition_dict,
-        }
-        
-    elif concept_type == "<>":
-        logger.debug(f"[{func_name}] Creating judgement prompt template")
-        judgement_prompt = Template("""Your task is to judge if "$cog_n_with_perc_n" is true or false.
-
-What each of the component in "$cog_n_with_perc_n" refers to: 
-$perc_cn_n_v_bullets
-                            
-**Truth conditions to judge if it is true or false that "$cog_n_with_perc_n":** 
-    "$cog_v_with_perc_n"
-
-When judging **quote** the specific part of the Truth conditions you mentioned to make the judgement in your output, this is to make sure you are not cheating and the answer is intelligible without the Truth conditions.
-                            
-Now, judge if "$cog_n_with_perc_n" is true or false based **strictly** on the above Truth conditions, and quote the specific part of the Truth conditions you mentioned to make the judgement in your output.
-
-Your output should be a JSON object with Explanation and Summary_Key fields. The Explanation should contain your reasoning and the specific part of the Truth conditions you mentioned. The Summary_Key should be either "TRUE", "FALSE", or "N/A" (if not applicable).""")
-
-        cognition_config = {
-            "mode": "llm_prompt_two_replacement",
-            "llm": "bullet_llm",
-            "prompt_template": judgement_prompt,
-            "template_variable_definition_dict": default_variable_definition_dict
-        }
-
-    return perception_config, cognition_config
-
-
-
+# Sequence class for executing registered steps
 class Inference:
-    def __init__(
-        self, 
-        concept_to_infer: Concept,
-        perception_concepts: Union[List[Concept], Concept],
-        cognition_concept: Concept,
-        view: Optional[List[str]] = None,
-    ):
-        """Initialize an Inference instance with all necessary components.
+    def __init__(self, sequence_name: str, concept_to_infer: Concept, value_concepts: list[Concept], function_concept: Concept):
+        logger.info(f"Initializing Inference instance with sequence: {sequence_name}")
+        logger.debug(f"Concept to infer: {concept_to_infer}")
+        logger.debug(f"Value concepts: {value_concepts}")
+        logger.debug(f"Function concept: {function_concept}")
         
-        Args:
-            concept_to_infer: The concept to be inferred
-            perception_concepts: List of Concept objects for perception
-            cognition_concept: Single Concept object for cognition
-            view: Optional list of axes to keep in the view
-        """
         self.concept_to_infer: Concept = concept_to_infer
-        self.agent = None
-        # self.view = view or []  # Direct list of axes to keep
-        self.post_actuation_pre_perception_concepts: List[Concept] = perception_concepts
-        self.post_actuation_pre_cognition_concept: Concept = cognition_concept
-        self.combined_pre_perception_concept: Optional[Concept] = None
-        self.perception_configuration = None 
-        self.cognition_configuration = None
-        self.actuation_configuration = None
+        self.value_concepts: list[Concept] = value_concepts
+        self.function_concept: Concept = function_concept
+        self.sequence_name = sequence_name
+        # Instance-specific step registry
+        self._step_registry = {}
+        self._initialize_steps()
+        logger.info(f"Inference instance initialized successfully")
 
-        # Validate perception concept
-        if not isinstance(perception_concepts, (list, tuple)):
-            perception_concepts = [perception_concepts]
+    def register_step(self, step_name: str, **metadata):
+        """Instance method to register a step for this specific instance"""
+        logger.debug(f"Registering step: {step_name} with metadata: {metadata}")
+        def decorator(func: Callable) -> Callable:
+            self._step_registry[step_name] = {
+                "function": func,
+                "metadata": metadata
+            }
+            logger.debug(f"Successfully registered step: {step_name}")
+            return func
+        return decorator
 
-        if not all(isinstance(c, Concept) for c in perception_concepts):
-            raise TypeError("All perception inputs must be Concept instances")
+    @property
+    def steps(self):
+        """Return steps for this specific instance"""
+        # Use object.__getattribute__ to avoid triggering __getattr__
+        return object.__getattribute__(self, '_step_registry')
+
+    def _initialize_steps(self):
+        """Initialize step and check functions from instance registry"""
+        logger.debug(f"Initializing {len(self._step_registry)} steps")
+        # Replace step functions
+        for step_name, step_data in self._step_registry.items():
+            # Remove 'step_' prefix if present for cleaner method names
+            method_name = step_name.replace('step_', '') if step_name.startswith('step_') else step_name
+            setattr(self, method_name, step_data["function"])
+            logger.debug(f"Initialized step method: {method_name}")
+    
+    def __getattr__(self, name):
+        """Handle missing methods gracefully"""
+        # Use object.__getattribute__ to avoid recursion
+        step_registry = object.__getattribute__(self, '_step_registry')
+        if name in step_registry:
+            logger.debug(f"Retrieved step function: {name}")
+            return step_registry[name]["function"]
+        logger.warning(f"Attribute '{name}' not found in step registry")
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def _discover_sequences(self) -> Dict[str, Callable]:
+        """Discover sequence methods dynamically"""
+        # Get instance methods
+        instance_sequences = {
+            name: method for name, method in inspect.getmembers(self, inspect.ismethod)
+            if name in [self.sequence_name]
+        }
         
-    def working_configuration(self, perception_working_config, cognition_working_config, actuation_working_config):
-        default_perception_working_config, default_cognition_working_config = _get_default_working_config(self.post_actuation_pre_perception_concepts)
-        self.perception_configuration = perception_working_config or self.perception_configuration or default_perception_working_config
-        self.cognition_configuration = cognition_working_config or self.cognition_configuration or default_cognition_working_config
-        self.actuation_configuration = actuation_working_config or self.actuation_configuration or default_actuation_working_config
+        # Get class methods (including those registered via setattr)
+        class_sequences = {
+            name: method for name, method in inspect.getmembers(self.__class__, inspect.isfunction)
+            if name in [self.sequence_name] and not name.startswith('_')
+        }
         
+        # Combine both, with instance methods taking precedence
+        sequences = {**class_sequences, **instance_sequences}
+        logger.debug(f"Discovered sequences: {list(sequences.keys())}")
+        return sequences
 
-    def execute(self, agent, shape_view=True):
-        from core._agentframe._agent_main import AgentFrame
-        if not isinstance(agent, AgentFrame):
-            raise ValueError("Agent must be an instance of AgentFrame")
-        """Execute pipeline with direct axis selection and optional custom configuration.
+    def execute(self, input_data, sequence_method: str | None = None):
+        """Execute the selected sequence method (default: the one matching sequence_name)"""
+        method_name = sequence_method or self.sequence_name
+        logger.info(f"Executing sequence method: {method_name}")
+        logger.debug(f"Input data: {input_data}")
         
-        Args:
-            agent: AgentFrame instance required for execution
-            actuation: Whether to apply actuation to the reference
-            perception_config_to_give: Optional custom perception configuration
-            cognition_config_to_give: Optional custom cognition configuration
-            shape_view: Whether to apply view shaping to the reference
-        """
-        self.agent = agent  # Set the agent for this execution
+        # Discover sequences at execution time
+        sequences = self._discover_sequences()
+        
+        if method_name not in sequences:
+            error_msg = f"Sequence '{method_name}' not found. Available: {list(sequences.keys())}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        try:
+            result = sequences[method_name](input_data)
+            logger.info(f"Sequence '{method_name}' executed successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Error executing sequence '{method_name}': {str(e)}", exc_info=True)
+            raise
 
-        # Combine perception concepts using the utility function
-        # self.combined_pre_perception_concept = agent.perception_combination(self.post_actuation_pre_perception_concepts, agent)
+    def judgement(self, input_data: dict):
+        """placeholder for judgement sequence"""
+        logger.debug("Executing judgement sequence placeholder")
+        pass
+    
+    def imperative(self, input_data: dict):
+        """placeholder for imperative sequence"""
+        logger.debug("Executing imperative sequence placeholder")
+        pass
 
-        perception_ref = agent.perception(self.combined_pre_perception_concept, self.perception_configuration)
-        cognition_ref = agent.cognition(self.post_actuation_pre_cognition_concept, self.cognition_configuration)
 
-        if agent.debug:
-            logging.debug("===========================")
-            logging.debug("Now processing inference execution: %s", self)
-            logging.debug("     concept to infer %s", self.concept_to_infer.comprehension["name"])
-            logging.debug("     perception %s", self.combined_pre_perception_concept.comprehension["name"])
-            logging.debug("     cognition %s", self.post_actuation_pre_cognition_concept.comprehension["name"])
-
-            logging.debug("!! cross-actioning references:")
-            logging.debug("     cog: %s %s", cognition_ref.axes, cognition_ref.tensor)
-            logging.debug("     perc %s %s", perception_ref.axes, perception_ref.tensor)
-
-        pre_actuation_reference = cross_action(
-            cognition_ref,
-            perception_ref,
-            self.concept_to_infer.comprehension["name"]
-        )
-
-        self.concept_to_infer.reference = agent.actuation(pre_actuation_reference, self.actuation_configuration, self.concept_to_infer)
-
-        if agent.debug:
-            logging.debug(" raw_result %s %s", self.concept_to_infer.reference.axes, self.concept_to_infer.reference.tensor)
-
-        # if shape_view:
-        #     self.concept_to_infer.reference = self.concept_to_infer.reference.shape_view(self.view)
-
-        return self.concept_to_infer
+def register_inference_sequence(sequence_name: str):
+    """Class method decorator to register a function as a sequence method of the Inference class"""
+    logger.debug(f"Registering inference sequence: {sequence_name}")
+    def decorator(func: Callable) -> Callable:
+        # Add the function as a method to the Inference class
+        method_name = f"{sequence_name}"
+        setattr(Inference, method_name, func)
+        logger.debug(f"Successfully registered sequence method: {method_name}")
+        return func
+    return decorator
