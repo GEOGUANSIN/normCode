@@ -137,3 +137,20 @@ New Working Congiuration Scheme:
 4. **Configuration Management**: IWCC and OWCC bookend the process, ensuring proper setup and cleanup of working configurations.
 
 5. **Reference Management**: RRC appears in both patterns, indicating the framework's focus on maintaining referential integrity throughout the inference process. 
+
+Inference
+    - determine the inference by concept type of the function concept
+        - this is in fact determined by the agent - so there is an overall agent configuration that will pre-resolve all the inference sequence.
+        - This will require an agent.inference_sequence_config dictionary from the agent_frame -> this wil be in the working memory
+    - The customization of the sequencing will be done through this miminal inference_seqeunce_config. process will be stored in the Inference Working configuration
+    - Given this, I think the better design is actaully having having the sequence coded in the cogintion configuration of the concept
+Working Cofiguration
+    -> A configuration for each of the concept
+        -> a concept has three configurations
+        -> cognition configuration
+            -> inference sequence
+            -> concept related configuration that is in the inference sequence, ususally include:
+               -> working configuraion input  (must include and not customizable)
+               -> formal name Self-referential (concept-level  - no need to be customized)
+               -> Return of Reference (element-level) -  specified what to return
+               -> working configuraion ouput - specifed what is changed by the concept (This is only useful during the cognition of syntatical concepts )

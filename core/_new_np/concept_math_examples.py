@@ -2,6 +2,8 @@ from _concept import Concept
 from _reference import Reference, cross_product, element_action, cross_action
 from _inference import Inference
 from _agentframe import AgentFrame, logger, register_inference_sequence
+from _language_models import LanguageModel
+from string import Template
 
 def _strip_element_wrapper(element: str) -> str:
     """
@@ -83,11 +85,11 @@ def demonstrate_concept_with_references():
 
 
     # Answer concept
-    answer_axes = ["answer"]
+    answer_axes = ["number_answer"]
     answer_shape = (1,)
     # answer_ref = Reference(answer_axes, answer_shape)
     # answer_ref.set("%(1)", answer=0)
-    answer_concept = Concept("answer", "Answer", None, "{}")
+    answer_concept = Concept("number_answer", "Answer", None, "{}")
     print(f"   Concept: {answer_concept.name}")
 
     return operation_concept, number_1, number_2, answer_concept
@@ -124,8 +126,12 @@ class MathAgentFrame(AgentFrame):
                         "mode": "in-cognition"
                     },
                     "ap": {
-                        "mode": "llm",
-                        "product": "translated_templated_function"
+                        "mode": "llm_formal",
+                        "product": "translated_templated_function",
+                        "value_order": {
+                            "number_1": 0,
+                            "number_2": 1
+                        }
                     }
                 },
                 "actuation": {
@@ -146,7 +152,7 @@ class MathAgentFrame(AgentFrame):
                     },
                 }
             },
-            "answer": {
+            "number_answer": {
                 "perception": {
                     "mvp": {
                         "mode": "formal"
@@ -154,6 +160,9 @@ class MathAgentFrame(AgentFrame):
                 },
             }
         }
+        self.body["llm"] = LanguageModel("qwen-turbo-latest")
+
+
 
     def _set_up_imperative_demo(self):
         logger.debug("Setting up imperative demo sequence")
@@ -173,10 +182,10 @@ class MathAgentFrame(AgentFrame):
             crossed_perception_reference = self.CP(perception_references)
             # 4. Apply Perception
             logger.debug("Step 4: Actuator Perception (AP)")
-            actuated_reference = self.AP(working_configuration, self.function_concept)
+            actuated_functional_reference = self.AP(working_configuration, self.function_concept, "imperative", self.concept_to_infer)
             # 5. On-Perception Tool Actuation
             logger.debug("Step 5: On-Perception Tool Actuation (PTA)")
-            applied_reference = self.PTA(working_configuration, actuated_reference, self.function_concept, self.concept_to_infer)
+            applied_reference = self.PTA(working_configuration, actuated_functional_reference, crossed_perception_reference, self.function_concept, self.concept_to_infer)
             # 6. Action Specification Perception
             logger.debug("Step 6: Action Specification Perception (ASP)")
             action_specification_perception = self.ASP(applied_reference, self.function_concept) 
@@ -185,7 +194,7 @@ class MathAgentFrame(AgentFrame):
             self.MA(action_specification_perception)
             # 8. Return Reference
             logger.debug("Step 8: Return Reference (RR)")
-            self.RR(actuated_reference, self.concept_to_infer)
+            self.RR(actuated_functional_reference, self.concept_to_infer)
             # 9. Output Working Configuration
             logger.debug("Step 8: Output Working Configuration (OWC)")
             self.OWC(self.concept_to_infer)
@@ -228,16 +237,16 @@ class MathAgentFrame(AgentFrame):
             return crossed_perception_reference
         
         @inference_instance.register_step("AP")
-        def apply_perception(working_configuration, function_concept):
+        def actuator_perception(working_configuration, function_concept, concept_type, concept_to_infer):
             """Perform the apply perception"""
             logger.debug("Executing AP step")
-            return self._actuator_perception(working_configuration, function_concept)
+            return self._actuator_perception(working_configuration, function_concept, concept_type, concept_to_infer)
         
         @inference_instance.register_step("PTA")
-        def on_perception_tool_actuation(working_configuration, crossed_perception_reference, function_concept, concept_to_infer):
+        def on_perception_tool_actuation(working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer):
             """Perform the on-perception tool actuation"""
-            logger.debug(f"Executing PTA step with function concept: {function_concept}")
-            return self._on_perception_tool_actuation(working_configuration, crossed_perception_reference, function_concept, concept_to_infer)
+            logger.debug(f"Executing PTA step with actuated functional reference: {actuated_functional_reference}")
+            return self._on_perception_tool_actuation(working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer)
         
         @inference_instance.register_step("ASP")
         def action_specification_perception(actuated_reference, function_concept):
@@ -290,19 +299,113 @@ class MathAgentFrame(AgentFrame):
         logger.debug(f"Value concepts references: {value_concepts_references}")
         return value_concepts_references
 
-    def _actuator_perception(self, working_configuration, function_concept):
+    def _actuator_perception(self, working_configuration, function_concept, concept_type, concept_to_infer):
         """Perform the actuator perception"""
         logger.debug(f"Executing AP step with function concept: {function_concept}")
-        pass
+        
+        if working_configuration[function_concept.name]["perception"]["ap"]["mode"] == "llm_formal":
+            if working_configuration[function_concept.name]["perception"]["ap"]["product"] == "translated_templated_function":
+                
+                input_length = len(working_configuration[function_concept.name]["perception"]["ap"]["value_order"])
+                concept_to_infer_name = concept_to_infer.name
+                
+                llm = self.body["llm"]
 
-    def _on_perception_tool_actuation(self, working_configuration, crossed_perception_reference, function_concept, concept_to_infer):
+                translation_template = llm.load_prompt_template(f"{concept_type}_translate")
+                instruction_template = llm.load_prompt_template("instruction")
+                instruction_validation_template = llm.load_prompt_template("instruction_validation")
+
+                def _strip_translate_and_instruct_actuator(actuator_element):
+
+                        stripped_actuator_element = _strip_element_wrapper(actuator_element)
+                        actuator_translation_template = translation_template.safe_substitute(input_normcode=stripped_actuator_element)
+                        actuator_translated_raw = llm.generate(actuator_translation_template, system_message="")
+                        actuator_translated_template = Template(actuator_translated_raw)
+                        if input_length == 1:
+                            def _generation_function_1(input_1):
+                                valued_actuator_prompt = str(actuator_translated_template.safe_substitute(input_1=input_1, output=concept_to_infer_name))
+                                instruction= instruction_template.safe_substitute(input=valued_actuator_prompt)
+                                for i in range(5):
+                                    new_element_raw = llm.generate(instruction, system_message="")
+                                    logger.debug(f"New element raw: {new_element_raw}")
+                                    instruction_validation_prompt = instruction_validation_template.safe_substitute(instruction=instruction, output=new_element_raw)
+                                    logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
+                                    validity = llm.generate(instruction_validation_prompt, system_message="")
+                                    logger.debug(f"Instruction validation raw: {validity}")
+                                    if validity == "Yes":
+                                        break
+                                    else:
+                                        new_instruction = instruction.template + f"(Notice that {new_element_raw} is incorrect in format.)"
+                                        instruction = Template(new_instruction)
+                                        if i == 4:
+                                            new_element_raw = "@#SKIP#@"
+                                        continue
+                                if isinstance(new_element_raw, str):
+                                    new_element = [new_element_raw]
+                                elif isinstance(new_element_raw, list):
+                                    new_element = new_element_raw
+                                else:
+                                    raise ValueError(f"Invalid new element type: {type(new_element_raw)}")
+                                return new_element
+                            return _generation_function_1
+                        elif input_length > 1:
+                            def _generation_function_n(input_list):
+                                input_dict = {}
+                                for i in range(input_length):
+                                    input_dict[f"input_{i+1}"] = input_list[i]
+                                logger.debug(f"Input dict: {input_dict}")
+
+                                for i in range(5):
+                                    valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
+                                    logger.debug(f"Valued actuator prompt: {valued_actuator_prompt}")
+                                    instruction= instruction_template.safe_substitute(input=valued_actuator_prompt)
+                                    logger.debug(f"Instruction: {instruction}")
+                                    new_element_raw = llm.generate(instruction, system_message="")
+                                    logger.debug(f"New element raw: {new_element_raw}")
+                                    instruction_validation_prompt = instruction_validation_template.safe_substitute(instruction=valued_actuator_prompt, output=new_element_raw, concept_to_infer=concept_to_infer.name)
+                                    logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
+                                    validity = llm.generate(instruction_validation_prompt, system_message="")
+                                    logger.debug(f"Instruction validation raw: {validity}")
+                                    if validity == "Yes":
+                                        break
+                                    else:
+                                        if i == 4:
+                                            new_element_raw = "@#SKIP#@"
+                                        new_instruction = instruction.template + f"(Notice that {new_element_raw} is incorrect in format.)"
+                                        instruction = Template(new_instruction)
+                                        continue
+
+                                if isinstance(new_element_raw, str):
+                                    new_element = [new_element_raw]
+                                elif isinstance(new_element_raw, list):
+                                    new_element = new_element_raw
+                                else:
+                                    raise ValueError(f"Invalid new element type: {type(new_element_raw)}")
+
+                                return new_element
+
+                            return _generation_function_n
+                        else:
+                            raise ValueError(f"Input length must be 1 or greater, got {input_length}")   
+
+                _functional_actuator_reference = element_action(_strip_translate_and_instruct_actuator, [function_concept.reference])
+                logger.debug(f"Functional actuator reference: {_functional_actuator_reference.tensor}")
+                return _functional_actuator_reference
+        else:
+            raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['perception']['ap']['mode']}")
+
+
+    def _on_perception_tool_actuation(self, working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer):
         """Perform the on-perception tool actuation"""
-        logger.debug(f"Executing PTA step with function concept: {function_concept}")
+        logger.debug(f"Executing PTA step with actuated functional reference: {actuated_functional_reference}")
 
-        function_concept_reference = function_concept.reference
-        crossed_perception_reference = crossed_perception_reference
-        new_axis_name = concept_to_infer.name
-        return cross_action(function_concept_reference, crossed_perception_reference, new_axis_name)
+        if working_configuration[function_concept.name]["actuation"]["pta"]["mode"] == "in-cognition":
+            new_reference = cross_action(actuated_functional_reference, crossed_perception_reference, concept_to_infer.name)
+            logger.debug(f"New reference: {new_reference.tensor}")
+            return new_reference
+        else:
+            raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['actuation']['pta']['mode']}")
+
     
 
 if __name__ == "__main__":

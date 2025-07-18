@@ -7,22 +7,20 @@ Instructions:
 - Use $input_1, $input_2, etc. for input placeholders
 - Use $output for the result/outcome
 - Maintain the logical flow and relationships
-- Keep the translation concise and clear
+- Keep the translation straightforward and faithful
 
 Examples:
 - Input: ::({1}<$({matrix})%_> transpose)
-  Output: transpose matrix (being $input_1) and obtain $output
+  Output: Matrix (being $input_1) transposes. Obtain a $output.
 
-- Input: ::({1}<$({image})%_> enhance {2}<$({filter})%_> {3}<$({intensity})%_>)
-  Output: enhance image (being $input_1) using filter (being $input_2) with intensity (being $input_3) and obtain $output
+- Input: ::({1}<$({water})%_> add {2}<$({salt})%_>)
+  Output: Water (being $input_1) add salt (being $input_2). Obtain a $output.
 
-- Input: ::({1}<$({dataset})%_> cluster {2}<$({algorithm})%_> {3}<$({parameters})%_> {4}<$({threshold})%_>)
-  Output: cluster dataset (being $input_1) with algorithm (being $input_2) using parameters (being $input_3) at threshold (being $input_4) and obtain $output
+- Input: ::(enhance {1}<$({image})%_> with {2}<$({filter})%_> and {3}<$({intensity})%_>)
+  Output: Enhance image (being $input_1) with filter (being $input_2) and intensity (being $input_3). Obtain a $output.
 
-- Input: ::({1}<$({code})%_> optimize)
-  Output: optimize code (being $input_1) and obtain $output
+- Input: ::(cluster {1}<$({dataset})%_> with {2}<$({algorithm})%_> using {3}<$({parameters})%_> at {4}<$({threshold})%_>)
+  Output: Cluster dataset (being $input_1) with algorithm (being $input_2) using parameters (being $input_3) at threshold (being $input_4). Obtain a $output.
 
-- Input: ::({1}<$({text})%_> translate {2}<$({source_language})%_> {3}<$({target_language})%_>)
-  Output: translate text (being $input_1) from source language (being $input_2) to target language (being $input_3) and obtain $output
-
-Translation:
+Input imperative: $input_normcode
+Return only the Translation:

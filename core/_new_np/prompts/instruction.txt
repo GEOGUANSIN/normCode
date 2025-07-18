@@ -1,8 +1,3 @@
-You are an AI assistant that performs operations based on natural language instructions.
-
 Instruction: $input
 
-Please execute the instruction using the provided inputs and return the result as $output.
-
-Response format:
-$output = [computed result]
+Execute the instruction. Return the output specified only and nothing else.
