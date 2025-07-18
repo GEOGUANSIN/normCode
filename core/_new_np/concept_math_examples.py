@@ -315,7 +315,7 @@ class MathAgentFrame(AgentFrame):
                 instruction_template = llm.load_prompt_template("instruction")
                 instruction_validation_template = llm.load_prompt_template("instruction_validation")
 
-                def _strip_translate_and_instruct_actuator(actuator_element):
+                def _strip_translate_and_instruct_validate_validate_actuator(actuator_element):
 
                         stripped_actuator_element = _strip_element_wrapper(actuator_element)
                         actuator_translation_template = translation_template.safe_substitute(input_normcode=stripped_actuator_element)
@@ -332,7 +332,7 @@ class MathAgentFrame(AgentFrame):
                                     logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
                                     validity = llm.generate(instruction_validation_prompt, system_message="")
                                     logger.debug(f"Instruction validation raw: {validity}")
-                                    if validity == "Yes":
+                                    if validity.startswith("Yes"):
                                         break
                                     else:
                                         new_instruction = instruction.template + f"(Notice that {new_element_raw} is incorrect in format.)"
@@ -366,7 +366,7 @@ class MathAgentFrame(AgentFrame):
                                     logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
                                     validity = llm.generate(instruction_validation_prompt, system_message="")
                                     logger.debug(f"Instruction validation raw: {validity}")
-                                    if validity == "Yes":
+                                    if validity.startswith("Yes"):
                                         break
                                     else:
                                         if i == 4:
@@ -388,7 +388,7 @@ class MathAgentFrame(AgentFrame):
                         else:
                             raise ValueError(f"Input length must be 1 or greater, got {input_length}")   
 
-                _functional_actuator_reference = element_action(_strip_translate_and_instruct_actuator, [function_concept.reference])
+                _functional_actuator_reference = element_action(_strip_translate_and_instruct_validate_validate_actuator, [function_concept.reference])
                 logger.debug(f"Functional actuator reference: {_functional_actuator_reference.tensor}")
                 return _functional_actuator_reference
         else:
