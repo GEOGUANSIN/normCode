@@ -27,6 +27,11 @@ def _strip_element_wrapper(element: str) -> str:
         return element[2:-1]  # Remove first 2 chars (%() and last char ())
     return element
 
+def _wrap_element_wrapper(element: str) -> str:
+    """
+    Wrap an element in %(...)
+    """
+    return f"%({element})"
 
 
 def demonstrate_concept_with_references():
@@ -68,14 +73,14 @@ def demonstrate_concept_with_references():
     # Example 2: Mathematical operations with functional concepts
     print("2. Mathematical Operation Concept:")
     operation_axes = ["operation"]
-    operation_shape = (4,)  # 4 operations
+    operation_shape = (2,)  # 4 operations
     operation_ref = Reference(operation_axes, operation_shape)
     
     # Set mathematical operations
     operation_ref.set("%(::({1}<$({number})%_> add {2}<$({number})%_>))", operation=0)
     operation_ref.set("%(::({1}<$({number})%_> subtract {2}<$({number})%_>))", operation=1)
-    operation_ref.set("%(::({1}<$({number})%_> multiply {2}<$({number})%_>))", operation=2)
-    operation_ref.set("%(::({1}<$({number})%_> divide {2}<$({number})%_>))", operation=3)
+    # operation_ref.set("%(::({1}<$({number})%_> multiply {2}<$({number})%_>))", operation=2)
+    # operation_ref.set("%(::({1}<$({number})%_> divide {2}<$({number})%_>))", operation=3)
     
     operation_concept = Concept("::({1}<$({number})%_> operate on {2}<$({number})%_>)", "Basic mathematical operations", operation_ref, "::({})")
     print(f"   Concept: {operation_concept.name}")
@@ -188,18 +193,19 @@ class MathAgentFrame(AgentFrame):
             applied_reference = self.PTA(working_configuration, actuated_functional_reference, crossed_perception_reference, self.function_concept, self.concept_to_infer)
             # 6. Action Specification Perception
             logger.debug("Step 6: Action Specification Perception (ASP)")
-            action_specification_perception = self.ASP(applied_reference, self.function_concept) 
+            action_specification_perception = self.ASP(working_configuration, applied_reference, self.function_concept) 
             # 7. Memory Actuation
             logger.debug("Step 7: Memory Actuation (MA)")
-            self.MA(action_specification_perception)
+            action_specification_perception = self.MA(action_specification_perception)
             # 8. Return Reference
             logger.debug("Step 8: Return Reference (RR)")
-            self.RR(actuated_functional_reference, self.concept_to_infer)
+            concept_to_infer_with_reference = self.RR(action_specification_perception, self.concept_to_infer)
             # 9. Output Working Configuration
             logger.debug("Step 8: Output Working Configuration (OWC)")
-            self.OWC(self.concept_to_infer)
+            self.OWC(concept_to_infer_with_reference)
 
             logger.info("Imperative sequence completed")
+            return concept_to_infer_with_reference
 
     def _configure_imperative_demo(self, inference_instance: Inference):
         logger.debug("Configuring imperative demo steps")
@@ -216,10 +222,10 @@ class MathAgentFrame(AgentFrame):
             return self._output_working_configurations()
         
         @inference_instance.register_step("RR")
-        def return_reference(actuated_reference, concepts_to_infer):
+        def return_reference(action_specification_perception, concepts_to_infer):
             """Perform the return reference"""
             logger.debug(f"Executing RR step with concepts: {concepts_to_infer}")
-            pass    
+            return self._return_reference(action_specification_perception, concepts_to_infer)
         
         @inference_instance.register_step("MVP")
         def memorized_values_perception(working_configuration, value_concepts, function_concept):
@@ -249,16 +255,16 @@ class MathAgentFrame(AgentFrame):
             return self._on_perception_tool_actuation(working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer)
         
         @inference_instance.register_step("ASP")
-        def action_specification_perception(actuated_reference, function_concept):
+        def action_specification_perception(working_configuration, applied_reference, function_concept):
             """Perform the action specification perception"""
             logger.debug(f"Executing ASP step with function concept: {function_concept}")
-            pass
+            return self._action_specification_perception(working_configuration, applied_reference, function_concept)
         
         @inference_instance.register_step("MA") 
-        def memory_actuation(actuated_reference):
+        def memory_actuation(action_specification_perception):
             """Perform the memory actuation"""
             logger.debug("Executing MA step")
-            pass
+            return self._memory_actuation(action_specification_perception)
 
     def _input_working_configurations(self, value_concepts:list[Concept], function_concept:Concept, concept_to_infer:Concept):
         active_working_configuration = {}  
@@ -394,7 +400,6 @@ class MathAgentFrame(AgentFrame):
         else:
             raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['perception']['ap']['mode']}")
 
-
     def _on_perception_tool_actuation(self, working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer):
         """Perform the on-perception tool actuation"""
         logger.debug(f"Executing PTA step with actuated functional reference: {actuated_functional_reference}")
@@ -406,7 +411,28 @@ class MathAgentFrame(AgentFrame):
         else:
             raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['actuation']['pta']['mode']}")
 
+    def _action_specification_perception(self, working_configuration, applied_reference, function_concept):
+        """Perform the action specification perception"""
+        logger.debug(f"Executing ASP step with function concept: {function_concept}")
+        if working_configuration[function_concept.name]["perception"]["asp"]["mode"] == "in-cognition":
+            return applied_reference
+        else:
+            raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['perception']['asp']['mode']}")
     
+    def _memory_actuation(self, action_specification_perception):
+        """Perform the memory actuation"""
+        logger.debug("Executing MA step")
+        action_specification_perception_wrapped = element_action(_wrap_element_wrapper, [action_specification_perception])
+        logger.debug(f"Action specification perception wrapped: {action_specification_perception_wrapped.tensor}")
+        return action_specification_perception_wrapped  
+
+    def _return_reference(self, action_specification_perception, concept_to_infer):
+        """Perform the return reference"""
+        logger.debug("Executing RR step")
+        concept_to_infer.reference = action_specification_perception
+        logger.debug(f"Concept to infer reference: {concept_to_infer.reference.tensor}")
+        return concept_to_infer
+
 
 if __name__ == "__main__":
     operation_concept, number_1, number_2, answer_concept = demonstrate_concept_with_references()   
@@ -419,7 +445,12 @@ if __name__ == "__main__":
         operation_concept
     )
 
-
     agent.configure(operation_inference, "imperative")
 
-    operation_inference.execute(input_data={})
+    answer_concept = operation_inference.execute(input_data={})
+
+    print(f"Answer concept reference: {answer_concept.reference.tensor}")
+    print(f"Answer concept axes: {answer_concept.reference.axes}")
+    all_info_reference = cross_product([operation_concept.reference, number_1.reference, number_2.reference, answer_concept.reference])
+    print(f"All info reference: {all_info_reference.tensor}")
+    print(f"All info axes: {all_info_reference.axes}")
