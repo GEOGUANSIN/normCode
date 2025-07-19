@@ -3,6 +3,7 @@ from _reference import Reference, cross_product, element_action, cross_action
 from string import Template
 import logging
 import sys
+from typing import Optional
 
 def setup_logging(level=logging.INFO, log_file=None):
     """Setup logging configuration for the inference module"""
@@ -109,18 +110,18 @@ def memorized_values_perception(working_configuration, value_concepts, function_
     logger.debug(f"Executing MVP step with value concepts: {value_concepts}")
     value_order = working_configuration[function_concept.name]["actuation"]["pta"]["value_order"]
     logger.debug(f"Value order: {value_order}")
-    value_concepts_references = len(value_order) * [None]
+    value_concepts_references: list[Optional[Reference | None]] = len(value_order) * [None] # type: ignore
     logger.debug(f"Value concepts references: {value_concepts_references}")
 
     for value_concept in value_concepts:
         raw_concept_reference = value_concept.reference
         logger.debug(f"Raw concept reference: {raw_concept_reference.tensor}")
-        value_concept_index = value_order[value_concept.name]
+        value_concept_index = int(value_order[value_concept.name])
         logger.debug(f"Value concept index: {value_concept_index}")
         concept_reference = element_action(strip_element_wrapper, [raw_concept_reference])
         logger.debug(f"Concept reference: {concept_reference.tensor}")
         value_concepts_references[value_concept_index] = concept_reference
-    logger.debug(f"Value concepts: {value_concepts}")
+    logger.debug(f"Value concepts: {[concept.name for concept in value_concepts]}")
     logger.debug(f"Value concepts references: {value_concepts_references}")
     return value_concepts_references
 
