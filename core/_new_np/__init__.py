@@ -10,7 +10,8 @@ intelligent agent systems with formal reasoning capabilities.
 from ._concept import Concept, CONCEPT_TYPES
 from ._reference import Reference, cross_product, cross_action, element_action
 from ._inference import Inference
-from ._agentframe import AgentFrame
+from ._agentframe import AgentFrame, strip_element_wrapper, wrap_element_wrapper
+from ._language_models import LanguageModel
 
 # Type classification constants
 from ._concept import (
@@ -34,11 +35,14 @@ __all__ = [
     "Reference", 
     "Inference",
     "AgentFrame",
+    "LanguageModel",
     
     # Functions
     "cross_product",
     "cross_action", 
     "element_action",
+    "strip_element_wrapper",
+    "wrap_element_wrapper",
     
     # Constants
     "CONCEPT_TYPES",

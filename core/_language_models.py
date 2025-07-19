@@ -82,6 +82,8 @@ class LanguageModel:
             {"role": "system", "content": system_message},
             {"role": "user", "content": prompt}
         ]
+        print("===================fasd=============================")
+        print(response_format)
 
         # Prepare request parameters
         request_params = {
@@ -92,6 +94,7 @@ class LanguageModel:
         # Add response format if specified
         if response_format:
             request_params["response_format"] = response_format
+            print(request_params["response_format"])
 
         # Run the prompt through the LLM
         response = self.client.chat.completions.create(**request_params)

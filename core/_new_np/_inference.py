@@ -121,7 +121,7 @@ class Inference:
         logger.debug(f"Discovered sequences: {list(sequences.keys())}")
         return sequences
 
-    def execute(self, input_data, sequence_method: str | None = None):
+    def execute(self, input_data, sequence_method: str | None = None) -> Concept:
         """Execute the selected sequence method (default: the one matching sequence_name)"""
         method_name = sequence_method or self.sequence_name
         logger.info(f"Executing sequence method: {method_name}")

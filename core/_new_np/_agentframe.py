@@ -1,12 +1,12 @@
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, List, Optional
 import inspect
 import logging
 import sys
 from _concept import Concept
-from _reference import Reference
+from _reference import Reference, cross_product, element_action, cross_action
 from _inference import Inference, register_inference_sequence
-
-
+from _language_models import LanguageModel
+from _methods._demo import all_demo_methods
 
 # Configure logging
 def setup_logging(level=logging.INFO, log_file=None):
@@ -46,14 +46,44 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+def strip_element_wrapper(element: str) -> str:
+    """
+    Strip %( and ) from a reference element.
+    
+    Args:
+        element (str): A string that may be wrapped in %(...)
+        
+    Returns:
+        str: The element with %( and ) removed if present
+        
+    Examples:
+        >>> _strip_element_wrapper("%(1)")
+        "1"
+        >>> _strip_element_wrapper("%(::({1}<$({number})%_> add {2}<$({number})%_>))")
+        "::({1}<$({number})%_> add {2}<$({number})%_>)"
+        >>> _strip_element_wrapper("plain_text")
+        "plain_text"
+    """
+    if element.startswith("%(") and element.endswith(")"):
+        return element[2:-1]  # Remove first 2 chars (%() and last char ())
+    return element
+
+def wrap_element_wrapper(element: str) -> str:
+    """
+    Wrap an element in %(...)
+    """
+    return f"%({element})"
+
 
 class AgentFrame():
-    def __init__(self, AgentFrameModel: str):
+    def __init__(self, AgentFrameModel: str, llm: Optional[LanguageModel]=None, working_configuration: Optional[dict]=None):
         logger.info(f"Initializing AgentFrame with model: {AgentFrameModel}")
         self.AgentFrameModel = AgentFrameModel
-        self._norm_code_setup()
-        self.working_configuration = {}
+        self.working_configuration = working_configuration if working_configuration else {}
         self.body = {}
+        if llm:
+            self.body["llm"] = llm
+        self._norm_code_setup()
         logger.info("AgentFrame initialized successfully")
 
     def _norm_code_setup(self):
@@ -67,15 +97,16 @@ class AgentFrame():
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
-    def configure(self, inference_instance: Inference, inference_sequence: str):
+    def configure(self, inference_instance: Inference, inference_sequence: str, **kwargs):
         logger.info(f"Configuring inference instance with sequence: {inference_sequence}")
         if self.AgentFrameModel == "demo":
             if inference_sequence == "judgement":
                 logger.debug("Configuring judgement demo")
-                self._configure_judgement_demo(inference_instance)
+                self._configure_judgement_demo(inference_instance, **kwargs)
             elif inference_sequence == "imperative":
                 logger.debug("Configuring imperative demo")
-                self._configure_imperative_demo(inference_instance)
+                methods = all_demo_methods("imperative")
+                self._configure_imperative_demo(inference_instance, **methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:
@@ -114,39 +145,79 @@ class AgentFrame():
 
     def _set_up_imperative_demo(self):
         logger.debug("Setting up imperative demo sequence")
-        # Define the imperative sequence function
+        all_working_configuration = self.working_configuration
+        llm = self.body["llm"]
         @register_inference_sequence("imperative")
         def imperative(self: Inference, input_data: dict):
-            """`(IWC-[(MVP-CP)-[PTA-ASP]-MA)]-RR-OWC)`"""
+            """`(IWC-[(MVP-CP)-[AP-PTA-ASP]-MA)]-RR-OWC)`"""
             logger.info("Executing imperative sequence")
+            
             # 1. Input Working Configuration
             logger.debug("Step 1: Input Working Configuration (IWC)")
-            working_configuration = self.IWC()
+            working_configuration = self.IWC(
+                value_concepts=self.value_concepts, 
+                function_concept=self.function_concept, 
+                concept_to_infer=self.concept_to_infer, 
+                all_working_configuration=all_working_configuration
+            )
             # 2. Memorized Values Perception
             logger.debug("Step 2: Memorized Values Perception (MVP)")
-            perception_references = self.MVP(working_configuration, self.value_concepts)
+            perception_references = self.MVP(
+                working_configuration=working_configuration, 
+                value_concepts=self.value_concepts, 
+                function_concept=self.function_concept
+            )
             # 3. Cross Perception
             logger.debug("Step 3: Cross Perception (CP)")
-            crossed_perception_reference = self.CP(perception_references)
-            # 4. On-Perception Tool Actuation
-            logger.debug("Step 4: On-Perception Tool Actuation (PTA)")
-            actuated_reference = self.PTA(working_configuration, crossed_perception_reference, self.function_concept)
-            # 5. Action Specification Perception
-            logger.debug("Step 5: Action Specification Perception (ASP)")
-            action_specification_perception = self.ASP(actuated_reference, self.function_concept)
-            # 6. Memory Actuation
-            logger.debug("Step 6: Memory Actuation (MA)")
-            self.MA(action_specification_perception)
-            # 7. Return Reference
-            logger.debug("Step 7: Return Reference (RR)")
-            self.RR(actuated_reference, self.concept_to_infer)
-            # 8. Output Working Configuration
-            logger.debug("Step 8: Output Working Configuration (OWC)")
-            self.OWC(self.concept_to_infer)
+            crossed_perception_reference = self.CP(
+                perception_references=perception_references
+            )
+            # 4. Apply Perception
+            logger.debug("Step 4: Actuator Perception (AP)")
+            actuated_functional_reference = self.AP(
+                working_configuration=working_configuration, 
+                function_concept=self.function_concept, 
+                concept_type="imperative", 
+                concept_to_infer=self.concept_to_infer, 
+                llm=llm)
+            # 5. On-Perception Tool Actuation
+            logger.debug("Step 5: On-Perception Tool Actuation (PTA)")
+            applied_reference = self.PTA(
+                working_configuration=working_configuration, 
+                actuated_functional_reference=actuated_functional_reference, 
+                crossed_perception_reference=crossed_perception_reference, 
+                function_concept=self.function_concept, 
+                concept_to_infer=self.concept_to_infer
+            )
+            # 6. Action Specification Perception
+            logger.debug("Step 6: Action Specification Perception (ASP)")
+            action_specification_perception = self.ASP(
+                working_configuration=working_configuration, 
+                applied_reference=applied_reference, 
+                function_concept=self.function_concept
+            )
+            # 7. Memory Actuation
+            logger.debug("Step 7: Memory Actuation (MA)")
+            action_specification_perception = self.MA(
+                action_specification_perception=action_specification_perception
+            )
+            # 8. Return Reference
+            logger.debug("Step 8: Return Reference (RR)")
+            concept_to_infer_with_reference = self.RR(
+                action_specification_perception=action_specification_perception, 
+                concept_to_infer=self.concept_to_infer
+            )
+            # 9. Output Working Configuration
+            logger.debug("Step 9: Output Working Configuration (OWC)")
+            self.OWC(
+                concept_to_infer_with_reference=concept_to_infer_with_reference
+            )
+
             logger.info("Imperative sequence completed")
+            return concept_to_infer_with_reference
 
 
-    def _configure_judgement_demo(self, inference_instance: Inference):
+    def _configure_judgement_demo(self, inference_instance: Inference, **kwargs):
         logger.debug("Configuring judgement demo steps")
         # Register steps for THIS SPECIFIC INSTANCE
         @inference_instance.register_step("IWC")
@@ -192,55 +263,121 @@ class AgentFrame():
             logger.debug("Executing MA step")
             pass
 
-    def _configure_imperative_demo(self, inference_instance: Inference):
+    def _configure_imperative_demo(self, inference_instance: Inference, **kwargs):
         logger.debug("Configuring imperative demo steps")
         @inference_instance.register_step("IWC")
-        def input_working_configurations():
+        def input_working_configurations(**fkwargs):
             """Validate that input contains two numbers"""
             logger.debug("Executing IWC step")
-            pass
+            function = kwargs.get("input_working_configurations", self._input_working_configurations)
+            return function(**fkwargs) 
         
         @inference_instance.register_step("OWC")
-        def output_working_configurations(concepts_to_infer):
+        def output_working_configurations(**fkwargs):
             """Perform the output working configurations"""
-            logger.debug(f"Executing OWC step with concepts: {concepts_to_infer}")
-            pass
+            logger.debug(f"Executing OWC step with concepts: {fkwargs['concept_to_infer_with_reference'].name}")
+            function = kwargs.get("output_working_configurations", self._output_working_configurations)
+            return function(**fkwargs)
         
         @inference_instance.register_step("RR")
-        def return_reference(actuated_reference, concepts_to_infer):
+        def return_reference(**fkwargs):
             """Perform the return reference"""
-            logger.debug(f"Executing RR step with concepts: {concepts_to_infer}")
-            pass    
+            logger.debug(f"Executing RR step with concepts: {fkwargs['concept_to_infer'].name}")
+            function = kwargs.get("return_reference", self._return_reference)
+            return function(**fkwargs)
         
         @inference_instance.register_step("MVP")
-        def memorized_values_perception(working_configuration, value_concepts):
+        def memorized_values_perception(**fkwargs):
             """Perform the memorized values perception"""
-            logger.debug(f"Executing MVP step with value concepts: {value_concepts}")
-            pass
+            logger.debug(f"Executing MVP step with value concepts: {[concept.name for concept in fkwargs['value_concepts']]}")
+            function = kwargs.get("memorized_values_perception", self._memorized_values_perception)
+            return function(**fkwargs)
         
         @inference_instance.register_step("CP")
         def cross_perception(perception_references):
             """Perform the cross perception"""
             logger.debug("Executing CP step")
-            pass
+            logger.debug(f"Perception references: {[reference.tensor for reference in perception_references]}")
+            crossed_perception_reference = cross_product(perception_references)
+            logger.debug(f"Crossed perception reference: {crossed_perception_reference.tensor}")
+            return crossed_perception_reference
+        
+        @inference_instance.register_step("AP")
+        def actuator_perception(**fkwargs):
+            """Perform the apply perception"""
+            logger.debug("Executing AP step")
+            function = kwargs.get("actuator_perception", self._actuator_perception)
+            return function(**fkwargs)
         
         @inference_instance.register_step("PTA")
-        def on_perception_tool_actuation(working_configuration, crossed_perception_reference, function_concept):
+        def on_perception_tool_actuation(**fkwargs):
             """Perform the on-perception tool actuation"""
-            logger.debug(f"Executing PTA step with function concept: {function_concept}")
-            pass
+            logger.debug(f"Executing PTA step with actuated functional reference: {fkwargs['actuated_functional_reference'].tensor}")
+            function = kwargs.get("on_perception_tool_actuation", self._on_perception_tool_actuation)
+            return function(**fkwargs)
         
         @inference_instance.register_step("ASP")
-        def action_specification_perception(actuated_reference, function_concept):
+        def action_specification_perception(**fkwargs):
             """Perform the action specification perception"""
-            logger.debug(f"Executing ASP step with function concept: {function_concept}")
-            pass
+            logger.debug(f"Executing ASP step with function concept: {fkwargs['function_concept'].name}")
+            function = kwargs.get("action_specification_perception", self._action_specification_perception)
+            return function(**fkwargs)
         
         @inference_instance.register_step("MA") 
-        def memory_actuation(actuated_reference):
+        def memory_actuation(**fkwargs):
             """Perform the memory actuation"""
             logger.debug("Executing MA step")
-            pass
+            function = kwargs.get("memory_actuation", self._memory_actuation)
+            return function(**fkwargs)
+
+    def _input_working_configurations(self, value_concepts:list[Concept], function_concept:Concept, concept_to_infer:Concept, all_working_configuration:dict):
+        """Perform the input working configurations"""
+        logger.debug("Executing IWC step")
+        pass
+    
+    def _output_working_configurations(self):
+        """Perform the output working configurations"""
+        logger.debug("Executing OWC step")
+        pass
+
+    def _return_reference(self, action_specification_perception, concepts_to_infer):
+        """Perform the return reference"""
+        logger.debug(f"Executing RR step with concepts: {concepts_to_infer}")
+        pass
+    
+    def _memorized_values_perception(self, working_configuration, value_concepts, function_concept):
+        """Perform the memorized values perception"""
+        logger.debug(f"Executing MVP step with value concepts: {value_concepts}")
+        pass
+    
+    def _cross_perception(self, perception_references):
+        """Perform the cross perception"""
+        logger.debug("Executing CP step")
+        pass
+    
+    def _actuator_perception(self, working_configuration, function_concept, concept_type, concept_to_infer, llm):
+        """Perform the actuator perception"""
+        logger.debug(f"Executing AP step with function concept: {function_concept}")
+        pass
+    
+    def _on_perception_tool_actuation(self, working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer, llm):
+        """Perform the on-perception tool actuation"""
+        logger.debug(f"Executing PTA step with actuated functional reference: {actuated_functional_reference}")
+        pass    
+    
+    def _action_specification_perception(self, working_configuration, applied_reference, function_concept):
+        """Perform the action specification perception"""
+        logger.debug(f"Executing ASP step with function concept: {function_concept}")
+        pass
+    
+    def _memory_actuation(self, action_specification_perception):
+        """Perform the memory actuation"""
+        logger.debug("Executing MA step")
+        pass
+    
+
+
+
 
 # Abstract usage pattern
 if __name__ == "__main__":

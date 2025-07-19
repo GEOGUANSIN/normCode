@@ -98,7 +98,7 @@ class LanguageModel:
         Args:
             prompt (str): The prompt to send to the LLM
             system_message (str): Optional system message to set context
-            response_format (dict): Optional response format specification
+            response_format (dict): Optional response format specification, can be json_object or json_schema
 
         Returns:
             str: The LLM response
