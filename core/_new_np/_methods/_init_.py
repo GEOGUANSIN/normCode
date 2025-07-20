@@ -18,6 +18,9 @@ from ._demo import (
     return_reference,
     all_demo_methods
 )
+from ._workspace_demo import (
+    all_workspace_demo_methods
+)
 
 __all__ = [
     "strip_element_wrapper",
@@ -30,5 +33,6 @@ __all__ = [
     "action_specification_perception",
     "memory_actuation",
     "return_reference",
-    "all_demo_methods"
+    "all_demo_methods",
+    "all_workspace_demo_methods"
 ]

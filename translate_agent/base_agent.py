@@ -79,7 +79,7 @@ class LLMFactory:
             response_format={"type": "json_object"}
         )
         
-        return response.choices[0].message.content
+        return response.choices[0].message.content # type: ignore
 
 
 @dataclass
@@ -182,12 +182,29 @@ class BaseAgent(ABC, Generic[T]):
         try:
             # Clean the response - remove markdown code blocks if present
             cleaned_response = raw_response.strip()
-            if cleaned_response.startswith('```json'):
-                # Remove ```json and ``` markers
-                cleaned_response = cleaned_response.split('```json')[1].split('```')[0].strip()
-            elif cleaned_response.startswith('```'):
-                # Remove generic ``` markers
-                cleaned_response = cleaned_response.split('```')[1].split('```')[0].strip()
+            
+            # First, try to extract JSON from markdown code blocks
+            if '```json' in cleaned_response:
+                # Extract content between ```json and ```
+                start_idx = cleaned_response.find('```json') + 7
+                end_idx = cleaned_response.find('```', start_idx)
+                if end_idx != -1:
+                    cleaned_response = cleaned_response[start_idx:end_idx].strip()
+            elif '```' in cleaned_response:
+                # Extract content between ``` markers
+                start_idx = cleaned_response.find('```') + 3
+                end_idx = cleaned_response.find('```', start_idx)
+                if end_idx != -1:
+                    cleaned_response = cleaned_response[start_idx:end_idx].strip()
+            
+            # If still not valid JSON, try to find JSON object in the text
+            if not cleaned_response.startswith('{'):
+                # Look for the first { and last }
+                start_idx = cleaned_response.find('{')
+                end_idx = cleaned_response.rfind('}')
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    cleaned_response = cleaned_response[start_idx:end_idx + 1]
+            
             # Always parse JSON first since LLM is configured to return JSON format
             parsed_json = json.loads(cleaned_response)
             

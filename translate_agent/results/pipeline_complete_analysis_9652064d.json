@@ -1,0 +1,542 @@
+{
+  "agent_type": "pipeline",
+  "result_type": "complete_analysis",
+  "session_id": "9652064d",
+  "input_hash": "9652064d7a7517026c815ed9b91f6bef",
+  "result_data": {
+    "main_question": {
+      "type": "how",
+      "target": "::(transform technical concepts)",
+      "condition": "@by",
+      "question": "$how?(::(transform technical concepts), @by)"
+    },
+    "ensuing_questions": [
+      {
+        "question": "$how?(::(transform technical concepts), @by)",
+        "answer": "Transform technical concepts into relatable ideas using everyday analogies",
+        "chunk_index": 0
+      },
+      {
+        "question": "$how?(::(maintain conversational rhythm), @by)",
+        "answer": "Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words",
+        "chunk_index": 1
+      },
+      {
+        "question": "$how?(::(use strategic emphasis), @by)",
+        "answer": "Use strategic emphasis through exclamations and occasional emojis",
+        "chunk_index": 2
+      },
+      {
+        "question": "$how?(::(replace jargon), @by)",
+        "answer": "Replace jargon with plain alternatives",
+        "chunk_index": 3
+      },
+      {
+        "question": "$how?(::(frame benefits), @by)",
+        "answer": "Frame benefits as personal wins",
+        "chunk_index": 4
+      },
+      {
+        "question": "$how?(::(end communication), @by)",
+        "answer": "End with an uplifting call-to-action",
+        "chunk_index": 5
+      }
+    ],
+    "decomposition_metadata": {
+      "original_text": "Transform technical concepts into relatable ideas using everyday analogies. Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words. Use strategic emphasis through exclamations and occasional emojis. Replace jargon with plain alternatives, frame benefits as personal wins, and end with an uplifting call-to-action.",
+      "text_length": 360,
+      "chunk_count": 6,
+      "main_question_type": "how",
+      "processing_timestamp": "2024-01-01T00:00:00Z"
+    },
+    "question_analyses": [
+      {
+        "analysis_id": "main_question",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(transform technical concepts)",
+          "condition": "@by",
+          "question": "$how?(::(transform technical concepts), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Transform technical concepts into relatable ideas using everyday analogies"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(transform technical concepts)",
+          "condition": "@by",
+          "content": "::(transform technical concepts)\n    <= @by",
+          "horizontal_layout": "|1|::(transform technical concepts) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(transform technical concepts)",
+          "condition": "<= @by",
+          "content": "::(transform technical concepts)\n    <= @by\n    <- ::(transform technical concepts into relatable ideas using everyday analogies)",
+          "horizontal_layout": "|1|::(transform technical concepts) |1.1|<= @by |/1.1||1.2|<- ::(transform technical concepts into relatable ideas using everyday analogies) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "transform technical concepts",
+          "condition": "",
+          "content": "::(transform {1}<$({technical_concepts})%_>)\n    <= @by\n    <- ::(transform {1}<$({technical_concepts})%_> into {2}<$({relatable_ideas})%_> using {3}<$({everyday_analogies})%_>)\n    <- {technical_concepts}<:{1}>\n    <- {relatable_ideas}<:{2}>\n    <- {everyday_analogies}<:{3}>",
+          "horizontal_layout": "|1|::(transform {1}<$({technical_concepts})%_>) |1.1|<= @by |1.1.1|<- ::(transform {1}<$({technical_concepts})%_> into {2}<$({relatable_ideas})%_> using {3}<$({everyday_analogies})%_>) |/1.1.1||1.1.2|<- {technical_concepts}<:{1}> |/1.1.2||1.1.3|<- {relatable_ideas}<:{2}> |/1.1.3||1.1.4|<- {everyday_analogies}<:{3}> |/1.1.4||/1.1||/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "technical concepts",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "technical_concepts"
+          },
+          {
+            "concrete_term": "relatable ideas",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "relatable_ideas"
+          },
+          {
+            "concrete_term": "everyday analogies",
+            "abstract_placeholder": "{3}",
+            "placeholder_type": "everyday_analogies"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(transform technical concepts), @by)",
+          "answer": "Transform technical concepts into relatable ideas using everyday analogies",
+          "question_length": 44,
+          "answer_length": 74,
+          "question_marker": "$how?",
+          "question_target": "::(transform technical concepts)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_0",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(transform technical concepts)",
+          "condition": "@by",
+          "question": "$how?(::(transform technical concepts), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Transform technical concepts into relatable ideas using everyday analogies"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(transform technical concepts)",
+          "condition": "@by",
+          "content": "::(transform technical concepts)\n    <= @by",
+          "horizontal_layout": "|1|::(transform technical concepts) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(transform technical concepts)",
+          "condition": "<= @by",
+          "content": "::(transform technical concepts)\n    <= @by\n    <- ::(transform technical concepts into relatable ideas using everyday analogies)",
+          "horizontal_layout": "|1|::(transform technical concepts) |1.1|<= @by |/1.1||1.2|<- ::(transform technical concepts into relatable ideas using everyday analogies) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "transform technical concepts",
+          "condition": "",
+          "content": "::(transform {1}<$({technical_concepts})%_>)\n    <= @by\n    <- ::(transform {1}<$({technical_concepts})%_> into {2}<$({relatable_ideas})%_> using {3}<$({everyday_analogies})%_>)\n    <- {technical_concepts}<:{1}>\n    <- {relatable_ideas}<:{2}>\n    <- {everyday_analogies}<:{3}>",
+          "horizontal_layout": "|1|::(transform {1}<$({technical_concepts})%_>) |1.1|<= @by |1.1.1|<- ::(transform {1}<$({technical_concepts})%_> into {2}<$({relatable_ideas})%_> using {3}<$({everyday_analogies})%_>) |/1.1.1||1.1.2|<- {technical_concepts}<:{1}> |/1.1.2||1.1.3|<- {relatable_ideas}<:{2}> |/1.1.3||1.1.4|<- {everyday_analogies}<:{3}> |/1.1.4||/1.1||/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "technical concepts",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "technical_concepts"
+          },
+          {
+            "concrete_term": "relatable ideas",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "relatable_ideas"
+          },
+          {
+            "concrete_term": "everyday analogies",
+            "abstract_placeholder": "{3}",
+            "placeholder_type": "everyday_analogies"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(transform technical concepts), @by)",
+          "answer": "Transform technical concepts into relatable ideas using everyday analogies",
+          "question_length": 44,
+          "answer_length": 74,
+          "question_marker": "$how?",
+          "question_target": "::(transform technical concepts)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_1",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(maintain conversational rhythm)",
+          "condition": "@by",
+          "question": "$how?(::(maintain conversational rhythm), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(maintain conversational rhythm)",
+          "condition": "@by",
+          "content": "::(maintain conversational rhythm)\n    <= @by",
+          "horizontal_layout": "|1|::(maintain conversational rhythm) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(maintain conversational rhythm)",
+          "condition": "<= @by",
+          "content": "::(maintain conversational rhythm)\n    <= @by\n    <- ::(Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words)",
+          "horizontal_layout": "|1|::(maintain conversational rhythm) |1.1|<= @by |/1.1||1.2|<- ::(Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "::(maintain conversational rhythm)",
+          "condition": "<= @by",
+          "content": "::(maintain conversational rhythm)\n    <= @by\n    <- ::(Maintain a conversational rhythm with {1}<$({features})%_>, {2}<$({features})%_>, and {3}<$({features})%_>)\n    <- {features}<:{1}>\n    <- {features}<:{2}>\n    <- {features}<:{3}>",
+          "horizontal_layout": "|1|::(maintain conversational rhythm) |1.1|<= @by |1.1.1|<- ::(Maintain a conversational rhythm with {1}<$({features})%_>, {2}<$({features})%_>, and {3}<$({features})%_>) |/1.1.1| |1.1.2|<- {features}<:{1}> |/1.1.2| |1.1.3|<- {features}<:{2}> |/1.1.3| |1.1.4|<- {features}<:{3}> |/1.1.4| |/1.1| |/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "contractions",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "features"
+          },
+          {
+            "concrete_term": "encouraging phrases",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "features"
+          },
+          {
+            "concrete_term": "sentences under 25 words",
+            "abstract_placeholder": "{3}",
+            "placeholder_type": "features"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(maintain conversational rhythm), @by)",
+          "answer": "Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words",
+          "question_length": 46,
+          "answer_length": 101,
+          "question_marker": "$how?",
+          "question_target": "::(maintain conversational rhythm)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_2",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(use strategic emphasis)",
+          "condition": "@by",
+          "question": "$how?(::(use strategic emphasis), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Use strategic emphasis through exclamations and occasional emojis"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(use strategic emphasis)",
+          "condition": "@by",
+          "content": "::(use strategic emphasis)\n    <= @by",
+          "horizontal_layout": "|1|::(use strategic emphasis) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(use strategic emphasis)",
+          "condition": "<= @by",
+          "content": "::(use strategic emphasis)\n    <= @by\n    <- ::(use strategic emphasis through exclamations and occasional emojis)",
+          "horizontal_layout": "|1|::(use strategic emphasis) |1.1|<= @by |/1.1||1.2|<- ::(use strategic emphasis through exclamations and occasional emojis) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "use strategic emphasis",
+          "condition": "through exclamations and occasional emojis",
+          "content": "::(use strategic emphasis)\n    <= @by\n    <- ::(use strategic emphasis through {1}<$({methods})%_> and {2}<$({elements})%_>)\n    <- {methods}<:{1}>\n    <- {elements}<:{2}>",
+          "horizontal_layout": "|1|::(use strategic emphasis) |1.1|<= @by |1.1.1|<- ::(use strategic emphasis through {1}<$({methods})%_> and {2}<$({elements})%_>) |/1.1.1||1.1.2|<- {methods}<:{1}> |/1.1.2||1.1.3|<- {elements}<:{2}> |/1.1.3| |/1.1| |/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "exclamations",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "methods"
+          },
+          {
+            "concrete_term": "occasional emojis",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "elements"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(use strategic emphasis), @by)",
+          "answer": "Use strategic emphasis through exclamations and occasional emojis",
+          "question_length": 38,
+          "answer_length": 65,
+          "question_marker": "$how?",
+          "question_target": "::(use strategic emphasis)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_3",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(replace jargon)",
+          "condition": "@by",
+          "question": "$how?(::(replace jargon), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Replace jargon with plain alternatives"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(replace jargon)",
+          "condition": "@by",
+          "content": "::(replace jargon)\n    <= @by",
+          "horizontal_layout": "|1|::(replace jargon) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(replace jargon)",
+          "condition": "<= @by",
+          "content": "::(replace jargon)\n    <= @by\n    <- ::(replace jargon with plain alternatives)",
+          "horizontal_layout": "|1|::(replace jargon) |1.1|<= @by |/1.1||1.2|<- ::(replace jargon with plain alternatives) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "replace jargon",
+          "condition": "by",
+          "content": "::(replace {1}<$({language_element})%_>)\n    <= @by\n    <- ::(replace {1}<$({language_element})%_> with {2}<$({plain_alternatives})%_>)\n    <- {jargon}<:{1}>\n    <- {plain alternatives}<:{2}>",
+          "horizontal_layout": "|1|::(replace {1}<$({language_element})%_>) |1.1|<= @by |1.1.1|<- ::(replace {1}<$({language_element})%_> with {2}<$({plain_alternatives})%_>) |/1.1.1||1.1.2|<- {jargon}<:{1}> |/1.1.2||1.1.3|<- {plain alternatives}<:{2}> |/1.1.3| |/1.1| |/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "jargon",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "language_element"
+          },
+          {
+            "concrete_term": "plain alternatives",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "plain_alternatives"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(replace jargon), @by)",
+          "answer": "Replace jargon with plain alternatives",
+          "question_length": 30,
+          "answer_length": 38,
+          "question_marker": "$how?",
+          "question_target": "::(replace jargon)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_4",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(frame benefits)",
+          "condition": "@by",
+          "question": "$how?(::(frame benefits), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "Frame benefits as personal wins"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(frame benefits)",
+          "condition": "@by",
+          "content": "::(frame benefits)\n    <= @by",
+          "horizontal_layout": "|1|::(frame benefits) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(frame benefits)",
+          "condition": "<= @by",
+          "content": "::(frame benefits)\n    <= @by\n    <- ::(frame benefits as personal wins)",
+          "horizontal_layout": "|1|::(frame benefits) |1.1|<= @by |/1.1||1.2|<- ::(frame benefits as personal wins) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "frame benefits",
+          "condition": "by means of framing benefits as personal wins",
+          "content": "::(frame benefits)\n    <= @by\n    <- ::(frame {1}<$({benefits})%_> as {2}<$({personal_wins})%_>)\n    <- {benefits}<:{1}>\n    <- {personal_wins}<:{2}>",
+          "horizontal_layout": "|1|::(frame benefits) |1.1|<= @by |/1.1||1.2|<- ::(frame {1}<$({benefits})%_> as {2}<$({personal_wins})%_>) |/1.2||1.3|<- {benefits}<:{1}> |/1.3||1.4|<- {personal_wins}<:{2}> |/1.4||/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "benefits",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "benefits"
+          },
+          {
+            "concrete_term": "personal wins",
+            "abstract_placeholder": "{2}",
+            "placeholder_type": "personal_wins"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(frame benefits), @by)",
+          "answer": "Frame benefits as personal wins",
+          "question_length": 30,
+          "answer_length": 31,
+          "question_marker": "$how?",
+          "question_target": "::(frame benefits)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      },
+      {
+        "analysis_id": "ensuing_question_5",
+        "question_structure": {
+          "marker": "$how?",
+          "target": "::(end communication)",
+          "condition": "@by",
+          "question": "$how?(::(end communication), @by)"
+        },
+        "clause_analysis": {
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "clauses": [
+            "End with an uplifting call-to-action"
+          ]
+        },
+        "phase1_draft": {
+          "target": "::(end communication)",
+          "condition": "@by",
+          "content": "::(end communication)\n    <= @by",
+          "horizontal_layout": "|1|::(end communication) |1.1|<= @by |/1.1||/1|"
+        },
+        "phase2_draft": {
+          "target": "::(end communication)",
+          "condition": "<= @by",
+          "content": "::(end communication)\n    <= @by\n    <- ::(end with an uplifting call-to-action)",
+          "horizontal_layout": "|1|::(end communication) |1.1|<= @by |/1.1||1.2|<- ::(end with an uplifting call-to-action) |/1.2||/1|"
+        },
+        "phase3_draft": {
+          "target": "::(end communication)",
+          "condition": "<= @by",
+          "content": "::(end communication)\n    <= @by\n    <- ::(end with an {1}<$({call-to-action})%_>)\n    <- {call-to-action}<:{1}>",
+          "horizontal_layout": "|1|::(end communication) |1.1|<= @by |1.1.1|<- ::(end with an {1}<$({call-to-action})%_>) |/1.1.1||1.1.2|<- {call-to-action}<:{1}> |/1.1.2| |/1.1||/1|"
+        },
+        "template_mappings": [
+          {
+            "concrete_term": "uplifting call-to-action",
+            "abstract_placeholder": "{1}",
+            "placeholder_type": "call-to-action"
+          }
+        ],
+        "analysis_metadata": {
+          "question": "$how?(::(end communication), @by)",
+          "answer": "End with an uplifting call-to-action",
+          "question_length": 33,
+          "answer_length": 36,
+          "question_marker": "$how?",
+          "question_target": "::(end communication)",
+          "question_condition": "@by",
+          "structure_type": "imperative",
+          "clause_count": 1,
+          "clause_types": [
+            "single"
+          ],
+          "processing_timestamp": "2024-01-01T00:00:00Z"
+        }
+      }
+    ],
+    "pipeline_metadata": {
+      "pipeline_version": "1.0",
+      "input_text_length": 360,
+      "main_question_type": "how",
+      "question_pairs_count": 6,
+      "total_analyses_count": 7,
+      "decomposition_metadata": {
+        "original_text": "Transform technical concepts into relatable ideas using everyday analogies. Maintain a conversational rhythm with contractions, encouraging phrases, and sentences under 25 words. Use strategic emphasis through exclamations and occasional emojis. Replace jargon with plain alternatives, frame benefits as personal wins, and end with an uplifting call-to-action.",
+        "text_length": 360,
+        "chunk_count": 6,
+        "main_question_type": "how",
+        "processing_timestamp": "2024-01-01T00:00:00Z"
+      },
+      "analysis_summary": {
+        "total_template_mappings": 16,
+        "average_clause_count": 1.0,
+        "structure_types": [
+          "imperative"
+        ]
+      }
+    },
+    "processing_timestamp": "2025-07-19T19:58:02.972299",
+    "input_text_hash": "9652064d7a7517026c815ed9b91f6bef"
+  },
+  "metadata": {
+    "text_length": 360,
+    "question_pairs_count": 6,
+    "analysis_count": 7
+  },
+  "created_at": "2025-07-19T19:58:02.972299"
+}
