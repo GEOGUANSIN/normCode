@@ -6,15 +6,21 @@ Instructions:
 - Convert the imperative syntax to clear natural language
 - Use $input_1, $input_2, etc. for input placeholders
 - Use $output for the result/outcome
+- Elements marked with ? (e.g., {1}?) indicate the output/result
+- Regular numbered placeholders (e.g., {1}, {2}) indicate inputs
 - Maintain the logical flow and relationships
 - Keep the translation straightforward and faithful
 
 Examples:
-- Input: ::({1}<$({matrix})%_> transpose)
-  Output: Matrix (being $input_1) transposes. Obtain a $output.
 
-- Input: ::({1}<$({water})%_> add {2}<$({salt})%_>)
-  Output: Water (being $input_1) add salt (being $input_2). Obtain a $output.
+- Input: ::({1}?<$({apples})%_>)
+  Output: Apples (currently being $input_1). Obtain one/some apples (being the $output).
+
+- Input: ::({1}<$({matrix})%_> transpose)
+  Output: Matrix (being $input_1) transposes. Obtain the $output.
+
+- Input: ::({1}?<$({water})%_> add {2}<$({salt})%_>)
+  Output: Water (currently being $input_1) add salt (being $input_2). Obtain the water (being the $output).
 
 - Input: ::(enhance {1}<$({image})%_> with {2}<$({filter})%_> and {3}<$({intensity})%_>)
   Output: Enhance image (being $input_1) with filter (being $input_2) and intensity (being $input_3). Obtain a $output.

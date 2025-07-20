@@ -5,50 +5,132 @@ from _agentframe import AgentFrame, logger
 from _language_models import LanguageModel
 from _methods._workspace_demo import all_workspace_demo_methods
 
+def _log_concept_details(concept, reference=None, example_number=None, concept_name=None):
+    """Helper function to log concept details in a consistent format"""
+    if example_number and concept_name:
+        logger.info(f"{example_number}. {concept_name}:")
+    
+    logger.info(f"   Concept: {concept.name}")
+    logger.info(f"   Type: {concept.type} ({concept.get_type_class()})")
+    
+    if reference:
+        # Get all values from the reference using slice(None) for all axes
+        slice_params = {axis: slice(None) for axis in reference.axes}
+        all_values = reference.get(**slice_params)
+        logger.info(f"   All values: {all_values}")
+
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None):
+    """
+    Create a concept with an associated reference object.
+    
+    Args:
+        concept_name (str): The name of the concept (e.g., "{technical_concepts}?")
+        concept_id (str): The internal identifier for the concept
+        reference_value (str): The value to set in the reference
+        concept_type (str): The type format for the concept (default: "{}")
+        reference_axes (list): List of axis names for the reference (default: [concept_id])
+        reference_shape (tuple): Shape of the reference tensor (default: (1,))
+    
+    Returns:
+        tuple: (concept, reference) - The created concept and its reference
+    """
+    # Set default values if not provided
+    if reference_axes is None:
+        reference_axes = [concept_id]
+    if reference_shape is None:
+        reference_shape = (1,)
+    
+    # Create reference
+    reference = Reference(reference_axes, reference_shape)
+    
+    # Set the reference value
+    reference.set(f"%({reference_value})", **{concept_id: 0})
+    
+    # Create concept
+    concept = Concept(concept_name, concept_id, reference, concept_type)
+    
+    return concept, reference
+
+def create_simple_concept(concept_name, concept_id, concept_type="{}"):
+    """
+    Create a simple concept without a reference object.
+    
+    Args:
+        concept_name (str): The name of the concept
+        concept_id (str): The internal identifier for the concept
+        concept_type (str): The type format for the concept (default: "{}")
+    
+    Returns:
+        Concept: The created concept
+    """
+    return Concept(concept_name, concept_id, None, concept_type)
+
 def init_concept_with_references():
     """Demonstrate Concept class with actual Reference objects"""
     
-    print("=== Concept with References Examples ===\n")
+    logger.info("=== Concept with References Examples ===")
 
-    # Example 1: Mathematical operations with functional concepts
-    print("1. {technical_concepts}?:")
-    technical_concepts_1_axes = ["technical_concepts_1"]
-    technical_concepts_1_shape = (1,)  # 1 technical concept
-    technical_concepts_1_ref = Reference(technical_concepts_1_axes, technical_concepts_1_shape)
-    
-    # Set mathematical operations
-    technical_concepts_type = "A technical concept is a concept that is related to a technical problem. It can be difficult to understand for non-technical people."
-    technical_concepts_1_ref.set(f"%({technical_concepts_type})", technical_concepts_1=0) 
+    # Example 1: Technical concepts question concept
+    technical_concepts_type = "a mentioned concept that is related to a technical problem, and can be difficult to understand for non-technical people."
+    technical_concepts_1, technical_concepts_1_ref = create_concept_with_reference(
+        concept_name="{technical_concepts}?",
+        concept_id="technical_concepts_1",
+        reference_value=technical_concepts_type,
+        concept_type="{}"
+    )
+    _log_concept_details(technical_concepts_1, technical_concepts_1_ref, "1", "{technical_concepts}?")
 
-    technical_concepts_1 = Concept("{technical_concepts}?", "technical_concepts_1", technical_concepts_1_ref, "{}")
- 
+    # Example 2: Content-based technical concepts classification concept
+    technical_concepts_classification_concept, technical_concepts_classification_ref = create_concept_with_reference(
+        concept_name=":S_content:({1}?<$({technical_concepts})%_>)",
+        concept_id="technical_concepts_classification",
+        reference_value=":S_content:({1}?<$({technical_concepts})%_>)",
+        concept_type="::({})"
+    )
+    _log_concept_details(technical_concepts_classification_concept, technical_concepts_classification_ref, "2", ":S_content:({1}?<$({technical_concepts})%_>)")
 
-    print(f"   Concept: {technical_concepts_1.name}")
-    print(f"   Type: {technical_concepts_1.type} ({technical_concepts_1.get_type_class()})")
-    print(f"   All technical concepts: {technical_concepts_1_ref.get(technical_concepts_1=slice(None))}")
-    print()
+    # Example 3: Simple technical concepts concept (no reference)
+    technical_concepts_2 = create_simple_concept(
+        concept_name="{technical_concepts}",
+        concept_id="technical_concepts_2"
+    )
+    _log_concept_details(technical_concepts_2, None, "3", "{technical_concepts}")
 
+    # Example 4: Relatable ideas operation
+    relatable_ideas_operation_concept, relatable_ideas_operation_ref = create_concept_with_reference(
+        concept_name="::(make {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_> using everyday analogies)",
+        concept_id="relatable_ideas_operation",
+        reference_value="::(make {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_> using everyday analogies)",
+        concept_type="::({})"
+    )
+    _log_concept_details(relatable_ideas_operation_concept, relatable_ideas_operation_ref, "4", "::({})")
 
-    # Example 2: Mathematical operations with functional concepts
-    print("2. :S_content:({1}?<$({technical_concepts})%_>)")
-    technical_concepts_classification_axes = ["technical_concepts_classification"]
-    technical_concepts_classification_shape = (1,)  # 1 technical concept
-    technical_concepts_classification_ref = Reference(technical_concepts_classification_axes, technical_concepts_classification_shape)
-    
-    # Set mathematical operations
-    technical_concepts_classification_ref.set("%(:S_content:({1}?<$({technical_concepts})%_>))", technical_concepts_classification=0)
-    
-    technical_concepts_classification_concept = Concept(":S_content:({1}?<$({technical_concepts})%_>)", "technical_concepts_classification", technical_concepts_classification_ref, "::({})")
-    print(f"   Concept: {technical_concepts_classification_concept.name}")
-    print(f"   Type: {technical_concepts_classification_concept.type} ({technical_concepts_classification_concept.get_type_class()})")
-    print(f"   All technical concepts: {technical_concepts_classification_ref.get(technical_concepts_classification=slice(None))}")
-    print()
+    # Example 5: Relatable ideas concept
+    relatable_ideas_type = "a related expression that is related to a specific technical concept."
+    relatable_ideas_concept, relatable_ideas_ref = create_concept_with_reference(
+        concept_name="{relatable_ideas}?",
+        concept_id="relatable_ideas",
+        reference_value=relatable_ideas_type,
+        concept_type="{}"
+    )
+    _log_concept_details(relatable_ideas_concept, relatable_ideas_ref, "5", "{relatable_ideas}?")
 
-    technical_concepts_2 = Concept("{technical_concepts}", "technical_concepts_2", None, "{}")
-    print(f"   Concept: {technical_concepts_2.name}")
-    print()
+    # Example 6: Relatable ideas concept
+    relatable_ideas_concept_2  = create_simple_concept(
+        concept_name="{relatable_ideas}",
+        concept_id="relatable_ideas_2",
+        concept_type="{}"
+    )
+    _log_concept_details(relatable_ideas_concept, None, "6", "{relatable_ideas}")
 
-    return technical_concepts_1, technical_concepts_classification_concept, technical_concepts_2
+    return (
+        technical_concepts_1, 
+        technical_concepts_classification_concept, 
+        technical_concepts_2,
+        relatable_ideas_operation_concept,
+        relatable_ideas_concept,
+        relatable_ideas_concept_2
+    )
  
 def init_working_configuration():
     working_configuration = {
@@ -101,18 +183,86 @@ def init_working_configuration():
             },
         },
         },
+    "::(make {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_> using everyday analogies)": {
+        "perception": {
+            "ap": {
+                "mode": "llm_formal",
+                "product": "translated_templated_function",
+                "value_order": {
+                    "{technical_concepts}": 0,
+                    "{relatable_ideas}?": 1,
+                },
+            },
+            "asp": {
+                "mode": "in-cognition"
+            }
+        },
+        "actuation": {
+            "pta": {
+                "mode": "in-cognition",
+                "value_order": {
+                    "{technical_concepts}": 0,
+                    "{relatable_ideas}?": 1,
+                }
+            },
+            "ma": {
+                "mode": "formal"
+            }
+        },
+        "cognition": {
+            "rr": {
+                "mode": "identity"
+            }
+        }
+    },
+    "{relatable_ideas}?": {
+        "perception": {
+            "mvp": {
+                "mode": "formal"
+            },
+        },
+        "actuation": {},
+        "cognition": {}
+    },
+    "{relatable_ideas}": {
+        "perception": {
+            "mvp": {
+                "mode": "formal"
+            },
+        },
+        "actuation": {},
+        "cognition": {}
+    },
     }
     return working_configuration
 
 
 
+def _log_inference_result(result_concept, value_concepts, function_concept):
+    """Log the inference result and related information"""
+    if result_concept.reference:
+        logger.info(f"Answer concept reference: {result_concept.reference.tensor}")
+        logger.info(f"Answer concept axes: {result_concept.reference.axes}")
+        
+        # Create list of all references for cross product
+        all_references = [result_concept.reference]
+        if value_concepts:
+            all_references.extend([concept.reference for concept in value_concepts if concept.reference])
+        if function_concept and function_concept.reference:
+            all_references.append(function_concept.reference)
+        
+        if len(all_references) > 1:
+            all_info_reference = cross_product(all_references)
+            logger.info(f"All info reference: {all_info_reference.tensor}")
+            logger.info(f"All info axes: {all_info_reference.axes}")
+    else:
+        logger.warning("Answer concept reference is None")
+
+
 class WriteAgent(AgentFrame):
-    def __init__(self, name, llm, working_configuration, **body):
-        super().__init__(name, llm, working_configuration)
-        self.body.update(body)
-        self.body["workspace"] = {
-            "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
-        } 
+    def __init__(self, name, working_configuration, **body):
+        super().__init__(name, working_configuration=working_configuration, **body)
+        self.body = body
         self._norm_code_setup()
 
     def _norm_code_setup(self):
@@ -289,31 +439,73 @@ class WriteAgent(AgentFrame):
 if __name__ == "__main__":
 
     # Initialize concepts and inference
-    technical_concepts_1, technical_concepts_classification_concept, technical_concepts_2 = init_concept_with_references()   
-    classification_inference = Inference(
+    (technical_concepts_1, 
+    technical_concepts_classification_concept, 
+    technical_concepts_2, 
+    relatable_ideas_operation_concept, 
+    relatable_ideas_concept,
+    relatable_ideas_concept_2) = init_concept_with_references()   
+    first_inference = Inference(
         sequence_name="imperative", 
         concept_to_infer=technical_concepts_2,
         value_concepts=[technical_concepts_1],
         function_concept=technical_concepts_classification_concept
     )
+    second_inference = Inference(
+        sequence_name="imperative", 
+        concept_to_infer=relatable_ideas_concept_2,
+        value_concepts=[technical_concepts_2, relatable_ideas_concept],
+        function_concept=relatable_ideas_operation_concept
+    )
 
     # Initialize agent
     llm = LanguageModel("qwen-turbo-latest")
-    agent = WriteAgent("workspace_demo", llm, init_working_configuration())
-    agent.configure(
-        inference_instance=classification_inference, 
+    workspace = {
+        "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
+    } 
+    # Initialize content agent
+    content_agent = WriteAgent(
+        "workspace_demo",
+        init_working_configuration(),
+        llm=llm,
+        workspace=workspace)
+
+    # Configure content agent and update value concepts
+    content_agent.configure(
+        inference_instance=first_inference, 
         inference_sequence="imperative",
     )
+    technical_concepts_2 = first_inference.execute()
 
-    # Execute inference
-    technical_concepts_2 = classification_inference.execute()
+    print("========== First inference completed ==========")
 
-    # Print answer
-    if technical_concepts_2.reference:
-        print(f"Answer concept reference: {technical_concepts_2.reference.tensor}")
-        print(f"Answer concept axes: {technical_concepts_2.reference.axes}")
-        all_info_reference = cross_product([technical_concepts_1.reference, technical_concepts_classification_concept.reference, technical_concepts_2.reference])
-        print(f"All info reference: {all_info_reference.tensor}")
-        print(f"All info axes: {all_info_reference.axes}")
-    else:
-        print("Answer concept reference is None")
+    # Initialize formal agent
+    formal_agent = AgentFrame(
+        "demo",
+        init_working_configuration(),
+        llm=llm,
+        workspace=workspace)
+
+    # Configure formal agent and update value concepts
+    second_inference.value_concepts = [technical_concepts_2, relatable_ideas_concept]
+    formal_agent.configure(
+        inference_instance=second_inference, 
+        inference_sequence="imperative",
+    )
+    relatable_ideas_concept_2 = second_inference.execute()
+
+    # Log answer
+    print("========== First inference result ==========")
+    _log_inference_result(
+        result_concept=technical_concepts_2,
+        value_concepts=[technical_concepts_1],
+        function_concept=technical_concepts_classification_concept
+    )
+    print("========== Second inference result ==========")
+    _log_inference_result(
+        result_concept=relatable_ideas_concept_2,
+        value_concepts=[technical_concepts_2, relatable_ideas_concept],
+        function_concept=relatable_ideas_operation_concept
+    )
+    
+

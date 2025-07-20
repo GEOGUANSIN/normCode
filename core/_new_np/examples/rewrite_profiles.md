@@ -89,4 +89,5 @@ NormCode for instruction:
         <- {technical_concepts}<:{1}>
             <= :S_content:({1}?<$({technical_concepts})%_>)
             <- {technical_concepts}?<:{1}>
+        <- {relatable_ideas}?<:{2}>
 ```

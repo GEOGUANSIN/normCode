@@ -1,4 +1,4 @@
-Given the following context and answer, Check answe validity:
+Given the following context and answer, Check answer validity:
 """
 context: "$instruction"
 
