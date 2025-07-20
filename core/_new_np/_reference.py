@@ -190,14 +190,23 @@ class Reference:
                 data[current] = value
 
     def slice(self, *selected_axes):
+        # Handle case where no axes are provided
+        if not selected_axes:
+            # Create a reference with single axis "_none_axis" and shape (1,)
+            # Store the entire tensor as a single element
+            return Reference(
+                axes=["_none_axis"],
+                shape=(1,),
+                initial_value=None,
+                skip_value="@#SKIP#@"
+            )._replace_data([self.tensor])
+
         # Validate selected axes
         for axis in selected_axes:
             if axis not in self.axes:
                 raise KeyError(f"Axis '{axis}' not found in {self.axes}")
         if len(selected_axes) != len(set(selected_axes)):
             raise ValueError("Duplicate axes in selection")
-        if not selected_axes:
-            raise ValueError("At least one axis must be selected")
 
         # Calculate new shape based on selected axes
         new_shape = tuple(self.shape[self.axes.index(axis)] for axis in selected_axes)
@@ -573,6 +582,21 @@ if __name__ == "__main__":
     print("\nGrades for Student 0 across all assignments:")
     print(student_assignment_slice.get(student=0))
     print("Note: Missing grades are marked with '@#SKIP#@'")
+
+    # Test slicing with no axes (new functionality)
+    print("\n=== Example 3b: Slicing with No Axes ===")
+    print("\nInput data:")
+    print("Grades data (from previous example):")
+    print("- Shape: (3, 2, 4) with axes ['student', 'semester', 'assignment']")
+    
+    print("\nCreating a slice with no axes specified...")
+    no_axis_slice = grades.slice()
+    print("\nOutput:")
+    print("Slice axes:", no_axis_slice.axes)
+    print("Slice shape:", no_axis_slice.shape)
+    print("\nEntire tensor stored at _none_axis=0:")
+    print(no_axis_slice.get(_none_axis=0))
+    print("Note: The entire tensor is stored as a single element with axis '_none_axis'")
 
     print("\n=== Example 4: Cross Action with Functions ===")
     print("\nInput data:")
