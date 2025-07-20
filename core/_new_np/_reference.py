@@ -386,7 +386,10 @@ def cross_action(A, B, new_axis_name):
         if not retrieved_entry:
             break
         retrieved_entry = retrieved_entry[0]
-    new_shape = combined_shape + [len(retrieved_entry) if retrieved_entry else 0]  # New axis size
+    if isinstance(retrieved_entry, str) and retrieved_entry == "@#SKIP#@":
+        new_shape = combined_shape + [1]
+    else:
+        new_shape = combined_shape + [len(retrieved_entry) if retrieved_entry else 0]
     result_ref = Reference(new_axes, new_shape, None, skip_value="@#SKIP#@")
     result_ref._replace_data(new_data)
     return result_ref
@@ -478,6 +481,27 @@ def element_action(f, references, index_awareness=False):
 
 
 if __name__ == "__main__":
+
+
+    # Reference A: stores a function at a=0
+    A = Reference(axes=['a'], shape=(1,), initial_value=1)
+    A.set(lambda x: {x:x}, a=0)  # Function returns a list of length 2
+
+    # Reference B: stores a value at b=0
+    B = Reference(axes=['b'], shape=(1,), initial_value=0)
+    B.set(42, b=0)
+
+    # Perform cross action
+    result = cross_action(A, B, new_axis_name='result')
+
+    print("A axes:", A.axes, "shape:", A.shape)
+    print("B axes:", B.axes, "shape:", B.shape)
+    print("Result axes:", result.axes, "shape:", result.shape)
+    print("Result tensor:", result.tensor)
+    print("Result[0,0]:", result.get(a=0, b=0))
+
+
+
     print("\n=== Example 1: Basic Grade Tensor Creation and Operations ===")
     # Create a 3D tensor for student grades (students × semesters × assignments)
     grades = Reference(
