@@ -4,6 +4,8 @@ from string import Template
 import logging
 import sys
 from typing import Optional
+import ast
+import re
 
 def setup_logging(level=logging.INFO, log_file=None):
     """Setup logging configuration for the inference module"""
@@ -87,6 +89,142 @@ def wrap_element_wrapper(element: str) -> str:
     return f"%({element})"
 
 
+def _raw_element_process(new_element_raw):
+    """
+    Process raw element output from LLM generation.
+    
+    Args:
+        new_element_raw: The raw output from LLM generation (str or list)
+        
+    Returns:
+        list: A list containing the processed element(s)
+        
+    Raises:
+        ValueError: If the element type is not supported or cannot be parsed
+    """
+    if isinstance(new_element_raw, list):
+        return new_element_raw
+    elif isinstance(new_element_raw, str):
+        # Handle empty or whitespace-only strings
+        if not new_element_raw.strip():
+            return [new_element_raw]
+        
+        # Try to extract list from code blocks (```python ... ```)
+        code_block_match = re.search(r'```(?:python)?\s*\n?(.*?)\n?```', new_element_raw, re.DOTALL)
+        if code_block_match:
+            content = code_block_match.group(1).strip()
+            try:
+                # Try to evaluate as Python literal
+                parsed = ast.literal_eval(content)
+                if isinstance(parsed, list):
+                    return parsed
+            except (ValueError, SyntaxError):
+                pass
+        
+        # Try to extract list from bracket notation [item1, item2, ...]
+        bracket_match = re.search(r'\[(.*?)\]', new_element_raw, re.DOTALL)
+        if bracket_match:
+            content = bracket_match.group(1).strip()
+            try:
+                # Try to evaluate as Python literal
+                parsed = ast.literal_eval(f"[{content}]")
+                if isinstance(parsed, list):
+                    return parsed
+            except (ValueError, SyntaxError):
+                pass
+        
+        # If no list format detected, return as single string element
+        return [new_element_raw]
+    else:
+        raise ValueError(f"Invalid new element type: {type(new_element_raw)}")
+
+
+def _load_templates(llm, concept_type):
+    """Load prompt templates"""
+    translation_template = llm.load_prompt_template(f"{concept_type}_translate")
+    instruction_template = llm.load_prompt_template("instruction")
+    instruction_validation_template = llm.load_prompt_template("instruction_validation")
+    
+    return translation_template, instruction_template, instruction_validation_template
+
+
+def _validate_and_retry_generation(llm, instruction, instruction_validation_template, concept_to_infer_name=None, max_retries=5):
+    """Validate generated output and retry if needed"""
+    for i in range(max_retries):
+        new_element_raw = llm.generate(instruction, system_message="")
+        logger.debug(f"New element raw: {new_element_raw}")
+        
+        if concept_to_infer_name:
+            instruction_validation_prompt = instruction_validation_template.safe_substitute(
+                instruction=instruction, output=new_element_raw, concept_to_infer=concept_to_infer_name
+            )
+        else:
+            instruction_validation_prompt = instruction_validation_template.safe_substitute(
+                instruction=instruction, output=new_element_raw
+            )
+        
+        validity = llm.generate(instruction_validation_prompt, system_message="")
+        logger.debug(f"Instruction validation raw: {validity}")
+        
+        if validity.startswith("Yes"):
+            break
+        else:
+            if i == max_retries - 1:
+                new_element_raw = "@#SKIP#@"
+            new_instruction = str(instruction) + f"(Notice that {new_element_raw} is incorrect in format.)"
+            instruction = Template(new_instruction)
+            continue
+    
+    return new_element_raw
+
+
+def _create_actuator_function(actuator_translated_template, instruction_template, instruction_validation_template,
+                             concept_to_infer_name, input_length, llm):
+    """Create generation function for multiple inputs"""
+    def _generation_function_n(input_list):
+        input_dict = {}
+        for i in range(input_length):
+            input_dict[f"input_{i+1}"] = input_list[i]
+            input_dict["output"] = concept_to_infer_name
+        logger.debug(f"Input dict: {input_dict}")
+
+        valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
+        logger.debug(f"Valued actuator prompt: {valued_actuator_prompt}")
+        instruction = instruction_template.safe_substitute(input=valued_actuator_prompt)
+        logger.debug(f"Instruction: {instruction}")
+        
+        new_element_raw = _validate_and_retry_generation(
+            llm, instruction, instruction_validation_template, concept_to_infer_name
+        )
+        logger.debug(f"New element raw: {new_element_raw}")
+
+        new_element = _raw_element_process(new_element_raw)
+        logger.debug(f"New element: {new_element}")
+
+        return new_element
+    return _generation_function_n
+
+
+def _create_activation_function(translation_template, instruction_template, instruction_validation_template,
+                             concept_to_infer_name, input_length, llm):
+    """Create the main actuator function"""
+    def _strip_translate_and_instruct_validate_validate_actuator(actuator_element):
+        stripped_actuator_element = strip_element_wrapper(actuator_element)
+        actuator_translation_template = translation_template.safe_substitute(input_normcode=stripped_actuator_element)
+        actuator_translated_raw = llm.generate(actuator_translation_template, system_message="")
+        actuator_translated_template = Template(actuator_translated_raw)
+        
+        if input_length < 1:
+            raise ValueError(f"Input length must be 1 or greater, got {input_length}")
+        
+        return _create_actuator_function(
+            actuator_translated_template, instruction_template, instruction_validation_template,
+            concept_to_infer_name, input_length, llm
+        )
+    
+    return _strip_translate_and_instruct_validate_validate_actuator
+
+
 def input_working_configurations(value_concepts:list[Concept], function_concept:Concept, concept_to_infer:Concept, all_working_configuration:dict):
     active_working_configuration = {}  
 
@@ -135,84 +273,17 @@ def actuator_perception(working_configuration, function_concept, concept_type, c
             input_length = len(working_configuration[function_concept.name]["perception"]["ap"]["value_order"])
             concept_to_infer_name = concept_to_infer.name
             
-            translation_template = llm.load_prompt_template(f"{concept_type}_translate")
-            instruction_template = llm.load_prompt_template("instruction")
-            instruction_validation_template = llm.load_prompt_template("instruction_validation")
-
-            def _strip_translate_and_instruct_validate_validate_actuator(actuator_element):
-
-                    stripped_actuator_element = strip_element_wrapper(actuator_element)
-                    actuator_translation_template = translation_template.safe_substitute(input_normcode=stripped_actuator_element)
-                    actuator_translated_raw = llm.generate(actuator_translation_template, system_message="")
-                    actuator_translated_template = Template(actuator_translated_raw)
-                    if input_length == 1:
-                        def _generation_function_1(input_1):
-                            valued_actuator_prompt = str(actuator_translated_template.safe_substitute(input_1=input_1, output=concept_to_infer_name))
-                            instruction= instruction_template.safe_substitute(input=valued_actuator_prompt)
-                            for i in range(5):
-                                new_element_raw = llm.generate(instruction, system_message="")
-                                logger.debug(f"New element raw: {new_element_raw}")
-                                instruction_validation_prompt = instruction_validation_template.safe_substitute(instruction=instruction, output=new_element_raw)
-                                logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
-                                validity = llm.generate(instruction_validation_prompt, system_message="")
-                                logger.debug(f"Instruction validation raw: {validity}")
-                                if validity.startswith("Yes"):
-                                    break
-                                else:
-                                    new_instruction = instruction.template + f"(Notice that {new_element_raw} is incorrect in format.)"
-                                    instruction = Template(new_instruction)
-                                    if i == 4:
-                                        new_element_raw = "@#SKIP#@"
-                                    continue
-                            if isinstance(new_element_raw, str):
-                                new_element = [new_element_raw]
-                            elif isinstance(new_element_raw, list):
-                                new_element = new_element_raw
-                            else:
-                                raise ValueError(f"Invalid new element type: {type(new_element_raw)}")
-                            return new_element
-                        return _generation_function_1
-                    elif input_length > 1:
-                        def _generation_function_n(input_list):
-                            input_dict = {}
-                            for i in range(input_length):
-                                input_dict[f"input_{i+1}"] = input_list[i]
-                            logger.debug(f"Input dict: {input_dict}")
-
-                            for i in range(5):
-                                valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
-                                logger.debug(f"Valued actuator prompt: {valued_actuator_prompt}")
-                                instruction= instruction_template.safe_substitute(input=valued_actuator_prompt)
-                                logger.debug(f"Instruction: {instruction}")
-                                new_element_raw = llm.generate(instruction, system_message="")
-                                logger.debug(f"New element raw: {new_element_raw}")
-                                instruction_validation_prompt = instruction_validation_template.safe_substitute(instruction=valued_actuator_prompt, output=new_element_raw, concept_to_infer=concept_to_infer.name)
-                                logger.debug(f"Instruction validation prompt: {instruction_validation_prompt}")
-                                validity = llm.generate(instruction_validation_prompt, system_message="")
-                                logger.debug(f"Instruction validation raw: {validity}")
-                                if validity.startswith("Yes"):
-                                    break
-                                else:
-                                    if i == 4:
-                                        new_element_raw = "@#SKIP#@"
-                                    new_instruction = instruction.template + f"(Notice that {new_element_raw} is incorrect in format.)"
-                                    instruction = Template(new_instruction)
-                                    continue
-
-                            if isinstance(new_element_raw, str):
-                                new_element = [new_element_raw]
-                            elif isinstance(new_element_raw, list):
-                                new_element = new_element_raw
-                            else:
-                                raise ValueError(f"Invalid new element type: {type(new_element_raw)}")
-
-                            return new_element
-
-                        return _generation_function_n
-                    else:
-                        raise ValueError(f"Input length must be 1 or greater, got {input_length}")   
-
-            _functional_actuator_reference = element_action(_strip_translate_and_instruct_validate_validate_actuator, [function_concept.reference])
+            # Load templates
+            translation_template, instruction_template, instruction_validation_template = _load_templates(llm, concept_type)
+            
+            # Create actuator function
+            activation_function = _create_activation_function(
+                translation_template, instruction_template, instruction_validation_template,
+                concept_to_infer_name, input_length, llm
+            )
+            
+            # Apply actuator function to function concept reference
+            _functional_actuator_reference = element_action(activation_function, [function_concept.reference])
             logger.debug(f"Functional actuator reference: {_functional_actuator_reference.tensor}")
             return _functional_actuator_reference
     else:

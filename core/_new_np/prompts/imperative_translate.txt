@@ -8,6 +8,7 @@ Instructions:
 - Use $output for the result/outcome
 - Elements marked with ? (e.g., {1}?) indicate the output/result
 - Regular numbered placeholders (e.g., {1}, {2}) indicate inputs
+- All numbered placeholders should have a corresponding input placeholder
 - Maintain the logical flow and relationships
 - Keep the translation straightforward and faithful
 

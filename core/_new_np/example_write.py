@@ -459,7 +459,7 @@ if __name__ == "__main__":
     )
 
     # Initialize agent
-    llm = LanguageModel("qwen-turbo-latest")
+    llm = LanguageModel("deepseek-r1-distill-qwen-1.5b")
     workspace = {
         "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
     } 
