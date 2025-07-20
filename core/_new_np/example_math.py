@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     # Initialize agent
     llm = LanguageModel("qwen-turbo-latest")
-    agent = AgentFrame("demo", llm, init_working_configuration())
+    agent = AgentFrame("demo", init_working_configuration(), llm=llm)
     agent.configure(
         inference_instance=operation_inference, 
         inference_sequence="imperative",

@@ -76,11 +76,11 @@ def wrap_element_wrapper(element: str) -> str:
 
 
 class AgentFrame():
-    def __init__(self, AgentFrameModel: str, llm: Optional[LanguageModel]=None, working_configuration: Optional[dict]=None):
+    def __init__(self, AgentFrameModel: str, working_configuration: Optional[dict]=None, llm: Optional[LanguageModel]=None, **body):
         logger.info(f"Initializing AgentFrame with model: {AgentFrameModel}")
         self.AgentFrameModel = AgentFrameModel
         self.working_configuration = working_configuration if working_configuration else {}
-        self.body = {}
+        self.body = body
         if llm:
             self.body["llm"] = llm
         self._norm_code_setup()
