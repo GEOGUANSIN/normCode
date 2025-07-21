@@ -106,7 +106,7 @@ def demonstrate_normcode_simiple_or():
 def demonstrate_normcode_and_in():
 
     normcode_pattern = """[{old expression} and {new expression} in all {old expression}]
-    |ref. [%O[0]=%[%tech], %O[1]=%[%couch]]
+    |ref. [%[%[%{old expression}%(tech), %{new expression}%(techie)], %[%{old expression}%(couch), %{new expression}%(couchie)]]]
     <= &in({old expression};{new expression})%:{old expression}
     <- {old expression}
         |ref. [%O[0]=%(tech), %O[1]=%(couch)]
@@ -194,7 +194,7 @@ def demonstrate_normcode_and_in():
 def demonstrate_normcode_or_across():
 
     normcode_pattern = """[{old expression} or {new expression} across all {old expression}]
-    |ref. [[%(tech), %(techie)], [%(couch), %(couchie)]]
+    |ref. [[%(tech), %(techie), %(couch), %(couchie)]]
     <= &across({old expression};{new expression})%:{old expression}
     <- {old expression}
         |ref. [%O[0]=%(tech), %O[1]=%(couch)]
@@ -277,7 +277,7 @@ def demonstrate_normcode_or_across():
 def demonstrate_normcode_and_only():
 
     normcode_pattern = """[{old expression} and {new expression}]
-    |ref. [%O[0]=[%{old expression}%(tech), %{new expression}%(techie)], %O[1]=[%{old expression}%(couch), %{new expression}%(couchie)]]
+    |ref. [%O[0]=[%[%{old expression}%(tech), %{new expression}%(techie)]], %O[1]=[%[%{old expression}%(couch), %{new expression}%(couchie)]]]
     <= &and({old expression};{new expression})
     <- {old expression}
         |ref. [%O[0]=%(tech), %O[1]=%(couch)]
@@ -440,7 +440,7 @@ def demonstrate_normcode_or_only():
 
 if __name__ == "__main__":
 
-    demonstrate_normcode_and_in()
+    demonstrate_normcode_or_across()
 
 
 
