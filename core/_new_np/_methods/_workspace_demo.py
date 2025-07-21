@@ -327,6 +327,10 @@ def on_perception_tool_actuation(working_configuration, actuated_functional_refe
         new_reference = cross_action(actuated_functional_reference, crossed_perception_reference, concept_to_infer.name)
         logger.debug(f"New reference: {new_reference.tensor}")
         return new_reference
+    elif working_configuration[function_concept.name]["actuation"]["pta"]["mode"] == "in-workspace":
+        new_reference = cross_action(actuated_functional_reference, crossed_perception_reference, concept_to_infer.name)
+        logger.debug(f"New reference: {new_reference.tensor}")
+        return new_reference
     else:
         raise ValueError(f"Invalid mode: {working_configuration[function_concept.name]['actuation']['pta']['mode']}")
 

@@ -30,11 +30,8 @@ class Reference:
         if not isinstance(value, list):
             raise TypeError("Tensor must be a nested list structure")
 
-        # First compute the shape
-        new_shape = self._compute_shape(value)
-        
-        # Then validate the rank
-        observed_rank = len(new_shape)
+        # Validate that the rank matches
+        observed_rank = self._get_rank(value)
         expected_rank = len(self.axes)
 
         if observed_rank != expected_rank:
@@ -43,10 +40,14 @@ class Reference:
                 f"expected {expected_rank} (number of axes)"
             )
 
-        # Finally pad and set the tensor
+        # For irregular tensors, compute the appropriate shape
+        # and update the shape to match the data
+        new_shape = self._compute_irregular_shape(value)
+        self.shape = new_shape
+        
+        # Pad the tensor to the computed shape
         padded_data = self._pad_tensor(value, new_shape)
         self.data = padded_data
-        self.shape = new_shape
 
     def _pad_tensor(self, tensor, target_shape):
         """Pad a tensor to match the target shape with skip values"""
@@ -94,13 +95,45 @@ class Reference:
                 else:
                     max_len = max(max_len, 1)  # Count non-list elements as length 1
             shape.append(max_len)
-            # Find first list element to continue traversal
-            for elem in current:
-                if isinstance(elem, list):
-                    current = elem
-                    break
+            
+            # Check if we should continue to next dimension
+            # For irregular tensors, we need to check if any element is a list
+            has_list_elements = any(isinstance(elem, list) for elem in current)
+            if has_list_elements:
+                # Find the first list element to continue traversal
+                for elem in current:
+                    if isinstance(elem, list):
+                        current = elem
+                        break
             else:
                 break  # No more list elements found
+        return tuple(shape)
+
+    def _compute_irregular_shape(self, lst):
+        """Compute shape for irregular tensors, preserving the maximum dimensions"""
+        if not isinstance(lst, list):
+            return ()
+        
+        # For the first dimension, use the length of the list
+        shape = [len(lst)]
+        
+        # For subsequent dimensions, recursively compute the maximum shape
+        if lst:
+            # Find all list elements to determine the next dimension
+            list_elements = [elem for elem in lst if isinstance(elem, list)]
+            if list_elements:
+                # Compute the maximum shape of all sublists
+                sub_shapes = [self._compute_irregular_shape(sublist) for sublist in list_elements]
+                if sub_shapes:
+                    # Find the maximum length for each dimension
+                    max_dims = len(max(sub_shapes, key=len))
+                    for dim in range(max_dims):
+                        max_len = 0
+                        for sub_shape in sub_shapes:
+                            if dim < len(sub_shape):
+                                max_len = max(max_len, sub_shape[dim])
+                        shape.append(max_len)
+        
         return tuple(shape)
 
     def _validate_shape(self, lst, expected_shape):

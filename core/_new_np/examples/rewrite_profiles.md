@@ -74,20 +74,28 @@ NormCode for instruction:
 ### Example Focus 
 
 ```
-:NormCode:({1}<$(:_:)%_> has {2}<${content}%_> in the awared workspace)
-    <- ({agent}<$(:S_content:)%_>)<:{1}>
+:NormCode:({1}<$(:_:)%_> has {2}<${content}%_> in the awared workspace for {3}<$({control}%_)>)
+    <- ({agent}<$(:S_read_content:)%_>)<:{1}>
     <- {content}<:{2}>
+    <- {read}<:{3}>
+
+:NormCode:({1}<$(:_:)%_> has {2}<${content}%_> in the awared workspace for {3}<$({control}%_)>)
+    <- ({agent}<$(:S_write_content:)%_>)<:{1}>
+    <- {content}<:{2}>
+    <- {read and write}<:{3}>
 ```
 
 ```
 {step 1}
     <= $::
-    <- :S_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)
-    <- {technical_concepts}<:{1}>
-    <- {relatable_ideas}<:{2}>
-        <= ::(make {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_> using everyday analogies)
-        <- {technical_concepts}<:{1}>
-            <= :S_content:({1}?<$({technical_concepts})%_>)
-            <- {technical_concepts}?<:{1}>
-        <- {relatable_ideas}?<:{2}>
+    <- :S_write_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)
+    <- [all {technical_concepts}<:{1}> and {relatable_ideas}<:{2}>]
+        <= &in({technical_concepts}:{technical_concepts}; {relatable_ideas}:{technical_concepts})
+        <- {technical_concepts}
+        <- {relatable_ideas}
+            <= ::(make {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_> using everyday analogies)
+            <- {technical_concepts}<:{1}>
+                <= :S_read_content:({1}?<$({technical_concepts})%_>)
+                <- {technical_concepts}?<:{1}>
+            <- {relatable_ideas}?<:{2}>
 ```

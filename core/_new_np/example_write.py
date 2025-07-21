@@ -82,12 +82,12 @@ def init_concept_with_references():
 
     # Example 2: Content-based technical concepts classification concept
     technical_concepts_classification_concept, technical_concepts_classification_ref = create_concept_with_reference(
-        concept_name=":S_content:({1}?<$({technical_concepts})%_>)",
+        concept_name=":S_read_content:({1}?<$({technical_concepts})%_>)",
         concept_id="technical_concepts_classification",
-        reference_value=":S_content:({1}?<$({technical_concepts})%_>)",
+        reference_value=":S_read_content:({1}?<$({technical_concepts})%_>)",
         concept_type="::({})"
     )
-    _log_concept_details(technical_concepts_classification_concept, technical_concepts_classification_ref, "2", ":S_content:({1}?<$({technical_concepts})%_>)")
+    _log_concept_details(technical_concepts_classification_concept, technical_concepts_classification_ref, "2", ":S_read_content:({1}?<$({technical_concepts})%_>)")
 
     # Example 3: Simple technical concepts concept (no reference)
     technical_concepts_2 = create_simple_concept(
@@ -123,13 +123,34 @@ def init_concept_with_references():
     )
     _log_concept_details(relatable_ideas_concept, None, "6", "{relatable_ideas}")
 
+
+    # Example 7: Write content concept
+    write_content_concept, write_content_ref = create_concept_with_reference(
+        concept_name=":S_write_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)",
+        concept_id="write_content",
+        reference_value=":S_write_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)",
+        concept_type="::({})"
+    )
+    _log_concept_details(write_content_concept, write_content_ref, "7", ":S_write_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)")
+
+    # Example 8: Content concept
+    content_concept = create_simple_concept(
+        concept_name="{content}",
+        concept_id="content",
+        concept_type="{}"
+    )
+    _log_concept_details(content_concept, None, "8", "{content}")
+
+
     return (
         technical_concepts_1, 
         technical_concepts_classification_concept, 
         technical_concepts_2,
         relatable_ideas_operation_concept,
         relatable_ideas_concept,
-        relatable_ideas_concept_2
+        relatable_ideas_concept_2,
+        write_content_concept,
+        content_concept
     )
  
 def init_working_configuration():
@@ -145,7 +166,7 @@ def init_working_configuration():
         "cognition": {
         }
     },
-    ":S_content:({1}?<$({technical_concepts})%_>)": {
+    ":S_read_content:({1}?<$({technical_concepts})%_>)": {
         "perception": {
             "asp": {
                 "mode": "in-cognition"
@@ -233,6 +254,48 @@ def init_working_configuration():
         "actuation": {},
         "cognition": {}
     },
+    ":S_write_content:(transform {1}<$({technical_concepts})%_> into {2}?<$({relatable_ideas})%_>)": {
+        "perception": {
+            "ap": {
+                "mode": "llm_workspace",
+                "product": "translated_templated_function",
+                "value_order": {
+                    "{technical_concepts}": 0,
+                    "{relatable_ideas}": 1,
+                },
+                "workspace_object_name_list": ["content"]
+            },
+            "asp": {
+                "mode": "in-cognition"
+            }
+        },
+        "actuation": {
+            "pta": {
+                "mode": "in-cognition",
+                "value_order": {
+                    "{technical_concepts}": 0,
+                    "{relatable_ideas}": 1,
+                }
+            },
+            "ma": {
+                "mode": "formal"
+            }
+        },
+        "cognition": {
+            "rr": {
+                "mode": "identity",
+            }
+        },
+    },
+    "{content}": {
+        "perception": {
+            "mvp": {
+                "mode": "formal"
+            },
+        },
+        "actuation": {},
+        "cognition": {}
+        },  
     }
     return working_configuration
 
@@ -324,6 +387,7 @@ class WriteAgent(AgentFrame):
                 perception_references=perception_references
             )
             # 4. Apply Perception
+            logger.debug(f"£$£$the workspace: {workspace}")
             logger.debug("Step 4: Actuator Perception (AP)")
             actuated_functional_reference = self.AP(
                 working_configuration=working_configuration, 
@@ -444,7 +508,9 @@ if __name__ == "__main__":
     technical_concepts_2, 
     relatable_ideas_operation_concept, 
     relatable_ideas_concept,
-    relatable_ideas_concept_2) = init_concept_with_references()   
+    relatable_ideas_concept_2,
+    write_content_concept,
+    content_concept) = init_concept_with_references()   
     first_inference = Inference(
         sequence_name="imperative", 
         concept_to_infer=technical_concepts_2,
@@ -457,9 +523,15 @@ if __name__ == "__main__":
         value_concepts=[technical_concepts_2, relatable_ideas_concept],
         function_concept=relatable_ideas_operation_concept
     )
+    third_inference = Inference(
+        sequence_name="imperative", 
+        concept_to_infer=content_concept,
+        value_concepts=[technical_concepts_2, relatable_ideas_concept_2],
+        function_concept=write_content_concept
+    )
 
     # Initialize agent
-    llm = LanguageModel("deepseek-r1-distill-qwen-1.5b")
+    llm = LanguageModel("qwen-plus")
     workspace = {
         "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
     } 
@@ -494,6 +566,26 @@ if __name__ == "__main__":
     )
     relatable_ideas_concept_2 = second_inference.execute()
 
+    print("========== Second inference completed ==========")
+
+    # Initialize content agent
+    write_content_agent = WriteAgent(
+        "workspace_demo",
+        init_working_configuration(),
+        llm=llm,
+        workspace=workspace)
+
+    third_inference.value_concepts = [technical_concepts_2, relatable_ideas_concept_2]
+    write_content_agent.configure(
+        inference_instance=third_inference, 
+        inference_sequence="imperative",
+    )
+    content_concept = third_inference.execute()
+    print("========== Third inference completed ==========")
+
+
+
+
     # Log answer
     print("========== First inference result ==========")
     _log_inference_result(
@@ -507,5 +599,10 @@ if __name__ == "__main__":
         value_concepts=[technical_concepts_2, relatable_ideas_concept],
         function_concept=relatable_ideas_operation_concept
     )
-    
+    print("========== Third inference result ==========")
+    _log_inference_result(
+        result_concept=content_concept,
+        value_concepts=[technical_concepts_2, relatable_ideas_concept_2],
+        function_concept=write_content_concept
+    )
 
