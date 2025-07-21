@@ -9,6 +9,37 @@ class Reference:
         self.skip_value: str = skip_value
         self.data: list[Any] = self._create_nested_list(shape, initial_value)
 
+    @classmethod
+    def from_data(cls, data, axis_names=None, skip_value="@#SKIP#@"):
+        """
+        Create a Reference object from input data by automatically discovering axes and shape.
+        
+        Args:
+            data: The input data (nested list structure)
+            axis_names: Optional list of axis names. If None, will generate generic names.
+            skip_value: Value to use for missing/skip elements
+            
+        Returns:
+            Reference: A new Reference object with automatically discovered axes and shape
+        """
+        if not isinstance(data, list):
+            raise TypeError("Data must be a nested list structure")
+        
+        # Create a temporary instance to compute shape
+        temp_ref = cls([], (), initial_value=None, skip_value=skip_value)
+        shape = temp_ref._compute_irregular_shape(data)
+        
+        # Generate axis names if not provided
+        if axis_names is None:
+            axis_names = [f"axis_{i}" for i in range(len(shape))]
+        elif len(axis_names) != len(shape):
+            raise ValueError(f"Number of axis names ({len(axis_names)}) must match data rank ({len(shape)})")
+        
+        # Create the reference
+        ref = cls(axis_names, shape, initial_value=None, skip_value=skip_value)
+        ref.tensor = data  # This will pad the data appropriately
+        return ref
+
     @staticmethod
     def _create_nested_list(shape, initial_value):
         if not shape:
@@ -17,8 +48,40 @@ class Reference:
 
     @property
     def tensor(self):
-        """Direct access to the underlying tensor data structure"""
+        """Direct access to the underlying tensor data structure with skip values"""
         return self.data
+
+    def get_tensor(self, ignore_skip=False):
+        """
+        Get the underlying tensor data structure.
+        
+        Args:
+            ignore_skip (bool): If True, returns tensor without skip values.
+                              If False, returns the full tensor with skip values.
+        
+        Returns:
+            The tensor data structure
+        """
+        if ignore_skip:
+            return self._remove_skip_values(self.data)
+        return self.data
+
+    def _remove_skip_values(self, data):
+        """Recursively remove skip values from the tensor data"""
+        if not isinstance(data, list):
+            return data
+        
+        result = []
+        for item in data:
+            if item != self.skip_value:
+                if isinstance(item, list):
+                    cleaned_item = self._remove_skip_values(item)
+                    if cleaned_item:  # Only add non-empty lists
+                        result.append(cleaned_item)
+                else:
+                    result.append(item)
+        
+        return result
 
     @tensor.setter
     def tensor(self, value):
@@ -301,6 +364,57 @@ class Reference:
         self.data = padded_data
         return self
 
+    def _auto_remove_none_axis(self):
+        """
+        Automatically remove _none_axis if other axes are present.
+        This makes the behavior more intuitive when _none_axis is used as a temporary container.
+        """
+        if "_none_axis" in self.axes and len(self.axes) > 1:
+            # Remove _none_axis from axes and shape
+            none_axis_index = self.axes.index("_none_axis")
+            new_axes = [axis for axis in self.axes if axis != "_none_axis"]
+            new_shape = tuple(dim for i, dim in enumerate(self.shape) if i != none_axis_index)
+            
+            # Extract the actual data from the _none_axis dimension
+            if len(self.shape) == 1:
+                # If only _none_axis, extract the single element
+                new_data = self.data[0]
+            else:
+                # If multiple axes, extract data from _none_axis dimension
+                new_data = self._extract_from_none_axis(self.data, none_axis_index)
+            
+            # Create new reference without _none_axis
+            result = Reference(
+                axes=new_axes,
+                shape=new_shape,
+                initial_value=None,
+                skip_value=self.skip_value
+            )._replace_data(new_data)
+            return result
+        
+        return self
+
+    def _extract_from_none_axis(self, data, none_axis_index):
+        """Extract data from the _none_axis dimension"""
+        if none_axis_index == 0:
+            # _none_axis is the first dimension
+            if isinstance(data, list) and len(data) > 0:
+                return data[0]
+            return data
+        else:
+            # _none_axis is in a deeper dimension
+            if not isinstance(data, list):
+                return data
+            
+            result = []
+            for item in data:
+                if isinstance(item, list):
+                    extracted = self._extract_from_none_axis(item, none_axis_index - 1)
+                    result.append(extracted)
+                else:
+                    result.append(item)
+            return result
+
 
 def cross_product(references):
     if not references:
@@ -353,13 +467,15 @@ def cross_product(references):
     # Generate the new data
     new_data = build_data(combined_axes, {})
 
-    # Create and return new Reference
-    return Reference(
+    # Create and return new Reference with automatic _none_axis removal
+    result = Reference(
         axes=combined_axes,
         shape=combined_shape,
         initial_value=None,
         skip_value="@#SKIP#@"
     )._replace_data(new_data)
+    
+    return result._auto_remove_none_axis()
 
 
 def cross_action(A, B, new_axis_name):
@@ -434,7 +550,7 @@ def cross_action(A, B, new_axis_name):
         new_shape = combined_shape + [len(retrieved_entry) if retrieved_entry else 0]
     result_ref = Reference(new_axes, new_shape, None, skip_value="@#SKIP#@")
     result_ref._replace_data(new_data)
-    return result_ref
+    return result_ref._auto_remove_none_axis()
 
 def element_action(f, references, index_awareness=False):
     """
@@ -513,13 +629,15 @@ def element_action(f, references, index_awareness=False):
     # Generate the new data
     new_data = build_data(combined_axes, {})
 
-    # Create and return new Reference
-    return Reference(
+    # Create and return new Reference with automatic _none_axis removal
+    result = Reference(
         axes=combined_axes,
         shape=combined_shape,
         initial_value=None,
         skip_value="@#SKIP#@"
     )._replace_data(new_data)
+    
+    return result._auto_remove_none_axis()
 
 
 if __name__ == "__main__":

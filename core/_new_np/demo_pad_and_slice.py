@@ -1,4 +1,4 @@
-from _reference import Reference, cross_product
+from _reference import Reference, cross_product, element_action
 
 
 def demonstrate_slicing():
@@ -107,89 +107,6 @@ def demonstrate_slicing():
     print()
 
 
-def demonstrate_normcode_slicing():
-    """
-    Demonstrate NormCode slicing patterns using the Reference class.
-    This implements the complex slicing operations shown in the user's examples.
-    """
-    print("=== NormCode Slicing Pattern Demonstration ===\n")
-    
-    # Pattern 1: [{A} and {B}] with nested references
-    print("1. Pattern: [{A} and {B}]")
-    print("   |ref. [%[%a1, %b1, %b2], %[%a2, %b1, %b2]]")
-    print("   <= &in(A, B %:_)")
-    print("   <- A |ref. [[%a1], [%a2]]")
-    print("   <- B |ref. [[%b1, %b2]]")
-    
-    # Create reference A with shape (2,1) - two elements, each containing one value
-    A_ref = Reference(
-        axes=['d1', 'ad2'],
-        shape=(2, 1),
-        initial_value=0
-    )
-    A_ref.set('a1', d1=0, ad2=0)
-    A_ref.set('a2', d1=1, ad2=0)
-    
-    print(f"\nReference A shape: {A_ref.shape}")
-    print(f"Reference A axes: {A_ref.axes}")
-    print(f"Reference A data:")
-    print(A_ref.tensor)
-
-    # A_only_axis = A_ref.axes[-1]
-    # A_ref = A_ref.slice(A_only_axis)
-    # print(f"\nReference A shape after slicing: {A_ref.shape}")
-    # print(f"Reference A axes after slicing: {A_ref.axes}")
-    # print(f"Reference A data after slicing:")
-    # print(A_ref.tensor)
-
-    
-    # Create reference B with shape (1,2) - one element containing two values
-    B_ref = Reference(
-        axes=['d1', 'bd2'],
-        shape=(2, 2),
-        initial_value=0
-    )
-    B_ref.set('b1', d1=0, bd2=0)
-    B_ref.set('b2', d1=0, bd2=1)
-    B_ref.set('b3', d1=1, bd2=0)
-
-    print(f"\nReference B shape: {B_ref.shape}")
-    print(f"Reference B axes: {B_ref.axes}")
-    print(f"Reference B data:")
-    print(B_ref.tensor)
-
-    # B_only_axis = B_ref.axes[-1]
-    # B_ref = B_ref.slice(B_only_axis)
-    # print(f"\nReference B shape after slicing: {B_ref.shape}")
-    # print(f"Reference B axes after slicing: {B_ref.axes}")
-    # print(f"Reference B data after slicing:")
-    # print(B_ref.tensor)
-    
-    # Perform cross product
-    C_ref = cross_product([A_ref, B_ref])
-
-    print(f"\nReference C shape: {C_ref.shape}")
-    print(f"Reference C axes: {C_ref.axes}")
-    print(f"Reference C data:")
-    print(C_ref.tensor)
-    # axes_to_get = {
-    #     A_only_axis: 0,
-    #     B_only_axis: 0
-    # }
-    # print(C_ref.get(**axes_to_get))
-
-
-
-    print("2. Pattern: [{adult} in {dorm} and {baby} in {room}]")
-    print("   |ref. %K=[%C=[%D[1][%a1], %D[2][%a2]], %R[1][%b1, b2], %R[2][%b2]]")
-    print("   <= &in(A: D?; B: R?)")
-    print("   <- A")
-    print("       |ref. %K=[%C=[%D[1]=[%a1], %D[2]=[%a2]]]")
-    print("       |natural lanaguage: There is one Company(K); and one Class(C) in the company; In the")
-    print("   <- B")
-
-
-
 def demonstrate_irregular_slicing():
     """
     Demonstrate slicing with irregular data structures.
@@ -250,6 +167,9 @@ def irregular_tensor_example():
     print("After setting tensor (with padding):")
     print(irregular_tensor_reference.tensor)
     print()
+    print("Tensor without skip values:")
+    print(irregular_tensor_reference.get_tensor(ignore_skip=True))
+    print()
     print(f"Computed shape: {irregular_tensor_reference.shape}")
     print(f"Axes: {irregular_tensor_reference.axes}")
     print()
@@ -286,6 +206,9 @@ def irregular_tensor_example():
     
     print("After setting tensor (with padding):")
     print(complex_tensor.tensor)
+    print()
+    print("Tensor without skip values:")
+    print(complex_tensor.get_tensor(ignore_skip=True))
     print()
     print(f"Computed shape: {complex_tensor.shape}")
     print(f"Axes: {complex_tensor.axes}")
@@ -345,13 +268,153 @@ def debug_tensor_shape():
     print()
 
 
+def demonstrate_ignore_skip():
+    """
+    Demonstrate the ignore_skip functionality.
+    """
+    print("=== Ignore Skip Demonstration ===\n")
+    
+    # Create a tensor with some skip values
+    test_tensor = Reference(
+        axes=['row', 'col'],
+        shape=(3, 3),
+        initial_value="@#SKIP#@"
+    )
+    
+    # Set some data with skip values
+    test_tensor.set(1, row=0, col=0)
+    test_tensor.set(2, row=0, col=1)
+    test_tensor.set(3, row=1, col=0)
+    test_tensor.set(4, row=2, col=2)
+    
+    print("Original tensor with skip values:")
+    print(test_tensor.tensor)
+    print()
+    
+    print("Tensor without skip values:")
+    print(test_tensor.get_tensor(ignore_skip=True))
+    print()
+    
+    print("Comparison:")
+    print("With skip values (regular tensor):", test_tensor.tensor)
+    print("Without skip values (cleaned):", test_tensor.get_tensor(ignore_skip=True))
+    print()
+    
+    # Show how it works with irregular data
+    print("With irregular data:")
+    irregular_data = [
+        [1, 2, 3],
+        [4],
+        [7, 8]
+    ]
+    
+    irregular_ref = Reference(
+        axes=['row', 'col'],
+        shape=(3, 3),
+        initial_value="@#SKIP#@"
+    )
+    irregular_ref.tensor = irregular_data
+    
+    print("Original irregular data:", irregular_data)
+    print("Padded tensor:", irregular_ref.tensor)
+    print("Cleaned tensor:", irregular_ref.get_tensor(ignore_skip=True))
+    print()
+
+def demonstrate_reference_from_data():
+    """
+    Demonstrate creating Reference objects from data without specifying axes and shape.
+    """
+    print("=== Reference.from_data() Demonstration ===\n")
+    
+    # Example 1: Simple 1D list
+    print("1. Creating Reference from 1D list:")
+    data_1d = ['a', 'b', 'c']
+    ref_1d = Reference.from_data(data_1d, axis_names=['items'])
+    print(f"   Input data: {data_1d}")
+    print(f"   Generated axes: {ref_1d.axes}")
+    print(f"   Generated shape: {ref_1d.shape}")
+    print(f"   Reference tensor: {ref_1d.tensor}")
+    
+    # Example 2: 2D nested list
+    print("\n2. Creating Reference from 2D nested list:")
+    data_2d = [['a1', 'a2'], ['b1', 'b2'], ['c1']]
+    ref_2d = Reference.from_data(data_2d, axis_names=['rows', 'cols'])
+    print(f"   Input data: {data_2d}")
+    print(f"   Generated axes: {ref_2d.axes}")
+    print(f"   Generated shape: {ref_2d.shape}")
+    print(f"   Reference tensor: {ref_2d.tensor}")
+    
+    # Example 3: Using auto-generated axis names
+    print("\n3. Creating Reference with auto-generated axis names:")
+    data_3d = [[['x1', 'x2'], ['y1']], [['z1', 'z2', 'z3']]]
+    ref_3d = Reference.from_data(data_3d)  # No axis names provided
+    print(f"   Input data: {data_3d}")
+    print(f"   Generated axes: {ref_3d.axes}")
+    print(f"   Generated shape: {ref_3d.shape}")
+    print(f"   Reference tensor: {ref_3d.tensor}")
+    
+    # Example 4: Irregular tensor with skip values
+    print("\n4. Creating Reference from irregular tensor:")
+    data_irregular = [['a1', 'a2'], ['b1'], ['c1', 'c2', 'c3']]
+    ref_irregular = Reference.from_data(data_irregular, axis_names=['groups', 'items'])
+    print(f"   Input data: {data_irregular}")
+    print(f"   Generated axes: {ref_irregular.axes}")
+    print(f"   Generated shape: {ref_irregular.shape}")
+    print(f"   Reference tensor: {ref_irregular.tensor}")
+    print(f"   Note: Missing elements are padded with '@#SKIP#@'")
+
+def demonstrate_none_axis_auto_removal():
+    """
+    Demonstrate the automatic removal of _none_axis when other axes are present.
+    """
+    print("=== _none_axis Auto-Removal Demonstration ===\n")
+    
+    # Example 1: Creating a reference with _none_axis using from_data
+    print("1. Creating a reference with _none_axis:")
+    # Create a reference with _none_axis using from_data
+    ref_with_none = Reference.from_data([["hello", "world"]], axis_names=['_none_axis', 'items'])
+    print(f"   Original axes: {ref_with_none.axes}")
+    print(f"   Original shape: {ref_with_none.shape}")
+    print(f"   Original tensor: {ref_with_none.tensor}")
+    
+    # Example 2: Cross product with another reference
+    print("\n2. Cross product with another reference:")
+    other_ref = Reference.from_data(['a', 'b'], axis_names=['items'])
+    print(f"   Other reference axes: {other_ref.axes}")
+    print(f"   Other reference shape: {other_ref.shape}")
+    
+    combined = cross_product([ref_with_none, other_ref])
+    print(f"   Combined axes: {combined.axes}")
+    print(f"   Combined shape: {combined.shape}")
+    print(f"   Combined tensor: {combined.tensor}")
+    print(f"   Note: _none_axis was automatically removed!")
+    
+    # Example 3: Element action with _none_axis
+    print("\n3. Element action with _none_axis:")
+    def combine_strings(*args):
+        return " + ".join(str(arg) for arg in args)
+    
+    result = element_action(combine_strings, [ref_with_none, other_ref])
+    print(f"   Result axes: {result.axes}")
+    print(f"   Result shape: {result.shape}")
+    print(f"   Result tensor: {result.tensor}")
+    print(f"   Note: _none_axis was automatically removed!")
+    
+    # Example 4: When _none_axis is the only axis
+    print("\n4. When _none_axis is the only axis (no removal):")
+    single_none = Reference.from_data(["single_value"], axis_names=['_none_axis'])
+    print(f"   Single _none_axis axes: {single_none.axes}")
+    print(f"   Single _none_axis shape: {single_none.shape}")
+    print(f"   Single _none_axis tensor: {single_none.tensor}")
+    print(f"   Note: _none_axis is preserved when it's the only axis!")
+
+
+
 if __name__ == "__main__":
-    # debug_tensor_shape()
+
     irregular_tensor_example()
-    # Run the demonstrations
-    # demonstrate_slicing()
-    # demonstrate_normcode_slicing()
-    # demonstrate_irregular_slicing()
+
+
 
 
 

@@ -305,6 +305,7 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
     """Log the inference result and related information"""
     if result_concept.reference:
         logger.info(f"Answer concept reference: {result_concept.reference.tensor}")
+        logger.info(f"Answer concept reference without skip values: {result_concept.reference.get_tensor(ignore_skip=True)}")
         logger.info(f"Answer concept axes: {result_concept.reference.axes}")
         
         # Create list of all references for cross product
@@ -317,6 +318,7 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
         if len(all_references) > 1:
             all_info_reference = cross_product(all_references)
             logger.info(f"All info reference: {all_info_reference.tensor}")
+            logger.info(f"All info reference without skip values: {all_info_reference.get_tensor(ignore_skip=True)}")
             logger.info(f"All info axes: {all_info_reference.axes}")
     else:
         logger.warning("Answer concept reference is None")

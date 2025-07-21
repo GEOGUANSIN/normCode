@@ -150,7 +150,7 @@ if __name__ == "__main__":
     )
 
     # Initialize agent
-    llm = LanguageModel("qwen-turbo-latest")
+    llm = LanguageModel("deepseek-r1-distill-qwen-1.5b")
     agent = AgentFrame("demo", init_working_configuration(), llm=llm)
     agent.configure(
         inference_instance=operation_inference, 
@@ -163,9 +163,11 @@ if __name__ == "__main__":
     # Print answer
     if answer_concept.reference:
         print(f"Answer concept reference: {answer_concept.reference.tensor}")
+        print(f"Answer concept reference without skip values: {answer_concept.reference.get_tensor(ignore_skip=True)}")
         print(f"Answer concept axes: {answer_concept.reference.axes}")
         all_info_reference = cross_product([number_1.reference, number_2.reference, operation_concept.reference, answer_concept.reference])
         print(f"All info reference: {all_info_reference.tensor}")
+        print(f"All info reference without skip values: {all_info_reference.get_tensor(ignore_skip=True)}")
         print(f"All info axes: {all_info_reference.axes}")
     else:
         print("Answer concept reference is None")
