@@ -1,8 +1,38 @@
+import logging
+from typing import List, Optional, Any, Dict, Union
 from string import Template
 from copy import copy
 from _reference import Reference, cross_product, element_action
 from _methods._demo import strip_element_wrapper, wrap_element_wrapper
 
+# Configure logging
+def setup_logging(level=logging.INFO):
+    """Setup logging configuration for NormCodeGroup"""
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    logger = logging.getLogger('NormCodeGroup')
+    logger.info(f"NormCodeGroup logging initialized at level: {logging.getLevelName(level)}")
+    return logger
+
+# Create logger instance
+logger = setup_logging()
+
+def set_log_level(level):
+    """Set the logging level for NormCodeGroup"""
+    if level.upper() == 'DEBUG':
+        logger.setLevel(logging.DEBUG)
+    elif level.upper() == 'INFO':
+        logger.setLevel(logging.INFO)
+    elif level.upper() == 'WARNING':
+        logger.setLevel(logging.WARNING)
+    elif level.upper() == 'ERROR':
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.info(f"Log level set to: {level.upper()}")
 
 class NormCodeGroup:
     """
@@ -65,9 +95,21 @@ class NormCodeGroup:
             Reference: A new reference with annotated elements
         """
         def annotate_list(lst):
+            logger.debug(f"annotate_list received: {lst}")
+            logger.debug(f"annotation_list: {annotation_list}")
+            logger.debug(f"len(lst): {len(lst)}, len(annotation_list): {len(annotation_list)}")
+            
+            # The cross product result is a list where each element is a list of values
+            # from each input reference. We need to map these to the annotation labels.
+            if len(lst) != len(annotation_list):
+                # If the lengths don't match, return skip value
+                logger.debug(f"Length mismatch, returning skip value")
+                return self.skip_value
+            
             annotation_dict = {}
             for i, annotation in enumerate(annotation_list):
                 annotation_dict[annotation] = lst[i]
+            logger.debug(f"Created annotation_dict: {annotation_dict}")
             return annotation_dict
         
         return element_action(annotate_list, [reference])
@@ -86,6 +128,8 @@ class NormCodeGroup:
             function: Element actuation function
         """
         def element_actuation(element):
+            logger.debug(f"element_actuation received element: {element}")
+            logger.debug(f"element type: {type(element)}")
             return_string = ""
             
             # Handle both single element and list of elements
@@ -95,38 +139,50 @@ class NormCodeGroup:
                 elements = [element]
             
             for one_element in elements:
+                logger.debug(f"Processing one_element: {one_element}")
                 if annotation_list is not None:
                     # Annotated case: element is a dict with annotation keys
                     input_dict = {}
                     for i, annotation in enumerate(annotation_list):
+                        logger.debug(f"Looking for annotation: {annotation}")
                         if annotation in one_element:
                             input_value = one_element[annotation]
-                            if isinstance(input_value, list):
-                                # Use the new from_data method to create reference from data
-                                temp_ref = Reference.from_data(input_value)
-                                temp_ref = element_action(strip_element_wrapper, [temp_ref])
-                                input_value = str(temp_ref.tensor)
+                            logger.debug(f"Found input_value: {input_value}")
                             
-                            input_dict[f"input{i+1}"] = strip_element_wrapper(input_value)
+                            # Handle the input value directly without Reference conversion
+                            if isinstance(input_value, list):
+                                # For lists, convert to a readable string representation
+                                processed_value = str(input_value)
+                                logger.debug(f"Converted list to string: {processed_value}")
+                            else:
+                                # For other types, convert to string
+                                processed_value = str(input_value)
+                                logger.debug(f"Converted to string: {processed_value}")
+                            
+                            input_dict[f"input{i+1}"] = processed_value
                         else:
                             # Handle missing annotation
+                            logger.debug(f"Missing annotation: {annotation}")
                             input_dict[f"input{i+1}"] = self.skip_value
+                    logger.debug(f"Final input_dict: {input_dict}")
                 else:
                     # Non-annotated case: element is a simple value or list of values
                     if isinstance(one_element, list):
                         # Flatten and join multiple elements
                         format_string = ""
                         for base_element in one_element:
-                            format_string += f"{strip_element_wrapper(base_element)}"
+                            format_string += f"{str(base_element)}"
                             if base_element != one_element[-1]:
                                 format_string += "; "
                         input_dict = {"input1": format_string}
                     else:
                         # Single element
-                        input_dict = {"input1": strip_element_wrapper(one_element)}
+                        input_dict = {"input1": str(one_element)}
                 
                 template_copy = copy(template)
-                return_string += template_copy.safe_substitute(**input_dict) + " \n"
+                result_string = template_copy.safe_substitute(**input_dict) + " \n"
+                logger.debug(f"Template result: {result_string}")
+                return_string += result_string
             
             return return_string
         
@@ -151,21 +207,35 @@ class NormCodeGroup:
         """
         # Find shared axes
         shared_axes = self.find_share_axes(references)
+        logger.debug(f"Shared axes: {shared_axes}")
+        logger.debug(f"All reference axes: {[ref.axes for ref in references]}")
         
         # Slice references to shared axes
         sliced_refs = [ref.slice(*shared_axes) for ref in references]
+        logger.debug(f"Sliced refs shapes: {[ref.shape for ref in sliced_refs]}")
+        logger.debug(f"Sliced refs axes: {[ref.axes for ref in sliced_refs]}")
+        logger.debug(f"Sliced refs sample data: {[ref.tensor for ref in sliced_refs]}")
         
         # Perform cross product
         result = cross_product(sliced_refs)
+        logger.debug(f"Cross product result shape: {result.shape}")
+        logger.debug(f"Cross product result axes: {result.axes}")
+        logger.debug(f"Cross product result sample: {result.tensor}")
         
         # Annotate elements
         result = self.annotate_element(result, annotation_list)
+        logger.debug(f"After annotation shape: {result.shape}")
+        logger.debug(f"After annotation axes: {result.axes}")
+        logger.debug(f"After annotation sample: {result.tensor}")
         
         # Slice by slice_axes if provided (AND IN pattern)
         if slice_axes is not None:
             slice_axes_copy = slice_axes.copy()  # Create a copy to avoid modifying the original
             slice_axes_copy.pop()
             result = result.slice(*slice_axes_copy)
+            logger.debug(f"After slice shape: {result.shape}")
+            logger.debug(f"After slice axes: {result.axes}")
+            logger.debug(f"After slice sample: {result.tensor}")
         
         # Apply template if provided
         if template:
@@ -227,11 +297,13 @@ def demonstrate_normcode_group():
     """
     Demonstrate the NormCodeGroup class with examples similar to slice_with_normcode.py
     """
-    print("=== NormCodeGroup Class Demonstration ===\n")
+    logger.info("Starting NormCodeGroup demonstration")
     
     # Create a group instance
     group = NormCodeGroup()
+    logger.info("Created NormCodeGroup instance")
     
+    logger.info("Demonstrating AND IN Pattern")
     print("1. AND IN Pattern: [{old expression} and {new expression} in all {old expression}]")
     print("   |ref. [%[%[%{old expression}:(tech), %{new expression}[:(techie)]], %[%{old expression}:(couch), %{new expression}[:(couchie)]]]]")
     print("   <= &in({old expression};{new expression})%:{old expression}")
@@ -279,6 +351,7 @@ def demonstrate_normcode_group():
     # Apply template processing
     result_and_in_templated = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], ['O'], template)
     print(f"\nTemplated result: {result_and_in_templated.tensor}")
+    logger.info("AND IN Pattern demonstration completed")
     
     print("\n" + "="*60 + "\n")
     
@@ -305,6 +378,7 @@ def demonstrate_normcode_group():
     # Apply template processing
     result_or_across_templated = group.or_across([old_ref, new_ref], ['O'], or_across_template)
     print(f"\nTemplated result: {result_or_across_templated.tensor}")
+    logger.info("OR ACROSS Pattern demonstration completed")
     
     print("\n" + "="*60 + "\n")
     
@@ -329,6 +403,7 @@ def demonstrate_normcode_group():
     # Apply template processing
     result_and_only_templated = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], template=template)
     print(f"\nTemplated result: {result_and_only_templated.tensor}")
+    logger.info("AND ONLY Pattern demonstration completed")
     
     print("\n" + "="*60 + "\n")
     
@@ -356,6 +431,7 @@ def demonstrate_normcode_group():
     # Apply template processing
     result_or_only_templated = group.or_across([old_ref, new_ref], template=or_template)
     print(f"\nTemplated result: {result_or_only_templated.tensor}")
+    logger.info("OR ONLY Pattern demonstration completed")
     
     print("\n" + "="*60 + "\n")
     
@@ -583,11 +659,24 @@ def demonstrate_multi_axis_example():
     print("   <= &in({grades};{weights})%:{subject}")
     
     # Create template for processing
-    template = Template("Subject ${input1}: grades=${input2}, weights=${input3}")
+    template = Template("Grades: ${input1}, Weights: ${input2}")
+    
+    # Debug: Let's see what happens when we get elements manually
+    print(f"\nDEBUG - Testing manual get operations:")
+    print(f"Grades get(subject=0): {grades_ref.get(subject=0)}")
+    print(f"Grades get(student=0, subject=0): {grades_ref.get(student=0, subject=0)}")
+    print(f"Weights get(subject=0): {weights_ref.get(subject=0)}")
+
+    no_template_result = group.and_in(
+        [grades_ref, weights_ref], 
+        ['{grades}', '{weights}'], 
+        ['subject']
+    )
+    print(f"\nNo template result: {no_template_result.tensor}") 
     
     result_and_in = group.and_in(
         [grades_ref, weights_ref], 
-        ['{subject}', '{grades}', '{weights}'], 
+        ['{grades}', '{weights}'], 
         ['subject'], 
         template
     )
@@ -601,6 +690,12 @@ def demonstrate_multi_axis_example():
     print("   <= &across({grades})%:{student}")
     
     or_template = Template("Grade data: ${input1}")
+
+    no_template_result = group.or_across(
+        [grades_ref], 
+        ['student']
+    )
+    print(f"\nNo template result: {no_template_result.tensor}") 
     
     result_or_across = group.or_across(
         [grades_ref], 
@@ -615,9 +710,15 @@ def demonstrate_multi_axis_example():
     print("\n" + "="*60)
     print("3. AND ONLY Pattern: Combine grades and weights without slicing")
     print("   <= &and({grades};{weights})")
-    
+
     and_only_template = Template("Grades: ${input1}, Weights: ${input2}")
     
+    no_template_result = group.and_in(
+        [grades_ref, weights_ref], 
+        ['{grades}', '{weights}']
+    )
+    print(f"\nNo template result: {no_template_result.tensor}") 
+
     result_and_only = group.and_in(
         [grades_ref, weights_ref], 
         ['{grades}', '{weights}'], 
@@ -633,6 +734,11 @@ def demonstrate_multi_axis_example():
     print("   <= &or({grades})")
     
     or_only_template = Template("Flattened grades: ${input1}")
+
+    no_template_result = group.or_across(
+        [grades_ref], 
+    )
+    print(f"\nNo template result: {no_template_result.tensor}") 
     
     result_or_only = group.or_across(
         [grades_ref], 
@@ -653,6 +759,13 @@ def demonstrate_multi_axis_example():
     
     complex_template = Template("Student-Subject: grades=${input1}, weights=${input2}")
     
+    no_template_result = group.and_in(
+        [student_subject_grades, student_subject_weights], 
+        ['{grades}', '{weights}'], 
+        ['subject']
+    )
+    print(f"\nNo template result: {no_template_result.tensor}") 
+
     result_complex = group.and_in(
         [student_subject_grades, student_subject_weights], 
         ['{grades}', '{weights}'], 
@@ -667,8 +780,83 @@ def demonstrate_multi_axis_example():
     print("\n" + "="*60 + "\n")
 
 
+def debug_element_action():
+    """
+    Debug function to test element_action behavior with the multi-axis data
+    """
+    print("=== Debug Element Action ===")
+    
+    # Create the same references as in the multi-axis example
+    grades_ref = Reference(
+        axes=['student', 'subject', 'semester'],
+        shape=(2, 3, 2),
+        initial_value=0
+    )
+    grades_ref.tensor = [
+        [  # Student 0
+            [85, 90],  # Math: Fall, Spring
+            [78, 82],  # Science: Fall, Spring  
+            [92, 88]   # English: Fall, Spring
+        ],
+        [  # Student 1
+            [91, 87],  # Math: Fall, Spring
+            [85, 89],  # Science: Fall, Spring
+            [79, 84]   # English: Fall, Spring
+        ]
+    ]
+    
+    weights_ref = Reference(
+        axes=['subject', 'assessment_type'],
+        shape=(3, 2),
+        initial_value=0
+    )
+    weights_ref.tensor = [
+        [0.6, 0.4],  # Math: exams, homework
+        [0.5, 0.5],  # Science: exams, homework
+        [0.4, 0.6]   # English: exams, homework
+    ]
+    
+    print("Grades reference:")
+    print(f"  Axes: {grades_ref.axes}")
+    print(f"  Shape: {grades_ref.shape}")
+    print(f"  Sample data: {grades_ref.get(student=0, subject=0)}")
+    
+    print("\nWeights reference:")
+    print(f"  Axes: {weights_ref.axes}")
+    print(f"  Shape: {weights_ref.shape}")
+    print(f"  Sample data: {weights_ref.get(subject=0)}")
+    
+    # Test cross product
+    print("\nTesting cross product...")
+    try:
+        combined = cross_product([grades_ref, weights_ref])
+        print(f"  Combined axes: {combined.axes}")
+        print(f"  Combined shape: {combined.shape}")
+        print(f"  Sample combined data: {combined.get(student=0, subject=0)}")
+    except Exception as e:
+        print(f"  Cross product error: {e}")
+    
+    # Test element_action with a simple function
+    print("\nTesting element_action with simple function...")
+    def simple_function(a, b):
+        return f"Grades: {a}, Weights: {b}"
+    
+    try:
+        result = element_action(simple_function, [grades_ref, weights_ref])
+        print(f"  Result axes: {result.axes}")
+        print(f"  Result shape: {result.shape}")
+        print(f"  Sample result: {result.get(student=0, subject=0)}")
+    except Exception as e:
+        print(f"  Element action error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 if __name__ == "__main__":
+    # Set logging to INFO level by default
+    set_log_level('INFO')
+    
+    # Run the demonstration
     demonstrate_multi_axis_example()
-    # demonstrate_normcode_group()
 
 
