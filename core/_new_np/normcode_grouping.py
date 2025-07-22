@@ -4,15 +4,15 @@ from _reference import Reference, cross_product, element_action
 from _methods._demo import strip_element_wrapper, wrap_element_wrapper
 
 
-class NormCodeSlicer:
+class NormCodeGroup:
     """
-    A class that abstracts NormCode slicing patterns as functions of references.
-    Provides methods for different slicing operations: simple_or, and_in, or_across, and_only, or_only.
+    A class that abstracts NormCode grouping patterns as functions of references.
+    Provides methods for different grouping operations: simple_or, and_in, or_across, and_only, or_only.
     """
     
     def __init__(self, skip_value="@#SKIP#@"):
         """
-        Initialize the NormCodeSlicer.
+        Initialize the NormCodeGroup.
         
         Args:
             skip_value (str): Value to use for missing/skip elements
@@ -72,36 +72,58 @@ class NormCodeSlicer:
         
         return element_action(annotate_list, [reference])
     
-    def create_element_actuation(self, annotation_list, template):
+    def create_unified_element_actuation(self, template, annotation_list=None):
         """
-        Create an element actuation function for template processing.
+        Create a unified element actuation function for template processing.
+        Handles both annotated and non-annotated cases.
         
         Args:
-            annotation_list (list): List of annotation labels
             template (Template): String template for processing
+            annotation_list (list, optional): List of annotation labels. 
+                                            If None, treats elements as simple values.
             
         Returns:
             function: Element actuation function
         """
         def element_actuation(element):
             return_string = ""
-            # Handle both single annotation dict and list of annotation dicts
-            if isinstance(element, list):
-                annotation_items = element
-            else:
-                annotation_items = [element]
             
-            for one_annotation in annotation_items:
-                input_dict = {}
-                for i, annotation in enumerate(annotation_list):
-                    input_value = one_annotation[annotation]
-                    if isinstance(input_value, list):
-                        # Use the new from_data method to create reference from data
-                        temp_ref = Reference.from_data(input_value)
-                        temp_ref = element_action(strip_element_wrapper, [temp_ref])
-                        input_value = str(temp_ref.tensor)
-                    
-                    input_dict[f"input{i+1}"] = strip_element_wrapper(input_value)
+            # Handle both single element and list of elements
+            if isinstance(element, list):
+                elements = element
+            else:
+                elements = [element]
+            
+            for one_element in elements:
+                if annotation_list is not None:
+                    # Annotated case: element is a dict with annotation keys
+                    input_dict = {}
+                    for i, annotation in enumerate(annotation_list):
+                        if annotation in one_element:
+                            input_value = one_element[annotation]
+                            if isinstance(input_value, list):
+                                # Use the new from_data method to create reference from data
+                                temp_ref = Reference.from_data(input_value)
+                                temp_ref = element_action(strip_element_wrapper, [temp_ref])
+                                input_value = str(temp_ref.tensor)
+                            
+                            input_dict[f"input{i+1}"] = strip_element_wrapper(input_value)
+                        else:
+                            # Handle missing annotation
+                            input_dict[f"input{i+1}"] = self.skip_value
+                else:
+                    # Non-annotated case: element is a simple value or list of values
+                    if isinstance(one_element, list):
+                        # Flatten and join multiple elements
+                        format_string = ""
+                        for base_element in one_element:
+                            format_string += f"{strip_element_wrapper(base_element)}"
+                            if base_element != one_element[-1]:
+                                format_string += "; "
+                        input_dict = {"input1": format_string}
+                    else:
+                        # Single element
+                        input_dict = {"input1": strip_element_wrapper(one_element)}
                 
                 template_copy = copy(template)
                 return_string += template_copy.safe_substitute(**input_dict) + " \n"
@@ -147,9 +169,9 @@ class NormCodeSlicer:
         
         # Apply template if provided
         if template:
-            element_actuation = self.create_element_actuation(
-                annotation_list, 
-                template
+            element_actuation = self.create_unified_element_actuation(
+                template, 
+                annotation_list
             )
             result = element_action(element_actuation, [result])
         
@@ -190,51 +212,28 @@ class NormCodeSlicer:
         
         # Apply template if provided
         if template:
-            element_actuation = self.create_simple_element_actuation(template)
+            element_actuation = self.create_unified_element_actuation(template, None)
             result = element_action(element_actuation, [result])
         
         return result
     
 
     
-    def create_simple_element_actuation(self, template):
-        """
-        Create a simple element actuation function for templates without annotations.
-        
-        Args:
-            template (Template): String template for processing
-            
-        Returns:
-            function: Element actuation function
-        """
-        def element_actuation(element):
-            format_string = ""
-            if not isinstance(element, list):
-                element = [element]
-            for base_element in element:
-                format_string += f"{strip_element_wrapper(base_element)}"
-                if base_element != element[-1]:
-                    format_string += "; "
-            
-            template_copy = copy(template)
-            return_string = template_copy.safe_substitute(input1=format_string)
-            return return_string
-        
-        return element_actuation
+
 
 
 # Example usage and demonstration
-def demonstrate_normcode_slicer():
+def demonstrate_normcode_group():
     """
-    Demonstrate the NormCodeSlicer class with examples similar to slice_with_normcode.py
+    Demonstrate the NormCodeGroup class with examples similar to slice_with_normcode.py
     """
-    print("=== NormCodeSlicer Class Demonstration ===\n")
+    print("=== NormCodeGroup Class Demonstration ===\n")
     
-    # Create a slicer instance
-    slicer = NormCodeSlicer()
+    # Create a group instance
+    group = NormCodeGroup()
     
     print("1. AND IN Pattern: [{old expression} and {new expression} in all {old expression}]")
-    print("   |ref. [%[%[%{old expression}%(tech), %{new expression}%(techie)], %[%{old expression}%(couch), %{new expression}%(couchie)]]]")
+    print("   |ref. [%[%[%{old expression}:(tech), %{new expression}[:(techie)]], %[%{old expression}:(couch), %{new expression}[:(couchie)]]]]")
     print("   <= &in({old expression};{new expression})%:{old expression}")
     print("   <- {old expression}")
     print("       |ref. [%O[0]=%(tech), %O[1]=%(couch)]")
@@ -269,10 +268,17 @@ def demonstrate_normcode_slicer():
     # Create template for processing
     template = Template("Transform old expression (being '${input1}') into some new expression (like being '${input2}').")
     
-    result_and_in = slicer.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], ['O'])
+    result_and_in = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], ['O'])
     print(f"\nResult shape: {result_and_in.shape}")
     print(f"Result axes: {result_and_in.axes}")
     print(f"Result data: {result_and_in.tensor}")
+
+    expected_result = "[[{'{old expression}': '%(tech)', '{new expression}': ['%(techie)']}, {'{old expression}': '%(couch)', '{new expression}': ['%(couchie)']}]]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_and_in_templated = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], ['O'], template)
+    print(f"\nTemplated result: {result_and_in_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
@@ -288,15 +294,22 @@ def demonstrate_normcode_slicer():
     
     # Create a different template for OR ACROSS pattern that only uses input1
     or_across_template = Template("Transform expressions: ${input1}")
-    result_or_across = slicer.or_across([old_ref, new_ref], ['O'])
+    result_or_across = group.or_across([old_ref, new_ref], ['O'])
     print(f"\nResult shape: {result_or_across.shape}")
     print(f"Result axes: {result_or_across.axes}")
     print(f"Result data: {result_or_across.tensor}")
+
+    expected_result = "[['%(tech)', '%(techie)', '%(couch)', '%(couchie)']]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_or_across_templated = group.or_across([old_ref, new_ref], ['O'], or_across_template)
+    print(f"\nTemplated result: {result_or_across_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
     print("3. AND ONLY Pattern: [{old expression} and {new expression}]")
-    print("   |ref. [%O[0]=[%[%{old expression}%(tech), %{new expression}%(techie)]], %O[1]=[%[%{old expression}%(couch), %{new expression}%(couchie)]]]")
+    print("   |ref. [%O[0]=[%[%{old expression}:(tech), %{new expression}:(techie)]], %O[1]=[%[%{old expression}:(couch), %{new expression}:(couchie)]]]")
     print("   <= &and({old expression};{new expression})")
     print("   <- {old expression}")
     print("       |ref. [%O[0]=%(tech), %O[1]=%(couch)]")
@@ -305,10 +318,17 @@ def demonstrate_normcode_slicer():
     print("       |ref. [%O[0]=[%N[0]=%(techie)], %O[1]=[%N[0]=%(couchie)]]")
     print("       |nl. There are two old expressions(O[0], O[1]);")
     
-    result_and_only = slicer.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'])
+    result_and_only = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'])
     print(f"\nResult shape: {result_and_only.shape}")
     print(f"Result axes: {result_and_only.axes}")
     print(f"Result data: {result_and_only.tensor}")
+
+    expected_result = "[{'{old expression}': '%(tech)', '{new expression}': ['%(techie)']}, {'{old expression}': '%(couch)', '{new expression}': ['%(couchie)']}]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_and_only_templated = group.and_in([old_ref, new_ref], ['{old expression}', '{new expression}'], template=template)
+    print(f"\nTemplated result: {result_and_only_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
@@ -325,18 +345,25 @@ def demonstrate_normcode_slicer():
     # Create a different template for OR ONLY pattern
     or_template = Template("Identify the longer expression (being '$output') in old expression or new expression (being '${input1}').")
     
-    result_or_only = slicer.or_across([old_ref, new_ref])
+    result_or_only = group.or_across([old_ref, new_ref])
     print(f"\nResult shape: {result_or_only.shape}")
     print(f"Result axes: {result_or_only.axes}")
     print(f"Result data: {result_or_only.tensor}")
+
+    expected_result = "[['%(tech)', '%(techie)'], ['%(couch)', '%(couchie)']]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_or_only_templated = group.or_across([old_ref, new_ref], template=or_template)
+    print(f"\nTemplated result: {result_or_only_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
     print("5. SIMPLE OR ONLY Pattern: [{A} or {B}]")
-    print("   |ref. [%D[0]=%[%a1, %b1, %b2]], %D[1]=%[%a2, %b1, %b2]]")
+    print("   |ref. [%D[0]=%[%(a1), %(b1), %(b2)]], %D[1]=%[%(a2), %(b1), %(b2)]]")
     print("   <= &or(A; B)")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1, %B[1]=%b2]], [%D[1]=[%B[0]=%b1, %B[1]=%b2]]]")
+    print("   <- A |ref. [%D[0]=[%A[0]=%(a1)], %D[1]=[%A[1]=%(a2)]]")
+    print("   <- B |ref. [%D[0]=[%B[0]=%(b1), %B[1]=%(b2)]], [%D[1]=[%B[0]=%(b1), %B[1]=%(b2)]]]")
     
     # Create references for simple OR ONLY pattern
     A_ref = Reference(
@@ -344,14 +371,14 @@ def demonstrate_normcode_slicer():
         shape=(2, 1),
         initial_value=0
     )
-    A_ref.tensor = [['a1'], ['a2']]
+    A_ref.tensor = [['%(a1)'], ['%(a2)']]
     
     B_ref = Reference(
         axes=['D', 'B'],
         shape=(2, 2),
         initial_value=0
     )
-    B_ref.tensor = [['b1', 'b2'], ['b1', 'b2']]
+    B_ref.tensor = [['%(b1)', '%(b2)'], ['%(b1)', '%(b2)']]
     
     print(f"\nReference A shape: {A_ref.shape}")
     print(f"Reference A axes: {A_ref.axes}")
@@ -361,58 +388,88 @@ def demonstrate_normcode_slicer():
     print(f"Reference B axes: {B_ref.axes}")
     print(f"Reference B data: {B_ref.tensor}")
     
-    result_simple_or_only = slicer.or_across([A_ref, B_ref])
+    result_simple_or_only = group.or_across([A_ref, B_ref])
     print(f"\nResult shape: {result_simple_or_only.shape}")
     print(f"Result axes: {result_simple_or_only.axes}")
     print(f"Result data: {result_simple_or_only.tensor}")
     
+    expected_result = "[['%(a1)', '%(b1)', '%(b2)'], ['%(a2)', '%(b1)', '%(b2)']]"
+    print(f"expected: {expected_result}")
+    
+    # Create template for simple patterns
+    simple_template = Template("Combine elements: ${input1}")
+    result_simple_or_only_templated = group.or_across([A_ref, B_ref], template=simple_template)
+    print(f"\nTemplated result: {result_simple_or_only_templated.tensor}")
+    
     print("\n" + "="*60 + "\n")
     
     print("6. SIMPLE AND ONLY Pattern: [{A} and {B}]")
-    print("   |ref. [%D[0]=[%{A}%a1, %{B}%b1, %{B}%b2]], %D[1]=[%{A}%a2, %{B}%b1, %{B}%b2]]")
+    print("   |ref. [%D[0]=[%[%{A}:(a1), %{B}[:(b1), :(b2)]]], %D[1]=[%[%{A}:(a2), %{B}[:(b1), :(b2)]]]]")
     print("   <= &and(A; B)")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1, %B[1]=%b2]], [%D[1]=[%B[0]=%b1, %B[1]=%b2]]]")
+    print("   <- A |ref. [%D[0]=[%A[0]=%(a1)]], [%D[1]=[%A[1]=%(a2)]]]")
+    print("   <- B |ref. [%D[0]=[%B[0]=%(b1), %B[1]=%(b2)]], [%D[1]=[%B[0]=%(b1), %B[1]=%(b2)]]]")
     
-    result_simple_and_only = slicer.and_in([A_ref, B_ref], ['{A}', '{B}'])
+    result_simple_and_only = group.and_in([A_ref, B_ref], ['{A}', '{B}'])
     print(f"\nResult shape: {result_simple_and_only.shape}")
     print(f"Result axes: {result_simple_and_only.axes}")
     print(f"Result data: {result_simple_and_only.tensor}")
+
+    expected_result = "[{'{A}': ['%(a1)'], '{B}': ['%(b1)', '%(b2)']}, {'{A}': ['%(b1)', '%(b2)']}]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    simple_and_template = Template("A is '${input1}' and B is '${input2}'")
+    result_simple_and_only_templated = group.and_in([A_ref, B_ref], ['{A}', '{B}'], template=simple_and_template)
+    print(f"\nTemplated result: {result_simple_and_only_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
     print("7. SIMPLE OR ACROSS Pattern: [{A} or {B} across all {A}]")
-    print("   |ref. [[%a1, %b1, %b2], [%a2, %b1, %b2]]")
+    print("   |ref. [[%(a1), %(b1), %(b2), %(a2), %(b1), %(b2)]]")
     print("   <= &across(A; B)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1, %B[1]=%b2]], [%D[1]=[%B[0]=%b1, %B[1]=%b2]]]")
+    print("   <- A |ref. [%D[0]=[%A[0]=%(a1)]], [%D[1]=[%A[1]=%(a2)]]]")
+    print("   <- B |ref. [%D[0]=[%B[0]=%(b1), %B[1]=%(b2)]], [%D[1]=[%B[0]=%(b1), %B[1]=%(b2)]]]")
     
-    result_simple_or_across = slicer.or_across([A_ref, B_ref], ['D'])
+    result_simple_or_across = group.or_across([A_ref, B_ref], ['D'])
     print(f"\nResult shape: {result_simple_or_across.shape}")
     print(f"Result axes: {result_simple_or_across.axes}")
     print(f"Result data: {result_simple_or_across.tensor}")
+
+    expected_result = "[['%(a1)', '%(b1)', '%(b2)', '%(a2)', '%(b1)', '%(b2)']]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_simple_or_across_templated = group.or_across([A_ref, B_ref], ['D'], simple_template)
+    print(f"\nTemplated result: {result_simple_or_across_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
     print("8. SIMPLE AND IN Pattern: [{A} and {B} in all {A}]")
-    print("   |ref. [%[%{A}%a1, %{B}%b1, %{B}%b2], %[%{A}%a2, %{B}%b1, %{B}%b2]]")
+    print("   |ref. [%[%{A}[:(a1)], %{B}[:(b1), :(b2)]], %[%{A}[:(a2)], %{B}[:(b1), :(b2)]]]")
     print("   <= &in(A; B)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1, %B[1]=%b2]], [%D[1]=[%B[0]=%b1, %B[1]=%b2]]]")
+    print("   <- A |ref. [%D[0]=[%A[0]=%(a1)]], [%D[1]=[%A[1]=%(a2)]]]")
+    print("   <- B |ref. [%D[0]=[%B[0]=%(b1), %B[1]=%(b2)]], [%D[1]=[%B[0]=%(b1), %B[1]=%(b2)]]]")
     
-    result_simple_and_in = slicer.and_in([A_ref, B_ref], ['{A}', '{B}'], ['D'])
+    result_simple_and_in = group.and_in([A_ref, B_ref], ['{A}', '{B}'], ['D'])
     print(f"\nResult shape: {result_simple_and_in.shape}")
     print(f"Result axes: {result_simple_and_in.axes}")
     print(f"Result data: {result_simple_and_in.tensor}")
+
+    expected_result = "[[{'{A}': ['%(a1)'], '{B}': ['%(b1)', '%(b2)']}, {'{A}': ['%(a2)'], '{B}': ['%(b1)', '%(b2)']}]]"
+    print(f"expected: {expected_result}")
+    
+    # Apply template processing
+    result_simple_and_in_templated = group.and_in([A_ref, B_ref], ['{A}', '{B}'], ['D'], simple_and_template)
+    print(f"\nTemplated result: {result_simple_and_in_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
     print("9. THREE REFERENCES - AND IN Pattern: [{A} and {B} and {C} in all {A}]")
-    print("   |ref. [%[%{A}%a1, %{B}%b1, %{C}%c1], %[%{A}%a2, %{B}%b1, %{C}%c1]]")
+    print("   |ref. [%[%{A}[:(a1)], %{B}[:(b1), %(b2)], %{C}[:(c1)]], %[%{A}[:(a2)], %{B}[:(b1), %(b2)], %{C}[:(c2)]]]")
     print("   <= &in(A; B; C)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
+    print("   <- A |ref. [%D[0]=[%A[0]=%(a1)]], [%D[1]=[%A[1]=%(a2)]]]")
+    print("   <- B |ref. [%D[0]=[%B[0]=%(b1), %B[1]=%(b2)]], [%D[1]=[%B[0]=%(b1), %B[1]=%(b2)]]]")
+    print("   <- C |ref. [%D[0]=[%C[0]=%(c1)]], [%D[1]=[%C[0]=%(c2)]]]")
     
     # Create a third reference C
     C_ref = Reference(
@@ -420,101 +477,198 @@ def demonstrate_normcode_slicer():
         shape=(2, 1),
         initial_value=0
     )
-    C_ref.tensor = [['c1'], ['c1']]
+    C_ref.tensor = [['%(c1)'], ['%(c2)']]
     
     print(f"\nReference C shape: {C_ref.shape}")
     print(f"Reference C axes: {C_ref.axes}")
     print(f"Reference C data: {C_ref.tensor}")
     
-    result_three_and_in = slicer.and_in([A_ref, B_ref, C_ref], ['{A}', '{B}', '{C}'], ['D'])
+    result_three_and_in = group.and_in([A_ref, B_ref, C_ref], ['{A}', '{B}', '{C}'], ['D'])
     print(f"\nResult shape: {result_three_and_in.shape}")
     print(f"Result axes: {result_three_and_in.axes}")
     print(f"Result data: {result_three_and_in.tensor}")
     
-    print("\n" + "="*60 + "\n")
+    expected_result = "[[{'{A}': ['%(a1)'], '{B}': ['%(b1)', '%(b2)'], '{C}': ['%(c1)']}, {'{A}': ['%(a2)'], '{B}': ['%(b1)', '%(b2)'], '{C}': ['%(c2)']}]]"
+    print(f"expected: {expected_result}")
     
-    print("10. THREE REFERENCES - OR ACROSS Pattern: [{A} or {B} or {C} across all {A}]")
-    print("   |ref. [[%a1, %b1, %c1], [%a2, %b1, %c1]]")
-    print("   <= &across(A; B; C)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
-    
-    result_three_or_across = slicer.or_across([A_ref, B_ref, C_ref], ['D'])
-    print(f"\nResult shape: {result_three_or_across.shape}")
-    print(f"Result axes: {result_three_or_across.axes}")
-    print(f"Result data: {result_three_or_across.tensor}")
+    # Apply template processing with three annotations
+    three_ref_template = Template("A='${input1}', B='${input2}', C='${input3}'")
+    result_three_and_in_templated = group.and_in([A_ref, B_ref, C_ref], ['{A}', '{B}', '{C}'], ['D'], three_ref_template)
+    print(f"\nTemplated result: {result_three_and_in_templated.tensor}")
     
     print("\n" + "="*60 + "\n")
     
-    print("11. THREE REFERENCES - AND ONLY Pattern: [{A} and {B} and {C}]")
-    print("   |ref. [%D[0]=[%{A}%a1, %{B}%b1, %{C}%c1]], %D[1]=[%{A}%a2, %{B}%b1, %{C}%c1]]")
-    print("   <= &and(A; B; C)")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
+
+def demonstrate_multi_axis_example():
+    """
+    Demonstrate NormCodeGroup with complex multi-axis references.
+    Shows how the system handles 3D data with multiple axes and complex grouping patterns.
+    """
+    print("=== Multi-Axis NormCodeGroup Demonstration ===\n")
     
-    result_three_and_only = slicer.and_in([A_ref, B_ref, C_ref], ['{A}', '{B}', '{C}'])
-    print(f"\nResult shape: {result_three_and_only.shape}")
-    print(f"Result axes: {result_three_and_only.axes}")
-    print(f"Result data: {result_three_and_only.tensor}")
+    # Create a group instance
+    group = NormCodeGroup()
     
-    print("\n" + "="*60 + "\n")
+    print("Multi-Axis Example: Student Performance Analysis")
+    print("Scenario: Analyzing student performance across subjects, semesters, and assessment types")
+    print("Axes: [student, subject, semester, assessment_type]")
     
-    print("12. THREE REFERENCES - OR ONLY Pattern: [{A} or {B} or {C}]")
-    print("   |ref. [%D[0]=%[%a1, %b1, %c1]], %D[1]=%[%a2, %b1, %c1]]")
-    print("   <= &or(A; B; C)")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
-    
-    result_three_or_only = slicer.or_across([A_ref, B_ref, C_ref])
-    print(f"\nResult shape: {result_three_or_only.shape}")
-    print(f"Result axes: {result_three_or_only.axes}")
-    print(f"Result data: {result_three_or_only.tensor}")
-    
-    print("\n" + "="*60 + "\n")
-    
-    print("13. FOUR REFERENCES - Complex AND IN Pattern: [{A} and {B} and {C} and {D} in all {A}]")
-    print("   |ref. [%[%{A}%a1, %{B}%b1, %{C}%c1, %{D}%d1], %[%{A}%a2, %{B}%b1, %{C}%c1, %{D}%d1]]")
-    print("   <= &in(A; B; C; D)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
-    print("   <- D |ref. [%D[0]=[%E[0]=%d1]], [%D[1]=[%E[0]=%d1]]]")
-    
-    # Create a fourth reference D
-    D_ref = Reference(
-        axes=['D', 'E'],
-        shape=(2, 1),
+    # Create a 3D reference for student grades across subjects and semesters
+    grades_ref = Reference(
+        axes=['student', 'subject', 'semester'],
+        shape=(2, 3, 2),  # 2 students, 3 subjects, 2 semesters
         initial_value=0
     )
-    D_ref.tensor = [['d1'], ['d1']]
     
-    print(f"\nReference D shape: {D_ref.shape}")
-    print(f"Reference D axes: {D_ref.axes}")
-    print(f"Reference D data: {D_ref.tensor}")
+    # Set sample grade data
+    grades_ref.tensor = [
+        [  # Student 0
+            [85, 90],  # Math: Fall, Spring
+            [78, 82],  # Science: Fall, Spring  
+            [92, 88]   # English: Fall, Spring
+        ],
+        [  # Student 1
+            [91, 87],  # Math: Fall, Spring
+            [85, 89],  # Science: Fall, Spring
+            [79, 84]   # English: Fall, Spring
+        ]
+    ]
     
-    result_four_and_in = slicer.and_in([A_ref, B_ref, C_ref, D_ref], ['{A}', '{B}', '{C}', '{D}'], ['D'])
-    print(f"\nResult shape: {result_four_and_in.shape}")
-    print(f"Result axes: {result_four_and_in.axes}")
-    print(f"Result data: {result_four_and_in.tensor}")
+    print(f"DEBUG - Grades tensor after setting: {grades_ref.tensor}")
+    print(f"DEBUG - Grades data property: {grades_ref.data}")
+    
+    # Create a 2D reference for assessment weights
+    weights_ref = Reference(
+        axes=['subject', 'assessment_type'],
+        shape=(3, 2),  # 3 subjects, 2 assessment types
+        initial_value=0
+    )
+    
+    # Set assessment weights
+    weights_ref.tensor = [
+        [0.6, 0.4],  # Math: exams, homework
+        [0.5, 0.5],  # Science: exams, homework
+        [0.4, 0.6]   # English: exams, homework
+    ]
+    
+    print(f"DEBUG - Weights tensor after setting: {weights_ref.tensor}")
+    print(f"DEBUG - Weights data property: {weights_ref.data}")
+    
+    # Create a 1D reference for semester names
+    semester_names_ref = Reference(
+        axes=['semester'],
+        shape=(2,),
+        initial_value=0
+    )
+    
+    semester_names_ref.tensor = ['Fall 2023', 'Spring 2024']
+    
+    print(f"\nReference 1 - Grades:")
+    print(f"Shape: {grades_ref.shape}")
+    print(f"Axes: {grades_ref.axes}")
+    print(f"Data: {grades_ref.tensor}")
+    
+    print(f"\nReference 2 - Assessment Weights:")
+    print(f"Shape: {weights_ref.shape}")
+    print(f"Axes: {weights_ref.axes}")
+    print(f"Data: {weights_ref.tensor}")
+    
+    print(f"\nReference 3 - Semester Names:")
+    print(f"Shape: {semester_names_ref.shape}")
+    print(f"Axes: {semester_names_ref.axes}")
+    print(f"Data: {semester_names_ref.tensor}")
+    
+    print("\n" + "="*60)
+    print("1. AND IN Pattern: Combine grades and weights by subject")
+    print("   <= &in({grades};{weights})%:{subject}")
+    
+    # Create template for processing
+    template = Template("Subject ${input1}: grades=${input2}, weights=${input3}")
+    
+    result_and_in = group.and_in(
+        [grades_ref, weights_ref], 
+        ['{subject}', '{grades}', '{weights}'], 
+        ['subject'], 
+        template
+    )
+    
+    print(f"\nResult shape: {result_and_in.shape}")
+    print(f"Result axes: {result_and_in.axes}")
+    print(f"Result data: {result_and_in.tensor}")
+    
+    print("\n" + "="*60)
+    print("2. OR ACROSS Pattern: Flatten grades across students")
+    print("   <= &across({grades})%:{student}")
+    
+    or_template = Template("Grade data: ${input1}")
+    
+    result_or_across = group.or_across(
+        [grades_ref], 
+        ['student'], 
+        or_template
+    )
+    
+    print(f"\nResult shape: {result_or_across.shape}")
+    print(f"Result axes: {result_or_across.axes}")
+    print(f"Result data: {result_or_across.tensor}")
+    
+    print("\n" + "="*60)
+    print("3. AND ONLY Pattern: Combine grades and weights without slicing")
+    print("   <= &and({grades};{weights})")
+    
+    and_only_template = Template("Grades: ${input1}, Weights: ${input2}")
+    
+    result_and_only = group.and_in(
+        [grades_ref, weights_ref], 
+        ['{grades}', '{weights}'], 
+        template=and_only_template
+    )
+    
+    print(f"\nResult shape: {result_and_only.shape}")
+    print(f"Result axes: {result_and_only.axes}")
+    print(f"Result data: {result_and_only.tensor}")
+    
+    print("\n" + "="*60)
+    print("4. OR ONLY Pattern: Flatten grades without slicing")
+    print("   <= &or({grades})")
+    
+    or_only_template = Template("Flattened grades: ${input1}")
+    
+    result_or_only = group.or_across(
+        [grades_ref], 
+        template=or_only_template
+    )
+    
+    print(f"\nResult shape: {result_or_only.shape}")
+    print(f"Result axes: {result_or_only.axes}")
+    print(f"Result data: {result_or_only.tensor}")
+    
+    print("\n" + "="*60)
+    print("5. Complex AND IN with Student and Subject")
+    print("   <= &in({grades};{weights})%:{student,subject}")
+    
+    # Create a reference that shares both student and subject axes
+    student_subject_grades = grades_ref.slice('student', 'subject')
+    student_subject_weights = weights_ref.slice('subject')  # Only has subject axis
+    
+    complex_template = Template("Student-Subject: grades=${input1}, weights=${input2}")
+    
+    result_complex = group.and_in(
+        [student_subject_grades, student_subject_weights], 
+        ['{grades}', '{weights}'], 
+        ['subject'], 
+        complex_template
+    )
+    
+    print(f"\nResult shape: {result_complex.shape}")
+    print(f"Result axes: {result_complex.axes}")
+    print(f"Result data: {result_complex.tensor}")
     
     print("\n" + "="*60 + "\n")
-    
-    print("14. FOUR REFERENCES - Complex OR ACROSS Pattern: [{A} or {B} or {C} or {D} across all {A}]")
-    print("   |ref. [[%a1, %b1, %c1, %d1], [%a2, %b1, %c1, %d1]]")
-    print("   <= &across(A; B; C; D)%:{A}")
-    print("   <- A |ref. [%D[0]=[%A[0]=%a1]], [%D[1]=[%A[1]=%a2]]]")
-    print("   <- B |ref. [%D[0]=[%B[0]=%b1]], [%D[1]=[%B[0]=%b1]]]")
-    print("   <- C |ref. [%D[0]=[%C[0]=%c1]], [%D[1]=[%C[0]=%c1]]]")
-    print("   <- D |ref. [%D[0]=[%E[0]=%d1]], [%D[1]=[%E[0]=%d1]]]")
-    
-    result_four_or_across = slicer.or_across([A_ref, B_ref, C_ref, D_ref], ['D'])
-    print(f"\nResult shape: {result_four_or_across.shape}")
-    print(f"Result axes: {result_four_or_across.axes}")
-    print(f"Result data: {result_four_or_across.tensor}")
 
 
 if __name__ == "__main__":
-    demonstrate_normcode_slicer()
+    demonstrate_multi_axis_example()
+    # demonstrate_normcode_group()
+
+
