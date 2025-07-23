@@ -28,7 +28,7 @@ Data: ['Fall 2023', 'Spring 2024']
 
 ============================================================
 1. AND IN Pattern: Combine grades and weights by subject
-   <= &in({grades};{weights})%:{subject}
+   <= &in({grades};{weights})%:[{subject}]
 
 DEBUG - Testing manual get operations:
 Grades get(subject=0): [[85, 90], [91, 87]]
@@ -43,7 +43,7 @@ Result data: ['Grades: [[85, 90], [91, 87]], Weights: [0.6, 0.4] \nGrades: [[78,
 
 ============================================================
 2. OR ACROSS Pattern: Flatten grades across students
-   <= &across({grades})%:{student}
+   <= &across({grades})%:[{student}]
 
 No template result: [[85, 90, 78, 82, 92, 88, 91, 87, 85, 89, 79, 84]]
 
@@ -73,7 +73,7 @@ Result data: [[['Flattened grades: 85 \n', 'Flattened grades: 90 \n'], ['Flatten
 
 ============================================================
 5. Complex AND IN with Student and Subject
-   <= &in({grades};{weights})%:{student,subject}
+   <= &in({grades};{weights})%:[{student};{subject}]
 
 No template result: [[{'{grades}': [[85, 90], [91, 87]], '{weights}': [0.6, 0.4]}, {'{grades}': [[78, 82], [85, 89]], '{weights}': [0.5, 0.5]}, {'{grades}': [[92, 88], [79, 84]], '{weights}': [0.4, 0.6]}]]
 
@@ -113,7 +113,7 @@ Data: ['Fall 2023', 'Spring 2024']
 
 ============================================================
 1. AND IN Pattern: Combine grades and weights by subject
-   <= &in({grades};{weights})%:{subject}
+   <= &in({grades};{weights})%:[{subject}]
 
 DEBUG - Testing manual get operations:
 Grades get(subject=0): [[[85, 92], [90, 88]], [[91, 89], [87, 85]]]
@@ -130,7 +130,7 @@ Result data: ['Grades: @#SKIP#@, Weights: @#SKIP#@ \nGrades: @#SKIP#@, Weights: 
 
 ============================================================
 2. OR ACROSS Pattern: Flatten grades across students
-   <= &across({grades})%:{student}
+   <= &across({grades})%:[{student}]
 
 No template result: [[85, 90, 78, 82, 92, 88, 91, 87, 85, 89, 79, 84, 92, 88, 85, 80, 95, 90, 89, 85, 82, 87, 76, 81]]
 
@@ -160,7 +160,7 @@ Result data: [[[['Flattened grades: 85 \n', 'Flattened grades: 90 \n'], ['Flatte
 
 ============================================================
 5. Complex AND IN with Student and Subject
-   <= &in({grades};{weights})%:{student,subject}
+   <= &in({grades};{weights})%:[{student};{subject}]
 
 No template result: [[{'{grades}': [[[85, 92], [90, 88]], [[91, 89], [87, 85]]], '{weights}': [0.6, 0.4]}, {'{grades}': [[[78, 85], [82, 80]], [[85, 82], [89, 87]]], '{weights}': [0.5, 0.5]}, {'{grades}': [[[92, 95], [88, 90]], [[79, 76], [84, 81]]], '{weights}': [0.4, 0.6]}]], '{weights}': [0.4, 0.6]}]]
 

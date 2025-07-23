@@ -330,50 +330,62 @@ class AgentFrame():
             function = kwargs.get("memory_actuation", self._memory_actuation)
             return function(**fkwargs)
 
-    def _input_working_configurations(self, value_concepts:list[Concept], function_concept:Concept, concept_to_infer:Concept, all_working_configuration:dict):
+    def _input_working_configurations(self, *args, **kwargs):
         """Perform the input working configurations"""
-        logger.debug("Executing IWC step")
+        logger.warning("Executing IWC step: This will do nothing.")
         pass
     
-    def _output_working_configurations(self):
+    def _output_working_configurations(self, *args, **kwargs):
         """Perform the output working configurations"""
-        logger.debug("Executing OWC step")
+        logger.warning("Executing OWC step: This will do nothing.")
         pass
 
-    def _return_reference(self, action_specification_perception, concepts_to_infer):
+    def _return_reference(self, *args, **kwargs):
         """Perform the return reference"""
-        logger.debug(f"Executing RR step with concepts: {concepts_to_infer}")
+        logger.warning("Executing RR step: This will do nothing.")
         pass
     
-    def _memorized_values_perception(self, working_configuration, value_concepts, function_concept):
+    def _memorized_values_perception(self, *args, **kwargs):
         """Perform the memorized values perception"""
-        logger.debug(f"Executing MVP step with value concepts: {value_concepts}")
+        logger.warning("Executing MVP step: This will do nothing.")
         pass
     
-    def _cross_perception(self, perception_references):
+    def _cross_perception(self, *args, **kwargs):
         """Perform the cross perception"""
-        logger.debug("Executing CP step")
+        logger.warning("Executing CP step: This will do nothing.")
         pass
     
-    def _actuator_perception(self, working_configuration, function_concept, concept_type, concept_to_infer, llm):
+    def _actuator_perception(self, *args, **kwargs):
         """Perform the actuator perception"""
-        logger.debug(f"Executing AP step with function concept: {function_concept}")
+        logger.warning("Executing AP step: This will do nothing.")
         pass
     
-    def _on_perception_tool_actuation(self, working_configuration, actuated_functional_reference, crossed_perception_reference, function_concept, concept_to_infer, llm):
+    def _on_perception_tool_actuation(self, *args, **kwargs):
         """Perform the on-perception tool actuation"""
-        logger.debug(f"Executing PTA step with actuated functional reference: {actuated_functional_reference}")
+        logger.warning("Executing PTA step: This will do nothing.")
         pass    
     
-    def _action_specification_perception(self, working_configuration, applied_reference, function_concept):
+    def _action_specification_perception(self, *args, **kwargs):
         """Perform the action specification perception"""
-        logger.debug(f"Executing ASP step with function concept: {function_concept}")
+        logger.warning("Executing ASP step: This will do nothing.")
         pass
     
-    def _memory_actuation(self, action_specification_perception):
+    def _memory_actuation(self, *args, **kwargs):
         """Perform the memory actuation"""
-        logger.debug("Executing MA step")
+        logger.warning("Executing MA step: This will do nothing.")
         pass
+
+    def _formal_actuator_perception(self, *args, **kwargs):
+        """ Placeholder for formal actuator perception"""
+        logger.warning(f"Executing Placeholder FAP step: This will do nothing.")
+        pass
+
+
+    def _syntatical_perception_actuation(self, *args, **kwargs):
+        """ Placeholder for syntatical perception actuation"""
+        logger.warning(f"Executing Placeholder SPA step: This will do nothing.")
+        pass
+
     
 
 

@@ -21,7 +21,9 @@ from ._demo import (
 from ._workspace_demo import (
     all_workspace_demo_methods
 )
-
+from ._grouping_demo import (
+    all_grouping_demo_methods
+)
 __all__ = [
     "strip_element_wrapper",
     "wrap_element_wrapper", 
@@ -34,5 +36,6 @@ __all__ = [
     "memory_actuation",
     "return_reference",
     "all_demo_methods",
-    "all_workspace_demo_methods"
+    "all_workspace_demo_methods",
+    "all_grouping_demo_methods"
 ]

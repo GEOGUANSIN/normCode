@@ -107,7 +107,7 @@ def demonstrate_normcode_and_in():
 
     normcode_pattern = """[{old expression} and {new expression} in all {old expression}]
     |ref. [%[%[%{old expression}%(tech), %{new expression}%(techie)], %[%{old expression}%(couch), %{new expression}%(couchie)]]]
-    <= &in({old expression};{new expression})%:{old expression}
+    <= &in({old expression};{new expression})%:[{old expression}]
     <- {old expression}
         |ref. [%O[0]=%(tech), %O[1]=%(couch)]
         |nl. There are two old expressions(O[0], O[1]);
@@ -195,7 +195,7 @@ def demonstrate_normcode_or_across():
 
     normcode_pattern = """[{old expression} or {new expression} across all {old expression}]
     |ref. [[%(tech), %(techie), %(couch), %(couchie)]]
-    <= &across({old expression};{new expression})%:{old expression}
+    <= &across({old expression};{new expression})%:[{old expression}]
     <- {old expression}
         |ref. [%O[0]=%(tech), %O[1]=%(couch)]
         |nl. There are two old expressions(O[0], O[1]);
