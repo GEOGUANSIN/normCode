@@ -232,7 +232,9 @@ class NormCodeGroup:
         if slice_axes is not None:
             slice_axes_copy = slice_axes.copy()  # Create a copy to avoid modifying the original
             slice_axes_copy.pop()
-            result = result.slice(*slice_axes_copy)
+            preserve_axes = [axis for axis in result.axes if axis not in slice_axes]
+            final_slice_axes = preserve_axes + slice_axes_copy
+            result = result.slice(*final_slice_axes)
             logger.debug(f"After slice shape: {result.shape}")
             logger.debug(f"After slice axes: {result.axes}")
             logger.debug(f"After slice sample: {result.tensor}")
@@ -275,7 +277,9 @@ class NormCodeGroup:
         if slice_axes is not None:
             slice_axes_copy = slice_axes.copy()  # Create a copy to avoid modifying the original
             slice_axes_copy.pop()
-            result = result.slice(*slice_axes_copy)
+            preserve_axes = [axis for axis in result.axes if axis not in slice_axes]
+            final_slice_axes = preserve_axes + slice_axes_copy
+            result = result.slice(*final_slice_axes)
         
         # Flatten elements
         result = self.flatten_element(result)
@@ -587,26 +591,44 @@ def demonstrate_multi_axis_example():
     
     print("Multi-Axis Example: Student Performance Analysis")
     print("Scenario: Analyzing student performance across subjects, semesters, and assessment types")
-    print("Axes: [student, subject, semester, assessment_type]")
+    print("Axes: [student, subject, semester, assessment]")
     
-    # Create a 3D reference for student grades across subjects and semesters
+    # Create a 4D reference for student grades across subjects, semesters, and assessment types
     grades_ref = Reference(
-        axes=['student', 'subject', 'semester'],
-        shape=(2, 3, 2),  # 2 students, 3 subjects, 2 semesters
+        axes=['student', 'subject', 'semester', 'assessment'],
+        shape=(2, 3, 2, 2),  # 2 students, 3 subjects, 2 semesters, 2 assessment types
         initial_value=0
     )
     
     # Set sample grade data
     grades_ref.tensor = [
         [  # Student 0
-            [85, 90],  # Math: Fall, Spring
-            [78, 82],  # Science: Fall, Spring  
-            [92, 88]   # English: Fall, Spring
+            [  # Math
+                [85, 92],  # Fall: exam, homework
+                [90, 88]   # Spring: exam, homework
+            ],
+            [  # Science
+                [78, 85],  # Fall: exam, homework
+                [82, 80]   # Spring: exam, homework
+            ],
+            [  # English
+                [92, 95],  # Fall: exam, homework
+                [88, 90]   # Spring: exam, homework
+            ]
         ],
         [  # Student 1
-            [91, 87],  # Math: Fall, Spring
-            [85, 89],  # Science: Fall, Spring
-            [79, 84]   # English: Fall, Spring
+            [  # Math
+                [91, 89],  # Fall: exam, homework
+                [87, 85]   # Spring: exam, homework
+            ],
+            [  # Science
+                [85, 82],  # Fall: exam, homework
+                [89, 87]   # Spring: exam, homework
+            ],
+            [  # English
+                [79, 76],  # Fall: exam, homework
+                [84, 81]   # Spring: exam, homework
+            ]
         ]
     ]
     
@@ -615,7 +637,7 @@ def demonstrate_multi_axis_example():
     
     # Create a 2D reference for assessment weights
     weights_ref = Reference(
-        axes=['subject', 'assessment_type'],
+        axes=['subject', 'assessment'],
         shape=(3, 2),  # 3 subjects, 2 assessment types
         initial_value=0
     )
@@ -642,7 +664,8 @@ def demonstrate_multi_axis_example():
     print(f"\nReference 1 - Grades:")
     print(f"Shape: {grades_ref.shape}")
     print(f"Axes: {grades_ref.axes}")
-    print(f"Data: {grades_ref.tensor}")
+    print(f"Sample data (Student 0, Math, Fall): {grades_ref.get(student=0, subject=0, semester=0)}")
+    print(f"Sample data (Student 0, Math, Fall, exam): {grades_ref.get(student=0, subject=0, semester=0, assessment=0)}")
     
     print(f"\nReference 2 - Assessment Weights:")
     print(f"Shape: {weights_ref.shape}")
@@ -665,6 +688,8 @@ def demonstrate_multi_axis_example():
     print(f"\nDEBUG - Testing manual get operations:")
     print(f"Grades get(subject=0): {grades_ref.get(subject=0)}")
     print(f"Grades get(student=0, subject=0): {grades_ref.get(student=0, subject=0)}")
+    print(f"Grades get(student=0, subject=0, semester=0): {grades_ref.get(student=0, subject=0, semester=0)}")
+    print(f"Grades get(student=0, subject=0, semester=0, assessment=0): {grades_ref.get(student=0, subject=0, semester=0, assessment=0)}")
     print(f"Weights get(subject=0): {weights_ref.get(subject=0)}")
 
     no_template_result = group.and_in(
@@ -709,7 +734,7 @@ def demonstrate_multi_axis_example():
     
     print("\n" + "="*60)
     print("3. AND ONLY Pattern: Combine grades and weights without slicing")
-    print("   <= &and({grades};{weights})")
+    print("   <= &in({grades};{weights})")
 
     and_only_template = Template("Grades: ${input1}, Weights: ${input2}")
     
@@ -731,7 +756,7 @@ def demonstrate_multi_axis_example():
     
     print("\n" + "="*60)
     print("4. OR ONLY Pattern: Flatten grades without slicing")
-    print("   <= &or({grades})")
+    print("   <= &across({grades})")
     
     or_only_template = Template("Flattened grades: ${input1}")
 
@@ -753,21 +778,18 @@ def demonstrate_multi_axis_example():
     print("5. Complex AND IN with Student and Subject")
     print("   <= &in({grades};{weights})%:{student,subject}")
     
-    # Create a reference that shares both student and subject axes
-    student_subject_grades = grades_ref.slice('student', 'subject')
-    student_subject_weights = weights_ref.slice('subject')  # Only has subject axis
     
     complex_template = Template("Student-Subject: grades=${input1}, weights=${input2}")
     
     no_template_result = group.and_in(
-        [student_subject_grades, student_subject_weights], 
+        [grades_ref, weights_ref], 
         ['{grades}', '{weights}'], 
         ['subject']
     )
     print(f"\nNo template result: {no_template_result.tensor}") 
 
     result_complex = group.and_in(
-        [student_subject_grades, student_subject_weights], 
+        [grades_ref, weights_ref], 
         ['{grades}', '{weights}'], 
         ['subject'], 
         complex_template
@@ -788,25 +810,43 @@ def debug_element_action():
     
     # Create the same references as in the multi-axis example
     grades_ref = Reference(
-        axes=['student', 'subject', 'semester'],
-        shape=(2, 3, 2),
+        axes=['student', 'subject', 'semester', 'assessment'],
+        shape=(2, 3, 2, 2),
         initial_value=0
     )
     grades_ref.tensor = [
         [  # Student 0
-            [85, 90],  # Math: Fall, Spring
-            [78, 82],  # Science: Fall, Spring  
-            [92, 88]   # English: Fall, Spring
+            [  # Math
+                [85, 92],  # Fall: exam, homework
+                [90, 88]   # Spring: exam, homework
+            ],
+            [  # Science
+                [78, 85],  # Fall: exam, homework
+                [82, 80]   # Spring: exam, homework
+            ],
+            [  # English
+                [92, 95],  # Fall: exam, homework
+                [88, 90]   # Spring: exam, homework
+            ]
         ],
         [  # Student 1
-            [91, 87],  # Math: Fall, Spring
-            [85, 89],  # Science: Fall, Spring
-            [79, 84]   # English: Fall, Spring
+            [  # Math
+                [91, 89],  # Fall: exam, homework
+                [87, 85]   # Spring: exam, homework
+            ],
+            [  # Science
+                [85, 82],  # Fall: exam, homework
+                [89, 87]   # Spring: exam, homework
+            ],
+            [  # English
+                [79, 76],  # Fall: exam, homework
+                [84, 81]   # Spring: exam, homework
+            ]
         ]
     ]
     
     weights_ref = Reference(
-        axes=['subject', 'assessment_type'],
+        axes=['subject', 'assessment'],
         shape=(3, 2),
         initial_value=0
     )

@@ -1,0 +1,169 @@
+PS C:\Users\ProgU\PycharmProjects\normCode> & c:/Users/ProgU/PycharmProjects/normCode/.conda/python.exe c:/Users/ProgU/PycharmProjects/normCode/core/_new_np/normcode_grouping.py
+[INFO] NormCodeGroup logging initialized at level: INFO - 2025-07-22 14:24:32,778 - NormCodeGroup
+[INFO] Log level set to: INFO - 2025-07-22 14:24:32,778 - NormCodeGroup
+=== Multi-Axis NormCodeGroup Demonstration ===
+
+Multi-Axis Example: Student Performance Analysis
+Scenario: Analyzing student performance across subjects, semesters, and assessment types
+Axes: [student, subject, semester, assessment_type]
+DEBUG - Grades tensor after setting: [[[85, 90], [78, 82], [92, 88]], [[91, 87], [85, 89], [79, 84]]]
+DEBUG - Grades data property: [[[85, 90], [78, 82], [92, 88]], [[91, 87], [85, 89], [79, 84]]]
+DEBUG - Weights tensor after setting: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+DEBUG - Weights data property: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+
+Reference 1 - Grades:
+Shape: (2, 3, 2)
+Axes: ['student', 'subject', 'semester']
+Data: [[[85, 90], [78, 82], [92, 88]], [[91, 87], [85, 89], [79, 84]]]
+
+Reference 2 - Assessment Weights:
+Shape: (3, 2)
+Axes: ['subject', 'assessment_type']
+Data: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+
+Reference 3 - Semester Names:
+Shape: (2,)
+Axes: ['semester']
+Data: ['Fall 2023', 'Spring 2024']
+
+============================================================
+1. AND IN Pattern: Combine grades and weights by subject
+   <= &in({grades};{weights})%:{subject}
+
+DEBUG - Testing manual get operations:
+Grades get(subject=0): [[85, 90], [91, 87]]
+Grades get(student=0, subject=0): [85, 90]
+Weights get(subject=0): [0.6, 0.4]
+
+No template result: [[{'{grades}': [[85, 90], [91, 87]], '{weights}': [0.6, 0.4]}, {'{grades}': [[78, 82], [85, 89]], '{weights}': [0.5, 0.5]}, {'{grades}': [[92, 88], [79, 84]], '{weights}': [0.4, 0.6]}]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Grades: [[85, 90], [91, 87]], Weights: [0.6, 0.4] \nGrades: [[78, 82], [85, 89]], Weights: [0.5, 0.5] \nGrades: [[92, 88], [79, 84]], Weights: [0.4, 0.6] \n']
+
+============================================================
+2. OR ACROSS Pattern: Flatten grades across students
+   <= &across({grades})%:{student}
+
+No template result: [[85, 90, 78, 82, 92, 88, 91, 87, 85, 89, 79, 84]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Grade data: 85 \nGrade data: 90 \nGrade data: 78 \nGrade data: 82 \nGrade data: 92 \nGrade data: 88 \nGrade data: 91 \nGrade data: 87 \nGrade data: 85 \nGrade data: 89 \nGrade data: 79 \nGrade data: 84 \n']
+
+============================================================
+3. AND ONLY Pattern: Combine grades and weights without slicing
+   <= &and({grades};{weights})
+
+No template result: [{'{grades}': [[85, 90], [91, 87]], '{weights}': [0.6, 0.4]}, {'{grades}': [[78, 82], [85, 89]], '{weights}': [0.5, 0.5]}, {'{grades}': [[92, 88], [79, 84]], '{weights}': [0.4, 0.6]}]
+
+Result shape: [3]
+Result axes: ['subject']
+Result data: ['Grades: [[85, 90], [91, 87]], Weights: [0.6, 0.4] \n', 'Grades: [[78, 82], [85, 89]], Weights: [0.5, 0.5] \n', 'Grades: [[92, 88], [79, 84]], Weights: [0.4, 0.6] \n']
+
+============================================================
+4. OR ONLY Pattern: Flatten grades without slicing
+   <= &or({grades})
+
+No template result: [[[[85], [90]], [[78], [82]], [[92], [88]]], [[[91], [87]], [[85], [89]], [[79], [84]]]]
+
+Result shape: [2, 3, 2]
+Result axes: ['student', 'subject', 'semester']
+Result data: [[['Flattened grades: 85 \n', 'Flattened grades: 90 \n'], ['Flattened grades: 78 \n', 'Flattened grades: 82 \n'], ['Flattened grades: 92 \n', 'Flattened grades: 88 \n']], [['Flattened grades: 91 \n', 'Flattened grades: 87 \n'], ['Flattened grades: 85 \n', 'Flattened grades: 89 \n'], ['Flattened grades: 79 \n', 'Flattened grades: 84 \n']]]
+
+============================================================
+5. Complex AND IN with Student and Subject
+   <= &in({grades};{weights})%:{student,subject}
+
+No template result: [[{'{grades}': [[85, 90], [91, 87]], '{weights}': [0.6, 0.4]}, {'{grades}': [[78, 82], [85, 89]], '{weights}': [0.5, 0.5]}, {'{grades}': [[92, 88], [79, 84]], '{weights}': [0.4, 0.6]}]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Student-Subject: grades=[[85, 90], [91, 87]], weights=[0.6, 0.4] \nStudent-Subject: grades=[[78, 82], [85, 89]], weights=[0.5, 0.5] \nStudent-Subject: grades=[[92, 88], [79, 84]], weights=[0.4, 0.6] \n']
+
+============================================================
+
+[INFO] NormCodeGroup logging initialized at level: INFO - 2025-07-23 06:31:23,601 - NormCodeGroup
+[INFO] Log level set to: INFO - 2025-07-23 06:31:23,601 - NormCodeGroup
+=== Multi-Axis NormCodeGroup Demonstration ===
+
+Multi-Axis Example: Student Performance Analysis
+Scenario: Analyzing student performance across subjects, semesters, and assessment types
+Axes: [student, subject, semester, assessment]
+DEBUG - Grades tensor after setting: [[[[85, 92], [90, 88]], [[78, 85], [82, 80]], [[92, 95], [88, 90]]], [[[91, 89], [87, 85]], [[85, 82], [89, 87]], [[79, 76], [84, 81]]]]
+DEBUG - Grades data property: [[[[85, 92], [90, 88]], [[78, 85], [82, 80]], [[92, 95], [88, 90]]], [[[91, 89], [87, 85]], [[85, 82], [89, 87]], [[79, 76], [84, 81]]]]
+DEBUG - Weights tensor after setting: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+DEBUG - Weights data property: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+
+Reference 1 - Grades:
+Shape: (2, 3, 2, 2)
+Axes: ['student', 'subject', 'semester', 'assessment']
+Sample data (Student 0, Math, Fall): [85, 92]
+Sample data (Student 0, Math, Fall, exam): 85
+
+Reference 2 - Assessment Weights:
+Shape: (3, 2)
+Axes: ['subject', 'assessment']
+Data: [[0.6, 0.4], [0.5, 0.5], [0.4, 0.6]]
+
+Reference 3 - Semester Names:
+Shape: (2,)
+Axes: ['semester']
+Data: ['Fall 2023', 'Spring 2024']
+
+============================================================
+1. AND IN Pattern: Combine grades and weights by subject
+   <= &in({grades};{weights})%:{subject}
+
+DEBUG - Testing manual get operations:
+Grades get(subject=0): [[[85, 92], [90, 88]], [[91, 89], [87, 85]]]
+Grades get(student=0, subject=0): [[85, 92], [90, 88]]
+Grades get(student=0, subject=0, semester=0): [85, 92]
+Grades get(student=0, subject=0, semester=0, assessment=0): 85
+Weights get(subject=0): [0.6, 0.4]
+
+No template result: [[[{'{grades}': [[85, 90], [91, 87]], '{weights}': 0.6}, {'{grades}': [[78, 82], [85, 89]], '{weights}': 0.5}, {'{grades}': [[92, 88], [79, 84]], '{weights}': 0.4}], [{'{grades}': [[92, 88], [89, 85]], '{weights}': 0.4}, {'{grades}': [[85, 80], [82, 87]], '{weights}': 0.5}, {'{grades}': [[95, 90], [76, 81]], '{weights}': 0.6}]]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Grades: @#SKIP#@, Weights: @#SKIP#@ \nGrades: @#SKIP#@, Weights: @#SKIP#@ \n']
+
+============================================================
+2. OR ACROSS Pattern: Flatten grades across students
+   <= &across({grades})%:{student}
+
+No template result: [[85, 90, 78, 82, 92, 88, 91, 87, 85, 89, 79, 84, 92, 88, 85, 80, 95, 90, 89, 85, 82, 87, 76, 81]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Grade data: 85 \nGrade data: 90 \nGrade data: 78 \nGrade data: 82 \nGrade data: 92 \nGrade data: 88 \nGrade data: 91 \nGrade data: 87 \nGrade data: 85 \nGrade data: 89 \nGrade data: 79 \nGrade data: 84 \nGrade data: 92 \nGrade data: 88 \nGrade data: 85 \nGrade data: 80 \nGrade data: 95 \nGrade data: 90 \nGrade data: 89 \nGrade data: 85 \nGrade data: 82 \nGrade data: 87 \nGrade data: 76 \nGrade data: 81 \n']
+
+============================================================
+3. AND ONLY Pattern: Combine grades and weights without slicing
+   <= &and({grades};{weights})
+
+No template result: [[{'{grades}': [[85, 90], [91, 87]], '{weights}': 0.6}, {'{grades}': [[78, 82], [85, 89]], '{weights}': 0.5}, {'{grades}': [[92, 88], [79, 84]], '{weights}': 0.4}], [{'{grades}': [[92, 88], [89, 85]], '{weights}': 0.4}, {'{grades}': [[85, 80], [82, 87]], '{weights}': 0.5}, {'{grades}': [[95, 90], [76, 81]], '{weights}': 0.6}]]
+
+Result shape: [2, 3]
+Result axes: ['assessment', 'subject']
+Result data: [['Grades: [[85, 90], [91, 87]], Weights: 0.6 \n', 'Grades: [[78, 82], [85, 89]], Weights: 0.5 \n', 'Grades: [[92, 88], [79, 84]], Weights: 0.4 \n'], ['Grades: [[92, 88], [89, 85]], Weights: 0.4 \n', 'Grades: [[85, 80], [82, 87]], Weights: 0.5 \n', 'Grades: [[95, 90], [76, 81]], Weights: 0.6 \n']]
+
+============================================================
+4. OR ONLY Pattern: Flatten grades without slicing
+   <= &or({grades})
+
+No template result: [[[[[85], [90]], [[78], [82]], [[92], [88]]], [[[91], [87]], [[85], [89]], [[79], [84]]]], [[[[92], [88]], [[85], [80]], [[95], [90]]], [[[89], [85]], [[82], [87]], [[76], [81]]]]]
+
+Result shape: [2, 2, 3, 2]
+Result axes: ['assessment', 'student', 'subject', 'semester']
+Result data: [[[['Flattened grades: 85 \n', 'Flattened grades: 90 \n'], ['Flattened grades: 78 \n', 'Flattened grades: 82 \n'], ['Flattened grades: 92 \n', 'Flattened grades: 88 \n']], [['Flattened grades: 91 \n', 'Flattened grades: 87 \n'], ['Flattened grades: 85 \n', 'Flattened grades: 89 \n'], ['Flattened grades: 79 \n', 'Flattened grades: 84 \n']]], [[['Flattened grades: 92 \n', 'Flattened grades: 88 \n'], ['Flattened grades: 85 \n', 'Flattened grades: 80 \n'], ['Flattened grades: 95 \n', 'Flattened grades: 90 \n']], [['Flattened grades: 89 \n', 'Flattened grades: 85 \n'], ['Flattened grades: 82 \n', 'Flattened grades: 87 \n'], ['Flattened grades: 76 \n', 'Flattened grades: 81 \n']]]]
+
+============================================================
+5. Complex AND IN with Student and Subject
+   <= &in({grades};{weights})%:{student,subject}
+
+No template result: [[{'{grades}': [[[85, 92], [90, 88]], [[91, 89], [87, 85]]], '{weights}': [0.6, 0.4]}, {'{grades}': [[[78, 85], [82, 80]], [[85, 82], [89, 87]]], '{weights}': [0.5, 0.5]}, {'{grades}': [[[92, 95], [88, 90]], [[79, 76], [84, 81]]], '{weights}': [0.4, 0.6]}]], '{weights}': [0.4, 0.6]}]]
+
+Result shape: [1]
+Result axes: ['_none_axis']
+Result data: ['Student-Subject: grades=[[[85, 92], [90, 88]], [[91, 89], [87, 85]]], weights=[0.6, 0.4] \nStudent-Subject: grades=[[[78, 85], [82, 80]], [[85, 82], [89, 87]]], weights=[0.5, 0.5] \nStudent-Subject: grades=[[[92, 95], [88, 90]], [[79, 76], [84, 81]]], weights=[0.4, 0.6] \n']
