@@ -282,9 +282,6 @@ class Grouper:
         logger.debug(f"After annotation axes: {result.axes}")
         logger.debug(f"After annotation sample: {result.tensor}")
 
-
-        
-        
         # Slice by slice_axes if provided (AND IN pattern)
         if slice_axes is not None and len(slice_axes) > 0:
             if not isinstance(slice_axes[0], list):
@@ -451,6 +448,9 @@ def formal_actuator_perception(function_concept, context_concepts, value_concept
     parsed_normcode_grouping = _parse_normcode_grouping(function_concept.name)
     logger.debug(f"Parsed normcode grouping: {parsed_normcode_grouping}")
 
+    if context_concepts is None:
+        context_concepts = []
+
     context_concepts = [c for c in context_concepts if c.name in parsed_normcode_grouping["SliceAxis"]]
     logger.debug(f"Context concepts: {[c.name for c in context_concepts]}")
 
@@ -478,10 +478,11 @@ def formal_actuator_perception(function_concept, context_concepts, value_concept
     return grouping_actuated
 
 
-def syntatical_perception_actuation(working_configuration, formal_actuator_perception_reference, perception_references):
+def syntatical_perception_actuation(formal_actuator_function, perception_references):
     """Perform the syntatical perception actuation"""
-    logger.debug(f"Executing SPA step with formal actuator perception reference: {formal_actuator_perception_reference.tensor}")
-    pass
+    logger.debug(f"Executing SPA step with formal actuator function: {formal_actuator_function}")
+
+    return formal_actuator_function(perception_references)
 
 
 def memory_actuation(action_specification_perception):

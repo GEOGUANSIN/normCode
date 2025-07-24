@@ -143,6 +143,22 @@ def init_concept_with_references():
     _log_concept_details(content_concept, None, "8", "{content}")
 
 
+    # Example 9: Technical and relatable ideas concept
+    technical_and_relatable_ideas_concept = create_simple_concept(
+        concept_name="[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]",
+        concept_id="technical_and_relatable_ideas",
+        concept_type="[]"
+    )
+    _log_concept_details(technical_and_relatable_ideas_concept, None, "9", "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]")
+
+    # Example 10: Grouping Technical and Relatable ideas concept
+    grouping_technical_and_relatable_ideas_concept = create_simple_concept(
+        concept_name="&in({technical_concepts};{relatable_ideas})%:[{technical_concepts}]",
+        concept_id="grouping_technical_and_relatable_ideas",
+        concept_type="&in"
+    )
+    _log_concept_details(grouping_technical_and_relatable_ideas_concept, None, "10", "&in({technical_concepts};{relatable_ideas})%:[{technical_concepts}]")
+
     return (
         technical_concepts_1, 
         technical_concepts_classification_concept, 
@@ -151,7 +167,9 @@ def init_concept_with_references():
         relatable_ideas_concept,
         relatable_ideas_concept_2,
         write_content_concept,
-        content_concept
+        content_concept,
+        technical_and_relatable_ideas_concept,
+        grouping_technical_and_relatable_ideas_concept
     )
  
 def init_working_configuration():
@@ -297,6 +315,35 @@ def init_working_configuration():
         "actuation": {},
         "cognition": {}
         },  
+    "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": {
+        "perception": {
+            "mvp": {
+                "mode": "formal"
+            },
+        },
+        "actuation": {},
+    },
+    "&in({technical_concepts};{relatable_ideas})%:[{technical_concepts}]": {
+        "perception": {
+            "mvp": {
+                "mode": "formal"
+            },
+        },
+        "actuation": {
+            "pta": {
+                "mode": "in-cognition",
+                "value_order": {
+                    "{technical_concepts}": 0,
+                    "{relatable_ideas}": 1,
+                }
+            },
+        },
+        "cognition": {
+            "rr": {
+                "mode": "identity",
+            }
+        },
+    },
     }
     return working_configuration
 
@@ -392,27 +439,26 @@ class WriteAgent(AgentFrame):
             )
             # 3. Formal Actuator Perception
             logger.debug("Step 3: Formal Actuator Perception (FAP)")
-            formal_actuator_perception_reference = self.FAP(
-                working_configuration=working_configuration, 
-                value_concepts=self.value_concepts, 
-                function_concept=self.function_concept
+            formal_actuator_function = self.FAP(
+                function_concept=self.function_concept,
+                context_concepts=self.context_concepts, 
+                value_concepts=self.value_concepts
             )
             # 4. Syntatical Perception Actuation
             logger.debug("Step 4: Syntatical Perception Actuation (SPA)")
-            syntatical_perception_actuation = self.SPA(
-                working_configuration=working_configuration, 
-                formal_actuator_perception_reference=formal_actuator_perception_reference, 
+            action_specification_perception = self.SPA(
+                formal_actuator_function=formal_actuator_function, 
                 perception_references=perception_references
             )
             # 5. Memory Actuation
             logger.debug("Step 5: Memory Actuation (MA)")
-            syntatical_perception_actuation = self.MA(
-                syntatical_perception_actuation=syntatical_perception_actuation
+            action_specification_perception = self.MA(
+                action_specification_perception=action_specification_perception
             )
             # 6. Return Reference
             logger.debug("Step 6: Return Reference (RR)")
             concept_to_infer_with_reference = self.RR(
-                syntatical_perception_actuation=syntatical_perception_actuation, 
+                action_specification_perception=action_specification_perception, 
                 concept_to_infer=self.concept_to_infer
             )
             # 7. Output Working Configuration
@@ -463,7 +509,7 @@ class WriteAgent(AgentFrame):
         @inference_instance.register_step("SPA")
         def syntatical_perception_actuation(**fkwargs):
             """Perform the syntatical perception actuation"""
-            logger.debug(f"Executing SPA step with formal actuator perception reference: {fkwargs['formal_actuator_perception_reference'].tensor}")
+            logger.debug(f"Executing SPA step with formal actuator function: {fkwargs['formal_actuator_function']}")
             function = methods.get("syntatical_perception_actuation", self._syntatical_perception_actuation)
             return function(**fkwargs)
         
@@ -507,7 +553,6 @@ class WriteAgent(AgentFrame):
                 perception_references=perception_references
             )
             # 4. Apply Perception
-            logger.debug(f"£$£$the workspace: {workspace}")
             logger.debug("Step 4: Actuator Perception (AP)")
             actuated_functional_reference = self.AP(
                 working_configuration=working_configuration, 
@@ -630,7 +675,9 @@ if __name__ == "__main__":
     relatable_ideas_concept,
     relatable_ideas_concept_2,
     write_content_concept,
-    content_concept) = init_concept_with_references()   
+    content_concept,
+    technical_and_relatable_ideas_concept,
+    grouping_technical_and_relatable_ideas_concept) = init_concept_with_references()   
     first_inference = Inference(
         sequence_name="imperative", 
         concept_to_infer=technical_concepts_2,
@@ -644,10 +691,11 @@ if __name__ == "__main__":
         function_concept=relatable_ideas_operation_concept
     )
     third_inference = Inference(
-        sequence_name="imperative", 
-        concept_to_infer=content_concept,
+        sequence_name="grouping", 
+        concept_to_infer=technical_and_relatable_ideas_concept,
         value_concepts=[technical_concepts_2, relatable_ideas_concept_2],
-        function_concept=write_content_concept
+        function_concept=grouping_technical_and_relatable_ideas_concept,
+        context_concepts=[technical_concepts_2, relatable_ideas_concept]
     )
 
     # Initialize agent
@@ -690,7 +738,7 @@ if __name__ == "__main__":
 
     # Initialize content agent
     write_content_agent = WriteAgent(
-        "workspace_demo",
+        "demo",
         init_working_configuration(),
         llm=llm,
         workspace=workspace)
@@ -698,7 +746,7 @@ if __name__ == "__main__":
     third_inference.value_concepts = [technical_concepts_2, relatable_ideas_concept_2]
     write_content_agent.configure(
         inference_instance=third_inference, 
-        inference_sequence="imperative",
+        inference_sequence="grouping",
     )
     content_concept = third_inference.execute()
     print("========== Third inference completed ==========")

@@ -5,7 +5,7 @@ from _concept import Concept
 from copy import copy
 from _reference import Reference, cross_product, element_action
 from _methods._demo import strip_element_wrapper, wrap_element_wrapper
-from _methods._grouping_demo import Grouper, formal_actuator_perception
+from _methods._grouping_demo import Grouper, formal_actuator_perception, syntatical_perception_actuation
 
 # Configure logging
 def setup_logging(level=logging.INFO):
@@ -809,6 +809,14 @@ def debug_formal_actuator_perception():
     logger.debug(f"===")
     logger.debug(f"Function result: {function_result.tensor} \n with shape: {function_result.shape} \n and axes: {function_result.axes}")
     logger.debug(f"Manual function result: {manual_function_result.tensor} \n with shape: {manual_function_result.shape} \n and axes: {manual_function_result.axes}")
+
+
+    sref = syntatical_perception_actuation(
+        formal_actuator_function=function, 
+        perception_references=value_references
+    )
+
+    logger.debug(f"syntatical reference result: {sref.tensor} \n with shape: {sref.shape}")
 
 
 

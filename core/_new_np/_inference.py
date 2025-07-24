@@ -2,7 +2,7 @@
 Abstract Sequence Configuration - Demonstrates the core logic pattern
 """
 
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, Optional
 import inspect
 import logging
 import sys
@@ -49,7 +49,7 @@ logger.setLevel(logging.DEBUG)
 
 # Sequence class for executing registered steps
 class Inference:
-    def __init__(self, sequence_name: str, concept_to_infer: Concept, value_concepts: list[Concept], function_concept: Concept):
+    def __init__(self, sequence_name: str, concept_to_infer: Concept, value_concepts: list[Concept], function_concept: Concept, context_concepts: Optional[list[Concept]] = None):
         logger.info(f"Initializing Inference instance with sequence: {sequence_name}")
         logger.debug(f"Concept to infer: {concept_to_infer}")
         logger.debug(f"Value concepts: {value_concepts}")
@@ -58,6 +58,7 @@ class Inference:
         self.concept_to_infer: Concept = concept_to_infer
         self.value_concepts: list[Concept] = value_concepts
         self.function_concept: Concept = function_concept
+        self.context_concepts: Optional[list[Concept]] = context_concepts
         self.sequence_name = sequence_name
         # Instance-specific step registry
         self._step_registry = {}
