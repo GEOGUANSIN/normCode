@@ -286,16 +286,17 @@ def init_working_configuration():
                     0: "{technical_concepts}",
                     1: "{relatable_ideas}",
                 },
+                "filter_constraints": [[0, 1]],
                 "workspace_object_name_list": ["content"]
             },
             "asp": {
-                "mode": "workspace",
+                "mode": "in-cognition",
                 "workspace_object_name_list": ["content"]
             }
         },
         "actuation": {
             "pta": {
-                "mode": "workspace",
+                "mode": "in-workspace",
                 "value_order": {
                     "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": 0,
                     "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": 1,
@@ -304,6 +305,7 @@ def init_working_configuration():
                     0: "{technical_concepts}",
                     1: "{relatable_ideas}",
                 },
+                "filter_constraints": [[0, 1]],
                 "workspace_object_name_list": ["content"]
             },
             "ma": {
@@ -718,7 +720,9 @@ if __name__ == "__main__":
     llm = LanguageModel("qwen-plus")
     workspace = {
         "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
-    } 
+        # "content": "The mitochondrial oxidative phosphorylation cascade exhibits remarkable efficiency in ATP synthesis through the electron transport chain, utilizing cytochrome c oxidase as the terminal electron acceptor. "
+        # "content": "Real GDP for Q3 2025 reached $100B, reflecting a robust 10% quarter-over-quarter expansion, underscoring strong macroeconomic momentum."
+    }
     # Initialize content agent
     content_agent = WriteAgent(
         "workspace_demo",
@@ -764,8 +768,24 @@ if __name__ == "__main__":
         inference_instance=third_inference, 
         inference_sequence="grouping",
     )
-    content_concept = third_inference.execute()
+    technical_and_relatable_ideas_concept = third_inference.execute()
     print("========== Third inference completed ==========")
+
+    # Initialize content agent  
+    content_agent = WriteAgent(
+        "workspace_demo",
+        init_working_configuration(),
+        llm=llm,
+        workspace=workspace)
+
+    fourth_inference.value_concepts = [technical_and_relatable_ideas_concept]
+    # Configure content agent and update value concepts
+    content_agent.configure(
+        inference_instance=fourth_inference, 
+        inference_sequence="imperative",
+    )
+    content_concept = fourth_inference.execute()
+
 
 
 
@@ -788,6 +808,12 @@ if __name__ == "__main__":
     _log_inference_result(
         result_concept=content_concept,
         value_concepts=[technical_concepts_2, relatable_ideas_concept_2],
+        function_concept=write_content_concept
+    )
+    print("========== Fourth inference result ==========")
+    _log_inference_result(
+        result_concept=content_concept,
+        value_concepts=[technical_and_relatable_ideas_concept],
         function_concept=write_content_concept
     )
 

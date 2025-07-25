@@ -7,6 +7,7 @@ from typing import Optional
 import ast
 import re
 from typing import Any
+from ._util_nested_list import get_combinations_dict_and_indices
 
 def setup_logging(level=logging.INFO, log_file=None):
     """Setup logging configuration for the inference module"""
@@ -113,17 +114,39 @@ def memorized_values_perception(working_configuration, value_concepts, function_
     logger.debug(f"Executing MVP step with value concepts: {value_concepts}")
     value_order = working_configuration[function_concept.name]["actuation"]["pta"]["value_order"]
     logger.debug(f"Value order: {value_order}")
-    value_concepts_references: list[Optional[Reference | None]] = len(value_order) * [None] # type: ignore
+    
+    # Calculate the maximum index needed to determine list size
+    max_index = max(value_order.values()) if value_order else 0
+    value_concepts_references: list[Optional[Reference | None]] = (max_index + 1) * [None] # type: ignore
     logger.debug(f"Value concepts references: {value_concepts_references}")
 
+    # Create a mapping from concept names to their references for reuse
+    concept_references = {}
     for value_concept in value_concepts:
         raw_concept_reference = value_concept.reference
         logger.debug(f"Raw concept reference: {raw_concept_reference.tensor}")
-        value_concept_index = int(value_order[value_concept.name])
-        logger.debug(f"Value concept index: {value_concept_index}")
         concept_reference = element_action(strip_element_wrapper, [raw_concept_reference])
-        logger.debug(f"Concept reference: {concept_reference.tensor}")
-        value_concepts_references[value_concept_index] = concept_reference
+        concept_references[value_concept.name] = concept_reference
+        logger.debug(f"Concept reference for {value_concept.name}: {concept_reference.tensor}")
+    
+    # Assign references to all positions in value_order, allowing concept reuse
+    for concept_name, index in value_order.items():
+        if concept_name in concept_references:
+            value_concepts_references[int(index)] = concept_references[concept_name]
+            logger.debug(f"Assigned {concept_name} to index {index}")
+        else:
+            logger.warning(f"Concept {concept_name} not found in value_concepts")
+    
+    # Fill any remaining None values with the first available concept reference
+    # This handles cases where the same concept should be used in multiple positions
+    if value_concepts_references and any(ref is None for ref in value_concepts_references):
+        first_available_ref = next((ref for ref in value_concepts_references if ref is not None), None)
+        if first_available_ref:
+            for i, ref in enumerate(value_concepts_references):
+                if ref is None:
+                    value_concepts_references[i] = first_available_ref
+                    logger.debug(f"Filled index {i} with first available reference")
+    
     logger.debug(f"Value concepts: {[concept.name for concept in value_concepts]}")
     logger.debug(f"Value concepts references: {value_concepts_references}")
     return value_concepts_references
@@ -246,105 +269,56 @@ def _load_and_configure_templates(llm, concept_type, context_string):
 #     return new_element_raw
 
 def _create_actuator_function(actuator_translated_template, instruction_template, instruction_validation_template,
-                                 system_message, concept_to_infer_name, input_length, llm, relation_extraction=False, relation_extraction_guide=None):
+                                 system_message, concept_to_infer_name, input_length, llm, relation_extraction=False, relation_extraction_guide=None, filter_constraints=None):
     """Create generation function for multiple inputs"""
 
-    if relation_extraction and relation_extraction_guide:
-        # find unique value to be extracted in relation_extraction_guide
-        relation_extraction_values = set()
-        for key, value in relation_extraction_guide.items():
-            value_to_extract = value[1]
-            relation_extraction_values.add(value_to_extract)
-        logger.debug(f"Relation extraction values: {relation_extraction_values}")
-
-    def find_list_depth(obj: Any) -> int:
-        """
-        Find the maximum depth of nested lists in a structure.
-        
-        Args:
-            obj: The object to analyze (can be list, dict, or other types)
-            
-        Returns:
-            Maximum depth of nested lists (0 for non-lists, 1 for flat lists, etc.)
-            
-        Examples:
-            find_list_depth([1, 2, 3]) -> 1
-            find_list_depth([[1, 2], [3, 4]]) -> 2
-            find_list_depth([[[1]], [2, [3]]]) -> 3
-            find_list_depth({"key": [1, 2]}) -> 0
-        """
-        if not isinstance(obj, list):
-            return 0
-        
-        if not obj:  # Empty list
-            return 1
-        
-        max_depth = 1
-        for item in obj:
-            if isinstance(item, list):
-                item_depth = find_list_depth(item)
-                max_depth = max(max_depth, 1 + item_depth)
-        
-        return max_depth
-
-
-
-
     def _generation_function_n(input_list):
-        input_dict = {}
-        valued_actuator_prompt_aggregate = ""
 
-        # suppose that we know that some input values are string of tensors of dicts, and some are not
-        dict_values_input = [] # this is a list of index indicating the input values that are string of tensors of dicts
-        # we need to first make sure that are changed back to tensor of dicts only for the dict_values_input
-        for i in range(input_length):
-            if i in dict_values_input:
-                input_list[i] = ast.literal_eval(input_list[i]) # we want to make sure that the evalueation only proceeds up to the point that dictionary is reached
-            else:
-                input_list[i] = input_list[i]
-
-        # for each of the input_dict_values, after evaluation, we need to establish a sub index to retrieve the dict value 
-        for i in range(input_length):
-            if i in dict_values_input:
-                input_list[i] = ast.literal_eval(input_list[i]) # we want to make sure that the evalueation only proceeds up to the point that dictionary is reached, this needs to be done recursively
-                find_list_depth(input_list[i])
-                
-            else:
-                input_list[i] = input_list[i]
-
-
-
+        # Generate all possible combinations from nested data
+        logger.debug(f"Processing nested data: {input_list}")
         
-
-        # we now also know that some input values share the same index in the relation_extraction_guide
-
-
-
-
-    
-
-        for i in range(input_length):
-            input_dict[f"input_{i+1}"] = input_list[i]
+        # Create a nested structure for combination generation
+        nested_structure = input_list
+        
+        # Get all combinations using the utility function
+        combos_dict, _ = get_combinations_dict_and_indices(
+            nested_structure, 
+            filter_constraints=filter_constraints,  # Use the passed filter_constraints
+            extraction_guide=relation_extraction_guide if relation_extraction else None
+        )
+        
+        logger.debug(f"Generated {len(combos_dict)} combinations from nested data")
+        
+        # Process each combination
+        valued_actuator_prompt_aggregated = ""
+        for idx_tuple, combo in combos_dict.items():
+            logger.debug(f"Processing combination {idx_tuple}: {combo}")
+            
+            # Create input dict for this combination
+            input_dict = {}
+            for i in range(len(combo)):
+                input_dict[f"input_{i+1}"] = combo[i]
             input_dict["output"] = concept_to_infer_name
-        logger.debug(f"Input dict: {input_dict}")
+            
+            logger.debug(f"Input dict for combination: {input_dict}")
 
-        valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
-        logger.debug(f"Valued actuator prompt: {valued_actuator_prompt}")
-        instruction = instruction_template.safe_substitute(input=valued_actuator_prompt)
+            valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
+            logger.debug(f"Valued actuator prompt: {valued_actuator_prompt}")
+
+            valued_actuator_prompt_aggregated += f"{valued_actuator_prompt}\n"
+
+        instruction = instruction_template.safe_substitute(input=valued_actuator_prompt_aggregated)
         logger.debug(f"Instruction: {instruction}")
-        
-        # new_element_raw = _validate_and_retry_generation(
-        #     llm, instruction, instruction_validation_template, system_message, concept_to_infer_name
-        # )
+            
         new_element_raw = llm.generate(instruction, system_message=system_message)
-
         new_element = _raw_element_process(new_element_raw)
-
+            
         return new_element
+
     return _generation_function_n
 
 def _create_activation_function(translation_template, instruction_template, instruction_validation_template,
-                             system_message, concept_to_infer_name, input_length, llm, relation_extraction=False, relation_extraction_guide=None):
+                             system_message, concept_to_infer_name, input_length, llm, relation_extraction=False, relation_extraction_guide=None, filter_constraints=None):
     """Create the main actuator function"""
     def _strip_translate_and_instruct_validate_validate_actuator(actuator_element):
         stripped_actuator_element = strip_element_wrapper(actuator_element)
@@ -357,7 +331,7 @@ def _create_activation_function(translation_template, instruction_template, inst
         
         return _create_actuator_function(
             actuator_translated_template, instruction_template, instruction_validation_template,
-            system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide
+            system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide, filter_constraints
         )
     
     return _strip_translate_and_instruct_validate_validate_actuator
@@ -385,17 +359,20 @@ def actuator_perception(working_configuration, function_concept, concept_type, c
             )
 
             # Get relation extraction information
-            if working_configuration[function_concept.name]["perception"]["ap"]["relation_extraction"]:
+            if working_configuration[function_concept.name]["perception"]["ap"].get("relation_extraction", None):
                 relation_extraction = True
-                relation_extraction_guide = working_configuration[function_concept.name]["perception"]["ap"]["relation_extraction_guide"]
+                relation_extraction_guide = working_configuration[function_concept.name]["perception"]["ap"]["relation_extraction"]
             else:
                 relation_extraction = False
                 relation_extraction_guide = None
             
+            # Get filter constraints if available
+            filter_constraints = working_configuration[function_concept.name]["perception"]["ap"].get("filter_constraints", None)
+            
             # Create actuator function
             activation_function = _create_activation_function(
                 translation_template, instruction_template, instruction_validation_template,
-                system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide
+                system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide, filter_constraints
             )
             
             # Apply actuator function to function concept reference
@@ -423,10 +400,13 @@ def actuator_perception(working_configuration, function_concept, concept_type, c
                 relation_extraction = False
                 relation_extraction_guide = None
             
+            # Get filter constraints if available
+            filter_constraints = working_configuration[function_concept.name]["perception"]["ap"].get("filter_constraints", None)
+            
             # Create actuator function
             activation_function = _create_activation_function(
                 translation_template, instruction_template, instruction_validation_template,
-                system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide
+                system_message, concept_to_infer_name, input_length, llm, relation_extraction, relation_extraction_guide, filter_constraints
             )
             
             # Apply actuator function to function concept reference

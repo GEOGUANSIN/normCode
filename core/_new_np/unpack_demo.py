@@ -63,18 +63,11 @@ if __name__ == "__main__":
     grouping_technical_and_relatable_ideas_concept) = init_concept_with_references()   
 
     technical_and_relatable_ideas_concept.reference = relation_reference
-
-    fourth_inference = Inference(
-        sequence_name="imperative", 
-        concept_to_infer=content_concept,
-        value_concepts=[technical_and_relatable_ideas_concept],
-        function_concept=write_content_concept,
-    )
-
    # Initialize agent
     llm = LanguageModel("qwen-plus")
     workspace = {
         "content": "The new cloud architecture reduces latency by 35% through optimized edge caching and parallel processing. Enterprise customers can now deploy AI models with sub-100ms response times."
+        # "content": "The mitochondrial oxidative phosphorylation cascade exhibits remarkable efficiency in ATP synthesis through the electron transport chain, utilizing cytochrome c oxidase as the terminal electron acceptor. This process is facilitated by the proton gradient established across the inner mitochondrial membrane, enabling chemiosmotic coupling between electron transfer and ATP synthase activity. The Krebs cycle intermediates serve as substrates for various biosynthetic pathways, while the pentose phosphate pathway generates NADPH for reductive biosynthesis and ribose-5-phosphate for nucleotide synthesis."
     } 
 
     configuration = init_working_configuration()
@@ -89,27 +82,29 @@ if __name__ == "__main__":
                     "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": 1,
                 },
                 "relation_extraction":{
-                    0: ("{technical_concepts}", "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]"),
-                    1: ("{relatable_ideas}", "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]"),
+                    0: "{technical_concepts}",
+                    1: "{relatable_ideas}",
                 },
+                "filter_constraints": [[0, 1]],
                 "workspace_object_name_list": ["content"]
             },
             "asp": {
-                "mode": "workspace",
+                "mode": "in-cognition",
                 "workspace_object_name_list": ["content"]
             }
         },
         "actuation": {
             "pta": {
-                "mode": "workspace",
+                "mode": "in-workspace",
                 "value_order": {
                     "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": 0,
                     "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]": 1,
                 },
                 "relation_extraction":{
-                    0: ("{technical_concepts}", "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]"),
-                    1: ("{relatable_ideas}", "[{technical_concepts} and {relatable_ideas} in all {technical_concepts}]"),
+                        0: "{technical_concepts}",
+                        1: "{relatable_ideas}", 
                 },
+                "filter_constraints": [[0, 1]],
                 "workspace_object_name_list": ["content"]
             },
             "ma": {
@@ -124,10 +119,27 @@ if __name__ == "__main__":
     }
     
 
-    stripped_relation_reference = element_action(strip_element_wrapper, [relation_reference])
-    cross_product_reference = cross_product([stripped_relation_reference, stripped_relation_reference])
-    print(cross_product_reference.tensor)
+    fourth_inference = Inference(
+        sequence_name="imperative", 
+        concept_to_infer=content_concept,
+        value_concepts=[technical_and_relatable_ideas_concept],
+        function_concept=write_content_concept,
+    )
 
+
+    # Initialize content agent
+    content_agent = WriteAgent(
+        "workspace_demo",
+        configuration,
+        llm=llm,
+        workspace=workspace)
+
+    # Configure content agent and update value concepts
+    content_agent.configure(
+        inference_instance=fourth_inference, 
+        inference_sequence="imperative",
+    )
+    technical_concepts_2 = fourth_inference.execute()
 
 
 
