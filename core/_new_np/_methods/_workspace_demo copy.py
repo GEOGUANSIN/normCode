@@ -308,12 +308,11 @@ def _create_actuator_function(actuator_translated_template, instruction_template
             if i in dict_values_input:
                 input_list[i] = ast.literal_eval(input_list[i]) # we want to make sure that the evalueation only proceeds up to the point that dictionary is reached, this needs to be done recursively
                 find_list_depth(input_list[i])
-                
             else:
                 input_list[i] = input_list[i]
 
 
-
+        
         
 
         # we now also know that some input values share the same index in the relation_extraction_guide

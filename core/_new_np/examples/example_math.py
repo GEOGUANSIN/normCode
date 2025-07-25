@@ -150,7 +150,7 @@ if __name__ == "__main__":
     )
 
     # Initialize agent
-    llm = LanguageModel("deepseek-r1-distill-qwen-1.5b")
+    llm = LanguageModel("qwen-turbo-latest")
     agent = AgentFrame("demo", init_working_configuration(), llm=llm)
     agent.configure(
         inference_instance=operation_inference, 

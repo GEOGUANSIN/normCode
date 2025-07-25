@@ -148,34 +148,34 @@ def _load_templates(llm, concept_type):
     return translation_template, instruction_template, instruction_validation_template
 
 
-def _validate_and_retry_generation(llm, instruction, instruction_validation_template, concept_to_infer_name=None, max_retries=5):
-    """Validate generated output and retry if needed"""
-    for i in range(max_retries):
-        new_element_raw = llm.generate(instruction, system_message="")
-        logger.debug(f"New element raw: {new_element_raw}")
-        
-        if concept_to_infer_name:
-            instruction_validation_prompt = instruction_validation_template.safe_substitute(
-                instruction=instruction, output=new_element_raw, concept_to_infer=concept_to_infer_name
-            )
-        else:
-            instruction_validation_prompt = instruction_validation_template.safe_substitute(
-                instruction=instruction, output=new_element_raw
-            )
-        
-        validity = llm.generate(instruction_validation_prompt, system_message="")
-        logger.debug(f"Instruction validation raw: {validity}")
-        
-        if validity.startswith("Yes"):
-            break
-        else:
-            if i == max_retries - 1:
-                new_element_raw = "@#SKIP#@"
-            new_instruction = str(instruction) + f"(Notice that {new_element_raw} is incorrect in format.)"
-            instruction = Template(new_instruction)
-            continue
-    
-    return new_element_raw
+# def _validate_and_retry_generation(llm, instruction, instruction_validation_template, concept_to_infer_name=None, max_retries=5):
+#     """Validate generated output and retry if needed"""
+#     for i in range(max_retries):
+#         new_element_raw = llm.generate(instruction, system_message="")
+#         logger.debug(f"New element raw: {new_element_raw}")
+#         
+#         if concept_to_infer_name:
+#             instruction_validation_prompt = instruction_validation_template.safe_substitute(
+#                 instruction=instruction, output=new_element_raw, concept_to_infer=concept_to_infer_name
+#             )
+#         else:
+#             instruction_validation_prompt = instruction_validation_template.safe_substitute(
+#                 instruction=instruction, output=new_element_raw
+#             )
+#         
+#         validity = llm.generate(instruction_validation_prompt, system_message="")
+#         logger.debug(f"Instruction validation raw: {validity}")
+#         
+#         if validity.startswith("Yes"):
+#             break
+#         else:
+#             if i == max_retries - 1:
+#                 new_element_raw = "@#SKIP#@"
+#             new_instruction = str(instruction) + f"(Notice that {new_element_raw} is incorrect in format.)"
+#             instruction = Template(new_instruction)
+#             continue
+#     
+#     return new_element_raw
 
 
 def _create_actuator_function(actuator_translated_template, instruction_template, instruction_validation_template,
@@ -193,9 +193,10 @@ def _create_actuator_function(actuator_translated_template, instruction_template
         instruction = instruction_template.safe_substitute(input=valued_actuator_prompt)
         logger.debug(f"Instruction: {instruction}")
         
-        new_element_raw = _validate_and_retry_generation(
-            llm, instruction, instruction_validation_template, concept_to_infer_name
-        )
+        # new_element_raw = _validate_and_retry_generation(
+        #     llm, instruction, instruction_validation_template, concept_to_infer_name
+        # )
+        new_element_raw = llm.generate(instruction, system_message="")
         logger.debug(f"New element raw: {new_element_raw}")
 
         new_element = _raw_element_process(new_element_raw)
