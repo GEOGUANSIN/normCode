@@ -387,9 +387,88 @@ class AgentFrame():
         pass
 
     
+def _log_concept_details(concept, reference=None, example_number=None, concept_name=None):
+    """Helper function to log concept details in a consistent format"""
+    if example_number and concept_name:
+        logger.info(f"{example_number}. {concept_name}:")
+    
+    logger.info(f"   Concept: {concept.name}")
+    logger.info(f"   Type: {concept.type} ({concept.get_type_class()})")
+    
+    if reference:
+        # Get all values from the reference using slice(None) for all axes
+        slice_params = {axis: slice(None) for axis in reference.axes}
+        all_values = reference.get(**slice_params)
+        logger.info(f"   All values: {all_values}")
+
+def _log_inference_result(result_concept, value_concepts, function_concept):
+    """Log the inference result and related information"""
+    if result_concept.reference:
+        logger.info(f"Answer concept reference: {result_concept.reference.tensor}")
+        logger.info(f"Answer concept reference without skip values: {result_concept.reference.get_tensor(ignore_skip=True)}")
+        logger.info(f"Answer concept axes: {result_concept.reference.axes}")
+        
+        # Create list of all references for cross product
+        all_references = [result_concept.reference]
+        if value_concepts:
+            all_references.extend([concept.reference for concept in value_concepts if concept.reference])
+        if function_concept and function_concept.reference:
+            all_references.append(function_concept.reference)
+        
+        if len(all_references) > 1:
+            all_info_reference = cross_product(all_references)
+            logger.info(f"All info reference: {all_info_reference.tensor}")
+            logger.info(f"All info reference without skip values: {all_info_reference.get_tensor(ignore_skip=True)}")
+            logger.info(f"All info axes: {all_info_reference.axes}")
+    else:
+        logger.warning("Answer concept reference is None")
 
 
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None):
+    """
+    Create a concept with an associated reference object.
+    
+    Args:
+        concept_name (str): The name of the concept (e.g., "{technical_concepts}?")
+        concept_id (str): The internal identifier for the concept
+        reference_value (str): The value to set in the reference
+        concept_type (str): The type format for the concept (default: "{}")
+        reference_axes (list): List of axis names for the reference (default: [concept_id])
+        reference_shape (tuple): Shape of the reference tensor (default: (1,))
+    
+    Returns:
+        tuple: (concept, reference) - The created concept and its reference
+    """
+    # Set default values if not provided
+    if reference_axes is None:
+        reference_axes = [concept_id]
+    if reference_shape is None:
+        reference_shape = (1,)
+    
+    # Create reference
+    reference = Reference(reference_axes, reference_shape)
+    
+    # Set the reference value
+    reference.set(f"%({reference_value})", **{concept_id: 0})
+    
+    # Create concept
+    concept = Concept(concept_name, concept_id, reference, concept_type)
+    
+    return concept, reference
 
+def create_simple_concept(concept_name, concept_id, concept_type="{}"):
+    """
+    Create a simple concept without a reference object.
+    
+    Args:
+        concept_name (str): The name of the concept
+        concept_id (str): The internal identifier for the concept
+        concept_type (str): The type format for the concept (default: "{}")
+    
+    Returns:
+        Concept: The created concept
+    """
+    return Concept(concept_name, concept_id, None, concept_type)
 
 # Abstract usage pattern
 if __name__ == "__main__":
