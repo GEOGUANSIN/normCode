@@ -475,7 +475,7 @@ if __name__ == "__main__":
     inference_normcode = """
 {digit pairs}
     <= *every({digit position})%:[{digit position}].[{digit pairs}?]
-        <= ::(Read {digit pairs}*? of {both numbers} in {digit position}*)<:1>
+        <= ::(Read {digit pairs}*? of {both numbers} in {digit position}*)<*1>
         <- {both numbers}
         <- {digit pairs}*?
         <- {digit position}*
