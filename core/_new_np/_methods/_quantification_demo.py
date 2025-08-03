@@ -135,7 +135,7 @@ def _parse_normcode_quantification(expr: str) -> dict:
     }
     try:
         # Match the basic *every pattern: *every(loopBaseConcept)%:[viewAxis].[conceptToInfer]
-        basic_pattern = r"\\*every\\(([^)]+)\\)%:(\\[[^\]]+\])\\.(\\[[^\]]+\])"
+        basic_pattern = r"\*every\(([^)]+)\)%:\[([^\]]+)\]\.\[([^\]]+)\]"
         basic_match = re.match(basic_pattern, expr)
         if not basic_match:
             raise ValueError(f"Invalid quantification expression format: {expr}")
@@ -694,24 +694,33 @@ class Quantifier:
         """
 
         current_loop_index = 0
+        logger.debug(f"[retireve_next_base_element] to_loop_element_reference: {to_loop_element_reference.tensor}, type: {type(to_loop_element_reference)}")
         while True:
             get_element_function = lambda x: self._get_list_at_index(x, current_loop_index)
             current_to_loop_element_reference = element_action(get_element_function, [to_loop_element_reference.copy()])
+            # logger.debug(f"[retireve_next_base_element] current_to_loop_element_reference: {current_to_loop_element_reference.tensor}, type: {type(current_to_loop_element_reference)}")
+            # logger.debug(f"[retireve_next_base_element] current_to_loop_element_reference.tensor: {getattr(current_to_loop_element_reference, 'tensor', None)}, type: {type(getattr(current_to_loop_element_reference, 'tensor', None))}")
             elements = self._flatten_list(current_to_loop_element_reference.tensor.copy())
+            # logger.debug(f"[retireve_next_base_element] loop index: {current_loop_index}, elements: {elements}, type: {type(elements)}")
             if all(e is None or e == "@#SKIP#@" for e in elements):
                 break
 
+            # logger.debug(f"[retireve_next_base_element] current_subworkspace: {self.current_subworkspace}")
             for loop_index in self.current_subworkspace.keys():
                 if self.loop_base_concept_name in self.current_subworkspace[loop_index].keys():
                     if to_loop_element_reference in self.current_subworkspace[loop_index][self.loop_base_concept_name]:
                         current_loop_index += 1
                         continue
-                    else:
-                        return current_to_loop_element_reference, current_loop_index
-                else:
-                    raise ValueError(f"The {self.loop_base_concept_name} is not in the current_subworkspace")
 
-        return None, None
+            return current_to_loop_element_reference, current_loop_index
+
+            # Safety stop to avoid infinite loop
+            if current_loop_index > len(self.current_subworkspace):
+                logger.error("[retireve_next_base_element] Exceeded 1000 iterations, stopping to avoid infinite loop.")
+                break
+
+        return current_to_loop_element_reference, current_loop_index
+
 
 
     def check_all_base_elements_looped(self, to_loop_element_reference, in_loop_element_name=None):
@@ -888,6 +897,11 @@ def output_working_configurations(working_configuration, function_concept, works
     logger.debug("Executing status check for quantification")
     logger.debug(f"To loop elements: {to_loop_elements}")
     logger.debug(f"Concept to infer: {concept_to_infer.name}")
+
+    if concept_to_infer.reference is None:
+        working_configuration[function_concept.name]["completion_status"] = False
+        logger.debug(f"Completion status: {working_configuration[function_concept.name]['completion_status']}")
+        return working_configuration
     
     processor = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     status = processor.check_all_base_elements_looped(to_loop_elements, concept_to_infer.name)
@@ -917,14 +931,14 @@ def memorized_values_perception(working_configuration, value_concepts, function_
     logger.debug(f"Value concepts references: {value_concepts_references}")
     return value_concepts_references
 
-#FGAP
-def formal_actuator_perception(function_concept, context_concepts):
+#FAP
+def formal_actuator_perception(function_concept, value_concepts):
     """
     Perform formal actuator perception for quantification sequence.
     
     Args:
         function_concept (Concept): Function concept
-        context_concepts (List[Concept]): Context concepts
+        value_concepts (List[Concept]): Value concepts
         
     Returns:
         function: Formal actuator function
@@ -934,21 +948,21 @@ def formal_actuator_perception(function_concept, context_concepts):
     parsed_normcode_quantification = _parse_normcode_quantification(function_concept.name)
     logger.debug(f"Parsed normcode quantification: {parsed_normcode_quantification}")
 
-    if context_concepts is None:
-        context_concepts = []
+    if value_concepts is None:
+        value_concepts = []
 
-    # Filter context concepts based on ViewAxis (similar to SliceAxis in grouping)
-    context_concepts = [c for c in context_concepts if c.name in parsed_normcode_quantification["ViewAxis"]]
-    logger.debug(f"Context concepts: {[c.name for c in context_concepts]}")
+    # Filter value concepts based on ViewAxis (similar to SliceAxis in grouping)
+    value_concepts = [c for c in value_concepts if c.name in parsed_normcode_quantification["ViewAxis"]]
+    logger.debug(f"Value concepts: {[c.name for c in value_concepts]}")
 
-    context_axes = [c.reference.axes for c in context_concepts]
-    logger.debug(f"Context axes: {context_axes}")
+    value_axes = [c.reference.axes for c in value_concepts]
+    logger.debug(f"Value axes: {value_axes}")
 
     grouper = Grouper()
     # For quantification, we always use or_across pattern
     quantification_actuated = lambda x: grouper.or_across(
         x, 
-        slice_axes=context_axes,
+        slice_axes=value_axes,
     )
 
     return quantification_actuated, parsed_normcode_quantification
@@ -967,12 +981,17 @@ def group_perception(perception_references, formal_actuator_function):
     """
     logger.debug(f"Executing GP step with formal actuator function: {formal_actuator_function}")
 
-    return formal_actuator_function(perception_references)
+    new_perception_references = formal_actuator_function(perception_references)
+    
+    logger.debug(f"New perception references: {new_perception_references.tensor}, axes: {new_perception_references.axes}, shape: {new_perception_references.shape}")
+
+    return new_perception_references
 
 
 #PTA
-def perception_tool_actuation(parsed_normcode_quantification, workspace, loop_base_concept_name, to_loop_elements,
-                          current_loop_base_element, concept_to_infer_name:str, current_loop_element, context_concepts:list[Concept]):
+def perception_tool_actuation(parsed_normcode_quantification, workspace, loop_base_concept_name,
+                          current_loop_base_element:Reference, concept_to_infer_name:str, current_loop_element:Reference, context_concepts:list[Concept],
+                          is_new:bool):
     """
     Perform perception tool actuation for quantification sequence.
     
@@ -984,54 +1003,77 @@ def perception_tool_actuation(parsed_normcode_quantification, workspace, loop_ba
     Returns:
         Dict[str, Any]: Updated workspace
     """
+    if is_new:
+        quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
+        quantifier.store_new_base_element(current_loop_base_element)
+        quantifier.store_new_in_loop_element(current_loop_base_element, concept_to_infer_name, current_loop_element)
+    current_loop_base_concept_name = parsed_normcode_quantification['LoopBaseConcept'] + '*'
+
+    logger.debug(f"Parsed normcode quantification: {parsed_normcode_quantification}")
+    logger.debug(f"Context concepts: {[c.name for c in context_concepts]}")
+    logger.debug(f"Current loop base concept name: {current_loop_base_concept_name}")
     
-    quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
-    quantifier.store_new_base_element(current_loop_base_element)
-    current_loop_base_element, current_loop_index = quantifier.retireve_next_base_element(to_loop_elements)
-
-    quantifier.store_new_in_loop_element(current_loop_base_element, concept_to_infer_name, current_loop_element)
-
-    current_in_loop_elements = []
+    updated_context_concepts = []
     for context_concept in context_concepts:
-        if context_concept.name in parsed_normcode_quantification["inLoopConcept"]:
-            quantifier.store_new_in_loop_element(current_loop_base_element, context_concept.name, context_concept.reference)
-            current_loop_index = parsed_normcode_quantification["inLoopConcept"][context_concept.name]
-            current_in_loop_elements.append(quantifier.retrieve_next_in_loop_element(context_concept.name, current_loop_index))
+        if parsed_normcode_quantification["InLoopConcept"] is not None:
+            if context_concept.name in parsed_normcode_quantification["InLoopConcept"]:
+                if is_new:
+                    quantifier.store_new_in_loop_element(current_loop_base_element, context_concept.name, context_concept.reference)
+                    current_loop_index = parsed_normcode_quantification["InLoopConcept"][context_concept.name]
+                    current_in_loop_concept_reference = quantifier.retrieve_next_in_loop_element(context_concept.name, current_loop_index)
+                    context_concept.reference = current_in_loop_concept_reference
+        if context_concept.name == current_loop_base_concept_name:
+            logger.debug(f"Current loop base concept element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
+            context_concept.reference = current_loop_base_element
+            logger.debug(f"Context concept: {context_concept.name}, reference: {context_concept.reference.tensor}, axes: {context_concept.reference.axes}, shape: {context_concept.reference.shape}")
+        updated_context_concepts.append(context_concept)
 
-    return current_loop_base_element, current_in_loop_elements
+    return updated_context_concepts
 
 
 # CVP
-def context_value_perception(current_loop_base_concept, workspace, loop_base_concept_name):
+def context_value_perception(context_concepts, parsed_normcode_quantification, workspace, to_loop_elements):
     """
     Perform context value perception for quantification sequence.
     
     Args:
-        working_configuration (dict): Working configuration
-        current_loop_base_concept (Concept): Current loop base concept
-        quantifier_workspace (dict): Workspace for the Quantifier
-        
+        context_concepts (list[Concept]): List of context concepts
+        parsed_normcode_quantification (dict): Parsed normcode quantification
+        workspace (dict): Workspace for the Quantifier
+        to_loop_elements: Elements to loop over
     Returns:
         Any: Current loop element
     """
     logger.debug("Executing context value perception for quantification")
+    # Determine the in-loop concept name
+    in_loop_concept_name = parsed_normcode_quantification['LoopBaseConcept'] + '*'  # e.g., '{digit position}*'
+    # Find the context concept with this name
+    current_loop_base_concept = None
+    for c in context_concepts:
+        if c.name == in_loop_concept_name:
+            current_loop_base_concept = c
+            break
+    if current_loop_base_concept is None:
+        logger.warning(f"No context concept found with name {in_loop_concept_name}")
+        return None, False, None
     logger.debug(f"Current loop base concept: {current_loop_base_concept.name}")
-    
     # Initialize the Quantifier with the provided workspace
-    processor = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
-    
+    quantifier = Quantifier(workspace=workspace, loop_base_concept_name=parsed_normcode_quantification['LoopBaseConcept'])
     # Extract current element from reference
     current_element = None
     if current_loop_base_concept.reference:
         current_element = current_loop_base_concept.reference.get()
-        
+    logger.debug(f"[context_value_perception] current_element: {current_element}, type: {type(current_element)}")
+    next_current_loop_base_element, _ = quantifier.retireve_next_base_element(to_loop_elements)
     # Check if the current element is new using Quantifier's method
-    if current_element and processor._check_new_base_element_by_looped_base_element(current_element, current_loop_base_concept.name):
+    if current_element and quantifier._check_new_base_element_by_looped_base_element(current_element, current_loop_base_concept.name):
         logger.debug("New element detected in context value perception")
-        return current_element, True
+        new_element = True
     else:
         logger.debug("Element is not new or no element found")
-        return None, False
+        new_element = False
+    logger.debug(f"[context_value_perception] next_current_loop_base_element: {next_current_loop_base_element.tensor}, axes: {next_current_loop_base_element.axes}, shape: {next_current_loop_base_element.shape}")
+    return current_element, new_element, next_current_loop_base_element    
 
 
 # AVP
@@ -1088,7 +1130,8 @@ def memory_actuation(combined_reference, concept_to_infer):
     # TODO: Implement memory actuation logic
     pass
 
-def return_reference(combined_reference, concept_to_infer):
+#RR
+def return_reference(concept_to_infer_reference, concept_to_infer):
     """
     Perform return reference for quantification sequence.
     
@@ -1101,10 +1144,10 @@ def return_reference(combined_reference, concept_to_infer):
         Concept: Concept to infer with reference
     """
     logger.debug("Executing return reference for quantification")
-    logger.debug(f"Combined reference: {combined_reference}")
+    logger.debug(f"Concept to infer reference: {concept_to_infer_reference}")
     logger.debug(f"Concept to infer: {concept_to_infer.name}")
     
     # TODO: Implement return reference logic
-    concept_to_infer.reference = combined_reference
-    
+    concept_to_infer.reference = concept_to_infer_reference
+
     return concept_to_infer

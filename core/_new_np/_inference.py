@@ -7,7 +7,7 @@ import inspect
 import logging
 import sys
 from _concept import Concept
-from _reference import Reference
+from _reference import Reference, cross_product
 
 # Configure logging
 def setup_logging(level=logging.INFO, log_file=None):
@@ -46,6 +46,27 @@ setup_logging()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+def _log_inference_result(result_concept, value_concepts, function_concept):
+    """Log the inference result and related information"""
+    if result_concept.reference:
+        logger.info(f"Answer concept reference: {result_concept.reference.tensor}")
+        logger.info(f"Answer concept reference without skip values: {result_concept.reference.get_tensor(ignore_skip=True)}")
+        logger.info(f"Answer concept axes: {result_concept.reference.axes}")
+        
+        # Create list of all references for cross product
+        all_references = [result_concept.reference]
+        if value_concepts:
+            all_references.extend([concept.reference for concept in value_concepts if concept.reference])
+        if function_concept and function_concept.reference:
+            all_references.append(function_concept.reference)
+        
+        if len(all_references) > 1:
+            all_info_reference = cross_product(all_references)
+            logger.info(f"All info reference: {all_info_reference.tensor}")
+            logger.info(f"All info reference without skip values: {all_info_reference.get_tensor(ignore_skip=True)}")
+            logger.info(f"All info axes: {all_info_reference.axes}")
+    else:
+        logger.warning("Answer concept reference is None")
 
 # Sequence class for executing registered steps
 class Inference:

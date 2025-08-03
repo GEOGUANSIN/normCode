@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Optional, List
 
 class Reference:
@@ -8,6 +9,22 @@ class Reference:
         self.shape: tuple[int, ...] = shape
         self.skip_value: str = skip_value
         self.data: list[Any] = self._create_nested_list(shape, initial_value)
+
+    def copy(self):
+        """
+        Create a deep copy of the Reference object.
+        
+        Returns:
+            Reference: A new Reference object with copied axes, shape, skip_value, and data
+        """
+        new_ref = Reference(
+            axes=self.axes.copy(),
+            shape=self.shape,
+            initial_value=None,
+            skip_value=self.skip_value
+        )
+        new_ref.data = copy.deepcopy(self.data)
+        return new_ref
 
     @classmethod
     def from_data(cls, data, axis_names=None, skip_value="@#SKIP#@"):

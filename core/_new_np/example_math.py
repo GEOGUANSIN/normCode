@@ -1,10 +1,11 @@
 from _concept import Concept
 from _reference import Reference, cross_product, element_action
-from _inference import Inference, register_inference_sequence
+from _inference import Inference, register_inference_sequence, _log_inference_result
 from _agentframe import AgentFrame, logger, _log_concept_details, _log_inference_result, create_concept_with_reference, create_simple_concept
 from _language_models import LanguageModel
 from _methods._quantification_demo import all_quantification_demo_methods
-
+from _methods._grouping_demo import all_grouping_demo_methods
+from _methods._workspace_demo import all_workspace_demo_methods
 
 
 OPERATOR_DESCRIPTION = """*every(_loopBaseConcept_)%:[_viewAxis_].[_conceptToInfer_?]@(_loopIndex_)^(_inLoopConcept_<*_carryoverCondition_>)"""
@@ -38,8 +39,6 @@ SEQUENCE_DESCRIPTION = """
    - Check if all _toLoopElement_ are present in _processedloopedElement_ and Set working configuration "completion_status" to True or False through Output working configuration (OWC)
 """
 
-
-
 def init_concept_with_references(both_numbers_value="43,34", digit_position_value=[1,2]):
     """
     Initialize concepts with references for the digit processing inference normcode.
@@ -48,7 +47,7 @@ def init_concept_with_references(both_numbers_value="43,34", digit_position_valu
         tuple: (value_concepts, function_concept, concept_to_infer)
     """
     both_numbers_concept, both_numbers_ref = create_concept_with_reference(
-        concept_name="{both numbers}?",
+        concept_name="{both numbers}",
         concept_id="both_numbers",
         reference_value=both_numbers_value,
         concept_type="{}",
@@ -57,38 +56,34 @@ def init_concept_with_references(both_numbers_value="43,34", digit_position_valu
     )
     
     # Create concept for digit position
-    digit_position_concept, digit_position_ref = create_concept_with_reference(
-        concept_name="{digit position}?",
+    digit_position_concept = create_simple_concept(
+        concept_name="{digit position}",
         concept_id="digit_position",
-        reference_value=digit_position_value,
         concept_type="{}",
-        reference_axes=["digit_position"],
-        reference_shape=(1,)
     )
+
+    digit_position_value = [f"%({i})" for i in digit_position_value]
+    digit_position_concept.reference = Reference.from_data(digit_position_value, axis_names=["digit_position"])
     
     # Create concept for digit pairs
-    digit_pairs_concept, digit_pairs_ref = create_simple_concept(
-        concept_name="digit pairs",
+    digit_pairs_concept = create_simple_concept(
+        concept_name="{digit pairs}",
         concept_id="digit_pairs",
         concept_type="{}",
     )
-    
-    # Create optional concepts (with ? suffix)
-    digit_pairs_optional_concept, digit_pairs_optional_ref = create_simple_concept(
-        concept_name="*every({digit position})%:[{digit position}].[{digit pairs}?]",
-        concept_id="digit_position_loop",
-        concept_type="*every",
-    )
 
-    read_function_concept, read_function_ref = create_simple_concept(
-        concept_name="::(Read {digit pairs}*? of {both numbers} in {digit position}*)",
+    read_function_concept, read_function_ref = create_concept_with_reference(
+        concept_name="::(Read {1}?<$({digit pairs}*)%_> of {2}<$({both numbers})%_> in {3}<$({digit position}*)%_>)",
         concept_id="read_function",
+        reference_value="::(Read {1}?<$({digit pairs}*)%_> of {2}<$({both numbers})%_> in {3}<$({digit position}*)%_>)",
         concept_type="::({})",
+        reference_axes=["read_function"],
+        reference_shape=(1,)
     )
     
-    digit_position_loop_concept, digit_position_loop_ref = create_simple_concept(
+    digit_quantification_concept = create_simple_concept(
         concept_name="*every({digit position})%:[{digit position}].[{digit pairs}?]",
-        concept_id="digit_position_loop",
+        concept_id="digit_quantification",
         concept_type="*every",
     )
     
@@ -101,15 +96,16 @@ def init_concept_with_references(both_numbers_value="43,34", digit_position_valu
         reference_axes=["read_function"],
         reference_shape=(1,)
     )
-        # Create concept for digit position
-    digit_position_concept_in_loop, digit_position_ref_in_loop = create_simple_concept(
+
+    # Create concept for digit position
+    digit_position_concept_in_loop = create_simple_concept(
         concept_name="{digit position}*",
         concept_id="digit_position_in_loop",
         concept_type="{}",
     )
     
     # Create concept for digit pairs
-    digit_pairs_concept_in_loop, digit_pairs_ref_in_loop = create_simple_concept(
+    digit_pairs_concept_in_loop = create_simple_concept(
         concept_name="{digit pairs}*?",
         concept_id="digit_pairs_in_loop",
         concept_type="{}",
@@ -119,16 +115,33 @@ def init_concept_with_references(both_numbers_value="43,34", digit_position_valu
         both_numbers_concept,
         digit_position_concept,
         digit_pairs_concept,
-        digit_pairs_optional_concept,
-        digit_position_loop_concept,
         digit_position_concept_in_loop,
         digit_pairs_concept_in_loop,
         read_function_concept,
+        digit_quantification_concept,
     )
  
 def init_working_configuration():
     working_configuration = {
-    "number_1": {
+        "{both numbers}": {
+            "perception": {
+                "mvp": {
+                    "mode": "formal"
+                },
+            },
+            "actuation": {},
+            "cognition": {}
+        },
+        "{digit position}": {
+            "perception": {
+                "mvp": {
+                    "mode": "formal"
+                },
+            },
+            "actuation": {},
+            "cognition": {}
+        },
+        "{digit pairs}": {
         "perception": {
             "mvp": {
                 "mode": "formal"
@@ -138,8 +151,8 @@ def init_working_configuration():
         },
         "cognition": {
         }
-    },
-    "number_2": {
+        },
+        "{digit position}*": {
         "perception": {
             "mvp": {
                 "mode": "formal"
@@ -149,46 +162,75 @@ def init_working_configuration():
         },
         "cognition": {
         }
-    },
-    "::({1}<$({number})%_> operate on {2}<$({number})%_>)": {
+        },
+        "{digit pairs}*?": {
         "perception": {
-            "asp": {
-                "mode": "in-cognition"
+            "mvp": {
+                "mode": "formal"
             },
-            "ap": {
-                "mode": "llm_formal",
-                "product": "translated_templated_function",
-                "value_order": {
-                    "number_1": 0,
-                    "number_2": 1
+        },
+        "actuation": {
+        },
+        "cognition": {
+        }
+        },
+        "*every({digit position})%:[{digit position}].[{digit pairs}?]": {
+            "perception": {
+                "asp": {
+                    "mode": "in-cognition"
+                }
+            },
+            "actuation": {
+                "pta": {
+                    "mode": "in-cognition",
+                    "value_order": {
+                        "{digit position}": 0
+                    }
+                }
+            },
+            "cognition": {
+                "rr": {
+                    "mode": "identity"
+                },
+                "": {
+                    "mode": "in-cognition"
                 }
             }
         },
-        "actuation": {
-            "pta": {
-                "mode": "in-cognition",
-                "value_order": {
-                    "number_1": 0,
-                    "number_2": 1
+        "::(Read {1}?<$({digit pairs}*)%_> of {2}<$({both numbers})%_> in {3}<$({digit position}*)%_>)": {
+            "perception": {
+                "asp": {
+                    "mode": "in-cognition"
+                },
+                "ap": {
+                    "mode": "llm_formal",
+                    "product": "translated_templated_function",
+                    "value_order": {
+                        "{digit pairs}*?": 0,
+                        "{both numbers}": 1,
+                        "{digit position}*": 2
+                    }
                 }
             },
-            "ma": {
-                "mode": "formal",
+            "actuation": {
+                "pta": {
+                    "mode": "in-cognition",
+                    "value_order": {
+                        "{digit pairs}*?": 0,
+                        "{both numbers}": 1,
+                        "{digit position}*": 2
+                    }
+                },
+                "ma": {
+                    "mode": "formal",
+                },
             },
-        },  
-        "cognition": {
-            "rr": {
-                "mode": "identity"
-            },
+            "cognition": {
+                "rr": {
+                    "mode": "identity"
+                },
+            }
         }
-    },
-    "number_answer": {
-        "perception": {
-            "mvp": {
-                "mode": "formal"
-            },
-        },
-        },
     }
     return working_configuration
 
@@ -256,7 +298,7 @@ class QuantAgent(AgentFrame):
             logger.debug("Step 4: Formal Actuator Perception (FAP)")
             fap_result = self.FAP(
                 function_concept=self.function_concept,
-                context_concepts=self.context_concepts
+                value_concepts=self.value_concepts
             )
             formal_actuator_function, parsed_normcode_quantification = fap_result
 
@@ -269,10 +311,11 @@ class QuantAgent(AgentFrame):
 
             # 6. Context Value Perception (CVP)
             logger.debug("Step 6: Context Value Perception (CVP)")
-            current_loop_element, is_new = self.CVP(
-                current_loop_base_concept=self.function_concept,
+            current_loop_element, is_new, next_current_loop_base_element = self.CVP(
+                context_concepts=self.context_concepts,
+                parsed_normcode_quantification=parsed_normcode_quantification,
                 workspace=workspace,
-                loop_base_concept_name=self.function_concept.name
+                to_loop_elements=to_loop_elements
             )
 
             # 7. Actuator Value Perception (AVP)
@@ -281,21 +324,21 @@ class QuantAgent(AgentFrame):
                 function_concept=self.concept_to_infer
             )
 
-            # 8. If new element, perform PTA and GA
-            if is_new:
-                logger.debug("Step 8: Perception Tool Actuation (PTA)")
-                self.PTA(
-                    parsed_normcode_quantification=parsed_normcode_quantification,
-                    workspace=workspace,
-                    loop_base_concept_name=self.function_concept.name,
-                    to_loop_elements=to_loop_elements,
-                    current_loop_base_element=current_loop_element,
-                    concept_to_infer_name=self.concept_to_infer.name,
-                    current_loop_element=current_concept_element,
-                    context_concepts=self.context_concepts
-                )
+            # 8. Perception Tool Actuation (PTA)
+            logger.debug("Step 8: Perception Tool Actuation (PTA)")
+            updated_context_concepts = self.PTA(
+                parsed_normcode_quantification=parsed_normcode_quantification,
+                workspace=workspace,
+                loop_base_concept_name=self.function_concept.name,
+                current_loop_base_element=next_current_loop_base_element,
+                concept_to_infer_name=self.concept_to_infer.name,
+                current_loop_element=current_concept_element,
+                context_concepts=self.context_concepts,
+                is_new=is_new
+            )
 
-                # 9. Grouping Actuation (GA)
+            # 9. Grouping Actuation (GA)
+            if is_new:
                 logger.debug("Step 9: Grouping Actuation (GA)")
                 combined_reference = self.GA(
                     workspace=workspace,
@@ -303,36 +346,41 @@ class QuantAgent(AgentFrame):
                     to_loop_elements_reference=to_loop_elements,
                     concept_to_infer=self.concept_to_infer
                 )
+            else:
+                combined_reference = None
 
-            # 10. Memory Actuation (MA)
-            logger.debug("Step 10: Memory Actuation (MA)")
-            self.MA(
-                combined_reference=combined_reference,
-                concept_to_infer=self.concept_to_infer
-            )
-
-            # 11. Return Reference (RR)
-            logger.debug("Step 11: Return Reference (RR)")
+            # 10. Return Reference (RR)
+            logger.debug("Step 10: Return Reference (RR)")
             concept_to_infer_with_reference = self.RR(
-                combined_reference=combined_reference,
-                concept_to_infer=self.concept_to_infer
+                concept_to_infer_reference=combined_reference,
+                concept_to_infer=self.concept_to_infer,
             )
 
-            # 12. Output Working Configuration (OWC)
-            logger.debug("Step 12: Output Working Configuration (OWC)")
-            self.OWC(
+            # 11. Output Working Configuration (OWC)
+            logger.debug("Step 11: Output Working Configuration (OWC)")
+            working_configuration = self.OWC(
                 working_configuration=working_configuration,
                 function_concept=self.function_concept,
                 workspace=workspace,
                 loop_base_concept_name=self.function_concept.name,
                 to_loop_elements=to_loop_elements,
                 concept_to_infer=self.concept_to_infer,
-                concept_to_infer_with_reference=concept_to_infer_with_reference
             )
 
             logger.info("Quantification sequence completed")
-            return concept_to_infer_with_reference
+            logger.debug(f"Updated context concepts: {[c.name for c in updated_context_concepts]}")
+            for context_concept in updated_context_concepts:
+                if context_concept.reference is not None:   
+                    logger.debug(f"Context concept: {context_concept.name}, reference: {context_concept.reference.tensor}, axes: {context_concept.reference.axes}, shape: {context_concept.reference.shape}")
+                else:
+                    logger.debug(f"Context concept: {context_concept.name}, reference: None")
+            logger.debug(f"Working configuration: {working_configuration}")
 
+            logger.debug(f"Workspace: {workspace}")
+
+            return concept_to_infer_with_reference, updated_context_concepts, working_configuration, workspace
+
+            
     def _configure_quantification_demo(self, inference_instance: Inference, **methods):
         logger.debug("Configuring quantification demo steps")
         @inference_instance.register_step("IWC")
@@ -472,10 +520,9 @@ class QuantAgent(AgentFrame):
 
 if __name__ == "__main__":
 
-    inference_normcode = """
-{digit pairs}
-    <= *every({digit position})%:[{digit position}].[{digit pairs}?]
-        <= ::(Read {digit pairs}*? of {both numbers} in {digit position}*)<*1>
+    inference_normcode = """{digit pairs}
+    <= *every({digit position})%:[{digit position}].[{digit pairs}?]^({digit position}*)
+        <= ::(Read {digit pairs}*? of {both numbers} in {digit position}*)
         <- {both numbers}
         <- {digit pairs}*?
         <- {digit position}*
@@ -484,39 +531,54 @@ if __name__ == "__main__":
     (both_numbers_concept,
         digit_position_concept,
         digit_pairs_concept,
-        digit_pairs_optional_concept,
-        digit_position_loop_concept,
         digit_position_concept_in_loop,
         digit_pairs_concept_in_loop,
         read_function_concept,
+        digit_quantification_concept,
     ) = init_concept_with_references(
         both_numbers_value="43,34",
         digit_position_value=[1,2],
     )
 
-    
+    in_quantification_inference = Inference(
+        sequence_name="imperative",
+        concept_to_infer=digit_quantification_concept,
+        value_concepts=[digit_position_concept, digit_pairs_concept],
+        function_concept=read_function_concept
+    )
+
+    quantification_inference = Inference(
+        sequence_name="quantification",
+        concept_to_infer=digit_pairs_concept,
+        value_concepts=[digit_position_concept],
+        function_concept=digit_quantification_concept,
+        context_concepts=[digit_position_concept_in_loop, digit_pairs_concept_in_loop]
+    )
 
 
-working_configuration = {}
+    # Initialize agent
+    llm = LanguageModel("qwen-turbo-latest")
+    cal_agent = AgentFrame(
+        "demo", 
+        init_working_configuration(), 
+        llm=llm,
+    )
+    cal_agent.configure(
+        inference_instance=in_quantification_inference, 
+        inference_sequence="imperative",
+    )
 
-working_configuration["*every({digit position})%:[{digit position}].[{digit pairs}?]"] = {
-    "perception": {
-        "asp": {
-            "mode": "in-cognition"
-        }
-    },
-    "actuation": {
-        "pta": {
-            "mode": "in-cognition"
-        }
-    },
-    "cognition": {
-        "rr": {
-            "mode": "identity"
-        },
-        "": {
-            "mode": "in-cognition"
-        }
-    }
-}
+    # Initialize quantification agent
+    workspace = {}
+    quant_agent = QuantAgent(
+        "demo", 
+        init_working_configuration(), 
+        llm=llm, 
+        workspace=workspace
+    )
+    quant_agent.configure(
+        inference_instance=quantification_inference, 
+        inference_sequence="quantification",
+    )
+    quantification_inference.execute()
 

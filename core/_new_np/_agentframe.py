@@ -424,7 +424,7 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
         logger.warning("Answer concept reference is None")
 
 
-def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None):
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None) -> tuple[Concept, Reference]:
     """
     Create a concept with an associated reference object.
     
@@ -456,7 +456,7 @@ def create_concept_with_reference(concept_name, concept_id, reference_value, con
     
     return concept, reference
 
-def create_simple_concept(concept_name, concept_id, concept_type="{}"):
+def create_simple_concept(concept_name, concept_id, concept_type="{}") -> Concept:
     """
     Create a simple concept without a reference object.
     
