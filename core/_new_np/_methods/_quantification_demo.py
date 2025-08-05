@@ -490,6 +490,9 @@ class Quantifier:
         if self.workspace_key not in self.workspace.keys():
             self.workspace[self.workspace_key] = {}
         self.current_subworkspace = self.workspace[self.workspace_key]
+        logger.debug(f"Initialized Quantifier with current subworkspace: {self.current_subworkspace}")
+        
+        self._log_current_subworkspace_tensors()
 
     def _get_list_at_index(self, input_list, index):
         """
@@ -652,33 +655,6 @@ class Quantifier:
         
         return loop_index
 
-    def combine_processed_elements(self, looped_concept):
-        """
-        Combine the processed elements into a single reference.
-        
-        Args:
-            looped_concept (str): The name of the concept to combine
-            
-        Returns:
-            Reference: Combined reference from all processed elements
-            
-        Raises:
-            ValueError: If the concept is not found in any loop index
-        """
-        all_references = []
-        
-        for loop_index in self.current_subworkspace.keys():
-            if looped_concept in self.current_subworkspace[loop_index].keys():
-                all_references.append(self.current_subworkspace[loop_index][looped_concept])
-            else:
-                raise ValueError(f"The {looped_concept} is not in the current_subworkspace at loop_index {loop_index}")
-        
-        if not all_references:
-            raise ValueError(f"No references found for concept {looped_concept} in the workspace")
-        
-        combined_reference = cross_product(all_references)
-        return combined_reference
-
 
     def retireve_next_base_element(self, to_loop_element_reference, current_loop_base_element=None):
         """
@@ -804,54 +780,64 @@ class Quantifier:
         Args:
             to_loop_element_reference: Reference containing all elements to loop over
             concept_name (str): Name of the concept to combine elements for
-            
+        
         Returns:
             Reference: Combined reference of all looped elements for the specified concept
-            
+        
         Examples:
             >>> combined_ref = quantifier.combine_all_looped_elements_by_concept(to_loop_ref, "digit_pairs")
             >>> print(combined_ref.tensor)
             # Returns combined reference of all digit_pairs elements
         """
+        logger.debug(f"[combine_all_looped_elements_by_concept] START: concept_name={concept_name}, to_loop_element_reference.tensor={getattr(to_loop_element_reference, 'tensor', None)}")
         current_loop_index = 0
         all_concept_references = []
         
         while True:
+            logger.debug(f"[combine_all_looped_elements_by_concept] Loop index: {current_loop_index}")
             # Create current_to_loop_element_reference for this index
             get_element_function = lambda x: self._get_list_at_index(x, current_loop_index)
             current_to_loop_element_reference = element_action(get_element_function, [to_loop_element_reference.copy()])
+            logger.debug(f"[combine_all_looped_elements_by_concept] current_to_loop_element_reference.tensor: {getattr(current_to_loop_element_reference, 'tensor', None)}")
             
             # Check if we've reached the end (all None or skip values)
             elements = self._flatten_list(current_to_loop_element_reference.tensor.copy())
+            logger.debug(f"[combine_all_looped_elements_by_concept] elements at index {current_loop_index}: {elements}")
             if all(e is None or e == "@#SKIP#@" for e in elements):
+                logger.debug(f"[combine_all_looped_elements_by_concept] End of elements at index {current_loop_index}")
                 current_loop_index += 1
                 break
             
             # Find the matching loop index for this element
             matching_loop_index = None
             for loop_index in self.current_subworkspace.keys():
+                logger.debug(f"[combine_all_looped_elements_by_concept] Checking subworkspace loop_index {loop_index}")
                 if (self.loop_base_concept_name in self.current_subworkspace[loop_index].keys() and 
-                    current_to_loop_element_reference in self.current_subworkspace[loop_index][self.loop_base_concept_name]):
+                    current_to_loop_element_reference.tensor in [r.tensor for r in self.current_subworkspace[loop_index][self.loop_base_concept_name]]):
                     matching_loop_index = loop_index
+                    logger.debug(f"[combine_all_looped_elements_by_concept] Found matching loop_index {matching_loop_index} for element {getattr(current_to_loop_element_reference, 'tensor', None)}")
                     break
             
             # If matching loop index found and concept exists, add to collection
             if matching_loop_index is not None and concept_name in self.current_subworkspace[matching_loop_index].keys():
                 concept_reference = self.current_subworkspace[matching_loop_index][concept_name]
                 all_concept_references.append(concept_reference)
-                logger.debug(f"Added concept reference for index {matching_loop_index}: {concept_reference.tensor}")
+                logger.debug(f"[combine_all_looped_elements_by_concept] Added concept reference for index {matching_loop_index}: {getattr(concept_reference, 'tensor', None)}")
             else:
-                logger.warning(f"Concept '{concept_name}' not found for loop index {matching_loop_index}")
+                logger.warning(f"[combine_all_looped_elements_by_concept] Concept '{concept_name}' not found for loop index {matching_loop_index}")
             
             current_loop_index += 1
         
+        logger.debug(f"[combine_all_looped_elements_by_concept] Collected {len(all_concept_references)} references for concept '{concept_name}'")
         # Combine all collected references
         if all_concept_references:
             combined_reference = cross_product(all_concept_references)
-            logger.debug(f"Combined {len(all_concept_references)} references for concept '{concept_name}'")
+            logger.debug(f"[combine_all_looped_elements_by_concept] Combined reference tensor: {getattr(combined_reference, 'tensor', None)}, axes: {getattr(combined_reference, 'axes', None)}")
+            logger.debug(f"[combine_all_looped_elements_by_concept] END: returning combined reference")
             return combined_reference
         else:
-            logger.warning(f"No references found for concept '{concept_name}'")
+            logger.warning(f"[combine_all_looped_elements_by_concept] No references found for concept '{concept_name}'")
+            logger.debug(f"[combine_all_looped_elements_by_concept] END: returning None")
             return None
 
     def retrieve_next_in_loop_element(self, concept_name: str, mode: str = 'carry_over', current_loop_index: int = 0, carry_index: int = 0) -> Reference:
@@ -865,6 +851,18 @@ class Quantifier:
                 concept_reference = Reference(initial_value=None, axes=None, shape=None)
         
         return concept_reference
+
+    def _log_current_subworkspace_tensors(self):
+        """
+        Log the structure of current_subworkspace, showing for each loop index the concept names and the .tensor attribute of their Reference values (if present).
+        """
+        msg = "[Quantifier] current_subworkspace:"
+        for loop_index, concept_dict in self.current_subworkspace.items():
+            msg += f"\n  loop_index={loop_index}:"
+            for concept_name, ref in concept_dict.items():
+                tensor = getattr(ref, 'tensor', None)
+                msg += f"  {concept_name}: tensor={tensor};"
+        logger.debug(msg)
 
 # Quantification sequence step implementations
 
@@ -1036,15 +1034,15 @@ def perception_tool_actuation(parsed_normcode_quantification, workspace, next_cu
         quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
         quantifier.store_new_base_element(current_loop_base_element)
         quantifier.store_new_in_loop_element(current_loop_base_element, concept_to_infer_name, current_loop_element)
-        logger.debug(f"Current loop base element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
-        logger.debug(f"Current loop element: {current_loop_element}")
+        logger.debug(f"[PTA] Current loop base element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
+        logger.debug(f"[PTA] Current loop element: {current_loop_element}")
 
     # TODO: This is a temporary fix to get the current loop base concept name.
     current_loop_base_concept_name = parsed_normcode_quantification['LoopBaseConcept'] + '*'
 
-    logger.debug(f"Parsed normcode quantification: {parsed_normcode_quantification}")
-    logger.debug(f"Context concepts: {[c.name for c in context_concepts]}")
-    logger.debug(f"Current loop base concept name: {current_loop_base_concept_name}")
+    logger.debug(f"[PTA] Parsed normcode quantification: {parsed_normcode_quantification}")
+    logger.debug(f"[PTA] Context concepts: {[c.name for c in context_concepts]}")
+    logger.debug(f"[PTA] Current loop base concept name: {current_loop_base_concept_name}")
     
     updated_context_concepts = []
     for context_concept in context_concepts:
@@ -1052,18 +1050,20 @@ def perception_tool_actuation(parsed_normcode_quantification, workspace, next_cu
             if context_concept.name in parsed_normcode_quantification["InLoopConcept"]:
                 if is_new:
                     quantifier.store_new_in_loop_element(current_loop_base_element, context_concept.name, context_concept.reference)
-                    logger.debug(f"Current loop base element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
+                    logger.debug(f"[PTA] Current loop base element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
                     current_loop_index = parsed_normcode_quantification["InLoopConcept"][context_concept.name]
                     current_in_loop_concept_reference = quantifier.retrieve_next_in_loop_element(context_concept.name, current_loop_index)
                     context_concept.reference = current_in_loop_concept_reference
-                    logger.debug(f"Current in loop concept reference: {current_in_loop_concept_reference.tensor}, axes: {current_in_loop_concept_reference.axes}, shape: {current_in_loop_concept_reference.shape}")
+                    logger.debug(f"[PTA] Current in loop concept reference: {current_in_loop_concept_reference.tensor}, axes: {current_in_loop_concept_reference.axes}, shape: {current_in_loop_concept_reference.shape}")
         if context_concept.name == current_loop_base_concept_name:
-            logger.debug(f"Next current loop base concept element: {next_current_loop_base_element.tensor}, axes: {next_current_loop_base_element.axes}, shape: {next_current_loop_base_element.shape}")
+            logger.debug(f"[PTA] Next current loop base concept element: {next_current_loop_base_element.tensor}, axes: {next_current_loop_base_element.axes}, shape: {next_current_loop_base_element.shape}")
             context_concept.reference = next_current_loop_base_element.copy()
-            logger.debug(f"Context concept: {context_concept.name}, reference: {context_concept.reference.tensor}, axes: {context_concept.reference.axes}, shape: {context_concept.reference.shape}")
+            logger.debug(f"[PTA] Context concept: {context_concept.name}, reference: {context_concept.reference.tensor}, axes: {context_concept.reference.axes}, shape: {context_concept.reference.shape}")
         updated_context_concepts.append(context_concept)
 
-    logger.debug(f"Updated workspace: {workspace}")
+    logger.debug(f"[PTA] Updated workspace: {workspace}")
+    if is_new:
+        quantifier._log_current_subworkspace_tensors()
     return updated_context_concepts
 
 
@@ -1125,7 +1125,7 @@ def actuator_value_perception(function_concept):
 
 
 
-def grouping_actuation(workspace, loop_base_concept_name, to_loop_elements_reference, concept_to_infer):
+def grouping_actuation(workspace, to_loop_elements_reference, parsed_normcode_quantification, concept_to_infer):
     """
     Perform grouping actuation for quantification sequence.
     
@@ -1141,6 +1141,9 @@ def grouping_actuation(workspace, loop_base_concept_name, to_loop_elements_refer
     logger.debug(f"Concept to infer: {concept_to_infer.name}")
     logger.debug(f"To loop elements reference: {to_loop_elements_reference}")
     
+    loop_base_concept_name = parsed_normcode_quantification['LoopBaseConcept']
+    logger.debug(f"Loop base concept name: {loop_base_concept_name}")
+
     processor = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     combined_reference = processor.combine_all_looped_elements_by_concept(to_loop_elements_reference, concept_to_infer.name)
     

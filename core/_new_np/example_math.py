@@ -14,32 +14,57 @@ OPERATOR_DESCRIPTION = """*every(_loopBaseConcept_)%:[_viewAxis_].[_conceptToInf
 
 SEQUENCE_DESCRIPTION = """
 **Variable Definitions:**
-- `_loopBaseConcept_`: The original concept that contains a reference linked to `_toLoopElement_` (the complete list of elements to process)
-- `_currentLoopBaseConcept_`: The `_loopBaseConcept_` during loop execution, with its reference linked to `_currentloopedElement_` (the current element being processed)
-- `_processedloopedElement_`: The collection of previously processed `_currentloopedElement_` values stored in the working configuration, with its reference linked to `_currentConceptToInferElement_`
-- `_toLoopElement_`: The complete ordered list of elements to be processed, derived from `_loopBaseConcept_` through Perception Grouping
-- `_currentConceptToInferElement_`: The current concept to infer, making up the reference of `_conceptToInfer_` through Grouping Actuation
+- `_loopBaseConcept_`: The main concept being iterated over (provides the list of elements to process)
+- `_currentLoopBaseConcept_`: The current element in the loop, as a concept
+- `_processedloopedElement_`: The collection of previously processed elements, stored in the workspace
+- `_toLoopElement_`: The ordered list of elements to process, derived from `_loopBaseConcept_` via Group Perception (GP)
+- `_currentConceptToInferElement_`: The current value for the concept being inferred in this loop iteration
 
-1. Perception:
-    - Load through memory value perception (MVP) of _loopBaseConcept_ follow by cross perception (CP)
-    - Use formal actuator perception (FAP) to understand the _viewAxis_, _conceptToInfer_, _inLoopConcept_ from the _quantificationConcpet_'s name 
-    - Set up the ordered list of _toLoopElement_ through Group Perception (GP) according to the _viewAxis_ (in context concept)
-    - Load the _currentloopedElement_ through context value perception (CVP) _currentLoopBaseConcept_  and Check if the _currentloopedElement_ brings a new _toLoopElement_ in the _processedloopedElement_
-    - Load _currentConceptToInferElement_ through actuator value perception (AVP)  
+**Quantification Sequence Steps:**
 
-2. Actuation: 
-    - if the _currentloopedElement_ brings a new _toLoopElement_ in the _processedloopedElement_, then:
-        - through Perception tool actuation (PTA), 
-            - update Workspace of _processedloopedElement_ with the _currentloopedElement_ and the _currentConceptToInferElement_
-            - update _currentLoopBaseConcept_ to the next unprocessed element in _toLoopElement_
-            - update _inLoopConcept_ according to the _carryoverCondition_
-        - By grouping actuation (GA), combine _currentConceptToInferElement_ from all _currentLoopBaseConcept_ into a single reference for _conceptToInfer_ with _viewAxis_
-    - Perform Memory Actuation (MA) for _conceptToInfer_ reference (currently not implemented)
+1. **Input Working Configuration (IWC):**
+    - Initialize the working configuration for the inference process.
 
-3. Output:
-   - Return Reference (RR) of the complete _conceptToInfer_ reference
-   - Check if all _toLoopElement_ are present in _processedloopedElement_ and Set working configuration "completion_status" to True or False through Output working configuration (OWC)
+2. **Formal Actuator Perception (FAP):**
+    - Parse the quantification normcode expression to extract loop base, view axis, and concept to infer.
+    - Prepare a function for grouping/combining references according to the quantification pattern.
+
+3. **Group Perception (GP):**
+    - Use the FAP result to generate the ordered list of elements (`_toLoopElement_`) to loop over, based on the view axis.
+
+4. **Context Value Perception (CVP):**
+    - Determine the current element in the loop (`_currentLoopBaseConcept_`), check if it is new, and find the next element to process.
+
+5. **Actuator Value Perception (AVP):**
+    - Load the current value for the concept to infer (`_currentConceptToInferElement_`).
+
+6. **Perception Tool Actuation (PTA):**
+    - If the current element is new, update the workspace with the current loop base and concept to infer.
+    - Update context concepts as needed for the next iteration.
+
+7. **Grouping Actuation (GA):**
+    - Combine all processed elements for the concept to infer into a single reference, using the workspace and the list of looped elements.
+
+8. **Return Reference (RR):**
+    - Set the reference for the concept to infer to the combined result from GA.
+
+9. **Output Working Configuration (OWC):**
+    - Check if all elements in `_toLoopElement_` have been processed and update the working configuration's completion status accordingly.
+
 """
+
+
+def log_subworkspace_tensors(subworkspace):
+    """
+    Log the structure of a given subworkspace, showing for each loop index the concept names and the .tensor attribute of their Reference values.
+    """
+    msg = "[Subworkspace] current_subworkspace:"
+    for loop_index, concept_dict in subworkspace.items():
+        msg += f"\n  loop_index={loop_index}:"
+        for concept_name, ref in concept_dict.items():
+            tensor = getattr(ref, 'tensor', None)
+            msg += f"  {concept_name}: tensor={tensor};"
+    logger.debug(msg)
 
 def init_concept_with_references(two_numbers_value="43, 34", digit_position_value=[1,2]):
     """
@@ -324,7 +349,7 @@ class QuantAgent(AgentFrame):
                 parsed_normcode_quantification=parsed_normcode_quantification,
                 workspace=workspace,
                 next_current_loop_base_element=next_current_loop_base_element,
-                current_loop_base_element=current_concept_element,
+                current_loop_base_element=current_loop_element,
                 concept_to_infer_name=self.concept_to_infer.name,
                 current_loop_element=current_concept_element,
                 context_concepts=self.context_concepts,
@@ -336,8 +361,8 @@ class QuantAgent(AgentFrame):
                 logger.debug("Step 7: Grouping Actuation (GA)")
                 combined_reference = self.GA(
                     workspace=workspace,
-                    loop_base_concept_name=self.function_concept.name,
                     to_loop_elements_reference=to_loop_elements,
+                    parsed_normcode_quantification = parsed_normcode_quantification,
                     concept_to_infer=self.concept_to_infer
                 )
             else:
@@ -627,7 +652,9 @@ if __name__ == "__main__":
     logger.debug("=== After Quantification Execution 1 ===")
     _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
     _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
-    
+    for key, subworkspace in workspace.items(): #type: ignore
+        log_subworkspace_tensors(subworkspace)
+
     in_quantification_inference.value_concepts = [digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop]
     cal_agent.configure(
         inference_instance=in_quantification_inference, 
