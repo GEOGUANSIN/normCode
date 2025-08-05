@@ -305,7 +305,7 @@ class QuantAgent(AgentFrame):
             logger.info("Executing quantification sequence")
 
             # 1. Input Working Configuration (IWC)
-            logger.debug("Step 1: Input Working Configuration (IWC)")
+            logger.debug("***STEP 1: Input Working Configuration (IWC)***")
             working_configuration = self.IWC(
                 value_concepts=self.value_concepts,
                 function_concept=self.function_concept,
@@ -314,7 +314,7 @@ class QuantAgent(AgentFrame):
             )
 
             # 2. Formal Actuator Perception (FAP)
-            logger.debug("Step 2: Formal Actuator Perception (FAP)")
+            logger.debug("***STEP 2: Formal Actuator Perception (FAP)***")
             fap_result = self.FAP(
                 function_concept=self.function_concept,
                 value_concepts=self.value_concepts
@@ -322,14 +322,14 @@ class QuantAgent(AgentFrame):
             formal_actuator_function, parsed_normcode_quantification = fap_result
 
             # 3. Group Perception (GP)
-            logger.debug("Step 3: Group Perception (GP)")
+            logger.debug("***STEP 3: Group Perception (GP)***")
             to_loop_elements = self.GP(
                 formal_actuator_function=formal_actuator_function,
                 value_concepts=self.value_concepts
             )
 
             # 4. Context Value Perception (CVP)
-            logger.debug("Step 4: Context Value Perception (CVP)")
+            logger.debug("***STEP 4: Context Value Perception (CVP)***")
             current_loop_element, is_new, next_current_loop_base_element = self.CVP(
                 context_concepts=self.context_concepts,
                 parsed_normcode_quantification=parsed_normcode_quantification,
@@ -338,13 +338,13 @@ class QuantAgent(AgentFrame):
             )
 
             # 5. Actuator Value Perception (AVP)
-            logger.debug("Step 5: Actuator Value Perception (AVP)")
+            logger.debug("***STEP 5: Actuator Value Perception (AVP)***")
             current_concept_element = self.AVP(
                 function_concept=self.function_concept
             )
 
             # 6. Perception Tool Actuation (PTA)
-            logger.debug("Step 6: Perception Tool Actuation (PTA)")
+            logger.debug("***STEP 6: Perception Tool Actuation (PTA)***")
             updated_context_concepts: List[Concept] = self.PTA(
                 parsed_normcode_quantification=parsed_normcode_quantification,
                 workspace=workspace,
@@ -358,25 +358,27 @@ class QuantAgent(AgentFrame):
 
             # 7. Grouping Actuation (GA)
             if is_new:
-                logger.debug("Step 7: Grouping Actuation (GA)")
+                logger.debug("***STEP 7: Grouping Actuation (GA)***")
                 combined_reference = self.GA(
                     workspace=workspace,
                     to_loop_elements_reference=to_loop_elements,
                     parsed_normcode_quantification = parsed_normcode_quantification,
-                    concept_to_infer=self.concept_to_infer
+                    concept_to_infer=self.concept_to_infer,
+                    context_concepts=self.context_concepts,
+                    value_concepts=self.value_concepts
                 )
             else:
                 combined_reference = None
 
             # 8. Return Reference (RR)
-            logger.debug("Step 8: Return Reference (RR)")
+            logger.debug("***STEP 8: Return Reference (RR)***")
             concept_to_infer_with_reference = self.RR(
                 concept_to_infer_reference=combined_reference,
                 concept_to_infer=self.concept_to_infer,
             )
 
             # 9. Output Working Configuration (OWC)
-            logger.debug("Step 9: Output Working Configuration (OWC)")
+            logger.debug("***STEP 9: Output Working Configuration (OWC)***")
             working_configuration = self.OWC(
                 working_configuration=working_configuration,
                 function_concept=self.function_concept,

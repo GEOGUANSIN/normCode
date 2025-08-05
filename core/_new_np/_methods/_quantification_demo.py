@@ -800,7 +800,7 @@ class Quantifier:
             if matching_loop_index is not None and concept_name in self.current_subworkspace[matching_loop_index].keys():
                 concept_reference = self.current_subworkspace[matching_loop_index][concept_name]
                 all_concept_references.append(concept_reference)
-                logger.debug(f"[Quantifier.combine_all_looped_elements_by_concept] Added concept reference for index {matching_loop_index}: {getattr(concept_reference, 'tensor', None)}")
+                logger.debug(f"[Quantifier.combine_all_looped_elements_by_concept] Added concept reference for index {matching_loop_index}: {getattr(concept_reference, 'tensor', None)} with axes {getattr(concept_reference, 'axes', None)}")
             else:
                 logger.warning(f"[Quantifier.combine_all_looped_elements_by_concept] Concept '{concept_name}' not found for loop index {matching_loop_index}")
             current_loop_index += 1
@@ -1127,11 +1127,14 @@ def actuator_value_perception(function_concept):
     return None
 
 #GA
-def grouping_actuation(workspace, to_loop_elements_reference, parsed_normcode_quantification, concept_to_infer):
+def grouping_actuation(workspace, to_loop_elements_reference, parsed_normcode_quantification, concept_to_infer, context_concepts: list[Concept], value_concepts: list[Concept]):
     """
     Step 7: Grouping Actuation (GA)
     
     Combines all processed elements for the concept to infer into a single reference.
+    Also adjusts the axes of the combined reference:
+        - Any axis named {concept_to_infer.name}_in_loop is renamed to {concept_to_infer.name}
+        - The last axis (which is the loop axis) is renamed to {concept_to_infer.name}
     
     Args:
         workspace: Current workspace state
@@ -1147,11 +1150,29 @@ def grouping_actuation(workspace, to_loop_elements_reference, parsed_normcode_qu
     logger.debug(f"[GA] To loop elements reference: {to_loop_elements_reference}")
     
     loop_base_concept_name = parsed_normcode_quantification['LoopBaseConcept']
+    current_loop_base_concept_name = loop_base_concept_name + '*'
     logger.debug(f"[GA] Loop base concept name: {loop_base_concept_name}")
 
     processor = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     combined_reference = processor.combine_all_looped_elements_by_concept(to_loop_elements_reference, concept_to_infer.name)
     
+    loop_base_concept_axis = [concept.context for concept in value_concepts if concept.name == loop_base_concept_name][0]
+    logger.debug(f"[GA] Loop base concept axis: {loop_base_concept_axis}")
+    current_loop_base_concept_axis = [concept.context for concept in context_concepts if concept.name == current_loop_base_concept_name][0]
+    logger.debug(f"[GA] Current loop base concept axis: {current_loop_base_concept_axis}")
+
+
+    # Adjust axes of combined reference
+    if combined_reference:
+        new_axes = combined_reference.axes.copy()
+        new_axes[-1] = concept_to_infer.context
+        # # make sure that current_loop_base_concept_axis in the old axis is changed to loop_base_concept_axis
+        # new_axes[new_axes.index(current_loop_base_concept_axis)] = loop_base_concept_axis
+        # logger.debug(f"[GA] New axis: {new_axes}")
+        combined_reference.axes = new_axes
+        logger.debug(f"[GA] Combined reference axes: {combined_reference.axes}")
+        logger.debug(f"[GA] Combined reference tensor: {combined_reference.tensor}")
+
     return combined_reference
 
 
