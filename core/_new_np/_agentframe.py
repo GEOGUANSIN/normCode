@@ -395,7 +395,7 @@ def _log_concept_details(concept, reference=None, example_number=None, concept_n
     logger.info(f"   Concept: {concept.name}")
     logger.info(f"   Type: {concept.type} ({concept.get_type_class()})")
     
-    if reference:
+    if reference and isinstance(reference, Reference):
         # Get all values from the reference using slice(None) for all axes
         slice_params = {axis: slice(None) for axis in reference.axes}
         all_values = reference.get(**slice_params)

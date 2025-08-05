@@ -179,13 +179,13 @@ def _load_templates(llm, concept_type):
 
 
 def _create_actuator_function(actuator_translated_template, instruction_template, instruction_validation_template,
-                             concept_to_infer_name, input_length, llm):
+                             concept_to_infer_context, input_length, llm):
     """Create generation function for multiple inputs"""
     def _generation_function_n(input_list):
         input_dict = {}
         for i in range(input_length):
             input_dict[f"input_{i+1}"] = input_list[i]
-            input_dict["output"] = concept_to_infer_name
+            input_dict["output"] = concept_to_infer_context
         logger.debug(f"Input dict: {input_dict}")
 
         valued_actuator_prompt = str(actuator_translated_template.safe_substitute(**input_dict))
@@ -207,7 +207,7 @@ def _create_actuator_function(actuator_translated_template, instruction_template
 
 
 def _create_activation_function(translation_template, instruction_template, instruction_validation_template,
-                             concept_to_infer_name, input_length, llm):
+                             concept_to_infer_context, input_length, llm):
     """Create the main actuator function"""
     def _strip_translate_and_instruct_validate_validate_actuator(actuator_element):
         stripped_actuator_element = strip_element_wrapper(actuator_element)
@@ -220,7 +220,7 @@ def _create_activation_function(translation_template, instruction_template, inst
         
         return _create_actuator_function(
             actuator_translated_template, instruction_template, instruction_validation_template,
-            concept_to_infer_name, input_length, llm
+            concept_to_infer_context, input_length, llm
         )
     
     return _strip_translate_and_instruct_validate_validate_actuator
@@ -272,7 +272,7 @@ def actuator_perception(working_configuration, function_concept, concept_type, c
         if working_configuration[function_concept.name]["perception"]["ap"]["product"] == "translated_templated_function":
             
             input_length = len(working_configuration[function_concept.name]["perception"]["ap"]["value_order"])
-            concept_to_infer_name = concept_to_infer.name
+            concept_to_infer_context = concept_to_infer.context
             
             # Load templates
             translation_template, instruction_template, instruction_validation_template = _load_templates(llm, concept_type)
@@ -280,7 +280,7 @@ def actuator_perception(working_configuration, function_concept, concept_type, c
             # Create actuator function
             activation_function = _create_activation_function(
                 translation_template, instruction_template, instruction_validation_template,
-                concept_to_infer_name, input_length, llm
+                concept_to_infer_context, input_length, llm
             )
             
             # Apply actuator function to function concept reference
