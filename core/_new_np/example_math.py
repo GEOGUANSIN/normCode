@@ -381,7 +381,7 @@ class QuantAgent(AgentFrame):
                 working_configuration=working_configuration,
                 function_concept=self.function_concept,
                 workspace=workspace,
-                loop_base_concept_name=self.function_concept.name,
+                loop_base_concept_name=parsed_normcode_quantification['LoopBaseConcept'],
                 to_loop_elements=to_loop_elements,
                 concept_to_infer=self.concept_to_infer,
             )
@@ -407,17 +407,6 @@ class QuantAgent(AgentFrame):
             logger.debug("Executing IWC step")
             function = methods.get("input_working_configurations", self._input_working_configurations)
             return function(**fkwargs)
-
-        @inference_instance.register_step("MVP")
-        def memorized_values_perception(**fkwargs):
-            logger.debug("Executing MVP step")
-            function = methods.get("memorized_values_perception", self._memorized_values_perception)
-            return function(**fkwargs)
-
-        @inference_instance.register_step("CP")
-        def cross_perception(perception_references):
-            logger.debug("Executing CP step")
-            return cross_product(perception_references)
 
         @inference_instance.register_step("FAP")
         def formal_actuator_perception(**fkwargs):
@@ -455,12 +444,6 @@ class QuantAgent(AgentFrame):
             function = methods.get("grouping_actuation", self._grouping_actuation)
             return function(**fkwargs)
 
-        @inference_instance.register_step("MA")
-        def memory_actuation(**fkwargs):
-            logger.debug("Executing MA step")
-            function = methods.get("memory_actuation", self._memory_actuation)
-            return function(**fkwargs)
-
         @inference_instance.register_step("RR")
         def return_reference(**fkwargs):
             logger.debug("Executing RR step")
@@ -493,11 +476,6 @@ class QuantAgent(AgentFrame):
         logger.warning("Executing RR step: This will do nothing.")
         pass
 
-    def _memorized_values_perception(self, *args, **kwargs):
-        """Perform the memorized values perception"""
-        logger.warning("Executing MVP step: This will do nothing.")
-        pass
-
     def _formal_actuator_perception(self, *args, **kwargs):
         """Perform the formal actuator perception"""
         logger.warning("Executing FAP step: This will do nothing.")
@@ -528,10 +506,6 @@ class QuantAgent(AgentFrame):
         logger.warning("Executing GA step: This will do nothing.")
         pass
 
-    def _memory_actuation(self, *args, **kwargs):
-        """Perform the memory actuation"""
-        logger.warning("Executing MA step: This will do nothing.")
-        pass
 
 
 def renew_concepts_from_context(updated_context_concepts: List[Concept], *concepts_to_renew: Concept) -> List[Concept]:
