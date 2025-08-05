@@ -323,7 +323,8 @@ class QuantAgent(AgentFrame):
             updated_context_concepts: List[Concept] = self.PTA(
                 parsed_normcode_quantification=parsed_normcode_quantification,
                 workspace=workspace,
-                current_loop_base_element=current_loop_element,
+                next_current_loop_base_element=next_current_loop_base_element,
+                current_loop_base_element=current_concept_element,
                 concept_to_infer_name=self.concept_to_infer.name,
                 current_loop_element=current_concept_element,
                 context_concepts=self.context_concepts,
@@ -623,7 +624,7 @@ if __name__ == "__main__":
     workspace) = quantification_inference.execute()
 
         # Log the concepts After execution
-    logger.debug("=== After Execution ===")
+    logger.debug("=== After Quantification Execution 1 ===")
     _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
     _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
     
@@ -649,10 +650,16 @@ if __name__ == "__main__":
         inference_instance=quantification_inference, 
         inference_sequence="quantification",
     )
-    digit_quantification_concept = quantification_inference.execute()
-    logger.debug("=== After Quantification Execution ===")
-    _log_concept_details(digit_quantification_concept, digit_quantification_concept.reference)
+    (concept_to_infer_with_reference, 
+    updated_context_concepts, 
+    working_configuration, 
+    workspace) = quantification_inference.execute()
 
+    logger.debug("=== After Quantification Execution 2 ===")
+    _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
+    _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
+    _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
+    
 
 
     # # Renew the original concepts using the new function

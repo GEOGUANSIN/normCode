@@ -1007,7 +1007,7 @@ def group_perception(formal_actuator_function, value_concepts):
 
 
 #PTA
-def perception_tool_actuation(parsed_normcode_quantification, workspace,
+def perception_tool_actuation(parsed_normcode_quantification, workspace, next_current_loop_base_element:Reference,
                           current_loop_base_element:Reference, concept_to_infer_name:str, current_loop_element:Reference, context_concepts:list[Concept],
                           is_new:bool) -> List[Concept]:
     """
@@ -1058,8 +1058,8 @@ def perception_tool_actuation(parsed_normcode_quantification, workspace,
                     context_concept.reference = current_in_loop_concept_reference
                     logger.debug(f"Current in loop concept reference: {current_in_loop_concept_reference.tensor}, axes: {current_in_loop_concept_reference.axes}, shape: {current_in_loop_concept_reference.shape}")
         if context_concept.name == current_loop_base_concept_name:
-            logger.debug(f"Current loop base concept element: {current_loop_base_element.tensor}, axes: {current_loop_base_element.axes}, shape: {current_loop_base_element.shape}")
-            context_concept.reference = current_loop_base_element
+            logger.debug(f"Next current loop base concept element: {next_current_loop_base_element.tensor}, axes: {next_current_loop_base_element.axes}, shape: {next_current_loop_base_element.shape}")
+            context_concept.reference = next_current_loop_base_element.copy()
             logger.debug(f"Context concept: {context_concept.name}, reference: {context_concept.reference.tensor}, axes: {context_concept.reference.axes}, shape: {context_concept.reference.shape}")
         updated_context_concepts.append(context_concept)
 
