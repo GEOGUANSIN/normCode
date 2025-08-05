@@ -813,7 +813,7 @@ class Quantifier:
             for loop_index in self.current_subworkspace.keys():
                 logger.debug(f"[combine_all_looped_elements_by_concept] Checking subworkspace loop_index {loop_index}")
                 if (self.loop_base_concept_name in self.current_subworkspace[loop_index].keys() and 
-                    current_to_loop_element_reference.tensor in [r.tensor for r in self.current_subworkspace[loop_index][self.loop_base_concept_name]]):
+                    current_to_loop_element_reference.tensor == self.current_subworkspace[loop_index][self.loop_base_concept_name].tensor):
                     matching_loop_index = loop_index
                     logger.debug(f"[combine_all_looped_elements_by_concept] Found matching loop_index {matching_loop_index} for element {getattr(current_to_loop_element_reference, 'tensor', None)}")
                     break
