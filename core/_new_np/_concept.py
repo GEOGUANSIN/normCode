@@ -67,13 +67,14 @@ CONCEPT_TYPES = {
 
 
 class Concept:
-    def __init__(self, name, context="", reference: Optional[Reference] = None, type="{}"):
+    def __init__(self, name, context="", axis_name: Optional[str] = None, reference: Optional[Reference] = None, type="{}"):
         if type not in CONCEPT_TYPES:
             raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
             
         self.name = name
         self.type = type
         self.context = context
+        self.axis_name = axis_name if axis_name else name
         self.reference: Optional[Reference] = reference
         self.id = str(uuid.uuid4())  # Generate unique identification number
     
@@ -93,6 +94,7 @@ class Concept:
             "name": self.name,
             "type": self.type,
             "context": self.context,
+            "axis_name": self.axis_name,
             "type_description": CONCEPT_TYPES[self.type]["description"],
             "type_class": CONCEPT_TYPES[self.type]["type_class"],
         }
@@ -107,6 +109,8 @@ class Concept:
             return self.type
         elif key == "context":
             return self.context
+        elif key == "axis_name":
+            return self.axis_name
         elif key == "type_description":
             return CONCEPT_TYPES[self.type]["description"]
         elif key == "type_class":
@@ -125,6 +129,8 @@ class Concept:
             self.type = value
         elif key == "context":
             self.context = value
+        elif key == "axis_name":
+            self.axis_name = value
         else:
             raise KeyError(f"Key '{key}' not found")
 

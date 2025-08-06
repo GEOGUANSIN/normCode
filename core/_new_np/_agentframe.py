@@ -426,7 +426,7 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
         logger.warning("Answer concept reference is None")
 
 
-def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None) -> tuple[Concept, Reference]:
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None, axis_name = None) -> tuple[Concept, Reference]:
     """
     Create a concept with an associated reference object.
     
@@ -454,23 +454,24 @@ def create_concept_with_reference(concept_name, concept_id, reference_value, con
     reference.set(f"%({reference_value})", **{concept_id: 0})
     
     # Create concept
-    concept = Concept(concept_name, concept_id, reference, concept_type)
+    concept = Concept(concept_name, concept_id, axis_name, reference, concept_type)
     
     return concept, reference
 
-def create_simple_concept(concept_name, concept_id, concept_type="{}") -> Concept:
+def create_simple_concept(concept_name, concept_id, axis_name = None, concept_type="{}") -> Concept:
     """
     Create a simple concept without a reference object.
     
     Args:
         concept_name (str): The name of the concept
         concept_id (str): The internal identifier for the concept
+        axis_name (str): The name of the axis for the concept
         concept_type (str): The type format for the concept (default: "{}")
     
     Returns:
         Concept: The created concept
     """
-    return Concept(concept_name, concept_id, None, concept_type)
+    return Concept(concept_name, concept_id, axis_name, None, concept_type)
 
 # Abstract usage pattern
 if __name__ == "__main__":
@@ -478,9 +479,9 @@ if __name__ == "__main__":
     # Create inference instance for arithmetic calculator
     judgement_instance = Inference(
         "judgement",
-        Concept("concept_to_infer", "Concept to infer", Reference(axes=["concept_to_infer"], shape=(1,), initial_value=None)),
-        [Concept("value_concept", "Value concept", Reference(axes=["value_concept"], shape=(1,), initial_value=None))],
-        Concept("function_concept", "Function concept", Reference(axes=["function_concept"], shape=(1,), initial_value=None))
+        Concept("concept_to_infer", "Concept to infer", "concept_to_infer", Reference(axes=["concept_to_infer"], shape=(1,), initial_value=None)),
+        [Concept("value_concept", "Value concept", "value_concept", Reference(axes=["value_concept"], shape=(1,), initial_value=None))],
+        Concept("function_concept", "Function concept", "function_concept", Reference(axes=["function_concept"], shape=(1,), initial_value=None))
     )
 
     agent = AgentFrame("demo")

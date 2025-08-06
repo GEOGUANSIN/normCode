@@ -1181,9 +1181,9 @@ def grouping_actuation(workspace, to_loop_elements_reference, parsed_normcode_qu
     if combined_reference:
         new_axes = combined_reference.axes.copy()
         new_axes[-1] = concept_to_infer.context
-        # # make sure that current_loop_base_concept_axis in the old axis is changed to loop_base_concept_axis
-        # new_axes[new_axes.index(current_loop_base_concept_axis)] = loop_base_concept_axis
-        # logger.debug(f"[GA] New axis: {new_axes}")
+        # make sure that current_loop_base_concept_axis in the old axis is changed to loop_base_concept_axis
+        new_axes[new_axes.index(current_loop_base_concept_axis)] = loop_base_concept_axis
+        logger.debug(f"[GA] New axis: {new_axes}")
         combined_reference.axes = new_axes
         logger.debug(f"[GA] Combined reference axes: {combined_reference.axes}")
         logger.debug(f"[GA] Combined reference tensor: {combined_reference.tensor}")

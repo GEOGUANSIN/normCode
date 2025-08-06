@@ -19,7 +19,7 @@ def _log_concept_details(concept, reference=None, example_number=None, concept_n
         all_values = reference.get(**slice_params)
         logger.info(f"   All values: {all_values}")
 
-def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None):
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None, axis_name = None):
     """
     Create a concept with an associated reference object.
     
@@ -47,11 +47,11 @@ def create_concept_with_reference(concept_name, concept_id, reference_value, con
     reference.set(f"%({reference_value})", **{concept_id: 0})
     
     # Create concept
-    concept = Concept(concept_name, concept_id, reference, concept_type)
+    concept = Concept(concept_name, concept_id, axis_name, reference, concept_type)
     
     return concept, reference
 
-def create_simple_concept(concept_name, concept_id, concept_type="{}"):
+def create_simple_concept(concept_name, concept_id, axis_name = None, concept_type="{}"):
     """
     Create a simple concept without a reference object.
     
@@ -63,7 +63,7 @@ def create_simple_concept(concept_name, concept_id, concept_type="{}"):
     Returns:
         Concept: The created concept
     """
-    return Concept(concept_name, concept_id, None, concept_type)
+    return Concept(concept_name, concept_id, axis_name, None, concept_type)
 
 def init_concept_with_references():
     """Demonstrate Concept class with actual Reference objects"""

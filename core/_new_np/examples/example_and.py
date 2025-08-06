@@ -20,7 +20,7 @@ def _log_concept_details(concept, reference=None, example_number=None, concept_n
         all_values = reference.get(**slice_params)
         logger.info(f"   All values: {all_values}")
 
-def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None):
+def create_concept_with_reference(concept_name, concept_id, reference_value, concept_type="{}", reference_axes=None, reference_shape=None, axis_name = None):
     """
     Create a concept with an associated reference object.
     
@@ -31,6 +31,7 @@ def create_concept_with_reference(concept_name, concept_id, reference_value, con
         concept_type (str): The type format for the concept (default: "{}")
         reference_axes (list): List of axis names for the reference (default: [concept_id])
         reference_shape (tuple): Shape of the reference tensor (default: (1,))
+        axis_name (str): The name of the axis for the concept
     
     Returns:
         tuple: (concept, reference) - The created concept and its reference
@@ -48,23 +49,24 @@ def create_concept_with_reference(concept_name, concept_id, reference_value, con
     reference.set(f"%({reference_value})", **{concept_id: 0})
     
     # Create concept
-    concept = Concept(concept_name, concept_id, reference, concept_type)
+    concept = Concept(concept_name, concept_id, axis_name, reference, concept_type)
     
     return concept, reference
 
-def create_simple_concept(concept_name, concept_id, concept_type="{}"):
+def create_simple_concept(concept_name, concept_id, axis_name = None, concept_type="{}"):
     """
     Create a simple concept without a reference object.
     
     Args:
         concept_name (str): The name of the concept
         concept_id (str): The internal identifier for the concept
+        axis_name (str): The name of the axis for the concept
         concept_type (str): The type format for the concept (default: "{}")
     
     Returns:
         Concept: The created concept
     """
-    return Concept(concept_name, concept_id, None, concept_type)
+    return Concept(concept_name, concept_id, axis_name, None, concept_type)
 
 def init_concept_with_references():
     """Demonstrate Concept class with actual Reference objects"""

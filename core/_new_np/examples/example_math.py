@@ -28,8 +28,8 @@ def init_concept_with_references():
     number2_ref.set("%(3)", number_2=0)   
     number2_ref.set("%(4)", number_2=1) 
 
-    number_1 = Concept("number_1", "Numbers", number1_ref, "{}")
-    number_2 = Concept("number_2", "Numbers", number2_ref, "{}")
+    number_1 = Concept("number_1", "Numbers", "number_1", number1_ref, "{}")
+    number_2 = Concept("number_2", "Numbers", "number_2", number2_ref, "{}")
 
     print(f"   Concept: {number_1.name}")
     print(f"   Type: {number_1.type} ({number_1.get_type_class()})")
@@ -53,7 +53,7 @@ def init_concept_with_references():
     # operation_ref.set("%(::({1}<$({number})%_> multiply {2}<$({number})%_>))", operation=2)
     # operation_ref.set("%(::({1}<$({number})%_> divide {2}<$({number})%_>))", operation=3)
     
-    operation_concept = Concept("::({1}<$({number})%_> operate on {2}<$({number})%_>)", "Basic mathematical operations", operation_ref, "::({})")
+    operation_concept = Concept("::({1}<$({number})%_> operate on {2}<$({number})%_>)", "Basic mathematical operations", "operation", operation_ref, "::({})")
     print(f"   Concept: {operation_concept.name}")
     print(f"   Type: {operation_concept.type} ({operation_concept.get_type_class()})")
     print(f"   All operations: {operation_ref.get(operation=slice(None))}")
@@ -65,7 +65,7 @@ def init_concept_with_references():
     answer_shape = (1,)
     # answer_ref = Reference(answer_axes, answer_shape)
     # answer_ref.set("%(1)", answer=0)
-    answer_concept = Concept("number_answer", "Answer", None, "{}")
+    answer_concept = Concept("number_answer", "Answer", "number_answer", None, "{}")
     print(f"   Concept: {answer_concept.name}")
 
     return operation_concept, number_1, number_2, answer_concept
