@@ -796,18 +796,17 @@ def debug_formal_actuator_perception():
 
     function = formal_actuator_perception(function_concept, context_concepts, value_concepts)
 
-    value_references = [c.reference for c in value_concepts]
+    value_references = [c.reference.copy() for c in value_concepts] # type: ignore
 
     grouper = Grouper()
     manual_function_result = grouper.or_across(
         value_references,
         slice_axes=['subject','weather']
     )
-    logger.debug(f"Manual function result: {manual_function_result}")
+    # function_result = function(value_references)
 
-    function_result = function(value_references)
     logger.debug(f"===")
-    logger.debug(f"Function result: {function_result.tensor} \n with shape: {function_result.shape} \n and axes: {function_result.axes}")
+    # logger.debug(f"FAP Function result: {function_result.tensor} \n with shape: {function_result.shape} \n and axes: {function_result.axes}")
     logger.debug(f"Manual function result: {manual_function_result.tensor} \n with shape: {manual_function_result.shape} \n and axes: {manual_function_result.axes}")
 
 
@@ -818,13 +817,171 @@ def debug_formal_actuator_perception():
 
     logger.debug(f"syntatical reference result: {sref.tensor} \n with shape: {sref.shape}")
 
+def debug_slice_axes():
+    """
+    Debug function to test formal_actuator_perception behavior with the multi-axis data
+    """
+    print("=== Debug Formal Actuator Perception ===")
+    
+    # Create the same references as in the multi-axis example
+    grades_ref = Reference(
+        axes=['student', 'subject', 'semester', 'assessment'],
+        shape=(2, 3, 2, 2),
+        initial_value=0
+    )
+    grades_ref.tensor = [
+        [  # Student 0
+            [  # Math
+                [85, 92],  # Fall: exam, homework
+                [90, 88]   # Spring: exam, homework
+            ],
+            [  # Science
+                [78, 85],  # Fall: exam, homework
+                [82, 80]   # Spring: exam, homework
+            ],
+            [  # English
+                [92, 95],  # Fall: exam, homework
+                [88, 90]   # Spring: exam, homework
+            ]
+        ],
+        [  # Student 1
+            [  # Math
+                [91, 89],  # Fall: exam, homework
+                [87, 85]   # Spring: exam, homework
+            ],
+            [  # Science
+                [85, 82],  # Fall: exam, homework
+                [89, 87]   # Spring: exam, homework
+            ],
+            [  # English
+                [79, 76],  # Fall: exam, homework
+                [84, 81]   # Spring: exam, homework
+            ]
+        ]
+    ]
+    
+    weights_ref = Reference(
+        axes=['subject', 'assessment'],
+        shape=(3, 2),
+        initial_value=0
+    )
+    weights_ref.tensor = [
+        [0.6, 0.4],  # Math: exams, homework
+        [0.5, 0.5],  # Science: exams, homework
+        [0.4, 0.6]   # English: exams, homework
+    ]
 
+    semester_names_ref = Reference(
+        axes=['semester'],
+        shape=(2,),
+        initial_value=0
+    )
+    semester_names_ref.tensor = ['Fall 2023', 'Spring 2024']
+
+    assessment_names_ref = Reference(
+        axes=['assessment'],
+        shape=(2,),
+        initial_value=0
+    )
+    assessment_names_ref.tensor = ['exam', 'homework']
+
+    student_names_ref = Reference(
+        axes=['student'],
+        shape=(2,),
+        initial_value=0
+    )
+    student_names_ref.tensor = ['John', 'Jane']
+
+    subject_names_ref = Reference(
+        axes=['subject'],
+        shape=(3,),
+        initial_value=0
+    )
+    subject_names_ref.tensor = ['Math', 'Science', 'English']
+
+    weather_names_ref = Reference(
+        axes=['subject','weather'],
+        shape=(4,2,),
+        initial_value=0
+    )
+    weather_names_ref.tensor = [
+        ['Rainy','webnga'],
+        ['Happy','df'],
+        ['Rainy','webnga'],
+        ['Happy','df']
+    ]
+
+
+    student_concept = Concept(
+        name='{student}',
+        context='student',
+        reference=student_names_ref
+    )
+    subject_concept = Concept(
+        name='{subject}',
+        context='subject',
+        reference=subject_names_ref
+    )
+    semester_concept = Concept(
+        name='{semester}',
+        context='semester',
+        reference=semester_names_ref
+    )
+    assessment_concept = Concept(
+        name='{assessment}',
+        context='assessment',
+        reference=assessment_names_ref
+    )
+    grades_concept = Concept(
+        name='{grades}',
+        context='grades',
+        reference=grades_ref
+    )
+    weights_concept = Concept(
+        name='{weights}',
+        context='weights',
+        reference=weights_ref
+    )
+    weather_concept = Concept(
+        name='{weather}',
+        context='weather',
+        reference=weather_names_ref
+    )
+
+
+    log_concept(student_concept)
+    log_concept(subject_concept)
+    log_concept(semester_concept)
+    log_concept(assessment_concept)
+    log_concept(grades_concept)
+    log_concept(weights_concept)
+    log_concept(weather_concept)
+
+    value_concepts = [grades_concept]
+    context_concepts = [student_concept, subject_concept, semester_concept, assessment_concept, weather_concept, grades_concept, weights_concept]
+
+    function_concept = Concept(
+        name='&across({grades})%:[{grades}]',
+        context='grades across all grades',
+        reference=None
+    )
+
+    function = formal_actuator_perception(function_concept, context_concepts, value_concepts)
+
+    value_references = [c.reference.copy() for c in value_concepts] # type: ignore
+
+    sref = syntatical_perception_actuation(
+        formal_actuator_function=function, 
+        perception_references=value_references
+    )
+
+    logger.debug(f"syntatical reference result: {sref.tensor} \n with shape: {sref.shape} \n and axes: {sref.axes}")
 
 if __name__ == "__main__":
     # Set logging to INFO level by default
     set_log_level('DEBUG')
     
     # Run the demonstration
-    debug_formal_actuator_perception()
+    debug_slice_axes()
 
 

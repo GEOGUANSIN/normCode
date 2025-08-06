@@ -942,8 +942,8 @@ def formal_actuator_perception(function_concept, value_concepts):
     if value_concepts is None:
         value_concepts = []
 
-    # Filter value concepts based on ViewAxis (similar to SliceAxis in grouping)
-    value_concepts = [c for c in value_concepts if c.name in parsed_normcode_quantification["ViewAxis"]]
+    # Filter value concepts based on LoopBaseConcept (similar to SliceAxis in grouping)
+    value_concepts = [c for c in value_concepts if c.name in parsed_normcode_quantification["LoopBaseConcept"]]
     logger.debug(f"[FAP] Value concepts: {[c.name for c in value_concepts]}")
 
     value_axes = [c.reference.axes for c in value_concepts]
@@ -959,7 +959,7 @@ def formal_actuator_perception(function_concept, value_concepts):
     return quantification_actuated, parsed_normcode_quantification
 
 #GP
-def group_perception(formal_actuator_function, value_concepts):
+def group_perception(formal_actuator_function, value_concepts, parsed_normcode_quantification, context_concepts):
     """
     Step 3: Group Perception (GP)
     
@@ -968,11 +968,17 @@ def group_perception(formal_actuator_function, value_concepts):
     Args:
         formal_actuator_function: Function from FAP step
         value_concepts: List of value concepts
-        
+        parsed_normcode_quantification: Parsed normcode from FAP
+        context_concepts: List of context concepts
     Returns:
         Reference: Ordered list of elements to process (_toLoopElement_)
     """
     logger.debug(f"[GP] Executing GP step with formal actuator function: {formal_actuator_function}")
+    logger.debug(f"[GP] Parsed normcode quantification: {parsed_normcode_quantification}")
+
+    current_loop_base_concept_name = parsed_normcode_quantification['LoopBaseConcept'] + '*'
+    current_loop_base_concept_axis = [concept.context for concept in context_concepts if concept.name == current_loop_base_concept_name][0]
+    logger.debug(f"[GP] Current loop base concept axis: {current_loop_base_concept_axis}")
 
     perception_references = [c.reference for c in value_concepts]
     logger.debug(f"[GP] Perception references: {[c.name for c in value_concepts]}")
@@ -980,6 +986,15 @@ def group_perception(formal_actuator_function, value_concepts):
     new_perception_references = formal_actuator_function(perception_references)
     
     logger.debug(f"[GP] New perception references: {new_perception_references.tensor}, axes: {new_perception_references.axes}, shape: {new_perception_references.shape}")
+
+    if new_perception_references.axes == ["_none_axis"]:
+        new_axes = [current_loop_base_concept_axis]
+    else:
+        new_axes = new_perception_references.axes.copy() + [current_loop_base_concept_axis]
+
+    new_perception_references.axes = new_axes
+    logger.debug(f"[GP] New perception references axes: {new_perception_references.axes}")
+    logger.debug(f"[GP] New perception references tensor: {new_perception_references.tensor}")
 
     return new_perception_references
 

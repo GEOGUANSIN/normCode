@@ -400,6 +400,8 @@ def _log_concept_details(concept, reference=None, example_number=None, concept_n
         slice_params = {axis: slice(None) for axis in reference.axes}
         all_values = reference.get(**slice_params)
         logger.info(f"   All values: {all_values}")
+        logger.info(f"   All values without skip values: {reference.get_tensor(ignore_skip=True)}")
+        logger.info(f"   Axes: {reference.axes}")
 
 def _log_inference_result(result_concept, value_concepts, function_concept):
     """Log the inference result and related information"""

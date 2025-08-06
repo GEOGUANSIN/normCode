@@ -325,7 +325,9 @@ class QuantAgent(AgentFrame):
             logger.debug("***STEP 3: Group Perception (GP)***")
             to_loop_elements = self.GP(
                 formal_actuator_function=formal_actuator_function,
-                value_concepts=self.value_concepts
+                value_concepts=self.value_concepts,
+                parsed_normcode_quantification=parsed_normcode_quantification,
+                context_concepts=self.context_concepts
             )
 
             # 4. Context Value Perception (CVP)
