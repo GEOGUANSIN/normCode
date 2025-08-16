@@ -303,35 +303,3 @@ class Grouper:
         
         return result
     
-from _state_models import (
-    AgentSequenceState, StepDescriptor, ReferenceInterpretationState,
-    FunctionReference, ValuesReference, ContextReference, InferenceReference,
-    ModelSpec, ToolSpec, ConceptInfo, StepReferenceAccessor
-)
-
-
-def grouping_references(states):
-
-    st = StepReferenceAccessor
-
-    context_concepts_references = st(states.context).reference
-    value_concepts_references = st(states.values).reference
-    value_concepts = st(states.values).concept
-
-    by_axes = [c.axes for c in context_concepts_references]
-    value_concept_names = [c.name for c in value_concepts]
-
-    grouper = Grouper()
-    if states.syntax.marker == "in":
-        step(states.inference, "GA")[0].reference = grouper.and_in(
-            value_concepts_references, 
-            value_concept_names, 
-            by_axes=by_axes,
-        ).copy()
-    elif states.syntax.marker == "across":
-        step(states.inference, "GA")[0].reference = grouper.or_across(
-            value_concepts_references, 
-            by_axes=by_axes,
-        ).copy()
-
-    return states
