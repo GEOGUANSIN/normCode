@@ -2,6 +2,9 @@ import yaml
 import os
 from openai import OpenAI
 from constants import CURRENT_DIR, PROJECT_ROOT
+import asyncio
+import aiohttp
+import json
 
 
 class LanguageModel:
@@ -65,6 +68,32 @@ class LanguageModel:
         )
 
         return response.choices[0].message.content
+
+    async def async_generate(self, prompt: str, **kwargs) -> str:
+        """
+        Asynchronously generate text from the language model
+        """
+        # This is a simplified example - you'll need to implement based on your actual LLM API
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": prompt}],
+            **kwargs
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self.base_url, 
+                headers=headers, 
+                data=json.dumps(payload)
+            ) as response:
+                response_data = await response.json()
+                return response_data['choices'][0]['message']['content']
 
     def generate(self, prompt, system_message="You are a helpful assistant.", response_format=None):
         """

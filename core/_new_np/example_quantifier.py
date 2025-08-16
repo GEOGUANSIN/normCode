@@ -555,130 +555,140 @@ if __name__ == "__main__":
     llm = LanguageModel("qwen-turbo-latest")
     # contrast_answer = llm.generate(f"Generate a list of digit pairs in the same position for the numbers {two_numbers}. Output directly with nothing else.")
 
-    try_answer = llm.generate(f"what is the second digit of {two_numbers} from right to left? Output the list after thinking about the questions.")
+    try_answer = llm.generate(f"what is the second digit of {two_numbers} from right to left? Output directly with nothing else.")
     logger.debug(f"Try answer: {try_answer}")
 
 
-#     inference_normcode = """{digit pairs}
-#     <= *every({digit position})%:[{digit position}].[{digit pairs}?]^({digit position}*)
-#         <= ::(Read {digit pairs}*? of {two numbers} in {digit position}* from the right)
-#         <- {two numbers}
-#         <- {digit pairs}*?
-#         <- {digit position}*
-#     <- {digit position}
-# """
-#     (two_numbers_concept,
-#         digit_position_concept,
-#         digit_pairs_concept,
-#         digit_position_concept_in_loop,
-#         digit_pairs_concept_in_loop,
-#         read_function_concept,
-#         digit_quantification_concept,
-#     ) = init_concept_with_references(
-#         two_numbers_value=two_numbers,
-#         digit_position_value=digit_position_value,
-#     )
+    inference_normcode = """{digit pairs}
+    <= *every({digit position})%:[{digit position}].[{digit pairs}?]^({digit position}*)@1
+        <- [{number 1 digit} and {number 2 digit}]
+            <= *every({two numbers})%:[{two numbers}].[{digit in position}?]^({position}*)@2
+            <- {digit in position}*1
+            <- {digit in position}*2
+        <- {two numbers}
+        <- {digit pairs}*?
+        <- {digit position}*
+        <- {digit pairs}*?
+        <- {digit position}*
+    <- {digit position}
+    <- {two numbers}
+        <= $=
+        <- [{number 1} and {number 2}]
 
-#     in_quantification_inference = Inference(
-#         sequence_name="imperative",
-#         concept_to_infer=digit_quantification_concept,
-#         value_concepts=[digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop],
-#         function_concept=read_function_concept
-#     )
+"""
 
-#     quantification_inference = Inference(
-#         sequence_name="quantification",
-#         concept_to_infer=digit_pairs_concept,
-#         value_concepts=[digit_position_concept],
-#         function_concept=digit_quantification_concept,
-#         context_concepts=[digit_position_concept_in_loop, digit_pairs_concept_in_loop]
-#     )
+    # (two_numbers_concept,
+    #     digit_position_concept,
+    #     digit_pairs_concept,
+    #     digit_position_concept_in_loop,
+    #     digit_pairs_concept_in_loop,
+    #     read_function_concept,
+    #     digit_quantification_concept,
+    # ) = init_concept_with_references(
+    #     two_numbers_value=two_numbers,
+    #     digit_position_value=digit_position_value,
+    # )
 
+    # in_quantification_inference = Inference(
+    #     sequence_name="imperative",
+    #     concept_to_infer=digit_quantification_concept,
+    #     value_concepts=[digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop],
+    #     function_concept=read_function_concept
+    # )
 
-#         # Initialize agent
-#     cal_agent = AgentFrame(
-#         "demo", 
-#         init_working_configuration(), 
-#         llm=llm,
-#     )
-
-#     # Initialize quantification agent
-#     workspace = {}
-#     quant_agent = QuantAgent(
-#         "demo", 
-#         init_working_configuration(), 
-#         llm=llm, 
-#         workspace=workspace
-#     )
-#     quant_agent.configure(
-#         inference_instance=quantification_inference, 
-#         inference_sequence="quantification",
-#     )
+    # quantification_inference = Inference(
+    #     sequence_name="quantification",
+    #     concept_to_infer=digit_pairs_concept,
+    #     value_concepts=[digit_position_concept],
+    #     function_concept=digit_quantification_concept,
+    #     context_concepts=[digit_position_concept_in_loop, digit_pairs_concept_in_loop]
+    # )
 
 
-#     logger.debug("=== BEFORE Execution ===")
-#     _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-#     _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
+    #     # Initialize agent
+    # cal_agent = AgentFrame(
+    #     "demo", 
+    #     init_working_configuration(), 
+    #     llm=llm,
+    # )
+
+    # # Initialize quantification agent
+    # workspace = {}
+    # quant_agent = QuantAgent(
+    #     "demo", 
+    #     init_working_configuration(), 
+    #     llm=llm, 
+    #     workspace=workspace
+    # )
+    # quant_agent.configure(
+    #     inference_instance=quantification_inference, 
+    #     inference_sequence="quantification",
+    # )
+
+
+    # logger.debug("=== BEFORE Execution ===")
+    # _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
+    # _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
     
 
-#     (concept_to_infer_with_reference, 
-#     updated_context_concepts, 
-#     working_configuration, 
-#     workspace) = quantification_inference.execute()
+    # (concept_to_infer_with_reference, 
+    # updated_context_concepts, 
+    # working_configuration, 
+    # workspace) = quantification_inference.execute()
 
-#     iteration = 1
-#     while not working_configuration[digit_quantification_concept.name]['completion_status']: #type: ignore
+    # iteration = 1
+    # while not working_configuration[digit_quantification_concept.name]['completion_status']: #type: ignore
 
-#             # Log the concepts After execution
-#         logger.debug(f"=== After Quantification Execution {iteration} ===")
-#         _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-#         _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
-#         _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
-#         for key, subworkspace in workspace.items(): #type: ignore
-#             log_subworkspace_tensors(subworkspace)
+    #         # Log the concepts After execution
+    #     logger.debug(f"=== After Quantification Execution {iteration} ===")
+    #     _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
+    #     _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
+    #     _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
+    #     for key, subworkspace in workspace.items(): #type: ignore
+    #         log_subworkspace_tensors(subworkspace)
 
-#         in_quantification_inference.value_concepts = [digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop]
-#         cal_agent.configure(
-#             inference_instance=in_quantification_inference, 
-#             inference_sequence="imperative",
-#         )
-#         digit_quantification_concept = in_quantification_inference.execute()
+    #     in_quantification_inference.value_concepts = [digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop]
+    #     cal_agent.configure(
+    #         inference_instance=in_quantification_inference, 
+    #         inference_sequence="imperative",
+    #     )
+    #     digit_quantification_concept = in_quantification_inference.execute()
 
-#         logger.debug("=== After Imperative Execution ===")
-#         _log_concept_details(digit_quantification_concept, digit_quantification_concept.reference)
+    #     logger.debug("=== After Imperative Execution ===")
+    #     _log_concept_details(digit_quantification_concept, digit_quantification_concept.reference)
 
-#         quant_agent = QuantAgent(
-#             "demo", 
-#             working_configuration, 
-#             llm=llm, 
-#             workspace=workspace
-#         )
+    #     quant_agent = QuantAgent(
+    #         "demo", 
+    #         working_configuration, 
+    #         llm=llm, 
+    #         workspace=workspace
+    #     )
 
-#         quantification_inference.function_concept = digit_quantification_concept
-#         quant_agent.configure(
-#             inference_instance=quantification_inference, 
-#             inference_sequence="quantification",
-#         )
-#         (concept_to_infer_with_reference, 
-#         updated_context_concepts, 
-#         working_configuration, 
-#         workspace) = quantification_inference.execute()
+    #     quantification_inference.function_concept = digit_quantification_concept
+    #     quant_agent.configure(
+    #         inference_instance=quantification_inference, 
+    #         inference_sequence="quantification",
+    #     )
+    #     (concept_to_infer_with_reference, 
+    #     updated_context_concepts, 
+    #     working_configuration, 
+    #     workspace) = quantification_inference.execute()
 
-#         iteration += 1
+    #     iteration += 1
 
-#         logger.debug(f"working_configuration completion status: {working_configuration[digit_quantification_concept.name]['completion_status']}") #type: ignore
-
-
-#         # Log the concepts After execution
-#     logger.debug(f"=== After Quantification Execution {iteration} ===")
-#     _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-#     _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
-#     _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
-#     for key, subworkspace in workspace.items(): #type: ignore
-#         log_subworkspace_tensors(subworkspace)
+    #     logger.debug(f"working_configuration completion status: {working_configuration[digit_quantification_concept.name]['completion_status']}") #type: ignore
 
 
-#     logger.debug(f"Contrast answer: {contrast_answer}")
+    #     # Log the concepts After execution
+    # logger.debug(f"=== After Quantification Execution {iteration} ===")
+    # _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
+    # _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
+    # _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
+    # for key, subworkspace in workspace.items(): #type: ignore
+    #     log_subworkspace_tensors(subworkspace)
+
+
+    # logger.debug(f"Contrast answer: {contrast_answer}")
 
 
     # # Renew the original concepts using the new function

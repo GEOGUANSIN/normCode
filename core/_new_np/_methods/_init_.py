@@ -24,9 +24,7 @@ from ._workspace_demo import (
 from ._grouping_demo import (
     all_grouping_demo_methods
 )
-from ._demo_improved import (
-    all_demo_methods_improved
-)
+
 __all__ = [
     "strip_element_wrapper",
     "wrap_element_wrapper", 

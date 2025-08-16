@@ -163,8 +163,10 @@ def evaluate_rank1_elements(nested_data):
         evaluated.append(el)
     return evaluated
 
+
+### Demonstration Code ###
 # Example Data and Demonstration
-def create_nested_list_example():
+def demonstrate_nested_list_example():
     """Create a nested list with duplicate elements at rank 1."""
     return [
         "fruits",
@@ -177,7 +179,7 @@ def create_nested_list_example():
         ["apple", "banana", "orange"]  # Duplicate of element 1
     ]
 
-def create_technical_concepts_example():
+def demonstrate_technical_concepts_example():
     """Create an example with dictionaries and nested structures."""
     return [
         "technical_concepts",
@@ -269,13 +271,13 @@ def demonstrate_functionality_with_extraction(nested_data, title, extraction_gui
 # Module execution
 if __name__ == "__main__":
     print("=== Basic Example ===\n")
-    data1 = create_nested_list_example()
+    data1 = demonstrate_nested_list_example()
     demonstrate_functionality(data1, "Basic Nested List Example")
     
     print("\n" + "="*50 + "\n")
     
     print("=== Technical Concepts Example ===\n")
-    data2 = create_technical_concepts_example()
+    data2 = demonstrate_technical_concepts_example()
     # Extraction guide for technical concepts: extract both keys from each dict in element 1
     extraction_guide = {1: "{technical_concepts}", 1: "{relatable_ideas}"}
     # Apply filter to show only combinations where elements 0 and 1 have same sub-indices

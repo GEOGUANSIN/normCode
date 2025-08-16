@@ -8,6 +8,14 @@ from _language_models import LanguageModel
 from _methods._quantification_demo import all_quantification_demo_methods
 from _methods._grouping_demo import all_grouping_demo_methods
 from _methods._workspace_demo import all_workspace_demo_methods
+import random
+import json
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+from tqdm import tqdm
+import asyncio
+
 
 
 OPERATOR_DESCRIPTION = """*every(_loopBaseConcept_)%:[_viewAxis_].[_conceptToInfer_?]@(_loopIndex_)^(_inLoopConcept_<*_carryoverCondition_>)"""
@@ -545,151 +553,408 @@ def renew_concepts_from_context(updated_context_concepts: List[Concept], *concep
     return renewed_concepts
 
 
+def generate_number_string(length: int) -> str:
+    """
+    Generate a random number string of the specified length, allowing leading zeros.
+    
+    Args:
+        length: Length of the number string to generate
+        
+    Returns:
+        str: Random number string of the specified length
+    """
+    import random
+    # Generate each digit randomly (0-9) and join into a string
+    return ''.join(str(random.randint(0, 9)) for _ in range(length))
+
+
+def generate_number_strings(length: int) -> str:
+    """
+    Generate two random numbers as strings of the specified length, separated by " and "
+    Each number will have leading zeros to ensure consistent length
+    """
+    import random
+    num1 = ''.join(str(random.randint(0, 9)) for _ in range(length))
+    num2 = ''.join(str(random.randint(0, 9)) for _ in range(length))
+    return f"{num1} and {num2}"
+
+
+def get_digit_pair_at_position(two_numbers: str, position: int) -> list[int]:
+    """
+    Get the digit pair at a specific position in two numbers
+    
+    Args:
+        two_numbers: String in the format "num1 and num2"
+        position: Position to retrieve (1-indexed from right to left)
+        
+    Returns:
+        List of two integers representing the digits at the specified position
+    """
+    # Split the two numbers
+    num1, num2 = two_numbers.split(" and ")
+    
+    # Reverse both numbers to make indexing from right easier
+    num1_rev = num1[::-1]
+    num2_rev = num2[::-1]
+    
+    # Get digits at position (0-indexed from right)
+    # Use '0' if position is beyond the number length
+    digit1 = num1_rev[position-1] if position <= len(num1_rev) else '0'
+    digit2 = num2_rev[position-1] if position <= len(num2_rev) else '0'
+    
+    return [int(digit1), int(digit2)]
+
+
+async def run_trial(length, position, semaphore, llm):
+    """
+    Run a single trial for digit extraction accuracy testing.
+    """
+    async with semaphore:
+        two_numbers = generate_number_strings(length)
+        correct_answer = get_digit_pair_at_position(two_numbers, position)
+        
+        try:
+            # Ask LLM for the digit at position
+            response = await asyncio.to_thread(
+                llm.generate,
+                f"Output in JSON format with keys 'analysis' and 'final_answer': "
+                f"what is the {position}th digit of {two_numbers} from right to left? "
+                f"The 'final_answer' should be a Python list of two integers representing the digits at that position.",
+                response_format={"type": "json_object"},
+            )
+            
+            # Parse and validate response
+            try:
+                response_json = json.loads(response)
+                llm_answer = response_json.get('final_answer', [])
+                
+                if isinstance(llm_answer, list) and len(llm_answer) == 2:
+                    return 1 if llm_answer == correct_answer else 0
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON response: {response}")
+        except Exception as e:
+            logger.error(f"Error during LLM call: {e}")
+        return 0
+
+
+async def run_experiment():
+    """
+    Run an experiment to test LLM accuracy on digit extraction at different positions
+    across various string lengths. Generates a heatmap visualization of accuracy rates.
+    Uses asynchronous processing with concurrency limit.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+    from tqdm.asyncio import tqdm_asyncio
+
+    # Experiment parameters
+    min_length = 1
+    max_length = 100
+    num_trials = 5
+    concurrency_limit = 12  # Maximum concurrent requests
+    llm = LanguageModel("qwen-turbo-latest")
+
+    # Create logarithmic length sequence (more samples at lower lengths)
+    log_min = np.log(min_length)
+    log_max = np.log(max_length)
+    log_lengths = np.exp(np.linspace(log_min, log_max, 15))  # 15 points on log scale
+    lengths = np.unique(np.round(log_lengths).astype(int))   # Convert to unique integers
+    logger.info(f"Testing lengths: {lengths}")
+
+    # Initialize results matrix (lengths x positions)
+    results = np.full((max_length, max_length), np.nan)  # Use NaN for untested positions
+
+    # Create a semaphore to limit concurrency
+    semaphore = asyncio.Semaphore(concurrency_limit)
+
+    # Progress bar for lengths
+    for length in tqdm(lengths, desc="Testing lengths"):
+        # Create position sequence: first, last, and up to 4 uniformly distributed positions
+        if length <= 2:
+            positions = [1, length] if length > 1 else [1]
+        else:
+            # Always include first and last positions
+            positions = [1, length]
+            # Add up to 4 more positions in between
+            num_mid_points = min(4, length - 2)
+            if num_mid_points > 0:
+                mid_positions = np.linspace(2, length-1, num_mid_points + 2)[1:-1]
+                positions.extend(np.round(mid_positions).astype(int))
+            positions = sorted(set(positions))  # Remove duplicates and sort
+        
+        logger.debug(f"Testing length {length} at positions: {positions}")
+        
+        for position in tqdm(positions, desc=f"Positions for length {length}", leave=False):
+            # Create all trial tasks for this (length, position)
+            tasks = [run_trial(length, position, semaphore, llm) for _ in range(num_trials)]
+            
+            # Run trials concurrently with progress bar
+            trial_results = await tqdm_asyncio.gather(*tasks, desc="Trials")
+            
+            # Calculate accuracy for this position
+            accuracy = sum(trial_results) / num_trials # type: ignore
+            results[length - 1][position - 1] = accuracy
+    
+    # Create visualization
+    plt.figure(figsize=(12, 8))
+    cmap = LinearSegmentedColormap.from_list('accuracy', ['#ff4d4d', '#4dff4d'])
+    
+    # Create mask for untested positions
+    mask = np.isnan(results)
+    
+    # Plot heatmap
+    plt.imshow(results, cmap=cmap, vmin=0, vmax=1, aspect='auto')
+    plt.colorbar(label='Accuracy Rate')
+    
+    # Set labels and title
+    plt.title('LLM Digit Extraction Accuracy by Position and String Length')
+    plt.xlabel('Position (from right)')
+    plt.ylabel('String Length')
+    
+    # Set ticks
+    plt.xticks(np.arange(0, max_length), np.arange(1, max_length + 1).astype(str).tolist())
+    plt.yticks(np.arange(0, max_length), np.arange(1, max_length + 1).astype(str).tolist())
+    
+    # Add accuracy values to cells
+    for i in range(max_length):
+        for j in range(max_length):
+            if not np.isnan(results[i, j]):
+                plt.text(j, i, f"{results[i, j]:.2f}", 
+                         ha="center", va="center", 
+                         color="black" if results[i, j] > 0.5 else "white")
+    
+    # Add grid for tested positions
+    plt.grid(True, color='gray', linestyle='-', linewidth=0.5, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('digit_extraction_accuracy.png')
+    plt.show()
+    logger.info("Experiment complete. Visualization saved as 'digit_extraction_accuracy.png'")
+
+
+def validate_digit_position_response(response_json: dict, number: str) -> dict:
+    """
+    Validate the JSON response for digit position annotation.
+    
+    Args:
+        response_json: Parsed JSON response from LLM
+        number: Original number string to validate against
+        
+    Returns:
+        dict: Validation results with keys:
+            - 'success': bool indicating overall success
+            - 'correct_count': number of correct digit-position pairs
+            - 'total_digits': total number of digits
+            - 'accuracy': percentage of correct pairs
+            - 'errors': list of error details
+    """
+    # Extract digits from response
+    response_digits = response_json.get('digits', [])
+    total_digits = len(number)
+    correct_count = 0
+    errors = []
+    
+    # Validate each digit-position pair
+    for i, digit_info in enumerate(response_digits):
+        expected_digit = number[i]
+        expected_position = total_digits - i  # 1-indexed from right
+        
+        # Check if response has required keys
+        if 'digit' not in digit_info or 'position' not in digit_info:
+            errors.append({
+                'index': i,
+                'error': 'Missing keys in response',
+                'expected': {'digit': expected_digit, 'position': expected_position},
+                'actual': digit_info
+            })
+            continue
+        
+        actual_digit = str(digit_info['digit'])
+        actual_position = digit_info['position']
+        
+        # Validate digit and position
+        if actual_digit != expected_digit:
+            errors.append({
+                'index': i,
+                'error': 'Digit mismatch',
+                'expected': expected_digit,
+                'actual': actual_digit
+            })
+        elif actual_position != expected_position:
+            errors.append({
+                'index': i,
+                'error': 'Position mismatch',
+                'expected': expected_position,
+                'actual': actual_position
+            })
+        else:
+            correct_count += 1
+    
+    # Calculate accuracy
+    accuracy = (correct_count / total_digits) * 100 if total_digits > 0 else 0
+    
+    return {
+        'success': correct_count == total_digits,
+        'correct_count': correct_count,
+        'total_digits': total_digits,
+        'accuracy': accuracy,
+        'errors': errors
+    }
+
+
+def inquire_digit_position_by_number(number: str, position: int, length: int) -> str:
+    """
+    Generate an LLM inquiry to find the digit at a specific position in a number.
+    
+    Args:
+        number: The original number string
+        position: The position to find (1-indexed from right to left)
+        length: The length of the number
+    Returns:
+        str: Formatted inquiry string
+    """
+    return (
+        f"Given the number {number}, what is the digit at position {position} when counting from right to left? "
+        f"(Position 1 is the rightmost digit and position {length} is the leftmost digit). Output your answer in JSON format with the following keys: "
+        f"'analysis' (a string explaining your reasoning) and 'digit' (the digit at the specified position as a string)."
+    )
+
+def inquire_digit_position_by_record(record: list[dict], position: int) -> str:
+    """
+    Generate an LLM inquiry to find the digit at a specific position in a number.
+    
+    Args:
+        record: The record of number's digit in each position
+        position: The position to find (1-indexed from right to left)
+        
+    Returns:
+        str: Formatted inquiry string
+    """
+    return (
+        f"Given the record of number's digit in each position, what is the digit at position {position} when counting from right to left? "
+        f"The record is: {record}"
+        f"Output your answer in JSON format with the following keys: "
+        f"'analysis' (a string explaining your reasoning) and 'digit' (the digit at the specified position as a string)."
+    )
+
+def validate_number_differences(a: int | str, b: int | str) -> dict:
+    s1 = str(a)
+    s2 = str(b)
+    max_len = max(len(s1), len(s2))
+    s1 = s1.zfill(max_len)
+    s2 = s2.zfill(max_len)
+
+    diffs = []
+    for i in range(max_len):
+        # position_from_right: 1 is rightmost, increasing leftward
+        pos_from_right = i + 1
+        d1 = s1[-pos_from_right]
+        d2 = s2[-pos_from_right]
+        if d1 != d2:
+            diffs.append({
+                "position_from_right": pos_from_right,
+                "a_digit": d1,
+                "b_digit": d2
+            })
+
+    return {
+        "equal": len(diffs) == 0,
+        "count": len(diffs),
+        "numeric_delta": int(b) - int(a),
+        "differences": diffs  # ordered from right to left
+    }
+
+    # Example usage with the two sums in this file:
+    # result = validate_number_differences(sum1, sum2)
+    # print(result["equal"], result["count"])
+    # print(result["differences"][:10])  # first 10 mismatches from the right
+
 
 
 
 if __name__ == "__main__":
+    # Test the helper function
+    number_length = 230
+    position = 48
+    test_number = generate_number_string(number_length)
+    test_number2 = generate_number_string(number_length)
 
-    two_numbers = "1312 and 0064"
-    digit_position_value = ['the first position (ones)', 'the second position (tens)', 'the third position (hundreds)', 'the fourth position (thousands)']
-    llm = LanguageModel("qwen-turbo-latest")
-    # contrast_answer = llm.generate(f"Generate a list of digit pairs in the same position for the numbers {two_numbers}. Output directly with nothing else.")
-
-    try_answer = llm.generate(f"what is the second digit of {two_numbers} from right to left? Output directly with nothing else.")
-    logger.debug(f"Try answer: {try_answer}")
-
-
-    inference_normcode = """{digit pairs}
-    <= *every({digit position})%:[{digit position}].[{digit pairs}?]^({digit position}*)
-        <= ::(Read {digit pairs}*? of {two numbers} in {digit position}* from the right)
-        <- {two numbers}
-        <- {digit pairs}*?
-        <- {digit position}*
-    <- {digit position}
-"""
-    (two_numbers_concept,
-        digit_position_concept,
-        digit_pairs_concept,
-        digit_position_concept_in_loop,
-        digit_pairs_concept_in_loop,
-        read_function_concept,
-        digit_quantification_concept,
-    ) = init_concept_with_references(
-        two_numbers_value=two_numbers,
-        digit_position_value=digit_position_value,
-    )
-
-    in_quantification_inference = Inference(
-        sequence_name="imperative",
-        concept_to_infer=digit_quantification_concept,
-        value_concepts=[digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop],
-        function_concept=read_function_concept
-    )
-
-    quantification_inference = Inference(
-        sequence_name="quantification",
-        concept_to_infer=digit_pairs_concept,
-        value_concepts=[digit_position_concept],
-        function_concept=digit_quantification_concept,
-        context_concepts=[digit_position_concept_in_loop, digit_pairs_concept_in_loop]
-    )
+    sum = int(test_number) + int(test_number2)
+    logger.info(f"Test number 1: {test_number}, Test number 2: {test_number2}, Sum: {sum}")
 
 
-        # Initialize agent
-    cal_agent = AgentFrame(
-        "demo", 
-        init_working_configuration(), 
-        llm=llm,
-    )
+    sum1 = 119731344401632240203004242988513205799260297559136853690716627173070069616012694073296324139635376715550615452916357090704697778723284727894521889361013879861037360692641739619298675296677922239500902427195211270661143256260396587
+    logger.info(f"Sum1: {sum1}")
 
-    # Initialize quantification agent
-    workspace = {}
-    quant_agent = QuantAgent(
-        "demo", 
-        init_working_configuration(), 
-        llm=llm, 
-        workspace=workspace
-    )
-    quant_agent.configure(
-        inference_instance=quantification_inference, 
-        inference_sequence="quantification",
-    )
+    sum2 = 119731344401632240203004242988313205799260297559136853250716627173124069616012694073296324139635436315850615452916357090704697778723284828894521889328526079860037360692641748619298675296678922239500902427195222270661167157260396587
+    logger.info(f"Sum2: {sum2}")
+
+    result = validate_number_differences(sum1, sum2)
+    logger.info(f"Result: {result}")
+    logger.info(f"Equal: {result['equal']}, Count: {result['count']}")
+    logger.info(f"Result: {result['differences']}")
 
 
-    logger.debug("=== BEFORE Execution ===")
-    _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-    _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
+    # logger.info(f'two sums the same? {sum1 == sum2}')
+    # logger.info(f"Generated test number: {test_number}")
     
-
-    (concept_to_infer_with_reference, 
-    updated_context_concepts, 
-    working_configuration, 
-    workspace) = quantification_inference.execute()
-
-    iteration = 1
-    while not working_configuration[digit_quantification_concept.name]['completion_status']: #type: ignore
-
-            # Log the concepts After execution
-        logger.debug(f"=== After Quantification Execution {iteration} ===")
-        _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-        _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
-        _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
-        for key, subworkspace in workspace.items(): #type: ignore
-            log_subworkspace_tensors(subworkspace)
-
-        in_quantification_inference.value_concepts = [digit_position_concept_in_loop, two_numbers_concept, digit_pairs_concept_in_loop]
-        cal_agent.configure(
-            inference_instance=in_quantification_inference, 
-            inference_sequence="imperative",
-        )
-        digit_quantification_concept = in_quantification_inference.execute()
-
-        logger.debug("=== After Imperative Execution ===")
-        _log_concept_details(digit_quantification_concept, digit_quantification_concept.reference)
-
-        quant_agent = QuantAgent(
-            "demo", 
-            working_configuration, 
-            llm=llm, 
-            workspace=workspace
-        )
-
-        quantification_inference.function_concept = digit_quantification_concept
-        quant_agent.configure(
-            inference_instance=quantification_inference, 
-            inference_sequence="quantification",
-        )
-        (concept_to_infer_with_reference, 
-        updated_context_concepts, 
-        working_configuration, 
-        workspace) = quantification_inference.execute()
-
-        iteration += 1
-
-        logger.debug(f"working_configuration completion status: {working_configuration[digit_quantification_concept.name]['completion_status']}") #type: ignore
-
-
-        # Log the concepts After execution
-    logger.debug(f"=== After Quantification Execution {iteration} ===")
-    _log_concept_details(digit_position_concept_in_loop, digit_position_concept_in_loop.reference)
-    _log_concept_details(digit_pairs_concept_in_loop, digit_pairs_concept_in_loop.reference)
-    _log_concept_details(concept_to_infer_with_reference, concept_to_infer_with_reference.reference) # type: ignore
-    for key, subworkspace in workspace.items(): #type: ignore
-        log_subworkspace_tensors(subworkspace)
-
-
-    # logger.debug(f"Contrast answer: {contrast_answer}")
-
-
-    # # Renew the original concepts using the new function
-    # (a,
-    #         b) = renew_concepts_from_context(
-    #          updated_context_concepts,  # type: ignore
-    #          digit_position_concept_in_loop, # type: ignore
-    #          digit_pairs_concept_in_loop)
+    # llm = LanguageModel("qwen-turbo-latest")
+    # answer = llm.generate(
+    #     f"For the number {test_number}, annotate the position number (counting from right to left, starting at 1 for the rightmost digit and ending at {number_length} for the leftmost digit) for each digit. "
+    #     "Output your final answer in JSON format with the following keys: "
+    #     "'analysis' (a string explaining your reasoning) and "
+    #     "'digits' (a list of dictionaries, each with keys 'digit' (string) and 'position' (integer), in the same order as the digits in the number from left to right).",
+    #     response_format={"type": "json_object"}
+    # )
+    # logger.debug(answer)
     
-    # # Log the concepts after renewal
-    # logger.debug("=== AFTER RENEWAL ===")
-    # _log_concept_details(a, a.reference)
-    # _log_concept_details(b, b.reference)
+    # # Validate the response
+    # try:
+    #     response_json = json.loads(answer)
+    #     validation = validate_digit_position_response(response_json, test_number)
+    #     logger.info(f"Validation results for {test_number}: {validation}")
+    # except json.JSONDecodeError:
+    #     logger.error("Invalid JSON response from LLM")
 
+    # if response_json:
+    #     # Use the original number for the inquiry
+    #     digit_answer = llm.generate(
+    #         inquire_digit_position_by_number(test_number, position, number_length),
+    #         response_format={"type": "json_object"}
+    #     )
+    #     logger.debug(digit_answer)
+        
+    #     try:
+    #         digit_response = json.loads(digit_answer)
+    #         llm_digit = digit_response.get('digit', '')
+    #         correct_digit = test_number[-position]  # Position from right
+    #         is_correct = llm_digit == correct_digit
+            
+    #         logger.info(f"Correct digit at position {position}: {correct_digit}")
+    #         logger.info(f"LLM response digit: {llm_digit}")
+    #         logger.info(f"LLM digit is correct: {is_correct}")
+    #     except json.JSONDecodeError:
+    #         logger.error("Invalid JSON response for digit inquiry")
+
+    #     digit_answer_by_record = llm.generate(
+    #         inquire_digit_position_by_record(response_json['digits'], position),
+    #         response_format={"type": "json_object"}
+    #     )
+    #     logger.debug(digit_answer_by_record)
+
+    #     try:
+    #         digit_response_by_record = json.loads(digit_answer_by_record)
+    #         llm_digit_by_record = digit_response_by_record.get('digit', '')
+    #         correct_digit_by_record = test_number[-position]  # Position from right
+    #         is_correct_by_record = llm_digit_by_record == correct_digit_by_record
+            
+    #         logger.info(f"Correct digit at position {position}: {correct_digit_by_record}")
+    #         logger.info(f"LLM response digit: {llm_digit_by_record}")
+    #         logger.info(f"LLM digit is correct: {is_correct_by_record}")
+    #     except json.JSONDecodeError:
+    #         logger.error("Invalid JSON response for digit inquiry by record")
+
+
+
+    
