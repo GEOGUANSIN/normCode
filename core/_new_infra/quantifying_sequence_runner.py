@@ -89,6 +89,14 @@ class Quantifier:
         self.current_subworkspace[loop_index][looped_concept_name] = looped_concept_reference
         return loop_index
 
+    def _is_reference_empty(self, ref: Optional[Reference]) -> bool:
+        """Checks if a reference is None, has a None tensor, or a tensor with only Nones."""
+        if ref is None or ref.tensor is None:
+            return True
+        # Flatten the tensor and check if it contains any non-None values.
+        flat_tensor = self._flatten_list(ref.tensor if isinstance(ref.tensor, list) else [ref.tensor])
+        return all(x is None for x in flat_tensor)
+
     def retireve_next_base_element(self, to_loop_element_reference: Reference, current_loop_base_element: Optional[Reference] = None) -> Tuple[Optional[Reference], Optional[int]]:
         current_loop_index = 0
         max_iterations = 1000
@@ -123,6 +131,43 @@ class Quantifier:
                 break
         
         return None, None
+
+    def check_all_base_elements_looped(self, to_loop_element_reference: Reference, in_loop_element_name: Optional[str] = None) -> bool:
+        """Checks if all elements in a reference have been processed and stored in the workspace."""
+        current_loop_index = 0
+        # Assume the loop axis is the first axis
+        if not to_loop_element_reference.shape:
+            return True # Nothing to loop over
+        
+        loop_limit = to_loop_element_reference.shape[0]
+
+        while current_loop_index < loop_limit:
+            get_element_function = lambda x: self._get_list_at_index(x, current_loop_index)
+            current_to_loop_element_reference = element_action(get_element_function, [to_loop_element_reference.copy()])
+            elements = self._flatten_list(current_to_loop_element_reference.tensor.copy())
+            
+            if all(e is None or e == "@#SKIP#@" for e in elements):
+                current_loop_index += 1
+                continue # Skip empty/placeholder elements
+
+            element_found_in_workspace = False
+            matching_loop_index = None
+            for loop_idx, concepts in self.current_subworkspace.items():
+                if self.loop_base_concept_name in concepts and concepts[self.loop_base_concept_name].tensor == current_to_loop_element_reference.tensor:
+                    element_found_in_workspace = True
+                    matching_loop_index = loop_idx
+                    break
+            
+            if not element_found_in_workspace:
+                return False
+
+            if in_loop_element_name is not None and matching_loop_index is not None:
+                if in_loop_element_name not in self.current_subworkspace[matching_loop_index]:
+                    return False
+
+            current_loop_index += 1
+        
+        return True
 
     def combine_all_looped_elements_by_concept(self, to_loop_element_reference: Reference, concept_name: str) -> Optional[Reference]:
         all_concept_references = []
@@ -353,6 +398,12 @@ def input_working_interpretation(
     if working_interpretation:
         states.syntax = SimpleNamespace(**working_interpretation.get("syntax", {}))
 
+    # Clear previous state to prevent accumulation in loops
+    states.function = []
+    states.values = []
+    states.context = []
+    states.inference = []
+
     # Seed lists with empty records for each step
     for step in ["GR", "QR", "OR"]:
         states.inference.append(ReferenceRecordLite(step_name=step))
@@ -377,7 +428,7 @@ def input_references(inference: Inference, states: States) -> States:
         # Store GR concepts under 'GR' to be used by QR later.
         states.values.append(
             ReferenceRecordLite(
-                step_name="GR",
+                step_name="IR",
                 concept=ConceptInfoLite(id=vc.id, name=vc.name, type=vc.type, context=vc.context, axis_name=vc.axis_name),
                 reference=vc.reference.copy() if vc.reference else None
             )
@@ -397,36 +448,52 @@ def input_references(inference: Inference, states: States) -> States:
     return states
 
 def grouping_references(states: States) -> States:
-    """Perform the core grouping logic."""
-    context_refs = [r.reference for r in states.context if r.reference]
-    value_refs = [r.reference for r in states.values if r.reference and r.step_name == 'GR'] # Use only GR values
-    value_concept_names = [c.concept.name for c in states.values if c.concept and c.step_name == 'GR']
+    """Perform the core grouping logic for quantification."""
+    # 1. Get value references to be grouped.
+    value_refs = [r.reference for r in states.values if r.reference and r.step_name == 'IR']
+    if not value_refs:
+        logging.warning("[GR] No value references found for grouping.")
+        states.set_current_step("GR")
+        return states
 
-    by_axes = [ref.axes for ref in context_refs]
+    # 2. Find the axis of the concept we are looping over from the value concepts.
+    loop_base_concept_name = getattr(states.syntax, 'LoopBaseConcept', None)
+    loop_base_axis = None
+    if loop_base_concept_name:
+        loop_base_axis = next(
+            (r.concept.axis_name for r in states.values 
+             if r.concept and r.concept.name == loop_base_concept_name), 
+            None
+        )
     
+    if not loop_base_axis and value_refs[0].axes:
+        loop_base_axis = value_refs[0].axes[0]
+        logging.warning(f"Loop base axis not found for '{loop_base_concept_name}'. Falling back to '{loop_base_axis}'.")
+
+    # 3. Perform grouping. For quantification, this is essentially a flattening operation.
     grouper = Grouper()
-    result_ref = None
+    # For quantification, we always use or_across pattern
+    by_axes = [ref.axes for ref in value_refs]
+    to_loop_ref = grouper.or_across(
+        references=value_refs, 
+        by_axes=by_axes,
+    )
 
-    marker = getattr(states.syntax, 'marker', None)
-    if marker == "in":
-        logging.debug(f"Performing 'and_in' grouping with by_axes: {by_axes}")
-        result_ref = grouper.and_in(value_refs, value_concept_names, by_axes=by_axes)
-    elif marker == "across":
-        logging.debug(f"Performing 'or_across' grouping with by_axes: {by_axes}")
-        result_ref = grouper.or_across(value_refs, by_axes=by_axes)
-    else:
-        logging.warning(f"No valid grouping marker found ('{marker}'). Assuming direct pass-through of values.")
-        # If no grouping, just combine the values into a single reference for QR
-        if value_refs:
-            result_ref = cross_product(value_refs)
 
-    if result_ref:
-        # The result of grouping becomes an input for QR, so we store it in values.
-        gr_record = next((v for v in states.values if v.step_name == "GR"), None)
-        if gr_record:
-            gr_record.reference = result_ref
+    current_loop_base_concept_name = f"{getattr(states.syntax, 'LoopBaseConcept', None)}*" if getattr(states.syntax, 'LoopBaseConcept', None) else None
+    # Safely get the axis name from the concept, not the reference.
+    current_loop_base_concept_axis = next((r.concept.axis_name for r in states.context if r.concept and r.concept.name == current_loop_base_concept_name), None)
+
+
+    if current_loop_base_concept_axis:
+        if to_loop_ref.axes == ["_none_axis"]:
+            new_axes = [current_loop_base_concept_axis]
         else:
-             states.values.append(ReferenceRecordLite(step_name="GR", reference=result_ref))
+            new_axes = to_loop_ref.axes.copy() + [current_loop_base_concept_axis] 
+        to_loop_ref.axes = new_axes
+
+
+    states.values.append(ReferenceRecordLite(step_name="GR", reference=to_loop_ref))
    
     states.set_current_step("GR")
     logging.debug("GR completed.")
@@ -506,15 +573,15 @@ def quantifying_references(states: States) -> States:
     quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
         to_loop_element_reference=to_loop_elements,
-        current_loop_base_element=current_loop_base_element_opt,
+        current_loop_base_element=current_concept_element_opt,
     )
 
     # 7) Decide if current element is new
     is_new = False
-    if current_loop_base_element_opt is not None and isinstance(current_loop_base_element_opt, Reference):
-        if quantifier._check_new_base_element_by_looped_base_element(current_loop_base_element_opt, loop_base_concept_name):
+    if current_concept_element_opt is not None and isinstance(current_concept_element_opt, Reference):
+        if quantifier._check_new_base_element_by_looped_base_element(current_concept_element_opt, current_loop_base_concept_name):
             is_new = True
-            current_loop_base_element = current_loop_base_element_opt
+            current_loop_base_element = current_concept_element_opt
         else:
             current_loop_base_element = next_current_loop_base_element_opt
     else:
@@ -525,36 +592,58 @@ def quantifying_references(states: States) -> States:
     current_concept_element = _ensure_reference(current_concept_element_opt)
     current_loop_base_element = _ensure_reference(current_loop_base_element)
 
-    # 9) On new element, store base and in-loop concept
+    # 9) On new element, store base and in-loop concept, but only if they have valid references.
     if is_new:
-        quantifier.store_new_base_element(current_loop_base_element)
-        quantifier.store_new_in_loop_element(
-            current_loop_base_element,
-            concept_to_infer_name,
-            current_concept_element,
-        )
+        if not quantifier._is_reference_empty(current_loop_base_element):
+            # First, create the entry for the new base element and get its loop index.
+            loop_index = quantifier.store_new_base_element(current_loop_base_element)
+            
+            # Now, safely store the inferred concept using the obtained index.
+            if not quantifier._is_reference_empty(current_concept_element):
+                quantifier.store_new_in_loop_element(
+                    current_loop_base_element,
+                    concept_to_infer_name,
+                    current_concept_element,
+                )
 
-    # 10) Update context: advance loop base and carry-over for declared in-loop concepts
+    # 10) Update context: Create new 'QR' step records for the inner loop's context.
+    new_qr_context_records = []
     for ctx in context_block:
         concept_info = getattr(ctx, "concept", None)
         ctx_name = getattr(concept_info, "name", None)
+        new_ref_for_qr = None
+
+        # Determine the new reference for the loop base concept
         if ctx_name == current_loop_base_concept_name:
-            setattr(ctx, "reference", next_current_loop_base_element.copy())
-            continue
-        if in_loop_spec is not None and ctx_name in in_loop_spec:
+            new_ref_for_qr = next_current_loop_base_element.copy()
+
+        # Determine the new reference for any in-loop concepts to be carried over
+        elif in_loop_spec is not None and ctx_name in in_loop_spec:
             if not isinstance(ctx_name, str): continue
-            if is_new:
+            
+            # For new elements, store the initial value of the in-loop concept (e.g., initial partial_sum).
+            if is_new and not quantifier._is_reference_empty(current_loop_base_element):
                 quantifier.store_new_in_loop_element(
                     current_loop_base_element,
                     ctx_name,
                     _ensure_reference(getattr(ctx, "reference", None)),
                 )
             carry_index = in_loop_spec[ctx_name]
-            retrieved = quantifier.retrieve_next_in_loop_element(
+            new_ref_for_qr = quantifier.retrieve_next_in_loop_element(
                 ctx_name,
                 current_loop_index=carry_index,
             )
-            setattr(ctx, "reference", retrieved)
+        
+        # If an updated reference was created, add it to our list for the new QR context.
+        if new_ref_for_qr:
+            new_qr_context_records.append(ReferenceRecordLite(
+                step_name="QR",
+                concept=ctx.concept,
+                reference=new_ref_for_qr
+            ))
+
+    # Prepend the new QR records to the list so they are found first. The original IR records are preserved.
+    states.context = new_qr_context_records + states.context
 
     # 11) Combine all stored references for the inferred concept
     combined_reference: Optional[Reference] = None
@@ -597,19 +686,54 @@ def quantifying_references(states: States) -> States:
 
 
 def output_reference(states: States) -> States:
-    """Finalize the output reference from the last inference step (QR)."""
+    """Finalize the output reference and context from the QR step."""
     # The final result is the one produced by the QR step.
     qr_ref = states.get_reference("inference", "QR")
     if qr_ref:
         states.set_reference("inference", "OR", qr_ref)
+
+    # Copy QR context records to be the new OR context records for the next iteration.
+    or_context_records = [
+        ReferenceRecordLite(
+            step_name="OR",
+            concept=ctx.concept,
+            reference=ctx.reference.copy() if ctx.reference else None
+        ) 
+        for ctx in states.context if ctx.step_name == 'QR'
+    ]
+    
+    # Keep all non-OR records and add the new OR records.
+    non_or_context = [c for c in states.context if c.step_name != 'OR']
+    states.context = or_context_records + non_or_context
+
     states.set_current_step("OR")
     logging.debug("OR completed.")
     return states
 
 def output_working_interpretation(states: States) -> States:
-    """No-op finalization for demo."""
+    """Check for loop completion and set status."""
+    
+    syntax_data = getattr(states, "syntax", {})
+    loop_base_concept_name = getattr(syntax_data, "LoopBaseConcept", None)
+    
+    to_loop_elements = None
+    values_block = getattr(states, "values", []) or []
+    for item in values_block:
+        if getattr(item, "step_name", None) == "GR" and getattr(item, "reference", None) is not None:
+            to_loop_elements = item.reference
+            break
+            
+    is_complete = False
+    if loop_base_concept_name and to_loop_elements:
+        quantifier = Quantifier(workspace=states.workspace, loop_base_concept_name=loop_base_concept_name)
+        concept_to_infer_name = (getattr(syntax_data, "ConceptToInfer") or [""])[0]
+        if quantifier.check_all_base_elements_looped(to_loop_elements, in_loop_element_name=concept_to_infer_name):
+            is_complete = True
+
+    setattr(states.syntax, 'completion_status', is_complete)
+    
     states.set_current_step("OWI")
-    logging.debug("OWI completed.")
+    logging.debug(f"OWI completed. Completion status: {is_complete}")
     return states
 
 # --- Logging ---
@@ -646,7 +770,11 @@ def log_states_progress(states: States, step_name: str, step_filter: Optional[st
 @register_inference_sequence("quantifying_v2")
 def quantifying_v2(self: Inference, input_data: Optional[Dict[str, Any]] = None) -> States:
     """New quantifying sequence runner."""
-    states = States()
+    # Check if a persistent state is being passed in
+    states = (input_data or {}).get("initial_states")
+    if not isinstance(states, States):
+        states = States()
+
     working_interpretation = (input_data or {}).get("working_interpretation")
     
     # IWI
@@ -673,173 +801,155 @@ def quantifying_v2(self: Inference, input_data: Optional[Dict[str, Any]] = None)
 
 # --- Demo Setup: Summing Digits ---
 
-def _build_demo_concepts() -> tuple[Concept, List[Concept], Concept, List[Concept]]:
-    """Builds concepts for a quantification demo: summing digits with carry-over."""
-    logger = logging.getLogger(__name__)
-    logger.info("Building demo concepts for quantification.")
-
+def _build_demo_concepts_for_quant_controller() -> tuple[Concept, List[Concept], Concept, List[Concept]]:
+    """Builds concepts for the outer quantification controller."""
     # Value Concept: The list of digits to be looped over.
-    # This would typically be the output of a GR step.
     ref_digits = Reference(axes=["digit_pos"], shape=(4,))
     for i, v in enumerate([1, 8, 2, 5]):
         ref_digits.set(f"%({v})", digit_pos=i)
     concept_digits = Concept("{digit}", "digit", "digit_pos", ref_digits)
 
-    # Context Concepts for Quantification Loop Control
-    # 1. The loop base concept, which drives the iteration.
-    ref_digit_pos = Reference(axes=["digit_pos"], shape=(4,))
-    for i in range(4):
-        ref_digit_pos.set(f"%({i})", digit_pos=i)
-    concept_digit_pos = Concept("{digit position}", "digit position", "digit_pos", ref_digit_pos)
-    
-    # 2. The "current" version of the loop base, which advances.
-    concept_current_digit_pos = Concept("{digit position}*", "digit position*", "digit_pos*")
-    
-    # 3. The "carry-over" concept for the running sum.
+    # Context Concepts for Loop Control
+    concept_current_digit = Concept("{digit}*", "digit*", "digit*")
     concept_partial_sum = Concept("{partial_sum}*", "partial_sum*", "partial_sum*")
 
-    # Function Concept: A dummy "add" function. In a real scenario, this could be
-    # a complex model-driven function. For the demo, QR just needs a value to store
-    # for each loop iteration, which we'll simulate as the "new sum".
-    # Let's say we just add the digit to the previous sum (or 0 if first).
-    # The actual addition logic isn't in this runner, but we provide the function concept.
-    ref_add = Reference(axes=["f"], shape=(1,)); ref_add.set("%(add)", f=0)
-    function_concept = Concept("::(add)", "add", "f", ref_add)
+    # Placeholder for the function concept, which will be the *result* of the inner imperative step
+    quantification_concept = Concept("::(add_result)", "add_result", "f", Reference(axes=["f"], shape=(1,)))
 
-    # Concept to Infer: The final sum.
+    # Concept to Infer: The final accumulated sum.
     concept_to_infer = Concept("{sum}", "sum", "sum")
 
     return (
         concept_to_infer,
         [concept_digits],
-        function_concept,
-        [concept_digit_pos, concept_current_digit_pos, concept_partial_sum]
+        quantification_concept,
+        [concept_current_digit, concept_partial_sum]
     )
 
 def _build_demo_working_interpretation() -> Dict[str, Any]:
     """Provides the syntax needed for the QR step."""
     return {
         "syntax": {
-            "marker": None, # No grouping needed, values are passed through
-            "LoopBaseConcept": "{digit position}",
+            "marker": None, 
+            "LoopBaseConcept": "{digit}",
             "ConceptToInfer": ["{sum}"],
             "InLoopConcept": {
                 "{partial_sum}*": 1  # Carry over partial sum from 1 step ago
-            }
+            },
+            "completion_status": False
         }
     }
+
+# --- Utility Functions ---
+def _get_workspace_tensor_view(workspace: Dict) -> Dict:
+    """Recursively converts a workspace of Reference objects to a dictionary of their tensors."""
+    tensor_view = {}
+    for key, value in workspace.items():
+        if isinstance(value, dict):
+            tensor_view[key] = _get_workspace_tensor_view(value)
+        elif hasattr(value, 'tensor'): # Check if it's a Reference-like object
+            tensor_view[key] = value.tensor
+        else:
+            tensor_view[key] = value
+    return tensor_view
 
 # --- Main Execution ---
 
 def run_quantifying_sequence() -> States:
+    """Demonstrates the iterative controller-actor pattern for quantification."""
     setup_logging(logging.DEBUG)
 
-    concept_to_infer, value_concepts, function_concept, context_concepts = _build_demo_concepts()
+    # --- Mock Inner "Imperative" Sequence ---
+    def mock_imperative_add_step(current_digit_concept: Concept, partial_sum_concept: Concept) -> Concept:
+        """Simulates an inner sequence that performs addition for one loop step."""
+        # Strip wrappers like %() to get raw numbers
+        try:
+            current_digit = int(str(current_digit_concept.reference.tensor[0]).strip("%()"))
+        except (AttributeError, IndexError, ValueError):
+            current_digit = 0
+        
+        try:
+            partial_sum = int(str(partial_sum_concept.reference.tensor[0]).strip("%()"))
+        except (AttributeError, IndexError, ValueError, TypeError):
+            partial_sum = 0 # Default to 0 if no partial sum yet
 
-    inference = Inference(
+        new_sum = current_digit + partial_sum
+        logging.info(f"[Inner Worker] Adding {current_digit} + {partial_sum} = {new_sum}")
+
+        # The result is a new concept holding the calculated sum
+        ref_new_sum = Reference(axes=["sum"], shape=(1,)); ref_new_sum.set(f"%({new_sum})", sum=0)
+        return Concept("{new_sum}", "new_sum", "sum", ref_new_sum)
+
+    # --- Setup for Outer "Quantifying" Controller ---
+    concept_to_infer, value_concepts, quantification_concept, context_concepts = _build_demo_concepts_for_quant_controller()
+    
+    quantification_inference = Inference(
         "quantifying_v2",
         concept_to_infer,
         value_concepts,
-        function_concept,
+        quantification_concept, # Starts with a placeholder
         context_concepts=context_concepts
     )
     
-    # The QR step needs a function reference to be available in the states.
-    # We will manually put a placeholder function result in each loop.
-    # In a real run, another sequence (like imperative) would run inside the loop.
-    # We will manually drive the quantification loop to simulate a real scenario
-    # where an imperative sequence would run in each iteration.
-
-    # 1. Initial setup
-    states = States()
+    # --- Main Execution Loop ---
     working_interpretation = _build_demo_working_interpretation()
-    states = input_working_interpretation(inference, states, working_interpretation)
-    states = input_references(inference, states)
-    states = grouping_references(states)
-
-    # 2. Loop simulation
-    running_sum = 0
-    digits_to_process = value_concepts[0].reference.get_tensor(ignore_skip=True) # [ '%(1)', '%(8)', ... ]
+    iteration = 0
     
-    # The `quantifying_references` function looks for the "current" loop base element in the context.
-    # We must seed it before the first iteration.
-    initial_loop_base_ref = Reference(axes=['digit_pos'], shape=(1,))
-    initial_loop_base_ref.set('%(0)', digit_pos=0)
-    for ctx in states.context:
-        if ctx.concept and ctx.concept.name == '{digit position}*':
-            ctx.reference = initial_loop_base_ref
+    # We need a state object that persists across loop iterations
+    states = States()
+
+    while not working_interpretation.get("syntax", {}).get("completion_status", False):
+        iteration += 1
+        logging.info(f"--- QUANTIFICATION LOOP: ITERATION {iteration} ---")
+        if iteration > 5: # Safety break
+            logging.warning("Safety break triggered to prevent infinite loop.")
             break
 
-    for i, digit_str in enumerate(digits_to_process):
-        logging.info(f"--- SIMULATING LOOP ITERATION {i+1} ---")
+        # 1. Run the controller to get the current state and context for the inner worker
+        logging.info("[Controller] Running to get context for inner worker...")
         
-        # Strip wrapper to get the number
-        digit = int(digit_str.strip('%()'))
+        # Pass the whole states object to persist workspace and other attributes
+        workspace_tensor = _get_workspace_tensor_view(states.workspace)
+        states = quantification_inference.execute(input_data={"working_interpretation": working_interpretation, "initial_states": states, "initial_workspace": workspace_tensor})
         
-        # Simulate the "add" function: update running_sum
-        # In a real scenario, a model would do this.
-        # We need to get the "carry" value from the previous step.
-        
-        # Find the partial_sum reference from the context
-        partial_sum_ref = None
-        for ctx in states.context:
-            if ctx.concept and ctx.concept.name == '{partial_sum}*':
-                partial_sum_ref = ctx.reference
-                break
-        
-        previous_sum = 0
-        if partial_sum_ref:
-            try:
-                val = partial_sum_ref.get_tensor(ignore_skip=True)
-                if val: previous_sum = int(val[0])
-            except (ValueError, IndexError):
-                previous_sum = 0 # Default to 0 if parsing fails
-        
-        running_sum = previous_sum + digit
-        logging.info(f"Digit: {digit}, Previous Sum: {previous_sum}, New Sum: {running_sum}")
+        # Extract the current digit and partial sum from the controller's 'OR' context
+        current_digit_ctx = next((c for c in states.context if c.step_name == 'OR' and c.concept and c.concept.name == "{digit}*"), Concept("","", "", Reference(axes=[], shape=())))
+        partial_sum_ctx = next((c for c in states.context if c.step_name == 'OR' and c.concept and c.concept.name == "{partial_sum}*"), Concept("","", "", Reference(axes=[], shape=())))
 
-        # Update the function reference in states to hold the new sum.
-        # This is what the QR step will read.
-        new_sum_ref = Reference(axes=['sum'], shape=(1,))
-        new_sum_ref.set(running_sum, sum=0)
-        states.function = [ReferenceRecordLite("MFP_Result", reference=new_sum_ref)]
+        logging.info(f"[Controller] Current digit context for worker: {current_digit_ctx.reference.tensor}")
+        logging.info(f"[Controller] Partial sum context for worker: {partial_sum_ctx.reference.tensor}")
+
+        # 2. Run the inner worker (mocked) with the context provided by the controller
+        new_sum_concept = mock_imperative_add_step(current_digit_ctx, partial_sum_ctx)
+
+        # 3. Feed the result of the inner worker back to the controller
+        # The result becomes the "function_concept" for the controller's next run
+        quantification_inference.function_concept = new_sum_concept
         
-        # Now, call the QR step. It will:
-        # 1. See the current loop base element ('digit_pos' i) is new.
-        # 2. Store the `new_sum_ref` in its workspace associated with this digit.
-        # 3. Update the context concepts (advance 'digit_pos*', update 'partial_sum*').
-        states = quantifying_references(states)
-        log_states_progress(states, f"QR_Iter_{i+1}")
+        # Update the working interpretation with the latest completion status from the state
+        if hasattr(states, 'syntax') and hasattr(states.syntax, 'completion_status'):
+            working_interpretation["syntax"]["completion_status"] = states.syntax.completion_status
+        else:
+            working_interpretation["syntax"]["completion_status"] = True # Failsafe
 
-        # CRITICAL: Update the main state's partial_sum* with the one from the workspace for the next loop
-        new_partial_sum_ref = Reference(axes=['sum'], shape=(1,))
-        new_partial_sum_ref.set(running_sum, sum=0)
-        for ctx in states.context:
-            if ctx.concept and ctx.concept.name == '{partial_sum}*':
-                ctx.reference = new_partial_sum_ref
-                break
-
-    # One final call to QR to combine the last element
-    states = quantifying_references(states)
+    logging.info("--- QUANTIFICATION COMPLETE ---")
     
-    # 3. Finalization
-    states = output_reference(states)
-    states = output_working_interpretation(states)
+    # Final state after loop terminates
+    final_states = states
+    final_ref = final_states.get_reference("inference", "OR")
 
     # Final log
     logger = logging.getLogger(__name__)
-    final_ref = states.get_reference("inference", "OR")
     if isinstance(final_ref, Reference):
         logger.info("--- Final Output (OR) ---")
-        logger.info(f"Axes: {final_ref.axes}")
-        logger.info(f"Shape: {final_ref.shape}")
         tensor_content = final_ref.get_tensor(ignore_skip=True)
-        logger.info(f"Tensor (without skips): {tensor_content}")
+        logger.info(f"Final Tensor: {tensor_content}")
         print("\n--- Final Output (OR) ---")
+        # The result is a list of all the intermediate sums
         print(f"Tensor: {tensor_content}")
-        # Expected: [[[[1], [9]], [[11], [16]]]] or similar nested structure based on axes
+        # Expected: [['%(1)'], ['%(9)'], ['%(11)'], ['%(16)']]
     
-    return states
+    return final_states
 
 if __name__ == "__main__":
     run_quantifying_sequence() 

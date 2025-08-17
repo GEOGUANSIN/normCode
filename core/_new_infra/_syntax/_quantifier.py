@@ -397,3 +397,205 @@ class Quantifier:
                 tensor = getattr(ref, 'tensor', None)
                 msg += f"  {concept_name}: tensor={tensor};"
         logger.debug(msg)
+
+from ._state_models import (
+    AgentSequenceState, StepDescriptor, ReferenceInterpretationState,
+    FunctionReference, ValuesReference, ContextReference, InferenceReference,
+    ToolSpec, ConceptInfo, StepReferenceAccessor 
+)
+
+
+# States-only QR step
+
+def quantifying_references(states):
+    """
+    Quantifying References (QR) step using only the `states` object.
+
+    Expectations:
+    - states.syntax contains quantification syntax data (parsed dict) with keys like
+      'LoopBaseConcept', 'ConceptToInfer', 'InLoopConcept'.
+    - The to-loop elements reference comes from the Grouping References step result,
+      stored under states.values with step_name == 'GR' (preferred) or states.inference
+      with step_name == 'GA' (fallback).
+    - Workspace is stored on states.workspace (dict). If missing, it will be created.
+
+    Side effects:
+    - Updates states.context carry-over references and advances the current loop base.
+    - Updates states.inference with a 'QR' entry holding the combined reference when a
+      new element is processed.
+    """
+    st = StepReferenceAccessor
+
+    def _ensure_reference(ref: Optional[Reference]) -> Reference:
+        if isinstance(ref, Reference):
+            return ref
+        return Reference(initial_value=None, axes=None, shape=None)
+
+    # 1) Read syntax data (parsed quantification)
+    syntax_data = getattr(states, "syntax", {}) or {}
+    if not isinstance(syntax_data, dict):
+        logger.warning("[QR] states.syntax is not a dict; QR step requires parsed syntax data. Skipping.")
+        return states
+
+    loop_base_concept_name = syntax_data.get("LoopBaseConcept")
+    concept_to_infer_list = syntax_data.get("ConceptToInfer") or []
+    in_loop_spec = syntax_data.get("InLoopConcept")
+    if not loop_base_concept_name or not concept_to_infer_list:
+        logger.warning("[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping.")
+        return states
+    concept_to_infer_name = concept_to_infer_list[0]
+    current_loop_base_concept_name = f"{loop_base_concept_name}*"
+
+    # 2) Get to-loop elements reference (GR preferred, GA fallback)
+    to_loop_elements: Optional[Reference] = None
+    values_block = getattr(states, "values", []) or []
+    for item in values_block:
+        try:
+            if getattr(item, "step_name", None) == "GR" and getattr(item, "reference", None) is not None:
+                to_loop_elements = item.reference
+                break
+        except Exception:
+            continue
+    if to_loop_elements is None:
+        logger.warning("[QR] No to-loop elements found in states.values for step 'GR'. Skipping.")
+        return states
+
+    # 3) Prepare workspace
+    if not hasattr(states, "workspace") or getattr(states, "workspace") is None:
+        setattr(states, "workspace", {})
+    workspace = getattr(states, "workspace")
+
+    # 4) Current loop base element from context (if any)
+    current_loop_base_context_item = None
+    context_block = getattr(states, "context", []) or []
+    for ctx in context_block:
+        try:
+            concept_info = getattr(ctx, "concept", None)
+            concept_name = getattr(concept_info, "name", None) if concept_info is not None else getattr(ctx, "name", None)
+            if concept_name == current_loop_base_concept_name:
+                current_loop_base_context_item = ctx
+                break
+        except Exception:
+            continue
+
+    current_loop_base_element_opt = None
+    if current_loop_base_context_item is not None:
+        current_loop_base_element_opt = getattr(current_loop_base_context_item, "reference", None)
+
+    # 5) Determine current concept element from function block (first available reference)
+    current_concept_element_opt = None
+    function_block = getattr(states, "function", []) or []
+    for fn in function_block:
+        try:
+            ref = getattr(fn, "reference", None)
+            if ref is not None:
+                current_concept_element_opt = ref
+                break
+        except Exception:
+            continue
+
+    # 6) Initialize quantifier and retrieve next element
+    quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
+    next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
+        to_loop_element_reference=to_loop_elements,
+        current_loop_base_element=current_loop_base_element_opt,
+    )
+
+    # 7) Decide if current element is new
+    is_new = False
+    if current_loop_base_element_opt is not None and isinstance(current_loop_base_element_opt, Reference):
+        if quantifier._check_new_base_element_by_looped_base_element(current_loop_base_element_opt, current_loop_base_concept_name):
+            is_new = True
+            current_loop_base_element = current_loop_base_element_opt
+        else:
+            current_loop_base_element = next_current_loop_base_element_opt
+    else:
+        current_loop_base_element = next_current_loop_base_element_opt
+
+    # 8) Ensure references
+    next_current_loop_base_element = _ensure_reference(next_current_loop_base_element_opt)
+    current_concept_element = _ensure_reference(current_concept_element_opt)
+    current_loop_base_element = _ensure_reference(current_loop_base_element)
+
+    # 9) On new element, store base and in-loop concept
+    if is_new:
+        quantifier.store_new_base_element(current_loop_base_element)
+        quantifier.store_new_in_loop_element(
+            current_loop_base_element,
+            concept_to_infer_name,
+            current_concept_element,
+        )
+
+    # 10) Update context: advance loop base and carry-over for declared in-loop concepts
+    for ctx in context_block:
+        try:
+            concept_info = getattr(ctx, "concept", None)
+            ctx_name = getattr(concept_info, "name", None) if concept_info is not None else getattr(ctx, "name", None)
+            if ctx_name == current_loop_base_concept_name:
+                setattr(ctx, "reference", next_current_loop_base_element.copy())
+                continue
+            if in_loop_spec is not None and ctx_name in in_loop_spec:
+                # Ensure ctx_name is a valid string for downstream calls
+                if not isinstance(ctx_name, str):
+                    continue
+                if is_new:
+                    quantifier.store_new_in_loop_element(
+                        current_loop_base_element,
+                        ctx_name,
+                        _ensure_reference(getattr(ctx, "reference", None)),
+                    )
+                carry_index = in_loop_spec[ctx_name]
+                retrieved = quantifier.retrieve_next_in_loop_element(
+                    ctx_name,
+                    current_loop_index=carry_index,
+                )
+                setattr(ctx, "reference", retrieved)
+        except Exception as e:
+            logger.debug(f"[QR] Skipping context update due to error: {e}")
+            continue
+
+    # 11) Combine all stored references for the inferred concept
+    combined_reference: Optional[Reference] = None
+    if is_new:
+        combined_reference = quantifier.combine_all_looped_elements_by_concept(
+            to_loop_element_reference=to_loop_elements,
+            concept_name=concept_to_infer_name,
+        )
+        if combined_reference is not None:
+            # Axis normalization
+            loop_base_axis = None
+            current_loop_axis = None
+            try:
+                for v in values_block:
+                    ci = getattr(v, "concept", None)
+                    if ci and getattr(ci, "name", None) == loop_base_concept_name:
+                        loop_base_axis = getattr(ci, "axis_name", None)
+                        break
+                for c in context_block:
+                    ci = getattr(c, "concept", None)
+                    if ci and getattr(ci, "name", None) == current_loop_base_concept_name:
+                        current_loop_axis = getattr(ci, "axis_name", None)
+                        break
+            except Exception:
+                pass
+            if loop_base_axis is not None and current_loop_axis is not None:
+                new_axes = combined_reference.axes.copy()
+                # Last axis becomes the inferred concept's axis (use concept name)
+                new_axes[-1] = concept_to_infer_name
+                # Replace transient current-loop axis with the base axis
+                if current_loop_axis in new_axes:
+                    new_axes[new_axes.index(current_loop_axis)] = loop_base_axis
+                combined_reference.axes = new_axes
+
+    # 12) Write result into states.inference under QR if the entry exists
+    if combined_reference is not None:
+        for inf in getattr(states, "inference", []) or []:
+            try:
+                if getattr(inf, "step_name", None) == "QR":
+                    setattr(inf, "reference", combined_reference)
+                    break
+            except Exception:
+                continue
+
+    return states
+    
