@@ -54,20 +54,33 @@ class Quantifier:
         return flattened
         
     def _check_new_base_element_by_looped_base_element(self, current_looped_element_reference: Reference, loop_base_concept_name: str) -> bool:
+        # First, check if the reference itself is empty. If so, it can't be "new".
+        if self._is_reference_empty(current_looped_element_reference):
+            logging.debug(f"[_check_new_base_element] Input element is empty. Returning False (not new).")
+            return False
+
+        logging.debug(f"[_check_new_base_element] Checking for element: {current_looped_element_reference.tensor}")
         element_found = False
         for loop_index in self.current_subworkspace.keys():
             if (loop_base_concept_name in self.current_subworkspace[loop_index].keys() and 
                 current_looped_element_reference.tensor == self.current_subworkspace[loop_index][loop_base_concept_name].tensor):
+                logging.debug(f"[_check_new_base_element] Found match at loop index {loop_index}")
                 element_found = True
                 break
+        logging.debug(f"[_check_new_base_element] Is new? {not element_found}")
         return not element_found
 
     def _check_index_of_current_looped_base_element(self, looped_base_reference: Reference) -> int:
+        logging.debug(f"[_check_index] Checking index for: {looped_base_reference.tensor}")
         for existing_loop_index in self.current_subworkspace.keys():
             if (self.loop_base_concept_name in self.current_subworkspace[existing_loop_index] and 
                 self.current_subworkspace[existing_loop_index][self.loop_base_concept_name].tensor == looped_base_reference.tensor):
+                logging.debug(f"[_check_index] Found existing index: {existing_loop_index}")
                 return existing_loop_index
-        return self._get_next_loop_index()
+        
+        new_index = self._get_next_loop_index()
+        logging.debug(f"[_check_index] No existing index found. Returning new index: {new_index}")
+        return new_index
 
     def _get_next_loop_index(self) -> int:
         new_loop_index = 0
@@ -106,6 +119,7 @@ class Quantifier:
             elements = self._flatten_list(current_to_loop_element_reference.tensor.copy())
             
             if all(e is None or e == "@#SKIP#@" for e in elements):
+                # We've reached the end of the elements to loop through.
                 break
             
             is_current = False
@@ -134,21 +148,26 @@ class Quantifier:
 
     def check_all_base_elements_looped(self, to_loop_element_reference: Reference, in_loop_element_name: Optional[str] = None) -> bool:
         """Checks if all elements in a reference have been processed and stored in the workspace."""
-        current_loop_index = 0
-        # Assume the loop axis is the first axis
-        if not to_loop_element_reference.shape:
-            return True # Nothing to loop over
+        logging.debug(f"[check_all_looped] Starting check. Looping over {to_loop_element_reference.tensor}")
         
-        loop_limit = to_loop_element_reference.shape[0]
+        # Validate that all elements in the tensor are lists
+        if to_loop_element_reference.tensor:
+            for i, element in enumerate(to_loop_element_reference.tensor):
+                if not isinstance(element, list):
+                    raise ValueError(f"Element at index {i} is not a list: {element}")
+        
+        current_loop_index = 0
 
-        while current_loop_index < loop_limit:
+        while True:
             get_element_function = lambda x: self._get_list_at_index(x, current_loop_index)
             current_to_loop_element_reference = element_action(get_element_function, [to_loop_element_reference.copy()])
+            logging.debug(f"[check_all_looped] current_to_loop_element_reference: {current_to_loop_element_reference.tensor}")
             elements = self._flatten_list(current_to_loop_element_reference.tensor.copy())
+            logging.debug(f"[check_all_looped] Index {current_loop_index}: Checking element {elements}")
             
             if all(e is None or e == "@#SKIP#@" for e in elements):
-                current_loop_index += 1
-                continue # Skip empty/placeholder elements
+                logging.debug(f"[check_all_looped] Reached end of elements at index {current_loop_index}. Loop IS complete.")
+                break # Exit the while loop, will return True
 
             element_found_in_workspace = False
             matching_loop_index = None
@@ -156,17 +175,21 @@ class Quantifier:
                 if self.loop_base_concept_name in concepts and concepts[self.loop_base_concept_name].tensor == current_to_loop_element_reference.tensor:
                     element_found_in_workspace = True
                     matching_loop_index = loop_idx
+                    logging.debug(f"[check_all_looped] Index {current_loop_index}: Found element in workspace at loop index {loop_idx}.")
                     break
             
             if not element_found_in_workspace:
+                logging.debug(f"[check_all_looped] Index {current_loop_index}: Element NOT found in workspace. Loop is NOT complete. Returning False.")
                 return False
 
             if in_loop_element_name is not None and matching_loop_index is not None:
                 if in_loop_element_name not in self.current_subworkspace[matching_loop_index]:
+                    logging.debug(f"[check_all_looped] Index {current_loop_index}: Element found, but required in-loop concept '{in_loop_element_name}' is MISSING. Loop is NOT complete. Returning False.")
                     return False
 
             current_loop_index += 1
         
+        logging.debug("[check_all_looped] All elements checked and found in workspace. Loop IS complete. Returning True.")
         return True
 
     def combine_all_looped_elements_by_concept(self, to_loop_element_reference: Reference, concept_name: str) -> Optional[Reference]:
@@ -450,7 +473,7 @@ def input_references(inference: Inference, states: States) -> States:
 def grouping_references(states: States) -> States:
     """Perform the core grouping logic for quantification."""
     # 1. Get value references to be grouped.
-    value_refs = [r.reference for r in states.values if r.reference and r.step_name == 'IR']
+    value_refs = [r.reference.copy() for r in states.values if r.reference and r.step_name == 'IR']
     if not value_refs:
         logging.warning("[GR] No value references found for grouping.")
         states.set_current_step("GR")
@@ -473,7 +496,8 @@ def grouping_references(states: States) -> States:
     # 3. Perform grouping. For quantification, this is essentially a flattening operation.
     grouper = Grouper()
     # For quantification, we always use or_across pattern
-    by_axes = [ref.axes for ref in value_refs]
+    # Pass a copy of the axes to prevent destructive modification of the original reference.
+    by_axes = [ref.axes.copy() for ref in value_refs]
     to_loop_ref = grouper.or_across(
         references=value_refs, 
         by_axes=by_axes,
@@ -493,7 +517,7 @@ def grouping_references(states: States) -> States:
         to_loop_ref.axes = new_axes
 
 
-    states.values.append(ReferenceRecordLite(step_name="GR", reference=to_loop_ref))
+    states.values.append(ReferenceRecordLite(step_name="GR", reference=to_loop_ref.copy()))
    
     states.set_current_step("GR")
     logging.debug("GR completed.")
@@ -554,6 +578,7 @@ def quantifying_references(states: States) -> States:
         concept_name = getattr(concept_info, "name", None)
         if concept_name == current_loop_base_concept_name:
             current_loop_base_context_item = ctx
+            logging.debug(f"[QR Step 4] Found current loop base element in context: {current_loop_base_context_item}")
             break
     
     current_loop_base_element_opt = None
@@ -569,23 +594,32 @@ def quantifying_references(states: States) -> States:
             current_concept_element_opt = ref
             break
 
+    logging.debug(f"[QR Step 5] From function (inner step result): current_concept_element_opt = {current_concept_element_opt.tensor if current_concept_element_opt else 'None'}")
     # 6) Initialize quantifier and retrieve next element
     quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
         to_loop_element_reference=to_loop_elements,
-        current_loop_base_element=current_concept_element_opt,
+        current_loop_base_element=current_loop_base_element_opt,
     )
+
+    logging.debug(f"[QR Step 6] Retrieved next element to loop: next_current_loop_base_element_opt = {next_current_loop_base_element_opt.tensor if next_current_loop_base_element_opt else 'None'}")
 
     # 7) Decide if current element is new
     is_new = False
     if current_concept_element_opt is not None and isinstance(current_concept_element_opt, Reference):
-        if quantifier._check_new_base_element_by_looped_base_element(current_concept_element_opt, current_loop_base_concept_name):
+        is_new_check_result = quantifier._check_new_base_element_by_looped_base_element(current_concept_element_opt, current_loop_base_concept_name)
+        logging.debug(f"[QR Step 7] Checking if '{current_concept_element_opt.tensor if current_concept_element_opt else 'None'}' is a new base element. Result: {is_new_check_result}")
+
+        if is_new_check_result:
             is_new = True
-            current_loop_base_element = current_concept_element_opt
+            current_loop_base_element = current_loop_base_element_opt
+            logging.debug(f"[QR Step 7] Element IS new. Assigning inner step result to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}")
         else:
             current_loop_base_element = next_current_loop_base_element_opt
+            logging.debug(f"[QR Step 7] Element is NOT new. Assigning next element to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}")
     else:
         current_loop_base_element = next_current_loop_base_element_opt
+        logging.debug(f"[QR Step 7] No inner step result. Assigning next element to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}")
 
     # 8) Ensure references
     next_current_loop_base_element = _ensure_reference(next_current_loop_base_element_opt)
@@ -596,10 +630,12 @@ def quantifying_references(states: States) -> States:
     if is_new:
         if not quantifier._is_reference_empty(current_loop_base_element):
             # First, create the entry for the new base element and get its loop index.
+            logging.debug(f"[QR Step 9] Storing NEW base element: {current_loop_base_element.tensor}")
             loop_index = quantifier.store_new_base_element(current_loop_base_element)
             
             # Now, safely store the inferred concept using the obtained index.
             if not quantifier._is_reference_empty(current_concept_element):
+                logging.debug(f"[QR Step 9] Storing in-loop element '{concept_to_infer_name}' with value {current_concept_element.tensor} for base {current_loop_base_element.tensor} at index {loop_index}")
                 quantifier.store_new_in_loop_element(
                     current_loop_base_element,
                     concept_to_infer_name,
@@ -719,11 +755,13 @@ def output_working_interpretation(states: States) -> States:
     to_loop_elements = None
     values_block = getattr(states, "values", []) or []
     for item in values_block:
-        if getattr(item, "step_name", None) == "GR" and getattr(item, "reference", None) is not None:
+        if (getattr(item, "step_name", None) == "GR" and 
+            getattr(item, "reference", None) is not None):
             to_loop_elements = item.reference
             break
             
     is_complete = False
+    logging.debug(f"[OWI Step 1] Checking if loop is complete. Loop base concept name: {loop_base_concept_name}, To loop elements: {to_loop_elements}")
     if loop_base_concept_name and to_loop_elements:
         quantifier = Quantifier(workspace=states.workspace, loop_base_concept_name=loop_base_concept_name)
         concept_to_infer_name = (getattr(syntax_data, "ConceptToInfer") or [""])[0]
@@ -864,14 +902,13 @@ def run_quantifying_sequence() -> States:
         """Simulates an inner sequence that performs addition for one loop step."""
         # Strip wrappers like %() to get raw numbers
         try:
-            current_digit = int(str(current_digit_concept.reference.tensor[0]).strip("%()"))
+            current_digit = int(str(current_digit_concept.reference.copy().tensor[0]).strip("%()"))
         except (AttributeError, IndexError, ValueError):
             current_digit = 0
-        
         try:
-            partial_sum = int(str(partial_sum_concept.reference.tensor[0]).strip("%()"))
+            partial_sum = int(str(partial_sum_concept.reference.copy().tensor[0]).strip("%()"))
         except (AttributeError, IndexError, ValueError, TypeError):
-            partial_sum = 0 # Default to 0 if no partial sum yet
+            partial_sum = 1  # Default to 0 if no partial sum yet
 
         new_sum = current_digit + partial_sum
         logging.info(f"[Inner Worker] Adding {current_digit} + {partial_sum} = {new_sum}")
@@ -912,6 +949,11 @@ def run_quantifying_sequence() -> States:
         workspace_tensor = _get_workspace_tensor_view(states.workspace)
         states = quantification_inference.execute(input_data={"working_interpretation": working_interpretation, "initial_states": states, "initial_workspace": workspace_tensor})
         
+        # Check if the loop is complete right after the execution runs
+        if states.syntax.completion_status == True:
+            logging.info("[Controller] Loop is complete. Exiting loop.")
+            break
+
         # Extract the current digit and partial sum from the controller's 'OR' context
         current_digit_ctx = next((c for c in states.context if c.step_name == 'OR' and c.concept and c.concept.name == "{digit}*"), Concept("","", "", Reference(axes=[], shape=())))
         partial_sum_ctx = next((c for c in states.context if c.step_name == 'OR' and c.concept and c.concept.name == "{partial_sum}*"), Concept("","", "", Reference(axes=[], shape=())))
@@ -925,6 +967,12 @@ def run_quantifying_sequence() -> States:
         # 3. Feed the result of the inner worker back to the controller
         # The result becomes the "function_concept" for the controller's next run
         quantification_inference.function_concept = new_sum_concept
+
+        # 4. Renew the context concepts in the states object
+        [current_digit, partial_sum] = context_concepts
+        current_digit.reference = current_digit_ctx.reference.copy()
+        partial_sum.reference = partial_sum_ctx.reference.copy()
+        quantification_inference.context_concepts = [current_digit, partial_sum]
         
         # Update the working interpretation with the latest completion status from the state
         if hasattr(states, 'syntax') and hasattr(states.syntax, 'completion_status'):
