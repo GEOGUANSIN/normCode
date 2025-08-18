@@ -12,13 +12,13 @@ CURRENT_DIR = os.path.dirname(__file__)
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-from _inference import Inference, register_inference_sequence, setup_logging
-from _concept import Concept
-from _reference import Reference, cross_product, cross_action, element_action
-from _common.grouper import Grouper
-from _states.quantifying_states import States
-from _common.quantifier import Quantifier
-from ...._new_infra._steps.quantifying import (
+from infra._core import Inference, register_inference_sequence, setup_logging
+from infra._core import Concept
+from infra._core import Reference, cross_product, cross_action, element_action
+from infra._common.grouper import Grouper
+from infra._states.quantifying_states import States
+from infra._common.quantifier import Quantifier
+from infra._agent._steps.quantifying import (
     iwi,
     ir,
     gr,

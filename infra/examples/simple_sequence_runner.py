@@ -8,23 +8,14 @@ CURRENT_DIR = os.path.dirname(__file__)
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-from _inference import Inference, register_inference_sequence, setup_logging
-from _concept import Concept
-from dataclasses import dataclass, field
-from _reference import Reference, cross_product
-from _states.simple_states import States
-from ._steps.simple import iwi, ir, or_step, owi
-
-
-@register_inference_sequence("simple")
-def simple(self: Inference, input_data: Dict[str, Any] | None = None) -> States:
-	"""Simple sequence: IWI -> IR -> OR -> OWI using the minimal States container."""
-	states = States()
-	states = self.IWI(inference=self, states=states, body={}, working_interpretation=(input_data or {}).get("working_interpretation"))
-	states = self.IR(inference=self, states=states)
-	states = self.OR(states=states)
-	states = self.OWI(states=states)
-	return states
+# Import core components
+try:
+	from infra import Inference, Concept, Reference, AgentFrame, BaseStates
+except Exception:
+	import sys, pathlib
+	here = pathlib.Path(__file__).parent
+	sys.path.insert(0, str(here.parent.parent))  # Add workspace root to path
+	from infra import Inference, Concept, Reference, AgentFrame, BaseStates
 
 
 def _build_demo_concepts() -> tuple[Concept, List[Concept], Concept]:
@@ -51,8 +42,7 @@ def _build_demo_concepts() -> tuple[Concept, List[Concept], Concept]:
 	return concept_to_infer, value_concepts, function_concept
 
 
-def run_simple_sequence() -> States:
-	setup_logging(logging.DEBUG)
+def run_simple_sequence() -> BaseStates:
 
 	concept_to_infer, value_concepts, function_concept = _build_demo_concepts()
 
@@ -64,32 +54,12 @@ def run_simple_sequence() -> States:
 		function_concept,
 	)
 
-	# Bind steps to this instance
-	@inference.register_step("IWI")
-	def IWI(**fkwargs):
-		return iwi.input_working_interpretation(**fkwargs)
+	agent = AgentFrame("demo")
 
-	@inference.register_step("IR")
-	def IR(**fkwargs):
-		return ir.input_references(**fkwargs)
+	agent.configure(inference, "simple")
 
-	@inference.register_step("OR")
-	def OR(**fkwargs):
-		return or_step.output_reference(**fkwargs)
+	inference.execute()
 
-	@inference.register_step("OWI")
-	def OWI(**fkwargs):
-		return owi.output_working_interpretation(**fkwargs)
-
-	# Execute and log final output
-	states = simple(inference, {})
-	ref = states.get_or_reference()
-	if isinstance(ref, Reference):
-		logging.getLogger(__name__).info("Final Output (OR):")
-		logging.getLogger(__name__).info(f"\tAxes: {ref.axes}")
-		logging.getLogger(__name__).info(f"\tShape: {ref.shape}")
-		logging.getLogger(__name__).info(f"\tTensor: {ref.tensor}")
-	return states
 
 
 if __name__ == "__main__":

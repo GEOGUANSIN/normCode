@@ -18,12 +18,8 @@ try:
 except Exception:
     import sys, pathlib
     here = pathlib.Path(__file__).parent
-    if str(here) not in sys.path:
-        sys.path.insert(0, str(here))
-    parent = here.parent
-    if str(parent) not in sys.path:
-        sys.path.insert(0, str(parent))
-    from infra._states._model_state import (  # type: ignore
+    sys.path.insert(0, str(here.parent.parent))  # Add workspace root to path
+    from infra._states._model_state import (  
         AffordanceSpecLite,
         ToolSpecLite,
         ModelEnvSpecLite,
@@ -32,9 +28,9 @@ except Exception:
         MetaValue,
         AffordanceValue,
     )
-    from infra._agent._models._model_runner import ModelEnv, ModelSequenceRunner  # type: ignore
-    from infra._agent._models._prompt import PromptTool  # type: ignore
-    from infra._agent._models._language_models import LanguageModel  # type: ignore
+    from infra._agent._models._model_runner import ModelEnv, ModelSequenceRunner  
+    from infra._agent._models._prompt import PromptTool  
+    from infra._agent._models._language_models import LanguageModel  
 
 
 # ---- Real tools and states ----------------------------------------------------
