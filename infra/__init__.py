@@ -15,7 +15,7 @@ from infra._core import (
 
 # Agent framework (includes steps and models)
 from infra._agent import (
-    AgentFrame, strip_element_wrapper, wrap_element_wrapper, setup_logging, _steps, _models
+    AgentFrame, Body, strip_element_wrapper, wrap_element_wrapper, setup_logging, _steps, _models
 )
 
 # State management
@@ -70,6 +70,7 @@ __all__ = [
     
     # Agent framework
     "AgentFrame",
+    "Body",
     "strip_element_wrapper",
     "wrap_element_wrapper",
     "setup_logging",

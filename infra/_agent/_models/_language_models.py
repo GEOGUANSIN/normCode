@@ -156,7 +156,7 @@ class LanguageModel:
         """Return a simple generation function that formats the template with vars."""
         def _generate_with(vars: dict | None = None) -> str:
             vars = vars or {}
-            return Template(prompt_template).safe_substitute(vars)
+            return self.generate(Template(prompt_template).safe_substitute(vars))
         return _generate_with
 
     def expand_generation_function(self, base_generation_function, expansion_function, expansion_params: dict | None = None):

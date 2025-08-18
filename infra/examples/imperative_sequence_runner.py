@@ -17,7 +17,7 @@ except Exception:
 	import sys, pathlib
 	here = pathlib.Path(__file__).parent
 	sys.path.insert(0, str(here.parent.parent))  # Add workspace root to path
-	from infra import Inference, Concept, Reference, AgentFrame, BaseStates
+	from infra import Inference, Concept, Reference, AgentFrame, BaseStates, Body
 
 
 # --- Demo Setup ---
@@ -67,7 +67,7 @@ def run_imperative_sequence() -> BaseStates:
 		function_concept,
 	)
 
-	agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation())
+	agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(), body=Body())
 
 	agent.configure(inference, "imperative")
 
