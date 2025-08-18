@@ -37,7 +37,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["core*", "translate_agent*", "host_agent*"]
+include = ["core*", "translate_agent*", "host_agent*", "infra*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.txt", "*.yaml", "*.yml"]
@@ -76,7 +76,7 @@ warn_unreachable = true
 strict_equality = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "core", "translate_agent", "host_agent"]
+testpaths = ["tests", "core", "translate_agent", "host_agent", "infra"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -86,6 +86,7 @@ addopts = [
     "--cov=core",
     "--cov=translate_agent", 
     "--cov=host_agent",
+    "--cov=infra",
     "--cov-report=term-missing",
     "--cov-report=html",
 ] 
