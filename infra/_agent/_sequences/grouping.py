@@ -2,6 +2,7 @@ from infra._core import Inference, register_inference_sequence
 from infra._states._grouping_states import States as GroupingStates
 import logging
 from typing import Callable
+from infra._loggers import log_states_progress
 
 logger = logging.getLogger(__name__)
 
@@ -13,15 +14,15 @@ def set_up_grouping_demo(agent_frame):
     body = agent_frame.body
 
     @register_inference_sequence("grouping")
-    def grouping(self: Inference, input_data: dict):
+    def grouping(self: Inference):
         """`(IWI-IR-GR-OR-OWI)`"""
-        logger.info("Executing grouping sequence")
+        logger.info("=====EXECUTING GROUPING SEQUENCE=====")
         states = GroupingStates()
-        logger.info("---Step 1: Input Working Interpretation (IWI)---"); states = self.IWI(self, states, body, working_interpretation)    
-        logger.info("---Step 2: Input References (IR)---"); states = self.IR(self, states)
-        logger.info("---Step 3: Grouping References (GR)---"); states = self.GR(states)
-        logger.info("---Step 4: Output Reference (OR)---"); states = self.OR(states)
-        logger.info("---Step 5: Output Working Interpretation (OWI)---"); states = self.OWI(states)
+        logger.info("---Step 1: Input Working Interpretation (IWI)---"); states = self.IWI(inference=self, states=states, body=body, working_interpretation=working_interpretation); log_states_progress(states, "IWI", "IWI")
+        logger.info("---Step 2: Input References (IR)---"); states = self.IR(inference=self, states=states); log_states_progress(states, "IR", "IR")
+        logger.info("---Step 3: Grouping References (GR)---"); states = self.GR(states=states); log_states_progress(states, "GR", "GR")
+        logger.info("---Step 4: Output Reference (OR)---"); states = self.OR(states=states); log_states_progress(states, "OR", "OR")
+        logger.info("---Step 5: Output Working Interpretation (OWI)---"); states = self.OWI(states=states); log_states_progress(states, "OWI", "OWI")
         logger.info("=====GROUPING SEQUENCE COMPLETED=====")
         return states
 

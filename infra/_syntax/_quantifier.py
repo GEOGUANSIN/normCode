@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from infra._core import Reference, element_action
+from infra._core import Reference, element_action, cross_product
 
 
 class Quantifier:
@@ -190,7 +190,7 @@ class Quantifier:
                  all_concept_references.append(self.current_subworkspace[loop_index][concept_name])
 
         if all_concept_references:
-            return Reference.cross_product(all_concept_references)
+            return cross_product(all_concept_references)
 
         return None
 
