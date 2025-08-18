@@ -87,7 +87,7 @@ def wrap_element_wrapper(element: str) -> str:
 
 
 class AgentFrame():
-    def __init__(self, AgentFrameModel: str, working_interpretation: Optional[dict]=None, llm: Optional[LanguageModel]=None, **body):
+    def __init__(self, AgentFrameModel: str, working_interpretation: Optional[dict]=None, llm: Optional[LanguageModel]=None, body: Optional[dict]=None):
         logger.info(f"Initializing AgentFrame with model: {AgentFrameModel}")
         self.AgentFrameModel = AgentFrameModel
         self.working_interpretation = working_interpretation if working_interpretation else {}

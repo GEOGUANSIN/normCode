@@ -12,7 +12,7 @@ if PROJECT_ROOT not in sys.path:
 
 # Import core components
 try:
-	from infra import Inference, Concept, Reference, AgentFrame, BaseStates
+	from infra import Inference, Concept, Reference, AgentFrame, BaseStates, Body
 except Exception:
 	import sys, pathlib
 	here = pathlib.Path(__file__).parent
@@ -67,7 +67,7 @@ def run_imperative_sequence() -> BaseStates:
 		function_concept,
 	)
 
-	agent = AgentFrame("demo")
+	agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation())
 
 	agent.configure(inference, "imperative")
 
