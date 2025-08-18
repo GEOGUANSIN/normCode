@@ -30,11 +30,20 @@ from infra._syntax import (
     _parse_normcode_grouping, _parse_normcode_quantifying
 )
 
+# Logging
+from infra._loggers import (
+    log_states_progress,
+    _log_concept_details,
+    _log_inference_result,
+)
+
+
 # Import submodules for direct access
 from infra import _core
 from infra import _agent
 from infra import _states
 from infra import _syntax
+from infra import _loggers
 
 # Version and module info
 __version__ = "1.0.0"
@@ -64,6 +73,11 @@ __all__ = [
     "strip_element_wrapper",
     "wrap_element_wrapper",
     "setup_logging",
+
+    # Logging
+    "log_states_progress",
+    "_log_concept_details",
+    "_log_inference_result",
     
     # Step modules
     "_steps",
@@ -80,7 +94,7 @@ __all__ = [
     "_parse_normcode_grouping", "_parse_normcode_quantifying",
     
     # Submodules
-    "_core", "_agent", "_states", "_syntax",
+    "_core", "_agent", "_states", "_syntax", "_loggers",
     
     # Module info
     "__version__",

@@ -1,4 +1,10 @@
-def log_states_progress(states: States, step_name: str, step_filter: str | None = None):
+import logging
+from typing import List, Union
+
+from infra._core import Reference, cross_product
+from infra._states import ReferenceRecordLite, BaseStates
+
+def log_states_progress(states: BaseStates, step_name: str, step_filter: str | None = None):
     logger = logging.getLogger(__name__)
     logger.info(f"\n--- States after {step_name} (Filtered by: {step_filter if step_filter else 'None'}) ---")
     logger.info(f"Current Step: {states.sequence_state.current_step}")
@@ -31,6 +37,7 @@ def log_states_progress(states: States, step_name: str, step_filter: str | None 
 
 def _log_concept_details(concept, reference=None, example_number=None, concept_name=None):
     """Helper function to log concept details in a consistent format"""
+    logger = logging.getLogger(__name__)
     if example_number and concept_name:
         logger.info(f"{example_number}. {concept_name}:")
     
@@ -47,6 +54,7 @@ def _log_concept_details(concept, reference=None, example_number=None, concept_n
 
 def _log_inference_result(result_concept, value_concepts, function_concept):
     """Log the inference result and related information"""
+    logger = logging.getLogger(__name__)
     if result_concept.reference:
         logger.info(f"Answer concept reference: {result_concept.reference.tensor}")
         logger.info(f"Answer concept reference without skip values: {result_concept.reference.get_tensor(ignore_skip=True)}")

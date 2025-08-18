@@ -12,11 +12,11 @@ try:
 		MetaValue,
 		AffordanceValue,
 	)
-	from infra._agent._models._model_runner import ModelSequenceRunner  # Corrected import
+	from infra._agent._models._model_runner import ModelSequenceRunner
 except Exception:
 	import sys, pathlib
 	here = pathlib.Path(__file__).parent
-	sys.path.insert(0, str(here.parent))  # Add parent directory (workspace root) to path
+	sys.path.insert(0, str(here.parent.parent))  # Add workspace root to path
 	from infra._states import ( 
 		AffordanceSpecLite,
 		ToolSpecLite,
