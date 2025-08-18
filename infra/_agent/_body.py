@@ -1,11 +1,11 @@
 from typing import Any, Dict
-from ._models import PromptTool
+from infra._agent._models import PromptTool
 
 class Body:
 	def __init__(self) -> None:
 		self.prompt = PromptTool()
 		try:
-			from ._models import LanguageModel as _LM
+			from infra._agent._models import LanguageModel as _LM
 			self.llm = _LM("qwen-turbo-latest")
 		except Exception:
 			class _MockLM:

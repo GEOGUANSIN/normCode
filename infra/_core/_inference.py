@@ -158,7 +158,10 @@ class Inference:
             raise ValueError(error_msg)
         
         try:
-            result = sequences[method_name](input_data)
+            if input_data and isinstance(input_data, dict) and input_data != {}:
+                result = sequences[method_name](input_data)
+            else:
+                result = sequences[method_name]()
             logger.info(f"Sequence '{method_name}' executed successfully")
             return result
         except Exception as e:

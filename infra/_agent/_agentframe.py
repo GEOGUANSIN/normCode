@@ -13,6 +13,10 @@ from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
 from infra._states._simple_states import States as SimpleStates
+from infra._agent._steps.simple import simple_methods
+from infra._agent._steps.imperative import imperative_methods
+from infra._agent._steps.grouping import grouping_methods
+from infra._agent._steps.quantifying import quantifying_methods
 
 
 # Configure logging
@@ -99,24 +103,28 @@ class AgentFrame():
         logger.debug(f"Setting up sequences for NormCode inference")
         if self.AgentFrameModel == "demo":
             logger.info("Setting up demo sequences: imperative, grouping, quantifying")
+            set_up_simple_demo(self)
             set_up_imperative_demo(self)
             set_up_grouping_demo(self)
             set_up_quantifying_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
-    def configure(self, inference_instance: Inference, inference_sequence: str, **kwargs):
+    def configure(self, inference_instance: Inference, inference_sequence: str):
         logger.info(f"Configuring inference instance with sequence: {inference_sequence}")
         if self.AgentFrameModel == "demo":
             if inference_sequence == "imperative":
                 logger.info("Configuring imperative demo sequence")
-                configure_imperative_demo(self, inference_instance, **kwargs)
+                configure_imperative_demo(self, inference_instance, imperative_methods)
             elif inference_sequence == "grouping":
                 logger.info("Configuring grouping demo sequence")
-                configure_grouping_demo(self, inference_instance, **kwargs)
+                configure_grouping_demo(self, inference_instance, grouping_methods)
             elif inference_sequence == "quantifying":
                 logger.info("Configuring quantifying demo sequence")
-                configure_quantifying_demo(self, inference_instance, **kwargs)
+                configure_quantifying_demo(self, inference_instance, quantifying_methods)
+            elif inference_sequence == "simple":
+                logger.info("Configuring simple demo sequence")
+                configure_simple_demo(self, inference_instance, simple_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:
@@ -128,8 +136,8 @@ class AgentFrame():
 if __name__ == "__main__":
 
     # Create inference instance for arithmetic calculator
-    judgement_instance = Inference(
-        "judgement",
+    simple_instance = Inference(
+        "simple",
         Concept("concept_to_infer", "Concept to infer", "concept_to_infer", Reference(axes=["concept_to_infer"], shape=(1,), initial_value=None)),
         [Concept("value_concept", "Value concept", "value_concept", Reference(axes=["value_concept"], shape=(1,), initial_value=None))],
         Concept("function_concept", "Function concept", "function_concept", Reference(axes=["function_concept"], shape=(1,), initial_value=None))
@@ -137,6 +145,6 @@ if __name__ == "__main__":
 
     agent = AgentFrame("demo")
 
-    agent.configure(judgement_instance, "judgement")
+    agent.configure(simple_instance, "simple")
     
-    judgement_instance.execute(input_data={})
+    simple_instance.execute()   

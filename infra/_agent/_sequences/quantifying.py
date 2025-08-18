@@ -1,6 +1,7 @@
 from infra._core import Inference, register_inference_sequence
 from infra._states._quantifying_states import States as QuantifyingStates
 import logging
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def set_up_quantifying_demo(agent_frame):
         logger.info("=====QUANTIFYING SEQUENCE COMPLETED=====")
         return states
 
-def configure_quantifying_demo(agent_frame, inference_instance: Inference, **methods):
+def configure_quantifying_demo(agent_frame, inference_instance: Inference, methods: dict[str, Callable]):
     logger.debug("Configuring quantifying demo steps")
     @inference_instance.register_step("IWI")
     def IWI(**fkwargs): return methods.get("input_working_interpretation", _null_step)(**fkwargs) 
