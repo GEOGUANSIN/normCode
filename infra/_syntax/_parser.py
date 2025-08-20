@@ -138,3 +138,7 @@ def _parse_normcode_quantifying(expr: str) -> dict:
     except Exception as e:
         logger.error(f"Error parsing quantification expression '{expr}': {str(e)}")
         raise ValueError(f"Failed to parse quantification expression: {expr}")
+
+
+def _parse_normcode_assigning(expr: str) -> dict:
+    pass 

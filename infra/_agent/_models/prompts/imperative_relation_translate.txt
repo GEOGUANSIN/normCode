@@ -1,0 +1,34 @@
+Translate the following NormCode imperative into natural language terms using the specified input placeholders, focusing on relations between multiple output variables.
+
+Input imperative: $input_normcode
+
+Instructions:
+- Convert the imperative syntax to clear natural language
+- Use $input_1, $input_2, etc. for input placeholders
+- Use $output etc. for the result/outcome variables
+- Elements marked with ? (e.g., {1}?, {2}?) indicate output variables that participate in the relation
+- Regular numbered placeholders (e.g., {1}, {2}) indicate inputs
+- All numbered placeholders should have a corresponding input placeholder
+- Maintain the logical flow and relationships
+- Keep the translation straightforward and faithful
+- For relations, describe the relationship between the ? marked variables
+
+Examples:
+
+- Input: ::({1}?<$({person1})%_> knows {2}?<$({person2})%_>)
+  Output: Person1 (being $input_1) knows person2 (being $input_2). Obtain the relationship between person1 and person2 (being $output).
+
+- Input: ::({1}?<$({company})%_> employs {2}?<$({employee})%_> at {3}<$({department})%_>)
+  Output: Company (being $input_1) employs employee (being $input_2) in department (being $input_3). Obtain the employment relationship between company and employee (being $output).
+
+- Input: ::({1}?<$({student})%_> studies {2}?<$({subject})%_> at {3}?<$({university})%_>)
+  Output: Student (being $input_1) studies subject (being $input_2) at university (being $input_3). Obtain the academic relationship between student and subject (being $output).
+
+- Input: ::({1}?<$({parent})%_> is_parent_of {2}?<$({child})%_> and {3}?<$({grandparent})%_> is_grandparent_of {2}?)
+  Output: Parent (being $input_1) is parent of child (being $input_2), and grandparent (being $input_3) is grandparent of child (being $input_2). Obtain the family relationships between parent and child (being $output).
+
+- Input: ::({1}?<$({product})%_> sold_by {2}?<$({seller})%_> to {3}?<$({buyer})%_> for {4}<$({price})%_>)
+  Output: Product (being $input_1) is sold by seller (being $input_2) to buyer (being $input_3) for price (being $input_4). Obtain the commercial relationship between product and seller (being $output).
+
+Input imperative: $input_normcode
+Return only the Translation:

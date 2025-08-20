@@ -2,6 +2,7 @@ import logging
 
 from infra._states._imperative_states import States
 
+logging.basicConfig(level=logging.DEBUG)
 
 def tool_inference_perception(states: States) -> States:
     """Pass-through from TVA for this demo."""

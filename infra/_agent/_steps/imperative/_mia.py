@@ -4,6 +4,7 @@ import logging
 from infra._states._imperative_states import States
 from infra._core import element_action
 
+logging.basicConfig(level=logging.DEBUG)
 
 def memory_inference_actuation(states: States) -> States:
     """Wrap the result in the normcode wrapper %()."""

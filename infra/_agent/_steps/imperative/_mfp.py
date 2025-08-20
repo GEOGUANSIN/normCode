@@ -5,6 +5,8 @@ from infra._states._imperative_states import States
 from infra._core._reference import Reference
 from infra._agent._models._model_runner import ModelSequenceRunner
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 def model_function_perception(states: States) -> States:
     """Execute a model sequence to derive a function."""

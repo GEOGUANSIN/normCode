@@ -14,8 +14,15 @@ from infra._states._model_state import (
 	MetaValue,
 )
 
-def _build_mfp_env_and_sequence_from_wi(working_interpretation: Dict[str, Any] | None = None) -> tuple[ModelEnvSpecLite, ModelSequenceSpecLite]:
+def _build_mfp_env_and_sequence_from_wi(
+    working_interpretation: Dict[str, Any] | None = None,
+    is_relation_output: bool = False
+) -> tuple[ModelEnvSpecLite, ModelSequenceSpecLite]:
 	"""Builds the MFP environment and sequence spec, matching model_runner_real_demo.py."""
+	# Determine which prompts to use based on whether the output is a relation
+	translate_prompt = "imperative_relation_translate" if is_relation_output else "imperative_translate"
+	instruction_prompt = "inistruction_relation" if is_relation_output else "instruction"
+
 	env_spec = ModelEnvSpecLite(
 		model=ToolSpecLite(
 			tool_name="llm",
@@ -84,14 +91,14 @@ def _build_mfp_env_and_sequence_from_wi(working_interpretation: Dict[str, Any] |
 			ModelStepSpecLite(
 				step_index=1,
 				affordance="prompt.read",
-				params={"template_name": "imperative_translate"},
+				params={"template_name": translate_prompt},
 				result_key="imperative_template",
 			),
 			ModelStepSpecLite(
 				step_index=2,
 				affordance="prompt.render",
 				params={
-					"template_name": "imperative_translate",
+					"template_name": translate_prompt,
 					"variables": {
 						"input_normcode": MetaValue("states.function.concept.name"),
 						"output": MetaValue("states.inference.concept.name"),
@@ -110,14 +117,14 @@ def _build_mfp_env_and_sequence_from_wi(working_interpretation: Dict[str, Any] |
 			ModelStepSpecLite(
 				step_index=4,
 				affordance="prompt.read",
-				params={"template_name": "instruction"},
+				params={"template_name": instruction_prompt},
 				result_key="instruction_template",
 			),
 			ModelStepSpecLite(
 				step_index=5,
 				affordance="prompt.render",
 				params={
-					"template_name": "instruction",
+					"template_name": instruction_prompt,
 					"variables": {"input": MetaValue("nl_normcode_raw")},
 				},
 				result_key="instruction_prompt",
@@ -145,13 +152,19 @@ def input_working_interpretation(
     # Store the body containing tools
     states.body = body
 
+    # Check for relation output flag and update state
+    is_relation = (working_interpretation or {}).get("is_relation_output", False)
+    states.is_relation_output = is_relation
+
     # Extract and store value_order directly
     ir_func_record = next((f for f in states.function if f.step_name == "IR"), None)
     func_name = ir_func_record.concept.name if ir_func_record and ir_func_record.concept else ""
     states.value_order = (working_interpretation or {}).get(func_name, {}).get("value_order", {})
 
-    # Build and store MFP specs
-    env_spec, sequence_spec = _build_mfp_env_and_sequence_from_wi(working_interpretation)
+    # Build and store MFP specs based on whether it's a relation output
+    env_spec, sequence_spec = _build_mfp_env_and_sequence_from_wi(
+        working_interpretation, is_relation_output=is_relation
+    )
     states.mfp_env_spec = env_spec
     states.mfp_sequence_spec = sequence_spec
 

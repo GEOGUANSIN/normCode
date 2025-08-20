@@ -23,4 +23,5 @@ class States(BaseStates):
         self.body: Any | None = None
         self.mfp_env_spec: ModelEnvSpecLite | None = None
         self.mfp_sequence_spec: ModelSequenceSpecLite | None = None
-        self.value_order: Dict[str, Any] = field(default_factory=dict) 
+        self.value_order: Dict[str, Any] = field(default_factory=dict)
+        self.is_relation_output: bool = False

@@ -4,6 +4,7 @@ import logging
 from infra._states._imperative_states import States
 from infra._core import cross_action
 
+logging.basicConfig(level=logging.DEBUG)
 
 def tool_value_actuation(states: States) -> States:
     """Apply the function from MFP to the values from MVP."""
