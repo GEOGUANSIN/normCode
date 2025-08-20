@@ -1,0 +1,19 @@
+Instruction: $input
+
+Execute the instruction. Your final output must be a single JSON object.
+
+First, think step-by-step about how to solve the problem. Place your reasoning in the "thinking" key of the JSON object.
+Then, provide the final answer in the "output" key.
+
+The value of the "output" key should be a Python list of dictionaries, where each dictionary represents a relationship instance.
+
+Example of the final JSON output for a relation between 'number1' and 'number2':
+```json
+{
+  "thinking": "First, I need to identify the relationship between number1 and number2. Then, I will list all instances of this relationship. Finally, I will format the result as a JSON object with 'thinking' and 'output' keys.",
+  "output": [
+    {"number1": "value1", "number2": "value2"},
+    {"number1": "value3", "number2": "value4"}
+  ]
+}
+```

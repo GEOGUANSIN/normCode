@@ -25,3 +25,4 @@ class States(BaseStates):
         self.mfp_sequence_spec: ModelSequenceSpecLite | None = None
         self.value_order: Dict[str, Any] = field(default_factory=dict)
         self.is_relation_output: bool = False
+        self.with_thinking: bool = False

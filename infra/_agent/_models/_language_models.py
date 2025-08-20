@@ -159,6 +159,40 @@ class LanguageModel:
             return self.generate(Template(prompt_template).safe_substitute(vars))
         return _generate_with
 
+    def create_generation_function_thinking_json(self, prompt_template: str):
+        """Return a generation function that formats the template with vars and extracts JSON thinking/output."""
+        import json
+        
+        def _generate_with_thinking(vars: dict | None = None) -> dict:
+            vars = vars or {}
+            formatted_prompt = Template(prompt_template).safe_substitute(vars)
+            
+            # Use response_format to ensure JSON output
+            raw_response = self.generate(
+                prompt=formatted_prompt,
+                response_format={"type": "json_object"}
+            )
+            
+            try:
+                # Parse the response as JSON (should be valid due to response_format)
+                parsed_response = json.loads(raw_response)
+                
+                # Extract thinking and output from the JSON
+                thinking = parsed_response.get("thinking", "")
+                output = parsed_response.get("output", [])
+                
+                return output
+            except json.JSONDecodeError:
+                # Fallback in case JSON parsing still fails
+                return {
+                    "thinking": "",
+                    "output": [],
+                    "raw_response": raw_response,
+                    "error": "Failed to parse JSON response"
+                }
+        
+        return _generate_with_thinking
+
     def expand_generation_function(self, base_generation_function, expansion_function, expansion_params: dict | None = None):
         """Return a function that calls base_generation_function, then passes the result
         to an expansion_function (typically an affordance handle) with provided params."""

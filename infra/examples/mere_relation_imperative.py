@@ -3,6 +3,7 @@ import sys
 import logging
 from typing import Any, Dict, List
 import json
+import ast
 
 # Ensure the project root is in the Python path
 CURRENT_DIR = os.path.dirname(__file__)
@@ -25,40 +26,63 @@ def validate_number_breakdown(input_number: str, output_tensor: Any) -> bool:
     """
     Validates that the output from the relation-based imperative sequence correctly
     breaks down the input number into digits and their positions.
-    
-    Args:
-        input_number: The original number as a string
-        output_tensor: The tensor output from the agent containing the breakdown
-        
-    Returns:
-        bool: True if validation passes, False otherwise
+    Handles both correct JSON output and malformed list-of-strings output.
     """
     try:
-        # Extract the result string from the nested tensor structure
-        result_str = str(output_tensor)
+        breakdown_list = []
+
+        # Helper to extract the innermost list from a nested list structure
+        def get_innermost_list(obj):
+            current = obj
+            while isinstance(current, list) and len(current) > 0 and isinstance(current[0], list):
+                current = current[0]
+            return current if isinstance(current, list) else None
+
+        # Helper to extract a single string from a nested list structure
+        def get_innermost_string(obj):
+            current = obj
+            while isinstance(current, list) and len(current) > 0:
+                current = current[0]
+            return current if isinstance(current, str) else None
+
+        string_list = get_innermost_list(output_tensor)
+        json_string = get_innermost_string(output_tensor)
+
+        if string_list and isinstance(string_list[0], str) and string_list[0].startswith("%("):
+            # Case 1: Malformed list of strings like ["%({'k':'v'})", ...]
+            print("ℹ️  Detected list-of-strings format. Parsing with 'ast.literal_eval'.")
+            for item_str in string_list:
+                if item_str.startswith("%(") and item_str.endswith(")"):
+                    item_str = item_str[2:-1]
+                try:
+                    item_dict = ast.literal_eval(item_str)
+                    breakdown_list.append(item_dict)
+                except (ValueError, SyntaxError) as e:
+                    print(f"❌ Failed to parse item string: '{item_str}'. Error: {e}")
+                    return False
         
-        # Navigate through the nested structure to find the actual string
-        # The tensor structure is: [[[[['%([...])']]]]]
-        # We need to extract the innermost string
-        if isinstance(output_tensor, (list, tuple)):
-            # Recursively find the string in nested structures
-            def find_string_in_nested(obj):
-                if isinstance(obj, str):
-                    return obj
-                elif isinstance(obj, (list, tuple)) and len(obj) > 0:
-                    return find_string_in_nested(obj[0])
-                else:
-                    return str(obj)
+        elif json_string:
+            # Case 2: Correct single JSON string
+            print("ℹ️  Detected single-string format. Parsing as JSON.")
+            if json_string.startswith("%(") and json_string.endswith(")"):
+                json_string = json_string[2:-1]
             
-            result_str = find_string_in_nested(output_tensor)
-        
-        # Remove the %(...) wrapper if present
-        if result_str.startswith("%(") and result_str.endswith(")"):
-            result_str = result_str[2:-1]
-        
-        # Parse the JSON list of dictionaries
-        breakdown_list = json.loads(result_str)
-        
+            try:
+                parsed_json = json.loads(json_string)
+                if isinstance(parsed_json, dict) and "output" in parsed_json:
+                    print("ℹ️  Extracted 'output' key from thinking-enabled JSON.")
+                    breakdown_list = parsed_json["output"]
+                else:
+                    breakdown_list = parsed_json # Assumes a simple list of dicts
+            except json.JSONDecodeError as e:
+                print(f"❌ Failed to parse JSON output: {e}")
+                print(f"Raw output: {output_tensor}")
+                return False
+        else:
+            print(f"❌ Output tensor is not in a recognized format.")
+            print(f"Raw output: {output_tensor}")
+            return False
+
         # Validate the structure
         if not isinstance(breakdown_list, list):
             print(f"❌ Output is not a list: {type(breakdown_list)}")
@@ -133,10 +157,6 @@ def validate_number_breakdown(input_number: str, output_tensor: Any) -> bool:
         print(f"✅ Validation passed! Successfully broke down {input_number} into {len(breakdown_list)} digit-position pairs")
         return True
         
-    except json.JSONDecodeError as e:
-        print(f"❌ Failed to parse JSON output: {e}")
-        print(f"Raw output: {output_tensor}")
-        return False
     except Exception as e:
         print(f"❌ Validation error: {e}")
         return False
@@ -144,7 +164,7 @@ def validate_number_breakdown(input_number: str, output_tensor: Any) -> bool:
 
 # --- Demo Setup ---
 
-def _build_demo_concepts(number_to_break_down: int = 123) -> tuple[Concept, List[Concept], Concept]:
+def _build_demo_concepts(number_to_break_down: int = 123, normcode_string: str = "::(enumerate all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> from the rightmost digit to the leftmost digit, for {1}?<$({number 1})%_>)" ) -> tuple[Concept, List[Concept], Concept]:
     """Builds the concepts needed for the relation-based imperative demo."""
     logger = logging.getLogger(__name__)
     logger.info("Building demo concepts for relation imperative")
@@ -157,31 +177,30 @@ def _build_demo_concepts(number_to_break_down: int = 123) -> tuple[Concept, List
 
     # Concepts for the output relation parts (initially empty)
     ref_digit = Reference(axes=["digit"], shape=(1,))
-    ref_digit.set("A digit from the number", digit=0)  # Will be filled by the agent
+    ref_digit.set("one of the digits in the number", digit=0)  # Will be filled by the agent
     concept_digit = Concept(name="digit in position", context="A digit from the number", reference=ref_digit, type="{}")
     
     ref_position = Reference(axes=["position"], shape=(1,))
-    ref_position.set("The position of the digit (from the right)", position=0)  # Will be filled by the agent
+    ref_position.set("one of the positions of the number (from the right)", position=0)  # Will be filled by the agent
     concept_position = Concept(name="position", context="The position of the digit (from the right)", reference=ref_position, type="{}")
 
     # Function concept with multiple '?' marked outputs for the relation
-    normcode_string = "::(enumerate all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> from the rightmost digit to the leftmost digit, for {1}?<$({number 1})%_>)"
     ref_f = Reference(axes=["f"], shape=(1,))
     ref_f.set(normcode_string, f=0)
     function_concept = Concept(name=normcode_string, context="Break down a number into its digits and their positions", type="::", reference=ref_f)
     logger.info(f"ref_f: {ref_f.tensor}")
 
     # The concept to be inferred, which will hold the relational output
-    concept_to_infer = Concept(name="number_position_breakdown", context="The digits and their positions in the number", type="{}")
+    concept_to_infer = Concept(name="number digit position pairs", context="The digits and their positions in the number", type="{}")
     
     return concept_to_infer, [concept_num1, concept_digit, concept_position], function_concept
 
 
-def _build_demo_working_interpretation() -> Dict[str, Any]:
+def _build_demo_working_interpretation(normcode_string: str = "::(enumerate all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> from the rightmost digit to the leftmost digit, for {1}?<$({number 1})%_>)" ) -> Dict[str, Any]:
     """Builds the working interpretation, enabling the relation output mode."""
-    normcode_string = "::(find all {2}?<$({digit in position})%_> and {3}?<$({position})%_> from the rightmost digit to the leftmost digit, for {1}?<$({number 1})%_>)"
     return {
         "is_relation_output": True,
+        "with_thinking": True,
         normcode_string: {
             "value_order": {
                 "number 1": 0,
@@ -196,8 +215,9 @@ def _build_demo_working_interpretation() -> Dict[str, Any]:
 
 def run_relation_imperative_sequence() -> BaseStates:
     """Runs the full imperative sequence with relation-based prompts."""
-    num = "26897986303"
-    concept_to_infer, value_concepts, function_concept = _build_demo_concepts(number_to_break_down=num)
+    num = "89977409734098776"
+    normcode_string = "::(enumerate all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> pair from rightmost to leftmost in {1}?<$({number 1})%_>)"
+    concept_to_infer, value_concepts, function_concept = _build_demo_concepts(number_to_break_down=num, normcode_string=normcode_string)
 
     inference = Inference(
         "imperative",
@@ -207,7 +227,9 @@ def run_relation_imperative_sequence() -> BaseStates:
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
-    agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(), body=Body())
+    body=Body(llm_name="qwen-plus")
+
+    agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(normcode_string=normcode_string), body=body)
 
     agent.configure(inference, "imperative")
 

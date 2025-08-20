@@ -16,12 +16,21 @@ from infra._states._model_state import (
 
 def _build_mfp_env_and_sequence_from_wi(
     working_interpretation: Dict[str, Any] | None = None,
-    is_relation_output: bool = False
+    is_relation_output: bool = False,
+    with_thinking: bool = False
 ) -> tuple[ModelEnvSpecLite, ModelSequenceSpecLite]:
 	"""Builds the MFP environment and sequence spec, matching model_runner_real_demo.py."""
 	# Determine which prompts to use based on whether the output is a relation
+	if is_relation_output:
+		instruction_prompt = "instruction_relation_with_thinking" if with_thinking else "inistruction_relation"
+	else:
+		instruction_prompt = "instruction" # Assuming a non-relation thinking prompt might exist
+	
 	translate_prompt = "imperative_relation_translate" if is_relation_output else "imperative_translate"
-	instruction_prompt = "inistruction_relation" if is_relation_output else "instruction"
+	
+	# Determine which generation function to use
+	generation_function_affordance = "llm.create_generation_function_thinking_json" if with_thinking else "llm.create_generation_function"
+
 
 	env_spec = ModelEnvSpecLite(
 		model=ToolSpecLite(
@@ -34,6 +43,10 @@ def _build_mfp_env_and_sequence_from_wi(
 				AffordanceSpecLite(
 					affordance_name="create_generation_function",
 					call_code="result = tool.create_generation_function(params['prompt_template'])",
+				),
+				AffordanceSpecLite(
+					affordance_name="create_generation_function_thinking_json",
+					call_code="result = tool.create_generation_function_thinking_json(params['prompt_template'])",
 				),
 				AffordanceSpecLite(
 					affordance_name="expand_generation_function",
@@ -132,7 +145,7 @@ def _build_mfp_env_and_sequence_from_wi(
 			# 4) Create generation function from instruction prompt
 			ModelStepSpecLite(
 				step_index=6,
-				affordance="llm.create_generation_function",
+				affordance=generation_function_affordance,
 				params={"prompt_template": MetaValue("instruction_prompt")},
 				result_key="instruction_fn",
 			),
@@ -152,18 +165,23 @@ def input_working_interpretation(
     # Store the body containing tools
     states.body = body
 
-    # Check for relation output flag and update state
+    # Check for relation output and thinking flags and update state
     is_relation = (working_interpretation or {}).get("is_relation_output", False)
+    with_thinking = (working_interpretation or {}).get("with_thinking", False)
     states.is_relation_output = is_relation
+    # We might want to add with_thinking to states as well if other steps need it
+    # states.with_thinking = with_thinking
 
     # Extract and store value_order directly
     ir_func_record = next((f for f in states.function if f.step_name == "IR"), None)
     func_name = ir_func_record.concept.name if ir_func_record and ir_func_record.concept else ""
     states.value_order = (working_interpretation or {}).get(func_name, {}).get("value_order", {})
 
-    # Build and store MFP specs based on whether it's a relation output
+    # Build and store MFP specs based on flags
     env_spec, sequence_spec = _build_mfp_env_and_sequence_from_wi(
-        working_interpretation, is_relation_output=is_relation
+        working_interpretation, 
+        is_relation_output=is_relation,
+        with_thinking=with_thinking
     )
     states.mfp_env_spec = env_spec
     states.mfp_sequence_spec = sequence_spec
