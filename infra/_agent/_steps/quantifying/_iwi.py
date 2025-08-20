@@ -7,6 +7,9 @@ from infra._states._quantifying_states import States
 from infra._states._common_states import ReferenceRecordLite
 from infra._agent._body import Body
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 def input_working_interpretation(
     inference: Inference,
     states: States,
@@ -16,6 +19,9 @@ def input_working_interpretation(
     """Initialize states with syntax info and placeholder records."""
     if working_interpretation:
         states.syntax = SimpleNamespace(**working_interpretation.get("syntax", {}))
+
+        states.workspace = working_interpretation.get("workspace", {})
+        logger.debug(f"IWI Step 1] Workspace: {states.workspace}")
 
     # Clear previous state to prevent accumulation in loops
     states.function = []
@@ -28,5 +34,5 @@ def input_working_interpretation(
         states.inference.append(ReferenceRecordLite(step_name=step))
 
     states.set_current_step("IWI")
-    logging.debug(f"IWI completed. Syntax: {states.syntax}")
+    logger.debug(f"IWI completed. Syntax: {states.syntax}")
     return states 

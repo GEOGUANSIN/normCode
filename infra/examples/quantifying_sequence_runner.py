@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from string import Template
 from copy import copy
 
+# Configure logging to show DEBUG messages
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+
 # Ensure this directory is importable regardless of where the script is run from
 CURRENT_DIR = os.path.dirname(__file__)
 if CURRENT_DIR not in sys.path:
@@ -133,7 +136,10 @@ def run_quantifying_sequence() -> BaseStates:
         logging.info("[Controller] Running to get context for inner worker...")
         
         # Pass the whole states object to persist workspace and other attributes
+        working_interpretation["workspace"] = states.workspace.copy()
         workspace_tensor = _get_workspace_tensor_view(states.workspace); logging.info(f"Workspace tensor: {workspace_tensor}")
+        
+        
         agent = AgentFrame("demo", working_interpretation=working_interpretation, body=Body())
         agent.configure(quantification_inference, "quantifying")
         states = quantification_inference.execute()

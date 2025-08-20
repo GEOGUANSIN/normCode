@@ -6,6 +6,9 @@ from infra._core._reference import Reference
 from infra._syntax._quantifier import Quantifier
 from infra._states._common_states import ReferenceRecordLite
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 def quantifying_references(states: States) -> States:
     """
@@ -20,7 +23,7 @@ def quantifying_references(states: States) -> States:
     # 1) Read syntax data (parsed quantification)
     syntax_data = getattr(states, "syntax", {})
     if not isinstance(syntax_data, SimpleNamespace) and not isinstance(syntax_data, dict):
-        logging.warning(
+        logger.warning(
             "[QR] states.syntax is not a dict or SimpleNamespace; QR step requires parsed syntax data. Skipping."
         )
         return states
@@ -36,7 +39,7 @@ def quantifying_references(states: States) -> States:
     in_loop_spec = get_syntax_attr("InLoopConcept")
 
     if not loop_base_concept_name or not concept_to_infer_list:
-        logging.warning("[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping.")
+        logger.warning("[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping.")
         return states
     concept_to_infer_name = concept_to_infer_list[0]
     current_loop_base_concept_name = f"{loop_base_concept_name}*"
@@ -49,13 +52,14 @@ def quantifying_references(states: States) -> States:
             to_loop_elements = item.reference
             break
     if to_loop_elements is None:
-        logging.warning("[QR] No to-loop elements found in states.values for step 'GR'. Skipping.")
+        logger.warning("[QR] No to-loop elements found in states.values for step 'GR'. Skipping.")
         return states
 
     # 3) Prepare workspace
     if not hasattr(states, "workspace") or getattr(states, "workspace") is None:
         setattr(states, "workspace", {})
     workspace = getattr(states, "workspace")
+    logger.debug(f"[QR Step 3] Workspace: {workspace}")
 
     # 4) Current loop base element from context (if any)
     current_loop_base_context_item = None
@@ -65,7 +69,7 @@ def quantifying_references(states: States) -> States:
         concept_name = getattr(concept_info, "name", None)
         if concept_name == current_loop_base_concept_name:
             current_loop_base_context_item = ctx
-            logging.debug(
+            logger.debug(
                 f"[QR Step 4] Found current loop base element in context: {current_loop_base_context_item}"
             )
             break
@@ -83,44 +87,45 @@ def quantifying_references(states: States) -> States:
             current_concept_element_opt = ref
             break
 
-    logging.debug(
+    logger.debug(
         f"[QR Step 5] From function (inner step result): current_concept_element_opt = {current_concept_element_opt.tensor if current_concept_element_opt else 'None'}"
+        f"current_loop_base_element_opt = {current_loop_base_element_opt.tensor if current_loop_base_element_opt else 'None'}"
     )
     # 6) Initialize quantifier and retrieve next element
     quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
     next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
         to_loop_element_reference=to_loop_elements,
-        current_loop_base_element=current_concept_element_opt,
+        current_loop_base_element=current_loop_base_element_opt,
     )
 
-    logging.debug(
+    logger.debug(
         f"[QR Step 6] Retrieved next element to loop: next_current_loop_base_element_opt = {next_current_loop_base_element_opt.tensor if next_current_loop_base_element_opt else 'None'}"
     )
 
-    # 7) Decide if current element is new
+    # 7) Decide if current loop baseelement is new
     is_new = False
-    if current_concept_element_opt is not None and isinstance(current_concept_element_opt, Reference):
+    if current_loop_base_element_opt is not None and isinstance(current_loop_base_element_opt, Reference):
         is_new_check_result = quantifier._check_new_base_element_by_looped_base_element(
-            current_concept_element_opt, current_loop_base_concept_name
+            current_looped_element_reference=current_loop_base_element_opt, 
         )
-        logging.debug(
-            f"[QR Step 7] Checking if '{current_concept_element_opt.tensor if current_concept_element_opt else 'None'}' is a new base element. Result: {is_new_check_result}"
+        logger.debug(
+            f"[QR Step 7] Checking if '{current_loop_base_element_opt.tensor if current_loop_base_element_opt else 'None'}' is a new base element. Result: {is_new_check_result}"
         )
 
         if is_new_check_result:
             is_new = True
-            current_loop_base_element = current_concept_element_opt
-            logging.debug(
+            current_loop_base_element = current_loop_base_element_opt
+            logger.debug(
                 f"[QR Step 7] Element IS new. Assigning inner step result to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}"
             )
         else:
             current_loop_base_element = next_current_loop_base_element_opt
-            logging.debug(
+            logger.debug(
                 f"[QR Step 7] Element is NOT new. Assigning next element to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}"
             )
     else:
         current_loop_base_element = next_current_loop_base_element_opt
-        logging.debug(
+        logger.debug(
             f"[QR Step 7] No inner step result. Assigning next element to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}"
         )
 
@@ -133,12 +138,12 @@ def quantifying_references(states: States) -> States:
     if is_new:
         if not quantifier._is_reference_empty(current_loop_base_element):
             # First, create the entry for the new base element and get its loop index.
-            logging.debug(f"[QR Step 9] Storing NEW base element: {current_loop_base_element.tensor}")
+            logger.debug(f"[QR Step 9] Storing NEW base element: {current_loop_base_element.tensor}")
             loop_index = quantifier.store_new_base_element(current_loop_base_element)
 
             # Now, safely store the inferred concept using the obtained index.
             if not quantifier._is_reference_empty(current_concept_element):
-                logging.debug(
+                logger.debug(
                     f"[QR Step 9] Storing in-loop element '{concept_to_infer_name}' with value {current_concept_element.tensor} for base {current_loop_base_element.tensor} at index {loop_index}"
                 )
                 quantifier.store_new_in_loop_element(
@@ -221,5 +226,5 @@ def quantifying_references(states: States) -> States:
                 break
 
     states.set_current_step("QR")
-    logging.debug("QR completed.")
+    logger.debug("QR completed.")
     return states 

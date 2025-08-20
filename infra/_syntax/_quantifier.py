@@ -40,11 +40,13 @@ class Quantifier:
         _flatten_recursive(nested_list)
         return flattened
 
-    def _check_new_base_element_by_looped_base_element(self, current_looped_element_reference: Reference, loop_base_concept_name: str) -> bool:
+    def _check_new_base_element_by_looped_base_element(self, current_looped_element_reference: Reference) -> bool:
         # First, check if the reference itself is empty. If so, it can't be "new".
         if self._is_reference_empty(current_looped_element_reference):
             logging.debug(f"[_check_new_base_element] Input element is empty. Returning False (not new).")
             return False
+
+        loop_base_concept_name = self.loop_base_concept_name
 
         logging.debug(f"[_check_new_base_element] Checking for element: {current_looped_element_reference.tensor}")
         element_found = False

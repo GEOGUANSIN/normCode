@@ -2,6 +2,9 @@ import logging
 from infra._states._quantifying_states import States
 from infra._syntax._quantifier import Quantifier
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 def output_working_interpretation(states: States) -> States:
     """Check for loop completion and set status."""
@@ -17,7 +20,7 @@ def output_working_interpretation(states: States) -> States:
             break
 
     is_complete = False
-    logging.debug(
+    logger.debug(
         f"[OWI Step 1] Checking if loop is complete. Loop base concept name: {loop_base_concept_name}, To loop elements: {to_loop_elements}"
     )
     if loop_base_concept_name and to_loop_elements:
@@ -29,7 +32,8 @@ def output_working_interpretation(states: States) -> States:
             is_complete = True
 
     setattr(states.syntax, "completion_status", is_complete)
+    logger.debug(f"[OWI Step 2] Completion status: {is_complete}")
 
     states.set_current_step("OWI")
-    logging.debug(f"OWI completed. Completion status: {is_complete}")
+    logger.debug(f"OWI completed. Completion status: {is_complete}")
     return states 
