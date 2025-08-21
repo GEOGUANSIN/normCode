@@ -178,15 +178,14 @@ class LanguageModel:
                 parsed_response = json.loads(raw_response)
                 
                 # Extract thinking and output from the JSON
-                thinking = parsed_response.get("thinking", "")
-                output = parsed_response.get("output", [])
+                answer = parsed_response.get("answer", [])
                 
-                return output
+                return answer
             except json.JSONDecodeError:
                 # Fallback in case JSON parsing still fails
                 return {
-                    "thinking": "",
-                    "output": [],
+                    "analysis": "",
+                    "answer": [],
                     "raw_response": raw_response,
                     "error": "Failed to parse JSON response"
                 }

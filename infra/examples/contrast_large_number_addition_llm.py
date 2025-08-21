@@ -146,7 +146,7 @@ def run_addition_test(llm: LanguageModel, num1: str, num2: str, test_name: str =
 
 if __name__ == "__main__":
     # Initialize the language model
-    llm = LanguageModel("qwen-turbo-latest")
+    llm = LanguageModel("qwen-plus")
 
     # # Test 1: Fixed numbers (from your original example)
     # number_1 = "890826897986303343456"
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     print("           Generating Random Numbers...")
     print(f"{'='*60}")
     
-    num1_auto, num2_auto = generate_number_pair(min_length=16, max_length=19)
+    num1_auto, num2_auto = generate_number_pair(min_length=24, max_length=30)
     run_addition_test(llm, num1_auto, num2_auto, "Auto-Generated Numbers Test")
     
     # # Test 3: Very large numbers

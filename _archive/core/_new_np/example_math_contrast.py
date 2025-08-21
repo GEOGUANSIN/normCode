@@ -875,47 +875,49 @@ def validate_number_differences(a: int | str, b: int | str) -> dict:
 
 if __name__ == "__main__":
     # Test the helper function
-    number_length = 230
+    number_length = 50
     position = 48
     test_number = generate_number_string(number_length)
     test_number2 = generate_number_string(number_length)
 
-    sum = int(test_number) + int(test_number2)
-    logger.info(f"Test number 1: {test_number}, Test number 2: {test_number2}, Sum: {sum}")
+    # sum = int(test_number) + int(test_number2)
+    # logger.info(f"Test number 1: {test_number}, Test number 2: {test_number2}, Sum: {sum}")
 
 
-    sum1 = 119731344401632240203004242988513205799260297559136853690716627173070069616012694073296324139635376715550615452916357090704697778723284727894521889361013879861037360692641739619298675296677922239500902427195211270661143256260396587
-    logger.info(f"Sum1: {sum1}")
+    # sum1 = 119731344401632240203004242988513205799260297559136853690716627173070069616012694073296324139635376715550615452916357090704697778723284727894521889361013879861037360692641739619298675296677922239500902427195211270661143256260396587
+    # logger.info(f"Sum1: {sum1}")
 
-    sum2 = 119731344401632240203004242988313205799260297559136853250716627173124069616012694073296324139635436315850615452916357090704697778723284828894521889328526079860037360692641748619298675296678922239500902427195222270661167157260396587
-    logger.info(f"Sum2: {sum2}")
+    # sum2 = 119731344401632240203004242988313205799260297559136853250716627173124069616012694073296324139635436315850615452916357090704697778723284828894521889328526079860037360692641748619298675296678922239500902427195222270661167157260396587
+    # logger.info(f"Sum2: {sum2}")
 
-    result = validate_number_differences(sum1, sum2)
-    logger.info(f"Result: {result}")
-    logger.info(f"Equal: {result['equal']}, Count: {result['count']}")
-    logger.info(f"Result: {result['differences']}")
+    # result = validate_number_differences(sum1, sum2)
+    # logger.info(f"Result: {result}")
+    # logger.info(f"Equal: {result['equal']}, Count: {result['count']}")
+    # logger.info(f"Result: {result['differences']}")
 
 
     # logger.info(f'two sums the same? {sum1 == sum2}')
     # logger.info(f"Generated test number: {test_number}")
     
-    # llm = LanguageModel("qwen-turbo-latest")
-    # answer = llm.generate(
-    #     f"For the number {test_number}, annotate the position number (counting from right to left, starting at 1 for the rightmost digit and ending at {number_length} for the leftmost digit) for each digit. "
-    #     "Output your final answer in JSON format with the following keys: "
-    #     "'analysis' (a string explaining your reasoning) and "
-    #     "'digits' (a list of dictionaries, each with keys 'digit' (string) and 'position' (integer), in the same order as the digits in the number from left to right).",
-    #     response_format={"type": "json_object"}
-    # )
-    # logger.debug(answer)
+    llm = LanguageModel("qwen-turbo-latest")
+    extra_info = "(counting from right to left with position starting at 1)"
+    # extra_info = "(counting from right to left, starting at position 1 for the rightmost digit and ending at position {number_length} for the leftmost digit)"
+    answer = llm.generate(
+        f"For the number {test_number}, annotate the position number {extra_info} for each digit. "
+        "Output your final answer in JSON format with the following keys: "
+        "'analysis' (a string explaining your reasoning) and "
+        "'digits' (a list of dictionaries, each with keys 'digit' (string) and 'position' (integer), in the same order as the digits in the number from left to right).",
+        response_format={"type": "json_object"}
+    )
+    logger.debug(answer)
     
-    # # Validate the response
-    # try:
-    #     response_json = json.loads(answer)
-    #     validation = validate_digit_position_response(response_json, test_number)
-    #     logger.info(f"Validation results for {test_number}: {validation}")
-    # except json.JSONDecodeError:
-    #     logger.error("Invalid JSON response from LLM")
+    # Validate the response
+    try:
+        response_json = json.loads(answer)
+        validation = validate_digit_position_response(response_json, test_number)
+        logger.info(f"Validation results for {test_number}: {validation}")
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON response from LLM")
 
     # if response_json:
     #     # Use the original number for the inquiry

@@ -177,11 +177,11 @@ def _build_demo_concepts(number_to_break_down: int = 123, normcode_string: str =
 
     # Concepts for the output relation parts (initially empty)
     ref_digit = Reference(axes=["digit"], shape=(1,))
-    ref_digit.set("one of the digits in the number", digit=0)  # Will be filled by the agent
+    ref_digit.set("one of 0, 1, 2, 3, 4, 5, 6, 7, 8, 9", digit=0)  # Will be filled by the agent
     concept_digit = Concept(name="digit in position", context="A digit from the number", reference=ref_digit, type="{}")
     
     ref_position = Reference(axes=["position"], shape=(1,))
-    ref_position.set("one of the positions of the number (from the right)", position=0)  # Will be filled by the agent
+    ref_position.set("starting with position 1", position=0)  # Will be filled by the agent
     concept_position = Concept(name="position", context="The position of the digit (from the right)", reference=ref_position, type="{}")
 
     # Function concept with multiple '?' marked outputs for the relation
@@ -215,8 +215,9 @@ def _build_demo_working_interpretation(normcode_string: str = "::(enumerate all 
 
 def run_relation_imperative_sequence() -> BaseStates:
     """Runs the full imperative sequence with relation-based prompts."""
-    num = "89977409734098776"
-    normcode_string = "::(enumerate all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> pair from rightmost to leftmost in {1}?<$({number 1})%_>)"
+    num = "20941565794707318456987069"
+    normcode_string = "::(Given a {1}<$({number})%_>, annotate from rightmost to leftmost all the {2}?<$({digit in position})%_> and {3}?<$({position})%_> pairs in {1}<$({number})%_>)"
+    normcode_string = normcode_string.replace("$len$", str(len(num)))
     concept_to_infer, value_concepts, function_concept = _build_demo_concepts(number_to_break_down=num, normcode_string=normcode_string)
 
     inference = Inference(
@@ -227,7 +228,7 @@ def run_relation_imperative_sequence() -> BaseStates:
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
-    body=Body(llm_name="qwen-plus")
+    body=Body(llm_name="qwen-turbo-latest")
 
     agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(normcode_string=normcode_string), body=body)
 
