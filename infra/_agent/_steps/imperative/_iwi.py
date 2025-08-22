@@ -24,7 +24,7 @@ def _build_mfp_env_and_sequence_from_wi(
 	if is_relation_output:
 		instruction_prompt = "instruction_relation_with_thinking" if with_thinking else "inistruction_relation"
 	else:
-		instruction_prompt = "instruction" # Assuming a non-relation thinking prompt might exist
+		instruction_prompt = "instruction_with_thinking" if with_thinking else "instruction" # Assuming a non-relation thinking prompt might exist
 	
 	translate_prompt = "imperative_relation_translate" if is_relation_output else "imperative_translate"
 	

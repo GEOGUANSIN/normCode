@@ -1,5 +1,6 @@
 import yaml
 import os
+import logging
 from openai import OpenAI
 from string import Template
 try:
@@ -11,6 +12,10 @@ except Exception:
 	if str(parent) not in sys.path:
 		sys.path.insert(0, str(parent))
 	from infra._constants import CURRENT_DIR, PROJECT_ROOT
+
+# Set up logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class LanguageModel:
@@ -154,41 +159,65 @@ class LanguageModel:
 
     def create_generation_function(self, prompt_template: str):
         """Return a simple generation function that formats the template with vars."""
+        logger.debug(f"Creating generation function with template: {prompt_template[:100]}...")
+        
         def _generate_with(vars: dict | None = None) -> str:
             vars = vars or {}
-            return self.generate(Template(prompt_template).safe_substitute(vars))
+            logger.debug(f"Generating with vars: {vars}")
+            
+            formatted_prompt = Template(prompt_template).safe_substitute(vars)
+            logger.debug(f"Formatted prompt: {formatted_prompt[:100]}...")
+            
+            result = self.generate(formatted_prompt)
+            logger.debug(f"Generation completed, result type: {type(result).__name__}, length: {len(result) if result else 0}")
+            
+            return result
         return _generate_with
 
     def create_generation_function_thinking_json(self, prompt_template: str):
         """Return a generation function that formats the template with vars and extracts JSON thinking/output."""
         import json
         
+        logger.debug(f"Creating thinking JSON generation function with template: {prompt_template[:100]}...")
+        
         def _generate_with_thinking(vars: dict | None = None) -> dict:
             vars = vars or {}
+            logger.debug(f"Generating thinking JSON with vars: {vars}")
+            
             formatted_prompt = Template(prompt_template).safe_substitute(vars)
+            logger.debug(f"Formatted prompt for JSON generation: {formatted_prompt[:10000]}...")
             
             # Use response_format to ensure JSON output
+            logger.debug("Calling generate with JSON response format")
             raw_response = self.generate(
                 prompt=formatted_prompt,
                 response_format={"type": "json_object"}
             )
+            logger.debug(f"Raw JSON response received, length: {len(raw_response) if raw_response else 0}")
             
             try:
                 # Parse the response as JSON (should be valid due to response_format)
+                logger.debug("Parsing JSON response")
                 parsed_response = json.loads(raw_response)
+                logger.debug(f"JSON parsed successfully, keys: {list(parsed_response.keys()) if isinstance(parsed_response, dict) else 'not a dict'}")
                 
                 # Extract thinking and output from the JSON
                 answer = parsed_response.get("answer", [])
+                logger.debug(f"Extracted answer from JSON, type: {type(answer).__name__}, length: {len(answer) if hasattr(answer, '__len__') else 'N/A'}")
                 
                 return answer
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 # Fallback in case JSON parsing still fails
-                return {
+                logger.error(f"JSON decode error: {e}")
+                logger.error(f"Raw response that failed to parse: {raw_response}")
+                fallback_result = {
                     "analysis": "",
                     "answer": [],
                     "raw_response": raw_response,
                     "error": "Failed to parse JSON response"
                 }
+                logger.debug(f"Returning fallback result: {fallback_result}")
+                return fallback_result
         
         return _generate_with_thinking
 

@@ -120,7 +120,7 @@ def validate_number_length(input_number: str, output_tensor: Any) -> bool:
 
 # --- Demo Setup ---
 
-def _build_demo_concepts(number_to_measure: str = "123") -> tuple[Concept, List[Concept], Concept]:
+def _build_demo_concepts(number_to_measure: str = "123", normcode_string: str = "::(count {2}?<$({number length})%_> for {1}?<$({number 1})%_>)" ) -> tuple[Concept, List[Concept], Concept]:
     """Builds the concepts needed for the number length demo."""
     logger = logging.getLogger(__name__)
     logger.info("Building demo concepts for number length")
@@ -133,27 +133,26 @@ def _build_demo_concepts(number_to_measure: str = "123") -> tuple[Concept, List[
 
     # Concept for the output length
     ref_length = Reference(axes=["length"], shape=(1,))
-    ref_length.set("The length of the number", length=0)  # Will be filled by the agent
+    ref_length.set("from first digit to last digit", length=0)  # Will be filled by the agent
     concept_length = Concept(name="number length", context="The number of digits in the number", reference=ref_length, type="{}")
 
     # Function concept for finding the length
-    normcode_string = "::(count all {2}?<$({number length})%_> for {1}?<$({number 1})%_>)"
     ref_f = Reference(axes=["f"], shape=(1,))
     ref_f.set(normcode_string, f=0)
     function_concept = Concept(name=normcode_string, context="Count the digits in a number", type="::", reference=ref_f)
     logger.info(f"ref_f: {ref_f.tensor}")
 
     # The concept to be inferred, which will hold the length
-    concept_to_infer = Concept(name="number_length_result", context="The length of the number", type="{}")
+    concept_to_infer = Concept(name="total number length", context="The length of the number", type="{}")
     
     return concept_to_infer, [concept_num1, concept_length], function_concept
 
 
-def _build_demo_working_interpretation() -> Dict[str, Any]:
+def _build_demo_working_interpretation(normcode_string: str = "::(by enumeration, count all {2}?<$({number length})%_> for {1}?<$({number 1})%_>)" ) -> Dict[str, Any]:
     """Builds the working interpretation, enabling the relation output mode."""
-    normcode_string = "::(count all {2}?<$({number length})%_> for {1}?<$({number 1})%_>)"
     return {
         "is_relation_output": False,
+        "with_thinking": True,
         normcode_string: {
             "value_order": {
                 "number 1": 0,
@@ -167,8 +166,9 @@ def _build_demo_working_interpretation() -> Dict[str, Any]:
 
 def run_number_length_sequence() -> BaseStates:
     """Runs the full imperative sequence to find the length of a number."""
-    num = "26897986303456783"
-    concept_to_infer, value_concepts, function_concept = _build_demo_concepts(number_to_measure=num)
+    num = "268979863034567823456778876543239876545686545678876545678765456776545678765"
+    normcode_string = "::(count {2}?<$({number length})%_> for {1}?<$({number 1})%_>)"
+    concept_to_infer, value_concepts, function_concept = _build_demo_concepts(number_to_measure=num, normcode_string=normcode_string)
 
     inference = Inference(
         "imperative",
@@ -178,7 +178,7 @@ def run_number_length_sequence() -> BaseStates:
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
-    agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(), body=Body())
+    agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(normcode_string=normcode_string), body=Body())
 
     agent.configure(inference, "imperative")
 
