@@ -78,6 +78,18 @@ class Concept:
         self.reference: Optional[Reference] = reference
         self.id = str(uuid.uuid4())  # Generate unique identification number
     
+    def copy(self):
+        """Creates a copy of the concept with a new ID and a deep copy of the reference."""
+        new_reference = self.reference.copy() if self.reference else None
+        new_concept = Concept(
+            name=self.name,
+            context=self.context,
+            axis_name=self.axis_name,
+            reference=new_reference,
+            type=self.type
+        )
+        return new_concept
+    
     def is_syntactical(self) -> bool:
         return CONCEPT_TYPES[self.type]["type_class"] == TYPE_CLASS_SYNTACTICAL
     
