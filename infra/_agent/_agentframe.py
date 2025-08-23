@@ -9,14 +9,17 @@ from infra._agent._sequences.simple import set_up_simple_demo, configure_simple_
 from infra._agent._sequences.imperative import set_up_imperative_demo, configure_imperative_demo
 from infra._agent._sequences.grouping import set_up_grouping_demo, configure_grouping_demo
 from infra._agent._sequences.quantifying import set_up_quantifying_demo, configure_quantifying_demo
+from infra._agent._sequences.assigning import set_up_assigning_demo, configure_assigning_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
 from infra._states._simple_states import States as SimpleStates
+from infra._states._assigning_states import States as AssigningStates
 from infra._agent._steps.simple import simple_methods
 from infra._agent._steps.imperative import imperative_methods
 from infra._agent._steps.grouping import grouping_methods
 from infra._agent._steps.quantifying import quantifying_methods
+from infra._agent._steps.assigning import assigning_methods
 
 
 # Configure logging
@@ -102,11 +105,12 @@ class AgentFrame():
     def _sequence_setup(self):
         logger.debug(f"Setting up sequences for NormCode inference")
         if self.AgentFrameModel == "demo":
-            logger.info("Setting up demo sequences: imperative, grouping, quantifying")
+            logger.info("Setting up demo sequences: simple, imperative, grouping, quantifying, assigning")
             set_up_simple_demo(self)
             set_up_imperative_demo(self)
             set_up_grouping_demo(self)
             set_up_quantifying_demo(self)
+            set_up_assigning_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -125,6 +129,9 @@ class AgentFrame():
             elif inference_sequence == "simple":
                 logger.info("Configuring simple demo sequence")
                 configure_simple_demo(self, inference_instance, simple_methods)
+            elif inference_sequence == "assigning":
+                logger.info("Configuring assigning demo sequence")
+                configure_assigning_demo(self, inference_instance, assigning_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:

@@ -141,4 +141,58 @@ def _parse_normcode_quantifying(expr: str) -> dict:
 
 
 def _parse_normcode_assigning(expr: str) -> dict:
-    pass 
+    """
+    Parse a NormCode assigning expression to extract:
+      - Assignment marker (after $, e.g., . or +)
+      - Source concept (first concept in parentheses)
+      - Destination concept (second concept in parentheses, after :)
+    
+    Args:
+        expr (str): The assigning expression to parse (e.g., "$.(_a_:_b_)" or "$+(_a_:_b_)")
+        
+    Returns:
+        dict: Dictionary containing parsed components
+        
+    Examples:
+        >>> _parse_normcode_assigning("$.(_a_:_b_)")
+        {
+            "marker": ".",
+            "assign_source": "_a_",
+            "assign_destination": "_b_"
+        }
+        >>> _parse_normcode_assigning("$+(_source_:_dest_)")
+        {
+            "marker": "+",
+            "assign_source": "_source_",
+            "assign_destination": "_dest_"
+        }
+    """
+    logger.debug(f"Parsing assigning expression: {expr}")
+    
+    # Initialize result dictionary
+    result: Dict[str, Any] = {
+        "marker": None,
+        "assign_source": None,
+        "assign_destination": None
+    }
+    
+    try:
+        # Match the pattern: $marker(source:destination)
+        # The marker can be . or + (specification or continuation)
+        pattern = r"\$([.+])\(([^:]+):([^)]+)\)"
+        match = re.match(pattern, expr)
+        
+        if not match:
+            raise ValueError(f"Invalid assigning expression format: {expr}")
+        
+        # Extract components
+        result["marker"] = match.group(1).strip()
+        result["assign_source"] = match.group(2).strip()
+        result["assign_destination"] = match.group(3).strip()
+        
+        logger.debug(f"Parsed assigning expression: {result}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error parsing assigning expression '{expr}': {str(e)}")
+        raise ValueError(f"Failed to parse assigning expression: {expr}") 
