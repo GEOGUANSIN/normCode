@@ -10,7 +10,8 @@ for building intelligent agent systems with formal reasoning capabilities.
 from infra._core import (
     Concept, Reference, Inference,
     cross_product, cross_action, element_action,
-    CONCEPT_TYPES, TYPE_CLASS_SYNTACTICAL, TYPE_CLASS_SEMANTICAL, TYPE_CLASS_INFERENTIAL
+    CONCEPT_TYPES, TYPE_CLASS_SYNTACTICAL, TYPE_CLASS_SEMANTICAL, TYPE_CLASS_INFERENTIAL,
+    register_inference_sequence
 )
 
 # Agent framework (includes steps and models)
@@ -61,6 +62,7 @@ __all__ = [
     "cross_product",
     "cross_action", 
     "element_action",
+    "register_inference_sequence",
     
     # Core constants
     "CONCEPT_TYPES",

@@ -26,6 +26,33 @@ except Exception:
     from infra import Inference, Concept, Reference, AgentFrame, BaseStates, Body
 
 
+# --- Normcode for this example ---
+
+Normcode = """
+[all {index} and {digit} of number]
+    <= *every({number})%:[{number}]@[{index}^1]
+        <= $.([{index} and {digit}]*)
+        <- [{index} and {digit}]*
+            <= &in({index}*;{digit}*)
+            <- {index}*
+            <- {unit place value}*
+                <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)
+                <- {unit place digit}?<:{2}>
+                <- {number}<:{1}>
+        <- {number}
+            <= @after([{index} and {digit}]*)
+                <= $+({new number}:{number})
+                <- {new number}
+                    <= ::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)
+                    <- {unit place digit}?<:{2}> 
+                    <- {number}<:{1}>
+        <- {index}*
+            <= @after([{index} and {digit}]*)
+                <= ::(increment {1}<$({index})%_>)
+                <- {index}*
+    <- {number}
+"""
+
 # --- Utilities for Parsing Imperative Worker Output ---
 
 def parse_imperative_output(output_tensor: Any) -> Optional[str]:
@@ -271,9 +298,10 @@ def _get_workspace_tensor_view(workspace: Dict) -> Dict:
 def validate_digit_counting_output(input_number: str, output_tensor: Any) -> bool:
     """
     Validates that the output from the quantification sequence correctly deconstructed the number.
+    Provides detailed logging on missing, incorrect, and correct digits.
     Accepts overflowing zeros that do not change the integer value of the number.
     """
-    logger.info("\n--- Validation ---")
+    logger.info("\n--- Detailed Validation ---")
     try:
         # Check for expected tensor structure: a list containing one list of strings
         if not (isinstance(output_tensor, list) and len(output_tensor) > 0 and isinstance(output_tensor[0], list)):
@@ -284,13 +312,8 @@ def validate_digit_counting_output(input_number: str, output_tensor: Any) -> boo
         extracted_strings = [item.strip('%()') for item in output_tensor[0] if item]
         logger.info(f"📊 Extracted {len(extracted_strings)} items from tensor.")
 
-        # 1. Check if we have at least enough digits
-        if len(extracted_strings) < len(input_number):
-            logger.error(f"❌ Validation Failed: Not enough digits. Expected at least {len(input_number)}, but got {len(extracted_strings)}.")
-            return False
-
-        # 2. Parse each string to get index and digit
-        digit_map = {}
+        # Parse into a map of {index: digit}
+        reported_digits_map = {}
         for s in extracted_strings:
             match = re.search(r"index:\s*(\d+),\s*digit:\s*(\d)", s)
             if not match:
@@ -298,43 +321,79 @@ def validate_digit_counting_output(input_number: str, output_tensor: Any) -> boo
                 return False
             index = int(match.group(1))
             digit = match.group(2)
-            digit_map[index] = digit
+            reported_digits_map[index] = digit
         
-        logger.info(f"📊 Parsed digit map: {digit_map}")
+        logger.info(f"📊 Parsed {len(reported_digits_map)} unique digits from agent output.")
 
-        # 3. Reconstruct the number from the parsed digits
-        if not digit_map:
-            reconstructed_reversed_number = ""
+        # Create the expected map from the input number
+        # Agent extracts from right to left, so index 1 is the last digit.
+        reversed_input = input_number[::-1]
+        expected_digits_map = {i + 1: digit for i, digit in enumerate(reversed_input)}
+        
+        # --- Detailed Comparison ---
+        correct_count = 0
+        incorrect_digits = []
+        missing_digits = []
+
+        expected_indices = set(expected_digits_map.keys())
+        reported_indices = set(reported_digits_map.keys())
+
+        # 1. Find missing digits
+        missing_indices = expected_indices - reported_indices
+        if missing_indices:
+            for index in sorted(list(missing_indices)):
+                missing_digits.append(f"Index {index} (expected digit '{expected_digits_map[index]}')")
+
+        # 2. Compare reported digits
+        for index, reported_digit in reported_digits_map.items():
+            if index in expected_digits_map:
+                expected_digit = expected_digits_map[index]
+                if reported_digit == expected_digit:
+                    correct_count += 1
+                else:
+                    incorrect_digits.append(f"Index {index} (reported '{reported_digit}', expected '{expected_digit}')")
+
+        # --- Logging Summary ---
+        logger.info("--- Validation Summary ---")
+        logger.info(f"Total digits expected: {len(expected_digits_map)}")
+        logger.info(f"Total digits reported by agent: {len(reported_digits_map)}")
+        logger.info(f"✅ Correctly identified digits: {correct_count}")
+
+        if incorrect_digits:
+            logger.warning(f"⚠️ Incorrectly identified digits: {len(incorrect_digits)}")
+            for item in incorrect_digits:
+                logger.warning(f"  - {item}")
+        
+        if missing_digits:
+            logger.warning(f"⚠️ Missing digits: {len(missing_digits)}")
+            for item in missing_digits:
+                logger.warning(f"  - {item}")
+
+        # Final verdict
+        is_pass = (len(missing_digits) == 0 and len(incorrect_digits) == 0)
+        
+        # Also check integer value to handle overflowing zeros gracefully
+        if is_pass:
+            # Reconstruct from reported digits to check for extra non-zero digits
+            sorted_reported = [reported_digits_map[i] for i in sorted(reported_digits_map.keys())]
+            reconstructed_reversed = "".join(sorted_reported)
+            reconstructed_val = int(reconstructed_reversed[::-1])
+            expected_val = int(input_number)
+            if reconstructed_val != expected_val:
+                logger.error("❌ Validation Failed: Final integer value mismatch despite no missing/incorrect core digits. This may indicate extra non-zero digits.")
+                is_pass = False
+
+        if is_pass:
+            logger.info("✅ Validation Passed!")
         else:
-            sorted_digits = [digit_map[i] for i in sorted(digit_map.keys())]
-            reconstructed_reversed_number = "".join(sorted_digits)
-
-        logger.info(f"📊 Reconstructed reversed number: '{reconstructed_reversed_number}'")
-        
-        # 4. Reverse the reconstructed number string to get the number in correct order
-        reconstructed_number_str = reconstructed_reversed_number[::-1]
-        logger.info(f"📊 Reconstructed number string: '{reconstructed_number_str}'")
-
-        # 5. Compare the integer values to handle leading/overflowing zeros
-        try:
-            reconstructed_int = int(reconstructed_number_str)
-            expected_int = int(input_number)
-
-            logger.info(f"📊 Reconstructed as integer: {reconstructed_int}")
-            logger.info(f"📊 Expected as integer:    {expected_int}")
-
-            if reconstructed_int == expected_int:
-                logger.info("✅ Validation Passed! The number was deconstructed correctly.")
-                return True
-            else:
-                logger.error("❌ Validation Failed: Reconstructed number does not match the original integer value.")
-                return False
-        except ValueError:
-            logger.error(f"❌ Validation Failed: Could not convert reconstructed number '{reconstructed_number_str}' or input '{input_number}' to an integer for comparison.")
-            return False
+            logger.error("❌ Validation Failed.")
+            
+        return is_pass
 
     except Exception as e:
         logger.error(f"❌ An unexpected error occurred during validation: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -486,8 +545,9 @@ def generate_random_number(length: int) -> str:
 
 if __name__ == "__main__":
     # Use a short number for demonstration to keep the logs readable
-    length = 150
+    length = 100
     number = generate_random_number(length)
     _, result = run_mixed_counting_sequence(number=number, length=length)
     print(f"\nInput number was: {number}")
     print(f"Validation Result: {'✅ PASSED' if result else '❌ FAILED'}")
+
