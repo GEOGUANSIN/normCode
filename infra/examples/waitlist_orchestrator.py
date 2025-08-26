@@ -151,7 +151,7 @@ concept_entries: List[ConceptEntry] = [
     ConceptEntry(id=str(uuid.uuid4()), concept_name="{unit place value}*", type="object"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)", type="imperative"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="{unit place digit}?", type="object"),
-    ConceptEntry(id=str(uuid.uuid4()), concept_name="@after([{index} and {digit}]*)", type="scheduling"),
+    ConceptEntry(id=str(uuid.uuid4()), concept_name="@after([{index} and {digit}]*)", type="timing"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="$+({new number}:{number})", type="assigning"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="{new number}", type="object"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)", type="imperative"),
@@ -165,10 +165,10 @@ inference_entries: List[InferenceEntry] = [
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", concept_to_infer=concept_repo.get_concept("*every({number})%:[{number}]@[{index}^1]"), function_concept=concept_repo.get_concept("$.([{index} and {digit}]*)"), value_concepts=[concept_repo.get_concept("[{index} and {digit}]*"), concept_repo.get_concept("{number}"), concept_repo.get_concept("{index}*")], flow_info={"flow_index": "1.1", "support": ["1.1.1"], "target": ["1"]}),
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="grouping", concept_to_infer=concept_repo.get_concept("[{index} and {digit}]*"), function_concept=concept_repo.get_concept("&in({index}*;{digit}*)"), value_concepts=[concept_repo.get_concept("{index}*"), concept_repo.get_concept("{unit place value}*")], flow_info={"flow_index": "1.1.1", "support": ["1.1.1.1"], "target": ["1.1"]}),
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("{unit place value}*"), function_concept=concept_repo.get_concept("::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)",), value_concepts=[concept_repo.get_concept("{unit place digit}?"), concept_repo.get_concept("{number}")], flow_info={"flow_index": "1.1.1.1", "target": ["1.1.1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="scheduling", concept_to_infer=concept_repo.get_concept("{number}"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.2", "support": ["1.2.1"], "target": ["1.1.1.1"]}, start_without_value=True),
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", concept_to_infer=concept_repo.get_concept("{number}"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.2", "support": ["1.2.1"], "target": ["1.1.1.1"]}, start_without_value=True),
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", concept_to_infer=concept_repo.get_concept("@after([{index} and {digit}]*)"), function_concept=concept_repo.get_concept("$+({new number}:{number})"), value_concepts=[concept_repo.get_concept("{new number}")], flow_info={"flow_index": "1.2.1", "support": ["1.2.1.1"], "target": ["1.2"]}),
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("{new number}"), function_concept=concept_repo.get_concept("::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",), value_concepts=[concept_repo.get_concept("{unit place digit}?"), concept_repo.get_concept("{number}")], flow_info={"flow_index": "1.2.1.1", "target": ["1.2.1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="scheduling", concept_to_infer=concept_repo.get_concept("{index}*"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.3", "support": ["1.3.1"], "target": ["1.1.1.1"]}, start_without_value=True),
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", concept_to_infer=concept_repo.get_concept("{index}*"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.3", "support": ["1.3.1"], "target": ["1.1.1.1"]}, start_without_value=True),
     InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("@after([{index} and {digit}]*)"), function_concept=concept_repo.get_concept("::(increment {1}<$({index})%_>)"), value_concepts=[concept_repo.get_concept("{index}*")], flow_info={"flow_index": "1.3.1", "target": ["1.3"]})
 ]
 inference_repo = InferenceRepo(inference_entries) 
@@ -250,8 +250,8 @@ class Orchestrator:
         if item.inference_entry.start_without_value:
             return True
             
-        # Special readiness check for '@after' scheduling concepts
-        if fc and item.inference_entry.inference_sequence == 'scheduling' and fc.concept_name.startswith('@after('):
+        # Special readiness check for '@after' timing concepts
+        if fc and item.inference_entry.inference_sequence == 'timing' and fc.concept_name.startswith('@after('):
             match = re.search(r'@after\((.+)\)', fc.concept_name)
             if match:
                 dependency_concept_name = match.group(1)
