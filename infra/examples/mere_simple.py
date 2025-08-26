@@ -50,8 +50,8 @@ def run_simple_sequence() -> BaseStates:
 	inference = Inference(
 		"simple",
 		concept_to_infer,
-		value_concepts,
 		function_concept,
+		value_concepts,
 	)
 
 	agent = AgentFrame("demo")

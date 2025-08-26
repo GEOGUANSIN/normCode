@@ -70,14 +70,14 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
 
 # Sequence class for executing registered steps
 class Inference:
-    def __init__(self, sequence_name: str, concept_to_infer: Concept, value_concepts: list[Concept], function_concept: Concept, context_concepts: Optional[list[Concept]] = None):
+    def __init__(self, sequence_name: str, concept_to_infer: Concept, function_concept: Concept, value_concepts: Optional[list[Concept]] = None, context_concepts: Optional[list[Concept]] = None):
         logger.info(f"Initializing Inference instance with sequence: {sequence_name}")
         logger.debug(f"Concept to infer: {concept_to_infer}")
         logger.debug(f"Value concepts: {value_concepts}")
         logger.debug(f"Function concept: {function_concept}")
         
         self.concept_to_infer: Concept = concept_to_infer
-        self.value_concepts: list[Concept] = value_concepts
+        self.value_concepts: Optional[list[Concept]] = value_concepts
         self.function_concept: Concept = function_concept
         self.context_concepts: Optional[list[Concept]] = context_concepts
         self.sequence_name = sequence_name

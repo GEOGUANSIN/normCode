@@ -63,8 +63,8 @@ def run_imperative_sequence() -> BaseStates:
 	inference = Inference(
 		"imperative",
 		concept_to_infer,
-		value_concepts,
 		function_concept,
+		value_concepts,
 	)
 
 	agent = AgentFrame("demo", working_interpretation=_build_demo_working_interpretation(), body=Body())

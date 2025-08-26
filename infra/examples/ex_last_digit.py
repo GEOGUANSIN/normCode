@@ -356,8 +356,8 @@ def run_last_digit_sequence() -> BaseStates:
     inference = Inference(
         "imperative",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
@@ -400,8 +400,8 @@ def run_last_digit_sequence_with_number(input_number: str) -> BaseStates:
     inference = Inference(
         "imperative",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
@@ -437,8 +437,8 @@ def run_remove_unit_place_sequence() -> BaseStates:
     inference = Inference(
         "imperative",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
@@ -481,8 +481,8 @@ def run_remove_unit_place_sequence_with_number(input_number: str) -> BaseStates:
     inference = Inference(
         "imperative",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic

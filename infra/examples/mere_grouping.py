@@ -75,8 +75,8 @@ def run_grouping_sequence() -> BaseStates:
     inference = Inference(
         "grouping",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
         context_concepts=context_concepts
     )
     
@@ -175,8 +175,8 @@ def run_complex_grouping_sequence() -> BaseStates:
     inference = Inference(
         "grouping",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
         context_concepts=context_concepts
     )
     

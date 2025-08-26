@@ -155,8 +155,8 @@ def run_number_counting_sequence(number: str = "120738") -> BaseStates:
     quantification_inference = Inference(
         "quantifying",
         concept_to_infer,
-        value_concepts,
         quantification_concept, # Starts with a placeholder
+        value_concepts,
         context_concepts=context_concepts
     )
 

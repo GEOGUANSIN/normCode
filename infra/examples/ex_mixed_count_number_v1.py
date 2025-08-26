@@ -411,8 +411,8 @@ def run_mixed_counting_sequence(number: str = "987", length: int = 3) -> Tuple[B
     quantification_inference = Inference(
         "quantifying",
         concept_to_infer,
-        value_concepts,
         quantification_concept,
+        value_concepts,
         context_concepts=context_concepts
     )
 

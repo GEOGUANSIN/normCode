@@ -110,8 +110,8 @@ def run_quantifying_sequence() -> BaseStates:
     quantification_inference = Inference(
         "quantifying",
         concept_to_infer,
-        value_concepts,
         quantification_concept, # Starts with a placeholder
+        value_concepts,
         context_concepts=context_concepts
     )
 

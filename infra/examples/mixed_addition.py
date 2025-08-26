@@ -97,8 +97,8 @@ def run_mixed_addition() -> BaseStates:
 	inference = Inference(
 		"imperative",
 		concept_to_infer,
-		value_concepts,
 		function_concept,
+		value_concepts,
 	)
 
 	agent = AgentFrame("demo")

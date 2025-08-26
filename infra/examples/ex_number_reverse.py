@@ -177,8 +177,8 @@ def run_number_reverse_sequence() -> BaseStates:
     inference = Inference(
         "imperative",
         concept_to_infer,
-        value_concepts,
         function_concept,
+        value_concepts,
     )
 
     # The working_interpretation is passed to the AgentFrame to trigger the relational logic
