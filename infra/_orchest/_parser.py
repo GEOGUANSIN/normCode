@@ -195,4 +195,51 @@ def _parse_normcode_assigning(expr: str) -> dict:
         
     except Exception as e:
         logger.error(f"Error parsing assigning expression '{expr}': {str(e)}")
-        raise ValueError(f"Failed to parse assigning expression: {expr}") 
+        raise ValueError(f"Failed to parse assigning expression: {expr}")
+
+
+def _parse_normcode_timing(expr: str) -> dict:
+    """
+    Parse a NormCode timing expression to extract:
+      - marker (e.g., "after")
+      - condition (the concept to check)
+
+    Args:
+        expr (str): The timing expression to parse (e.g., "@after(data_loaded)")
+
+    Returns:
+        dict: Dictionary containing parsed components
+
+    Examples:
+        >>> _parse_normcode_timing("@after(data_loaded)")
+        {
+            "marker": "after",
+            "condition": "data_loaded"
+        }
+    """
+    logger.debug(f"Parsing timing expression: {expr}")
+
+    # Initialize result dictionary
+    result: Dict[str, Any] = {
+        "marker": None,
+        "condition": None,
+    }
+
+    try:
+        # Match the pattern: @marker(condition)
+        pattern = r"@(\w+)\(([^)]+)\)"
+        match = re.match(pattern, expr)
+
+        if not match:
+            raise ValueError(f"Invalid timing expression format: {expr}")
+
+        # Extract components
+        result["marker"] = match.group(1).strip()
+        result["condition"] = match.group(2).strip()
+
+        logger.debug(f"Parsed timing expression: {result}")
+        return result
+
+    except Exception as e:
+        logger.error(f"Error parsing timing expression '{expr}': {str(e)}")
+        raise ValueError(f"Failed to parse timing expression: {expr}") 

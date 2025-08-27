@@ -1,22 +1,17 @@
 """
 NormCode Syntax Module
 
-This module provides syntax parsing and processing capabilities for the NormCode framework.
-It includes parsers for NormCode expressions, grouping operations, quantification processing, and assignment operations.
+This module provides syntax processing capabilities for the NormCode framework.
+It includes syntax classes for grouping operations, quantification processing, assignment operations, and timing.
 """
 
 # Core syntax classes
-from infra._syntax._parser import GrouperInfo
 from infra._syntax._grouper import Grouper
 from infra._syntax._quantifier import Quantifier
 from infra._syntax._assigner import Assigner
+from infra._syntax._timer import Timer
 
-# Parser functions
-from infra._syntax._parser import (
-    _parse_normcode_grouping,
-    _parse_normcode_quantifying,
-    _parse_normcode_assigning
-)
+
 
 # Version and module info
 __version__ = "1.0.0"
@@ -26,15 +21,10 @@ __description__ = "NormCode Syntax Framework - Parsing and processing for NormCo
 # Public API
 __all__ = [
     # Core classes
-    "GrouperInfo",
     "Grouper",
     "Quantifier",
     "Assigner",
-    
-    # Parser functions
-    "_parse_normcode_grouping",
-    "_parse_normcode_quantifying",
-    "_parse_normcode_assigning",
+    "Timer",
     
     # Module info
     "__version__",

@@ -10,6 +10,7 @@ from infra._agent._steps import simple
 from infra._agent._steps import imperative
 from infra._agent._steps import grouping
 from infra._agent._steps import quantifying
+from infra._agent._steps import timing
 
 # Version and module info
 __version__ = "1.0.0"
@@ -23,6 +24,7 @@ __all__ = [
     "imperative", 
     "grouping",
     "quantifying",
+    "timing",
     
     # Module info
     "__version__",

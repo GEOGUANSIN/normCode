@@ -15,6 +15,7 @@ from .grouping import set_up_grouping_demo, configure_grouping_demo
 from .quantifying import set_up_quantifying_demo, configure_quantifying_demo
 from .imperative import set_up_imperative_demo, configure_imperative_demo
 from .assigning import set_up_assigning_demo, configure_assigning_demo
+from .timing import set_up_timing_demo, configure_timing_demo
 
 # Export all setup and configuration functions
 __all__ = [
@@ -37,4 +38,8 @@ __all__ = [
     # Assigning sequence
     "set_up_assigning_demo",
     "configure_assigning_demo",
+    
+    # Timing sequence
+    "set_up_timing_demo",
+    "configure_timing_demo",
 ]

@@ -12,6 +12,7 @@ from ._imperative_states import States as ImperativeStates
 from ._grouping_states import States as GroupingStates
 from ._quantifying_states import States as QuantifyingStates
 from ._assigning_states import States as AssigningStates
+from ._timing_states import States as TimingStates
 from ._model_state import (
     AffordanceSpecLite, ToolSpecLite, ModelEnvSpecLite, ModelStepSpecLite,
     ModelSequenceSpecLite, MetaValue, AffordanceValue
@@ -37,6 +38,7 @@ __all__ = [
     "GroupingStates", 
     "QuantifyingStates",
     "AssigningStates",
+    "TimingStates",
     
     # Model state dataclasses
     "AffordanceSpecLite",

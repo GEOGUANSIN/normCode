@@ -23,26 +23,26 @@ except Exception:
 # --- Normal Code Example ---
 Normcode_example = """
 [all {index} and {digit} of number]
-    <= *every({number})%:[{number}]@[{index}^1]
-        <= $.([{index} and {digit}]*)
-        <- [{index} and {digit}]*
-            <= &in({index}*;{digit}*)
-            <- {index}*
+    <= *every({number})%:[{number}]@[{index}^1] |1
+        <= $.([{index} and {digit}]*) |1.1
+        <- [{index} and {digit}]* 
+            <= &in({index}*;{digit}*) |1.1.2
+            <- {index}* 
             <- {unit place value}*
-                <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)
+                <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>) |1.1.2.3
                 <- {unit place digit}?<:{2}>
                 <- {number}<$={a}><:{1}>
         <- {number}<$={a}>
-            <= @after([{index} and {digit}]*)
-                <= $+({new number}:{number})
-                <- {new number}
-                    <= ::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)
-                    <- {unit place digit}?<:{2}> 
-                    <- {number}<$={a}><:{1}>
+            <= $+({new number}:{number}) |1.1.3
+                <= @after([{index} and {digit}]*) |1.1.3.1
+            <- {new number}
+                <= ::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>) |1.1.3.2
+                <- {unit place digit}?<:{2}> 
+                <- {number}<$={a}><:{1}>
         <- {index}*
-            <= @after([{index} and {digit}]*)
-                <= ::(increment {1}<$({index})%_>)
-                <- {index}*
+            <= ::(increment {1}<$({index})%_> by 1) |1.1.4
+                <= @after([{index} and {digit}]*) |1.1.4.1
+            <- {index}*
     <- {number}<$={a}>
 """
 
@@ -53,7 +53,6 @@ class ConceptEntry:
     id: str
     concept_name: str
     type: str
-    reference_status: str = "empty"  # complete, incomplete, empty
     description: Optional[str] = None
     concept: Optional[Concept] = field(default=None, repr=False)
 
@@ -70,11 +69,8 @@ class InferenceEntry:
 
 @dataclass
 class WaitlistItem:
-    """Represents an inference waiting to be processed, tracking its multi-stage status."""
+    """Represents an inference waiting to be processed."""
     inference_entry: InferenceEntry
-    status: str = "pending"  # pending, in_progress, completed, failed
-    result: Optional[any] = None
-    execution_count: int = 0
 
     def __hash__(self):
         return hash(self.inference_entry.id)
@@ -121,6 +117,59 @@ class ProcessTracker:
             return 0.0
         return (self.successful_executions / self.total_executions) * 100
 
+@dataclass
+class Blackboard:
+    """Manages the dynamic state of all concepts and inference items."""
+    concept_statuses: Dict[str, str] = field(default_factory=dict)  # concept_name -> status
+    item_statuses: Dict[str, str] = field(default_factory=dict)     # flow_index -> status
+    item_results: Dict[str, any] = field(default_factory=dict)      # flow_index -> result
+    item_execution_counts: Dict[str, int] = field(default_factory=dict) # flow_index -> count
+    completed_concept_timestamps: Dict[str, float] = field(default_factory=dict)  # concept_name -> timestamp
+
+    def initialize_states(self, concepts: List[ConceptEntry], items: List[WaitlistItem]):
+        """Sets the initial state for all concepts and items."""
+        for concept in concepts:
+            self.concept_statuses[concept.concept_name] = "empty"
+        for item in items:
+            flow_index = item.inference_entry.flow_info['flow_index']
+            self.item_statuses[flow_index] = "pending"
+            self.item_execution_counts[flow_index] = 0
+            self.item_results[flow_index] = None
+
+    def get_concept_status(self, concept_name: str) -> str:
+        return self.concept_statuses.get(concept_name, "empty")
+
+    def set_concept_status(self, concept_name: str, status: str):
+        self.concept_statuses[concept_name] = status
+        if status == 'complete':
+            if concept_name not in self.completed_concept_timestamps:
+                self.completed_concept_timestamps[concept_name] = time.time()
+                logging.info(f"  -> Blackboard: Recorded completion of '{concept_name}'.")
+
+    def get_item_status(self, flow_index: str) -> str:
+        return self.item_statuses.get(flow_index, "pending")
+
+    def set_item_status(self, flow_index: str, status: str):
+        self.item_statuses[flow_index] = status
+    
+    def get_item_result(self, flow_index: str) -> any:
+        return self.item_results.get(flow_index)
+
+    def set_item_result(self, flow_index: str, result: any):
+        self.item_results[flow_index] = result
+
+    def get_execution_count(self, flow_index: str) -> int:
+        return self.item_execution_counts.get(flow_index, 0)
+
+    def increment_execution_count(self, flow_index: str):
+        self.item_execution_counts[flow_index] = self.get_execution_count(flow_index) + 1
+
+    def get_all_pending_or_in_progress_items(self) -> bool:
+        return any(s in ['pending', 'in_progress'] for s in self.item_statuses.values())
+
+    def get_completed_concepts(self) -> List[str]:
+        return list(self.completed_concept_timestamps.keys())
+
 # --- Repositories (Data Access) ---
 
 class ConceptRepo:
@@ -155,28 +204,89 @@ concept_entries: List[ConceptEntry] = [
     ConceptEntry(id=str(uuid.uuid4()), concept_name="$+({new number}:{number})", type="assigning"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="{new number}", type="object"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)", type="imperative"),
-    ConceptEntry(id=str(uuid.uuid4()), concept_name="::(increment {1}<$({index})%_>)", type="imperative"),
+    ConceptEntry(id=str(uuid.uuid4()), concept_name="::(increment {1}<$({index})%_> by 1)", type="imperative"),
     ConceptEntry(id=str(uuid.uuid4()), concept_name="{number}", type="object")
 ]
 concept_repo = ConceptRepo(concept_entries)
 
 inference_entries: List[InferenceEntry] = [
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="quantifying", concept_to_infer=concept_repo.get_concept("[all {index} and {digit} of number]"), function_concept=concept_repo.get_concept("*every({number})%:[{number}]@[{index}^1]"), value_concepts=[concept_repo.get_concept("{number}")], flow_info={"flow_index": "1", "support": ["1.1", "1.2", "1.3"]}, start_without_value=True),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", concept_to_infer=concept_repo.get_concept("*every({number})%:[{number}]@[{index}^1]"), function_concept=concept_repo.get_concept("$.([{index} and {digit}]*)"), value_concepts=[concept_repo.get_concept("[{index} and {digit}]*"), concept_repo.get_concept("{number}"), concept_repo.get_concept("{index}*")], flow_info={"flow_index": "1.1", "support": ["1.1.1"], "target": ["1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="grouping", concept_to_infer=concept_repo.get_concept("[{index} and {digit}]*"), function_concept=concept_repo.get_concept("&in({index}*;{digit}*)"), value_concepts=[concept_repo.get_concept("{index}*"), concept_repo.get_concept("{unit place value}*")], flow_info={"flow_index": "1.1.1", "support": ["1.1.1.1"], "target": ["1.1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("{unit place value}*"), function_concept=concept_repo.get_concept("::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)",), value_concepts=[concept_repo.get_concept("{unit place digit}?"), concept_repo.get_concept("{number}")], flow_info={"flow_index": "1.1.1.1", "target": ["1.1.1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", concept_to_infer=concept_repo.get_concept("{number}"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.2", "support": ["1.2.1"], "target": ["1.1.1.1"]}, start_without_value=True),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", concept_to_infer=concept_repo.get_concept("@after([{index} and {digit}]*)"), function_concept=concept_repo.get_concept("$+({new number}:{number})"), value_concepts=[concept_repo.get_concept("{new number}")], flow_info={"flow_index": "1.2.1", "support": ["1.2.1.1"], "target": ["1.2"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("{new number}"), function_concept=concept_repo.get_concept("::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",), value_concepts=[concept_repo.get_concept("{unit place digit}?"), concept_repo.get_concept("{number}")], flow_info={"flow_index": "1.2.1.1", "target": ["1.2.1"]}),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", concept_to_infer=concept_repo.get_concept("{index}*"), function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), value_concepts=[], flow_info={"flow_index": "1.3", "support": ["1.3.1"], "target": ["1.1.1.1"]}, start_without_value=True),
-    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", concept_to_infer=concept_repo.get_concept("@after([{index} and {digit}]*)"), function_concept=concept_repo.get_concept("::(increment {1}<$({index})%_>)"), value_concepts=[concept_repo.get_concept("{index}*")], flow_info={"flow_index": "1.3.1", "target": ["1.3"]})
+    # 1. Quantifying Loop (Root)
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="quantifying", 
+                   concept_to_infer=concept_repo.get_concept("[all {index} and {digit} of number]"), 
+                   function_concept=concept_repo.get_concept("*every({number})%:[{number}]@[{index}^1]"), 
+                   value_concepts=[concept_repo.get_concept("{number}")], 
+                   flow_info={"flow_index": "1", "support": ["1.1"]}, start_without_value=True),
+    
+    # 1.1. Assigning value for the quantifier based on the loop's output
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", 
+                   concept_to_infer=concept_repo.get_concept("*every({number})%:[{number}]@[{index}^1]"), 
+                   function_concept=concept_repo.get_concept("$.([{index} and {digit}]*)"), 
+                   value_concepts=[concept_repo.get_concept("[{index} and {digit}]*"), concept_repo.get_concept("{number}"), concept_repo.get_concept("{index}*")], 
+                   flow_info={"flow_index": "1.1", "support": ["1.1.2", "1.1.3", "1.1.4"], "target": ["1"]}),
+    
+    # 1.1.2. Grouping index and digit, which is the main output of the loop body
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="grouping", 
+                   concept_to_infer=concept_repo.get_concept("[{index} and {digit}]*"), 
+                   function_concept=concept_repo.get_concept("&in({index}*;{digit}*)"), 
+                   value_concepts=[concept_repo.get_concept("{index}*"), concept_repo.get_concept("{unit place value}*")], 
+                   flow_info={"flow_index": "1.1.2", "support": ["1.1.2.3"], "target": ["1.1"]}),
+    
+    # 1.1.2.3. Getting the unit place value (digit) - the first step in the loop
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", 
+                   concept_to_infer=concept_repo.get_concept("{unit place value}*"), 
+                   function_concept=concept_repo.get_concept("::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)"), 
+                   value_concepts=[concept_repo.get_concept("{unit place digit}?"), concept_repo.get_concept("{number}")], 
+                   flow_info={"flow_index": "1.1.2.3", "target": ["1.1.2"]}),
+
+    # 1.1.3. Assign the new number back to the main {number} concept for the next loop.
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="assigning", 
+                   concept_to_infer=concept_repo.get_concept("{number}"), 
+                   function_concept=concept_repo.get_concept("$+({new number}:{number})"), 
+                   value_concepts=[concept_repo.get_concept("{new number}")], 
+                   flow_info={"flow_index": "1.1.3", "support": ["1.1.3.1", "1.1.3.2"], "target": ["1.1"]}),
+
+    # 1.1.3.1. Timing Gate: This becomes ready after a digit is extracted and grouped in a cycle. So the 1.3 can continue. 
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", 
+                   concept_to_infer=concept_repo.get_concept("$+({new number}:{number})"), 
+                   function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), 
+                   value_concepts=[], 
+                   flow_info={"flow_index": "1.1.3.1", "target": ["1.1.3"]}, start_without_value=True),
+
+    # 1.1.3.2. Create the new number by removing the last digit. This depends on the timing gate.
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", 
+                   concept_to_infer=concept_repo.get_concept("{new number}"), 
+                   function_concept=concept_repo.get_concept("::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)"), 
+                   value_concepts=[
+                       concept_repo.get_concept("{unit place digit}?"), 
+                       concept_repo.get_concept("{number}"), 
+                       concept_repo.get_concept("@after([{index} and {digit}]*)")
+                   ], 
+                   flow_info={"flow_index": "1.1.3.2", "target": ["1.1.3"]}),
+
+    # 1.1.4. Index Update Logic (also depends on the timing gate)
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="imperative", 
+                   concept_to_infer=concept_repo.get_concept("{index}*"), 
+                   function_concept=concept_repo.get_concept("::(increment {1}<$({index})%_> by 1)"), 
+                   value_concepts=[
+                       concept_repo.get_concept("{index}*"), 
+                       concept_repo.get_concept("@after([{index} and {digit}]*)")
+                   ], 
+                   flow_info={"flow_index": "1.1.4", "support": ["1.1.4.1"], "target": ["1.1"]}),
+
+    # 1.1.4.1. Timing Gate: This becomes ready after a digit is extracted and grouped in a cycle. So the 1.4 can continue. 
+    InferenceEntry(id=str(uuid.uuid4()), inference_sequence="timing", 
+                   concept_to_infer=concept_repo.get_concept("::(increment {1}<$({index})%_> by 1)"), 
+                   function_concept=concept_repo.get_concept("@after([{index} and {digit}]*)"), 
+                   value_concepts=[], 
+                   flow_info={"flow_index": "1.1.4.1", "target": ["1.1.4"]}, start_without_value=True),
 ]
 inference_repo = InferenceRepo(inference_entries) 
 
 # --- Initial State Configuration ---
-def configure_initial_state(concepts: List[ConceptEntry], inferences: List[InferenceEntry], initial_data_concepts: set[str]) -> set[str]:
+def configure_initial_state(concepts: List[ConceptEntry], inferences: List[InferenceEntry], 
+                           initial_data_concepts: set[str], blackboard: Blackboard) -> set[str]:
     """
-    Sets the initial reference_status for concepts and returns a set of 'protected'
+    Sets the initial reference_status for concepts in the Blackboard and returns a set of 'protected'
     concept names that should not be reset during orchestration cycles.
     """
     logging.info("--- Configuring Initial Concept States ---")
@@ -190,7 +300,7 @@ def configure_initial_state(concepts: List[ConceptEntry], inferences: List[Infer
     
     for concept in concepts:
         if concept.concept_name in protected_concepts:
-            concept.reference_status = 'complete'
+            blackboard.set_concept_status(concept.concept_name, 'complete')
             if concept.concept_name in primitive_functions:
                 logging.info(f"Primitive function '{concept.concept_name}' set to 'complete'.")
             else:
@@ -210,7 +320,9 @@ class Orchestrator:
         self.inference_repo = inference_repo
         self.concept_repo = concept_repo
         self.waitlist: Optional[Waitlist] = None
-        self.item_status_by_flow: Dict[str, str] = {}
+        
+        # Centralized state management
+        self.blackboard = Blackboard()
         
         # Process tracking
         self.tracker = ProcessTracker()
@@ -218,21 +330,23 @@ class Orchestrator:
         # Use the pre-calculated set of protected concepts
         self.protected_concepts = protected_concepts
         
-        # Automatically create the waitlist on initialization
-        self._create_waitlist()
+        # Automatically create the waitlist and initialize states on initialization
+        self._create_waitlist_and_initialize_states()
 
         # Map inferred concepts to their waitlist items for easy lookup during resets
         self._item_by_inferred_concept: Dict[str, WaitlistItem] = {
             item.inference_entry.concept_to_infer.concept_name: item for item in self.waitlist.items
         }
 
-    def _create_waitlist(self) -> Waitlist:
-        """Creates a waitlist from the inference repository."""
+    def _create_waitlist_and_initialize_states(self):
+        """Creates a waitlist and initializes all concept and item states in the Blackboard."""
         items = [WaitlistItem(inference_entry=inf) for inf in self.inference_repo.get_all_inferences()]
         self.waitlist = Waitlist(id=str(uuid.uuid4()), items=items)
-        self.item_status_by_flow = {item.inference_entry.flow_info['flow_index']: item.status for item in self.waitlist.items}
-        logging.info(f"Created waitlist {self.waitlist.id} with {len(self.waitlist.items)} items.")
-        return self.waitlist
+        
+        # Initialize all states in the state manager
+        self.blackboard.initialize_states(list(self.concept_repo._concept_map.values()), self.waitlist.items)
+        
+        logging.info(f"Created waitlist {self.waitlist.id} with {len(self.waitlist.items)} items and initialized states.")
 
     def _is_ready(self, item: WaitlistItem) -> bool:
         """
@@ -242,7 +356,7 @@ class Orchestrator:
         - For '@after' scheduling, the concept it waits for is 'complete'.
         """
         fc = item.inference_entry.function_concept
-        function_concept_ready = (fc is None) or (fc.reference_status == 'complete')
+        function_concept_ready = (fc is None) or (self.blackboard.get_concept_status(fc.concept_name) == 'complete')
 
         if not function_concept_ready:
             return False
@@ -255,28 +369,27 @@ class Orchestrator:
             match = re.search(r'@after\((.+)\)', fc.concept_name)
             if match:
                 dependency_concept_name = match.group(1)
-                dependency_concept = self.concept_repo.get_concept(dependency_concept_name)
-                return dependency_concept and dependency_concept.reference_status == 'complete'
+                return self.blackboard.get_concept_status(dependency_concept_name) == 'complete'
             return False # Malformed @after concept
 
         # Default readiness check for all other items
-        return all(vc.reference_status == 'complete' for vc in item.inference_entry.value_concepts)
+        return all(self.blackboard.get_concept_status(vc.concept_name) == 'complete' for vc in item.inference_entry.value_concepts)
 
     def _reset_non_protected_concepts(self):
         """Resets concept statuses and the status of items that inferred them."""
         resets = 0
         for concept_entry in self.concept_repo._concept_map.values():
-            if concept_entry.concept_name not in self.protected_concepts and concept_entry.reference_status == 'complete':
-                concept_entry.reference_status = 'empty'
+            if concept_entry.concept_name not in self.protected_concepts and self.blackboard.get_concept_status(concept_entry.concept_name) == 'complete':
+                self.blackboard.set_concept_status(concept_entry.concept_name, 'empty')
                 resets += 1
                 
                 # Also reset the status of the item that inferred this concept
                 item_to_reset = self._item_by_inferred_concept.get(concept_entry.concept_name)
-                if item_to_reset and item_to_reset.status == 'completed':
-                    item_to_reset.status = 'pending'
+                if item_to_reset:
                     flow_idx = item_to_reset.inference_entry.flow_info['flow_index']
-                    self.item_status_by_flow[flow_idx] = 'pending'
-                    logging.info(f"    -> Resetting dependent item {flow_idx} to 'pending'.")
+                    if self.blackboard.get_item_status(flow_idx) == 'completed':
+                        self.blackboard.set_item_status(flow_idx, 'pending')
+                        logging.info(f"    -> Resetting dependent item {flow_idx} to 'pending'.")
         
         if resets > 0:
             logging.info(f"  -> Reset {resets} non-protected, complete concepts to 'empty'.")
@@ -286,11 +399,13 @@ class Orchestrator:
         Handles the special state-reset logic for a 'quantifying' inference.
         Returns True if the item was handled and its status set to pending, False otherwise.
         """
-        if item.inference_entry.inference_sequence == 'quantifying' and item.execution_count <= 3:
-            flow_index = item.inference_entry.flow_info['flow_index']
-            logging.info(f"  -> Quantifying item {flow_index} (exec #{item.execution_count}) is in progress. Resetting concepts.")
+        flow_index = item.inference_entry.flow_info['flow_index']
+        execution_count = self.blackboard.get_execution_count(flow_index)
+
+        if item.inference_entry.inference_sequence == 'quantifying' and execution_count <= 3:
+            logging.info(f"  -> Quantifying item {flow_index} (exec #{execution_count}) is in progress. Resetting concepts.")
             self._reset_non_protected_concepts()
-            item.result = "Pending (reset cycle)"
+            self.blackboard.set_item_result(flow_index, "Pending (reset cycle)")
             return True
         return False
 
@@ -301,7 +416,8 @@ class Orchestrator:
         Updates the item's result and returns the new status.
         Special logic for 'quantifying': must be executed 3 times, resetting state, before it can complete.
         """
-        item.execution_count += 1
+        flow_index = item.inference_entry.flow_info['flow_index']
+        self.blackboard.increment_execution_count(flow_index)
 
         # Special handling for 'quantifying' inferences that resets state
         if self._handle_quantifying_cycle(item):
@@ -311,16 +427,16 @@ class Orchestrator:
         time.sleep(0.05)
         
         if random.random() < 0.96:
-            item.result = "Success"
+            self.blackboard.set_item_result(flow_index, "Success")
             
             # On success, always update the concept_to_infer
             concept = item.inference_entry.concept_to_infer
-            concept.reference_status = 'complete'
+            self.blackboard.set_concept_status(concept.concept_name, 'complete')
             logging.info(f"  -> Concept '{concept.concept_name}' set to 'complete'.")
 
             return "completed"
         else:
-            item.result = "Pending"
+            self.blackboard.set_item_result(flow_index, "Pending")
             return "pending"
 
     def _execute_item(self, item: WaitlistItem) -> str:
@@ -328,16 +444,14 @@ class Orchestrator:
         flow_index = item.inference_entry.flow_info['flow_index']
         logging.info(f"Item {flow_index} is ready. Executing.")
         
-        item.status = 'in_progress'
-        self.item_status_by_flow[flow_index] = 'in_progress'
+        self.blackboard.set_item_status(flow_index, 'in_progress')
         
         # Execute and get new status
         new_status = self._inference_execution(item)
         
         self.tracker.total_executions += 1
         
-        item.status = new_status
-        self.item_status_by_flow[flow_index] = new_status
+        self.blackboard.set_item_status(flow_index, new_status)
         
         # Track execution history
         self.tracker.add_execution_record(
@@ -368,7 +482,7 @@ class Orchestrator:
         
         retries: List[WaitlistItem] = []
 
-        while any(item.status in ['pending', 'in_progress'] for item in self.waitlist.items):
+        while self.blackboard.get_all_pending_or_in_progress_items():
             self.tracker.cycle_count += 1
             cycle_executions = 0
             cycle_successes = 0
@@ -385,7 +499,8 @@ class Orchestrator:
             ]
             
             for item in items_to_process:
-                if item.status == 'pending' and self._is_ready(item):
+                flow_index = item.inference_entry.flow_info['flow_index']
+                if self.blackboard.get_item_status(flow_index) == 'pending' and self._is_ready(item):
                     cycle_executions += 1
                     new_status = self._execute_item(item)
                     
@@ -400,7 +515,7 @@ class Orchestrator:
             
             if cycle_executions == 0:
                 logging.warning("No progress made in the last cycle. Deadlock detected.")
-                stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if i.status != 'completed']
+                stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if self.blackboard.get_item_status(i.inference_entry.flow_info['flow_index']) != 'completed']
                 logging.warning(f"Stuck items: {stuck_items}")
                 break
         
@@ -417,7 +532,8 @@ class Orchestrator:
         for item in sorted_items:
             fi = item.inference_entry.flow_info['flow_index']
             it = item.inference_entry.inference_sequence
-            print(f"  - Item {fi:<10} ({it:<12}): {item.status}")
+            status = self.blackboard.get_item_status(fi)
+            print(f"  - Item {fi:<10} ({it:<12}): {status}")
         
         # Process statistics
         print(f"\n--- Process Statistics ---")
@@ -441,7 +557,18 @@ class Orchestrator:
 # --- Main Execution ---
 if __name__ == "__main__":
     initial_data = {"{number}", "{unit place digit}?", "{index}*", "*every({number})%:[{number}]@[{index}^1]", "@after([{index} and {digit}]*)"}
-    protected_concepts = configure_initial_state(concept_entries, inference_entries, initial_data)
-    orchestrator = Orchestrator(inference_repo, concept_repo, protected_concepts)
+    
+    # The orchestrator now creates the state manager internally
+    orchestrator = Orchestrator(inference_repo, concept_repo, set()) # Protected set is configured inside
+    
+    # Configure the initial state using the orchestrator's state manager
+    protected_concepts = configure_initial_state(
+        concept_entries, 
+        inference_entries, 
+        initial_data, 
+        orchestrator.blackboard
+    )
+    orchestrator.protected_concepts = protected_concepts
+
     orchestrator.run()
     orchestrator.print_summary() 
