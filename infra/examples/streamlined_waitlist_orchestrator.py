@@ -60,6 +60,17 @@ class Waitlist:
     id: str
     items: List[WaitlistItem]
     status: str = "pending"
+    
+    def sort_by_flow_index(self):
+        """Sorts items according to the dot system (flow_index)."""
+        def sort_key(item):
+            flow_index = item.inference_entry.flow_info['flow_index']
+            # Convert dot notation to tuple of integers for proper sorting
+            # e.g., '1.2' -> (1, 2), '1.3' -> (1, 3), '1' -> (1,)
+            return tuple(int(part) for part in flow_index.split('.'))
+        
+        self.items.sort(key=sort_key)
+        logging.info(f"Waitlist items sorted by flow_index: {[item.inference_entry.flow_info['flow_index'] for item in self.items]}")
 
 @dataclass
 class ProcessTracker:
@@ -194,6 +205,7 @@ class Orchestrator:
         """Creates the waitlist from the inference repository."""
         items = [WaitlistItem(inference_entry=inf) for inf in self.inference_repo.get_all_inferences()]
         self.waitlist = Waitlist(id=str(uuid.uuid4()), items=items)
+        self.waitlist.sort_by_flow_index()
         logging.info(f"Created waitlist {self.waitlist.id} with {len(self.waitlist.items)} items.")
 
     def _initialize_blackboard(self):
@@ -370,30 +382,62 @@ class Orchestrator:
         return final_concepts
 
 # --- Data Definitions ---
-def create_simple_repositories():
-    """Creates concept and inference repositories for a simple waitlist scenario."""
+def create_sequential_repositories():
+    """Creates concept and inference repositories for a waitlist scenario with two intermediate data concepts and three functions."""
     # Create concept entries
     concept_entries = [
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_data', type='data', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_1', type='data'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_2', type='data'),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='data', is_final_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function', type='function', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_1', type='function', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_2', type='function', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_3', type='function', is_ground_concept=True),
     ]
     
     # Create concept repository
     concept_repo = ConceptRepo(concept_entries)
     
-    # Create inference entries
-    concept_to_infer = concept_repo.get_concept('output_result')
-    function_concept = concept_repo.get_concept('process_function')
-    value_concepts = [concept_repo.get_concept('input_data')]
+    # --- Inference 1: input_data -> intermediate_data_1 ---
+    inf1_to_infer = concept_repo.get_concept('intermediate_data_1')
+    inf1_function = concept_repo.get_concept('process_function_1')
+    inf1_values = [concept_repo.get_concept('input_data')]
+
+    # --- Inference 2: input_data -> intermediate_data_2 ---
+    inf2_to_infer = concept_repo.get_concept('intermediate_data_2')
+    inf2_function = concept_repo.get_concept('process_function_2')
+    inf2_values = [concept_repo.get_concept('input_data')]
+
+    # --- Inference 3: intermediate_data_1 + intermediate_data_2 -> output_result ---
+    inf3_to_infer = concept_repo.get_concept('output_result')
+    inf3_function = concept_repo.get_concept('process_function_3')
+    inf3_values = [concept_repo.get_concept('intermediate_data_1'), concept_repo.get_concept('intermediate_data_2')]
 
     inference_entries = [
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='simple',
-            concept_to_infer=concept_to_infer,
-            function_concept=function_concept,
-            value_concepts=value_concepts,
+            concept_to_infer=inf1_to_infer,
+            function_concept=inf1_function,
+            value_concepts=inf1_values,
+            flow_info={'flow_index': '1.3'},
+            working_interpretation={}
+        ),
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='simple',
+            concept_to_infer=inf2_to_infer,
+            function_concept=inf2_function,
+            value_concepts=inf2_values,
+            flow_info={'flow_index': '1.2'},
+            working_interpretation={}
+        ),
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='simple',
+            concept_to_infer=inf3_to_infer,
+            function_concept=inf3_function,
+            value_concepts=inf3_values,
             flow_info={'flow_index': '1'},
             working_interpretation={}
         ),
@@ -410,7 +454,7 @@ if __name__ == "__main__":
     logging.info("=== Starting Orchestrator Demo ===")
     
     # 1. Create repositories 
-    concept_repo, inference_repo = create_simple_repositories()
+    concept_repo, inference_repo = create_sequential_repositories()
 
     # 2. Initialize and run the orchestrator with Blackboard and AgentFrame
     orchestrator = Orchestrator(
