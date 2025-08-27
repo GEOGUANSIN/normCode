@@ -1,8 +1,48 @@
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
+from datetime import datetime
+import pathlib
 
 from infra._core import Reference, cross_product
 from infra._states import ReferenceRecordLite, BaseStates
+
+def setup_logging(log_file: Optional[str] = None):
+    """Setup logging to both console and optionally to a file."""
+    # Create formatter
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    
+    # Setup root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Clear any existing handlers
+    logger.handlers.clear()
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    
+    # File handler (if specified)
+    if log_file:
+        file_handler = logging.FileHandler(log_file, mode='w')
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logging.info(f"Logging to file: {log_file}")
+
+def setup_orchestrator_logging(script_path: str, log_dir_name: str = "logs") -> str:
+    """Setup logging for orchestrator scripts with automatic log directory creation."""
+    script_dir = pathlib.Path(script_path).parent
+    logs_dir = script_dir / log_dir_name
+    logs_dir.mkdir(exist_ok=True)  # Ensure logs directory exists
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = str(logs_dir / f"orchestrator_log_{timestamp}.txt")
+    setup_logging(log_filename)
+    
+    return log_filename
 
 def log_states_progress(states: BaseStates, step_name: str, step_filter: str | None = None):
     logger = logging.getLogger(__name__)

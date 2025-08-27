@@ -126,3 +126,10 @@ app/.env
 # Runtime files
 *.pid
 *.sock
+
+# Ignore all log files in this directory
+*.txt
+*.log
+
+# Keep the directory structure
+!.gitignore 

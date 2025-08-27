@@ -25,6 +25,12 @@ class Blackboard:
             self.item_execution_counts[flow_index] = 0
             self.item_results[flow_index] = None
 
+        # Set ground concepts to 'complete' status based on their is_ground_concept attribute
+        for concept in concepts:
+            if hasattr(concept, 'is_ground_concept') and concept.is_ground_concept:
+                self.set_concept_status(concept.concept_name, 'complete')
+                logging.info(f"Blackboard: Initial ground concept '{concept.concept_name}' set to 'complete'.")
+
     def get_concept_status(self, concept_name: str) -> str:
         return self.concept_statuses.get(concept_name, "empty")
 
