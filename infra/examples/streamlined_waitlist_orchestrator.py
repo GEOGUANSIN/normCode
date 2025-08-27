@@ -28,6 +28,7 @@ class ConceptEntry:
     type: str
     description: Optional[str] = None
     is_ground_concept: bool = False
+    is_final_concept: bool = False
     concept: Optional[Concept] = field(default=None, repr=False)
 
 @dataclass
@@ -92,7 +93,7 @@ class ProcessTracker:
             return 0.0
         return (self.successful_executions / self.total_executions) * 100
     
-    def log_summary(self, waitlist_id: str, waitlist_items: List['WaitlistItem'], blackboard):
+    def log_summary(self, waitlist_id: str, waitlist_items: List['WaitlistItem'], blackboard, concept_repo: 'ConceptRepo'):
         """Logs a comprehensive summary of the orchestration process."""
         logging.info(f"=== Orchestration Summary (ID: {waitlist_id}) ===")
         
@@ -120,6 +121,12 @@ class ProcessTracker:
             status_symbol = "[OK]" if record['status'] == 'completed' else "[RETRY]"
             logging.info(f"  Cycle {record['cycle']}: {status_symbol} {record['flow_index']} ({record['inference_type']}) -> {record['concept_inferred']}")
 
+        logging.info("--- Final Concepts ---")
+        for concept_entry in concept_repo.get_all_concepts():
+            if concept_entry.is_final_concept:
+                ref = concept_entry.concept.reference if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
+                logging.info(f"  - {concept_entry.concept_name}: {ref}")
+
 
 
 # --- Repositories (Data Access) ---
@@ -132,12 +139,27 @@ class ConceptRepo:
     def get_concept(self, name: str) -> Optional[ConceptEntry]:
         return self._concept_map.get(name)
 
+    def get_all_concepts(self) -> List[ConceptEntry]:
+        return list(self._concept_map.values())
+
 class InferenceRepo:
     def __init__(self, inferences: List[InferenceEntry]):
         self.inferences = inferences
         self._map_by_flow = {inf.flow_info['flow_index']: inf for inf in inferences}
+        
+        # Initialize Inference objects for each entry
+        for entry in inferences:
+            if entry.inference is None:
+                entry.inference = Inference(
+                    entry.inference_sequence,
+                    entry.concept_to_infer.concept,
+                    entry.function_concept.concept if entry.function_concept else None,
+                    [vc.concept for vc in entry.value_concepts]
+                )
+    
     def get_all_inferences(self) -> List[InferenceEntry]:
         return self.inferences
+    
     def get_inference_by_flow_index(self, idx: str) -> Optional[InferenceEntry]:
         return self._map_by_flow.get(idx)
 
@@ -314,11 +336,11 @@ class Orchestrator:
         stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if self.blackboard.get_item_status(i.inference_entry.flow_info['flow_index']) != 'completed']
         logging.warning(f"Stuck items: {stuck_items}")
 
-    def run(self):
+    def run(self) -> List[ConceptEntry]:
         """Runs the orchestration loop until completion or deadlock."""
         if not self.waitlist:
             logging.error("No waitlist created.")
-            return
+            return []
 
         logging.info(f"--- Starting Orchestration for Waitlist {self.waitlist.id} ---")
 
@@ -342,7 +364,10 @@ class Orchestrator:
         
         # Automatically log summary when orchestration completes
         if self.waitlist:
-            self.tracker.log_summary(self.waitlist.id, self.waitlist.items, self.blackboard)
+            self.tracker.log_summary(self.waitlist.id, self.waitlist.items, self.blackboard, self.concept_repo)
+
+        final_concepts = [c for c in self.concept_repo.get_all_concepts() if c.is_final_concept]
+        return final_concepts
 
 # --- Data Definitions ---
 def create_simple_repositories():
@@ -350,7 +375,7 @@ def create_simple_repositories():
     # Create concept entries
     concept_entries = [
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_data', type='data', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='data'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='data', is_final_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function', type='function', is_ground_concept=True),
     ]
     
@@ -361,13 +386,6 @@ def create_simple_repositories():
     concept_to_infer = concept_repo.get_concept('output_result')
     function_concept = concept_repo.get_concept('process_function')
     value_concepts = [concept_repo.get_concept('input_data')]
-    
-    inference = Inference(
-        "simple",
-        concept_to_infer.concept,
-        function_concept.concept,
-        [vc.concept for vc in value_concepts]
-    )
 
     inference_entries = [
         InferenceEntry(
@@ -377,7 +395,6 @@ def create_simple_repositories():
             function_concept=function_concept,
             value_concepts=value_concepts,
             flow_info={'flow_index': '1'},
-            inference=inference,
             working_interpretation={}
         ),
     ]
@@ -392,20 +409,26 @@ if __name__ == "__main__":
     # --- Main Execution Logic ---
     logging.info("=== Starting Orchestrator Demo ===")
     
-    # 1. Create repositories directly
+    # 1. Create repositories 
     concept_repo, inference_repo = create_simple_repositories()
-    
-    # 2. Create AgentFrame and Blackboard
-    agent_frame = AgentFrame("demo")
-    blackboard = Blackboard()
 
-    # 4. Initialize and run the orchestrator
+    # 2. Initialize and run the orchestrator with Blackboard and AgentFrame
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo, 
-        blackboard=blackboard,
-        agent_frame=agent_frame
+        blackboard=Blackboard(),
+        agent_frame=AgentFrame("demo")
     )
-    orchestrator.run()
+
+    # 3. Run the orchestrator
+    final_concepts = orchestrator.run()
     
+    logging.info("--- Final Concepts Returned ---")
+    if final_concepts:
+        for concept in final_concepts:
+            ref = concept.concept.reference if concept.concept and concept.concept.reference is not None else "N/A"
+            logging.info(f"  - {concept.concept_name}: {ref}")
+    else:
+        logging.info("  No final concepts were returned.")
+
     logging.info(f"=== Orchestrator Demo Complete - Log saved to {log_filename} ===") 
