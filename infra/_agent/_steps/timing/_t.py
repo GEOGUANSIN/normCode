@@ -14,6 +14,7 @@ def timing(states: States) -> States:
     if not states.blackboard:
         logger.error("Blackboard not found in states. Cannot perform timing check.")
         states.set_current_step("T")
+        raise ValueError("Blackboard not found in states. Cannot perform timing check.")
         return states
         
     timer = Timer(states.blackboard)
