@@ -287,106 +287,119 @@ class Orchestrator:
             return "failed"
 
         try:
-            # Create a fresh AgentFrame for each execution with body and working interpretation
-            working_interpretation = item.inference_entry.working_interpretation or {}
-            # Add blackboard to working interpretation for timing sequences
-            working_interpretation["blackboard"] = self.blackboard
-            working_interpretation["workspace"] = self.workspace
-            
-            agent_frame = AgentFrame(
-                self.agent_frame_model,
-                working_interpretation=working_interpretation,
-                body=self.body
-            )
-            agent_frame.configure(inference, item.inference_entry.inference_sequence)
-            states = inference.execute()
-
+            states = self._execute_agent_frame(item, inference)
             return self._process_inference_state(states, item)
 
         except Exception as e:
             self._handle_inference_failure(item, e)
             return "failed"
 
+    def _execute_agent_frame(self, item: WaitlistItem, inference: Inference) -> BaseStates:
+        """Creates and executes an AgentFrame for a given inference."""
+        working_interpretation = item.inference_entry.working_interpretation or {}
+        working_interpretation["blackboard"] = self.blackboard
+        working_interpretation["workspace"] = self.workspace
+        
+        agent_frame = AgentFrame(
+            self.agent_frame_model,
+            working_interpretation=working_interpretation,
+            body=self.body
+        )
+        agent_frame.configure(inference, item.inference_entry.inference_sequence)
+        return inference.execute()
+
     def _process_inference_state(self, states: BaseStates, item: WaitlistItem) -> str:
         """
-        Processes the state object from an inference execution and determines the item's final status.
-        
-        Returns:
-            str: The new status for the item, e.g., "completed" or "pending".
+        Processes the state from an inference execution and determines the item's final status.
         """
-        flow_index = item.inference_entry.flow_info['flow_index']
+        self._update_orchestrator_state(states)
 
-        # Update core components from state
+        if item.inference_entry.inference_sequence == 'timing':
+            return self._handle_timing_inference(states, item)
+        
+        return self._handle_regular_inference(states, item)
+
+    def _update_orchestrator_state(self, states: BaseStates):
+        """Updates the orchestrator's core components from the inference state."""
         if hasattr(states, 'workspace'):
             self.workspace = states.workspace
         if hasattr(states, 'blackboard'):
             self.blackboard = states.blackboard
 
-        # For timing inferences, check for completion before proceeding
-        is_timing = item.inference_entry.inference_sequence == 'timing'
+    def _handle_timing_inference(self, states: BaseStates, item: WaitlistItem) -> str:
+        """Handles the specific logic for timing inferences."""
+        flow_index = item.inference_entry.flow_info['flow_index']
         timing_ready = getattr(states, 'timing_ready', True)
-        if is_timing and not timing_ready:
+
+        if not timing_ready:
             logging.info(f"Timing condition for item {flow_index} not met. Item will be retried.")
             return "pending"
-        elif is_timing and timing_ready:
-            logging.info(f"Timing condition for item {flow_index} met. Item will be completed.")
-            self.blackboard.set_item_result(flow_index, "Success")
-            concept_name = item.inference_entry.concept_to_infer.concept_name
-            self.blackboard.set_concept_status(concept_name, 'complete') # set the concept to infer to complete
-            return "completed"
         
-        # If not an unready timer, proceed with success handling and reference updates
+        logging.info(f"Timing condition for item {flow_index} met. Item will be completed.")
+        self.blackboard.set_item_result(flow_index, "Success")
+        concept_name = item.inference_entry.concept_to_infer.concept_name
+        self.blackboard.set_concept_status(concept_name, 'complete')
+        return "completed"
+
+    def _handle_regular_inference(self, states: BaseStates, item: WaitlistItem) -> str:
+        """Handles the logic for all non-timing inferences."""
+        flow_index = item.inference_entry.flow_info['flow_index']
         logging.info(f"  -> Inference executed successfully for item {flow_index}")
         self.blackboard.set_item_result(flow_index, "Success")
         
-        all_conditions_met = self._update_references_and_get_completion_status(states, item)
+        all_conditions_met = self._update_references_and_check_completion(states, item)
         
         return "completed" if all_conditions_met else "pending"
 
-    def _update_references_and_get_completion_status(self, states: BaseStates, item: WaitlistItem) -> bool:
+    def _update_references_and_check_completion(self, states: BaseStates, item: WaitlistItem) -> bool:
         """
-        Updates concept references from the inference state and determines if all completion
-        conditions (e.g., for quantifying loops) have been met.
-
-        Returns:
-            bool: True if all completion conditions are met, False otherwise.
+        Updates concept references from the state and checks for completion conditions like quantifying loops.
+        Returns True if all conditions are met, False otherwise.
         """
         all_conditions_met = True
-        # Process both inference and context concepts from the 'OR' step
         for category in ['inference', 'context']:
             if hasattr(states, category):
-                records = getattr(states, category)
-                for record in records:
+                for record in getattr(states, category):
                     if record.step_name == 'OR' and record.reference is not None:
-                        if record.concept:
-                            concept_name = record.concept.name
-                        elif category == 'inference':
-                            concept_name = item.inference_entry.concept_to_infer.concept_name
-
-                        if concept_name:
-                            concept_entry = self.concept_repo.get_concept(concept_name)
-                            if concept_entry and concept_entry.concept:
-                                concept_entry.concept.reference = record.reference.copy()
-                                logging.info(f"Updated reference for concept '{concept_name}' from inference state.")
-                                
-                                # Check for quantifying loop completion
-                                is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
-                                if hasattr(states, 'syntax') and hasattr(states.syntax, 'completion_status'):
-                                    is_complete = states.syntax.completion_status
-                                else:
-                                    is_complete = False
-
-                                quantifying_incomplete = category == 'inference' and is_quantifying and not is_complete
-                                
-                                if quantifying_incomplete:
-                                    logging.info(f"Quantifying loop for '{concept_name}' not complete. Status remains pending.")
-                                    all_conditions_met = False
-                                else:
-                                    self.blackboard.set_concept_status(concept_name, 'complete')
-                                    logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
-                            else:
-                                logging.warning(f"Could not find concept '{concept_name}' in repo to update reference.")
+                        if not self._process_or_record(record, category, item, states):
+                            all_conditions_met = False
         return all_conditions_met
+
+    def _process_or_record(self, record: Any, category: str, item: WaitlistItem, states: BaseStates) -> bool:
+        """
+        Processes a single 'OR' record from the inference state, updates references, and checks completion.
+        Returns False if a loop is incomplete, True otherwise.
+        """
+        concept_name = self._get_concept_name_from_record(record, category, item)
+        if not concept_name:
+            return True
+
+        concept_entry = self.concept_repo.get_concept(concept_name)
+        if not (concept_entry and concept_entry.concept):
+            logging.warning(f"Could not find concept '{concept_name}' in repo to update reference.")
+            return True
+
+        concept_entry.concept.reference = record.reference.copy()
+        logging.info(f"Updated reference for concept '{concept_name}' from inference state.")
+
+        is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
+        is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
+
+        if category == 'inference' and is_quantifying and not is_complete:
+            logging.info(f"Quantifying loop for '{concept_name}' not complete. Status remains pending.")
+            return False
+        
+        self.blackboard.set_concept_status(concept_name, 'complete')
+        logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
+        return True
+
+    def _get_concept_name_from_record(self, record: Any, category: str, item: WaitlistItem) -> Optional[str]:
+        """Extracts the concept name from a state record."""
+        if record.concept:
+            return record.concept.name
+        if category == 'inference':
+            return item.inference_entry.concept_to_infer.concept_name
+        return None
 
     def _update_execution_tracking(self, item: WaitlistItem, status: str):
         """Updates the process tracker after an item execution attempt."""
