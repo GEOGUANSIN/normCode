@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 @dataclass
@@ -64,7 +64,8 @@ class Blackboard:
 
     def get_completed_concepts(self) -> List[str]:
         return list(self.completed_concept_timestamps.keys()) 
-
+    
     def check_progress_condition(self, concept_name: str) -> bool:
         """Checks if a concept's status is 'complete'."""
+        logging.info(f"Completed concepts for condition check '{concept_name}': {self.get_completed_concepts()}")
         return self.get_concept_status(concept_name) == 'complete' 
