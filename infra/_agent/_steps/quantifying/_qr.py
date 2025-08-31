@@ -129,6 +129,10 @@ def quantifying_references(states: States) -> States:
             f"[QR Step 7] No inner step result. Assigning next element to current_loop_base_element: {current_loop_base_element.tensor if current_loop_base_element else 'None'}"
         )
 
+    # Store is_quantifier_progress as an attribute of states
+    setattr(states, "is_quantifier_progress", is_new)
+    logger.debug(f"[QR Step 7] Stored is_quantifier_progress attribute: {is_new}")
+
     # 8) Ensure references
     next_current_loop_base_element = _ensure_reference(next_current_loop_base_element_opt)
     current_concept_element = _ensure_reference(current_concept_element_opt)

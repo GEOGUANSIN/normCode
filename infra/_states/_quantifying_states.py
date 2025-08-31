@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from types import SimpleNamespace
 from infra._states._common_states import BaseStates, SequenceStepSpecLite
 
@@ -17,4 +17,5 @@ class States(BaseStates):
             SequenceStepSpecLite(step_name="OWI"),
         ]
         self.syntax: SimpleNamespace = SimpleNamespace()
-        self.workspace: Dict[str, Any] = {}  # Workspace for Quantifier 
+        self.workspace: Dict[str, Any] = {}  # Workspace for Quantifier
+        self.is_quantifier_progress: Optional[bool] = False  # Tracks if quantifier made progress (new element found) 

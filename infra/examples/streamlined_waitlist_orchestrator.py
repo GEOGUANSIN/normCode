@@ -43,7 +43,9 @@ class InferenceEntry:
     value_concepts: List[ConceptEntry] = field(default_factory=list)
     context_concepts: List[ConceptEntry] = field(default_factory=list)
     start_without_value: bool = False
+    start_without_value_only_once: bool = False
     start_without_function: bool = False
+    start_without_function_only_once: bool = False
     inference: Optional[Inference] = field(default=None, repr=False)
     working_interpretation: Optional[Dict[str, any]] = field(default=None, repr=False)
 
@@ -75,6 +77,18 @@ class Waitlist:
         
         self.items.sort(key=sort_key)
         logging.info(f"Waitlist items sorted by flow_index: {[item.inference_entry.flow_info['flow_index'] for item in self.items]}")
+
+    def get_supporting_items(self, target_item: WaitlistItem) -> List[WaitlistItem]:
+        """
+        Retrieves a list of items that are supporting a specific item.
+        An item is considered a "supporter" if its flow_index is a descendant
+        of the target item's flow_index (e.g., '1.1' supports '1').
+        """
+        target_flow_index = target_item.inference_entry.flow_info['flow_index']
+        return [
+            item for item in self.items
+            if item != target_item and item.inference_entry.flow_info['flow_index'].startswith(target_flow_index + '.')
+        ]
 
 @dataclass
 class ProcessTracker:
@@ -139,8 +153,12 @@ class ProcessTracker:
         logging.info("--- Final Concepts ---")
         for concept_entry in concept_repo.get_all_concepts():
             if concept_entry.is_final_concept:
-                ref = concept_entry.concept.reference if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
-                logging.info(f"  - {concept_entry.concept_name}: {ref}")
+                ref_tensor = concept_entry.concept.reference.tensor if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
+                logging.info(f"  - {concept_entry.concept_name}: {ref_tensor}")
+                ref_axis_names = concept_entry.concept.reference.axes if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
+                logging.info(f"  - {concept_entry.concept_name}: {ref_axis_names}")
+                ref_shape = concept_entry.concept.reference.shape if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
+                logging.info(f"  - {concept_entry.concept_name}: {ref_shape}")
 
 
 
@@ -253,13 +271,20 @@ class Orchestrator:
         """
         An item is ready if its dependencies are met. Certain flags can bypass checks.
         """
+        flow_index = item.inference_entry.flow_info['flow_index']
+        is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
+
         # Check function concept readiness, unless bypassed
         if not item.inference_entry.start_without_function:
-            if not self._is_function_concept_ready(item):
-                return False
+            if not (item.inference_entry.start_without_function_only_once and is_first_execution):
+                if not self._is_function_concept_ready(item):
+                    return False
 
         # Check value concept readiness, unless bypassed
         if item.inference_entry.start_without_value:
+            return True
+
+        if item.inference_entry.start_without_value_only_once and is_first_execution:
             return True
 
         return self._are_value_concepts_ready(item)
@@ -353,45 +378,72 @@ class Orchestrator:
 
     def _update_references_and_check_completion(self, states: BaseStates, item: WaitlistItem) -> bool:
         """
-        Updates concept references from the state and checks for completion conditions like quantifying loops.
+        For quantifying loops, resets supporting items first, then updates all concept references from the state.
+        This "reset first, then update" approach ensures the system is correctly prepared for the next loop iteration.
         Returns True if all conditions are met, False otherwise.
         """
-        all_conditions_met = True
+        # 1. Check if the quantifying loop has completed.
+        is_quantifying, is_complete = self._check_quantifying_completion(states, item)
+
+        # 2. If the loop is not complete, reset the supporting items first.
+        if is_quantifying and not is_complete:
+            self._reset_supporting_items(item)
+
+        # 3. Always update all concept references with the results from the latest inference.
+        # This populates the blackboard with the necessary inputs for the *next* loop iteration.
         for category in ['inference', 'context']:
             if hasattr(states, category):
                 for record in getattr(states, category):
                     if record.step_name == 'OR' and record.reference is not None:
-                        if not self._process_or_record(record, category, item, states):
-                            all_conditions_met = False
-        return all_conditions_met
+                        self._update_concept_from_record(record, category, item)
 
-    def _process_or_record(self, record: Any, category: str, item: WaitlistItem, states: BaseStates) -> bool:
-        """
-        Processes a single 'OR' record from the inference state, updates references, and checks completion.
-        Returns False if a loop is incomplete, True otherwise.
-        """
+        # 4. The overall process is only "complete" if the quantifying loop is finished.
+        return not (is_quantifying and not is_complete)
+
+    def _check_quantifying_completion(self, states: BaseStates, item: WaitlistItem) -> tuple[bool, bool]:
+        """Checks if an item is a quantifying inference and whether it has completed."""
+        is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
+        if not is_quantifying:
+            return False, True
+        is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
+        return True, is_complete
+
+    def _reset_supporting_items(self, item: WaitlistItem):
+        """Resets the status of all items that support the given item."""
+        supporting_items = self.waitlist.get_supporting_items(item)
+        if not supporting_items:
+            return
+            
+        flow_index = item.inference_entry.flow_info['flow_index']
+        logging.info(f"Quantifying loop for item {flow_index} not complete. Resetting supporters.")
+        
+        for support_item in supporting_items:
+            support_flow_index = support_item.inference_entry.flow_info['flow_index']
+            self.blackboard.set_item_status(support_flow_index, 'pending')
+
+            inferred_concept_entry = support_item.inference_entry.concept_to_infer
+            if not inferred_concept_entry.is_ground_concept:
+                self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
+                if inferred_concept_entry.concept:
+                    inferred_concept_entry.concept.reference = None
+                logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
+
+    def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem):
+        """Processes a single 'OR' record from the inference state, updating the concept reference."""
         concept_name = self._get_concept_name_from_record(record, category, item)
         if not concept_name:
-            return True
+            return
 
         concept_entry = self.concept_repo.get_concept(concept_name)
         if not (concept_entry and concept_entry.concept):
             logging.warning(f"Could not find concept '{concept_name}' in repo to update reference.")
-            return True
+            return
 
         concept_entry.concept.reference = record.reference.copy()
         logging.info(f"Updated reference for concept '{concept_name}' from inference state.")
 
-        is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
-        is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
-
-        if category == 'inference' and is_quantifying and not is_complete:
-            logging.info(f"Quantifying loop for '{concept_name}' not complete. Status remains pending.")
-            return False
-        
         self.blackboard.set_concept_status(concept_name, 'complete')
         logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
-        return True
 
     def _get_concept_name_from_record(self, record: Any, category: str, item: WaitlistItem) -> Optional[str]:
         """Extracts the concept name from a state record."""
@@ -578,8 +630,8 @@ def create_sequential_repositories():
                     "completion_status": False,
                 }
             },
-            start_without_value=True,
-            start_without_function=True
+            start_without_value_only_once=True,
+            start_without_function_only_once=True
         ),
         # --- Inferences inside the loop ---
         InferenceEntry(
@@ -653,7 +705,7 @@ if __name__ == "__main__":
     if final_concepts:
         for concept in final_concepts:
             ref = concept.concept.reference if concept.concept and concept.concept.reference is not None else "N/A"
-            logging.info(f"  - {concept.concept_name}: {ref}")
+            logging.info(f"  - {concept.concept_name}: {ref.tensor}")
     else:
         logging.info("  No final concepts were returned.")
 
