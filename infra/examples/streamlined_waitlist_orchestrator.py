@@ -563,7 +563,7 @@ def create_sequential_repositories():
         ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_2', type='data'),
         # ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='data', is_final_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_1', type='function'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_2', type='function', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='::({1}<$({number})%_> add 1)', type='::', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_3', type='function', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='assign_function', type='function', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='timing_after_1_3', type='function', is_ground_concept=True),
@@ -578,11 +578,11 @@ def create_sequential_repositories():
     
     # --- Add initial references for ground concepts ---
     logging.info("Assigning initial references to ground concepts for experiment.")
-    concept_repo.add_reference('process_function_2', "Adds one to the input.", axis_names=['description'])
+    concept_repo.add_reference('::({1}<$({number})%_> add 1)', "::({1}<$({number})%_> add 1)", axis_names=['add_imperative'])
     concept_repo.add_reference('process_function_3', "Adds ten to the input.", axis_names=['description'])
     concept_repo.add_reference('assign_function', "Assigns a source concept's reference to a destination concept.", axis_names=['description'])
     concept_repo.add_reference('timing_after_1_3', "A timing function that runs after another concept is complete.", axis_names=['description'])
-    concept_repo.add_reference('items_to_loop', [101, 102, 103], axis_names=['items'])
+    concept_repo.add_reference('items_to_loop', ["%(101)", "%(102)", "%(103)"], axis_names=['items'])
     # --- End of initial references ---
     
     # --- Inference 1.1.2: items_to_loop* -> intermediate_data_1 ---
@@ -596,7 +596,7 @@ def create_sequential_repositories():
 
     # --- Inference 1.1.3: items_to_loop* -> intermediate_data_2 ---
     inf2_to_infer = concept_repo.get_concept('intermediate_data_2')
-    inf2_function = concept_repo.get_concept('process_function_2')
+    inf2_function = concept_repo.get_concept('::({1}<$({number})%_> add 1)')
     inf2_values = [concept_repo.get_concept('items_to_loop*')]
 
     # --- Inference 1.1: intermediate_data_2 -> quant_function (Assigning) ---
@@ -662,7 +662,7 @@ def create_sequential_repositories():
         ),
         InferenceEntry(
             id=str(uuid.uuid4()),
-            inference_sequence='simple',
+            inference_sequence='imperative',
             concept_to_infer=inf2_to_infer,
             function_concept=inf2_function,
             value_concepts=inf2_values,
