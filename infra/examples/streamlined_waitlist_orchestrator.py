@@ -565,6 +565,7 @@ def create_sequential_repositories():
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_1', type='function'),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_2', type='function', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_3', type='function', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='assign_function', type='function', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='timing_after_1_3', type='function', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='quant_function', type='function'),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='items_to_loop*', type='data'),
@@ -579,6 +580,7 @@ def create_sequential_repositories():
     logging.info("Assigning initial references to ground concepts for experiment.")
     concept_repo.add_reference('process_function_2', "Adds one to the input.", axis_names=['description'])
     concept_repo.add_reference('process_function_3', "Adds ten to the input.", axis_names=['description'])
+    concept_repo.add_reference('assign_function', "Assigns a source concept's reference to a destination concept.", axis_names=['description'])
     concept_repo.add_reference('timing_after_1_3', "A timing function that runs after another concept is complete.", axis_names=['description'])
     concept_repo.add_reference('items_to_loop', [101, 102, 103], axis_names=['items'])
     # --- End of initial references ---
@@ -597,9 +599,9 @@ def create_sequential_repositories():
     inf2_function = concept_repo.get_concept('process_function_2')
     inf2_values = [concept_repo.get_concept('items_to_loop*')]
 
-    # --- Inference 1.1: intermediate_data_1 + intermediate_data_2 -> quant_function ---
+    # --- Inference 1.1: intermediate_data_2 -> quant_function (Assigning) ---
     inf3_to_infer = concept_repo.get_concept('quant_function')
-    inf3_function = concept_repo.get_concept('process_function_3')
+    inf3_function = concept_repo.get_concept('assign_function')
     inf3_values = [concept_repo.get_concept('intermediate_data_1'), concept_repo.get_concept('intermediate_data_2')]
 
     # --- Inference 1: items_to_loop -> output_result_after_quantifying ---
@@ -636,12 +638,18 @@ def create_sequential_repositories():
         # --- Inferences inside the loop ---
         InferenceEntry(
             id=str(uuid.uuid4()),
-            inference_sequence='simple',
+            inference_sequence='assigning',
             concept_to_infer=inf3_to_infer,
             function_concept=inf3_function,
             value_concepts=inf3_values,
             flow_info={'flow_index': '1.1'},
-            working_interpretation={},
+            working_interpretation={
+                "syntax": {
+                    "marker": ".",
+                    "assign_source": "intermediate_data_2",
+                    "assign_destination": "quant_function"
+                }
+            },
         ),
         InferenceEntry(
             id=str(uuid.uuid4()),
@@ -704,8 +712,8 @@ if __name__ == "__main__":
     logging.info("--- Final Concepts Returned ---")
     if final_concepts:
         for concept in final_concepts:
-            ref = concept.concept.reference if concept.concept and concept.concept.reference is not None else "N/A"
-            logging.info(f"  - {concept.concept_name}: {ref.tensor}")
+            ref_tensor = concept.concept.reference.tensor if concept.concept and concept.concept.reference is not None else "N/A"
+            logging.info(f"  - {concept.concept_name}: {ref_tensor}")
     else:
         logging.info("  No final concepts were returned.")
 

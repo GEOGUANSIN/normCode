@@ -19,25 +19,25 @@ def assigning_references(states: States) -> States:
     value_concepts_map = {rec.concept.name: rec for rec in states.values}
 
     source_record = value_concepts_map.get(assign_source_name)
-    dest_record = value_concepts_map.get(assign_destination_name)
+    dest_record = value_concepts_map.get(assign_destination_name) if assign_destination_name else None
 
-    if not source_record or not dest_record:
-        logging.error(f"AR failed: Could not find concepts '{assign_source_name}' or '{assign_destination_name}' in value concepts.")
+    if not source_record:
+        logging.error(f"AR failed: Could not find concepts '{assign_source_name}' in value concepts.")
         states.set_current_step("AR")
         return states
 
     source_ref = source_record.reference
-    dest_ref = dest_record.reference
+    dest_ref = dest_record.reference if dest_record else None
     
     assigner = Assigner()
     output_ref = None
 
     if syntax_marker == ".":  # Specification
-        logging.info(f"Performing specification (.): Assigning '{source_record.concept.name}' reference to '{dest_record.concept.name}'.")
+        logging.info(f"Performing specification (.): Assigning '{source_record.concept.name}' reference to '{assign_destination_name if assign_destination_name else None}'.")
         output_ref = assigner.specification(source_ref, dest_ref)
 
     elif syntax_marker == "+":  # Continuation
-        logging.info(f"Performing continuation (+): Adding '{source_record.concept.name}' reference to '{dest_record.concept.name}'.")
+        logging.info(f"Performing continuation (+): Adding '{source_record.concept.name}' reference to '{assign_destination_name}'.")
         output_ref = assigner.continuation(source_ref, dest_ref)
 
     else:
