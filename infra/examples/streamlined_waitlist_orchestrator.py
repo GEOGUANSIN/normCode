@@ -667,7 +667,11 @@ def create_sequential_repositories():
             function_concept=inf2_function,
             value_concepts=inf2_values,
             flow_info={'flow_index': '1.1.3'},
-            working_interpretation={},
+            working_interpretation={
+                "value_order": {
+                    "items_to_loop*": 1,
+                }
+            },
         ),
         InferenceEntry(
             id=str(uuid.uuid4()),
