@@ -38,14 +38,14 @@ Normcode_count = """
             <- {digit}* | 1.1.2.3. imperative/simple
                 <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>) 
                 <- {unit place digit}?<:{2}>
-                <- {number}<:{1}>
+                <- {number}*<:{2}>
         <- {number}<:{1}> | 1.1.3. assigning
             <= $+({new number}:{number}) 
             <- {new number} | 1.1.3.2. imperative/simple
                 <= ::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>) 
                      <= @after([{index} and {digit}]*) | 1.1.3.2.1. timing
                 <- {unit place digit}?<:{2}> 
-                <- {number}<:{1}>
+                <- {number}*<:{2}>
         <- {index}* | 1.1.4. imperative/simple
             <= ::(increment {1}<$({index})%_>) | 1.1.4.1. timing
                 <= @after([{index} and {digit}]*) 
@@ -87,6 +87,15 @@ def create_sequential_repositories(number: str = "123"):
             description="Collection of index-digit pairs",
         ),
         
+
+        # The number concept
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number}*",
+            type="{}",
+            description="The number to process under quantifying",
+        ),
+
         # The index concept
         ConceptEntry(
             id=str(uuid.uuid4()),
@@ -217,7 +226,7 @@ def create_sequential_repositories(number: str = "123"):
             concept_to_infer=concept_repo.get_concept('[all {index} and {digit} of number]'),
             function_concept=concept_repo.get_concept('*every({number})%:[{number}]@[{index}^1]'),
             value_concepts=[concept_repo.get_concept('{number}')],
-            context_concepts=[concept_repo.get_concept('{index}*'), concept_repo.get_concept('[{index} and {digit}]*'), concept_repo.get_concept('{number}')],
+            context_concepts=[concept_repo.get_concept('{index}*'), concept_repo.get_concept('[{index} and {digit}]*'), concept_repo.get_concept('{number}*')],
             flow_info={'flow_index': '1'},
             working_interpretation={
                 "syntax": {
@@ -273,13 +282,13 @@ def create_sequential_repositories(number: str = "123"):
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{digit}*'),
             function_concept=concept_repo.get_concept('::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)'),
-            value_concepts=[concept_repo.get_concept('{number}'), concept_repo.get_concept('{unit place digit}?')],
+            value_concepts=[concept_repo.get_concept('{number}*'), concept_repo.get_concept('{unit place digit}?')],
             flow_info={'flow_index': '1.1.2.3'},
             working_interpretation={
                 "is_relation_output": False,
                 "with_thinking": True,
                 "value_order": {
-                    "{number}": 1,
+                    "{number}*": 1,
                     "{unit place digit}?": 2,
                 }
             },
@@ -306,13 +315,13 @@ def create_sequential_repositories(number: str = "123"):
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{new number}'),
             function_concept=concept_repo.get_concept('::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
-            value_concepts=[concept_repo.get_concept('{unit place digit}?'), concept_repo.get_concept('{number}')],
+            value_concepts=[concept_repo.get_concept('{unit place digit}?'), concept_repo.get_concept('{number}*')],
             flow_info={'flow_index': '1.1.3.2'},
             working_interpretation={
                 "is_relation_output": False,
                 "with_thinking": True,
                 "value_order": {
-                    "{number}": 1,
+                    "{number}*": 1,
                     "{unit place digit}?": 2,
                 }
             },
