@@ -1,11 +1,12 @@
 import logging
 from dataclasses import dataclass
 from typing import List
+from infra._orchest._repo import InferenceEntry
 
 @dataclass
 class WaitlistItem:
     """Represents an inference waiting to be processed."""
-    inference_entry: 'InferenceEntry'
+    inference_entry: InferenceEntry
 
     def __hash__(self):
         return hash(self.inference_entry.id)

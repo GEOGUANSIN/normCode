@@ -1,6 +1,8 @@
 import logging
 from dataclasses import dataclass, field
 from typing import List, Dict
+from infra._orchest._waitlist import WaitlistItem
+from infra._orchest._repo import ConceptRepo
 
 @dataclass
 class ProcessTracker:
@@ -34,7 +36,7 @@ class ProcessTracker:
             return 0.0
         return (self.successful_executions / self.total_executions) * 100
     
-    def log_summary(self, waitlist_id: str, waitlist_items: List['WaitlistItem'], blackboard, concept_repo: 'ConceptRepo'):
+    def log_summary(self, waitlist_id: str, waitlist_items: List[WaitlistItem], blackboard, concept_repo: ConceptRepo):
         """Logs a comprehensive summary of the orchestration process."""
         logging.info(f"=== Orchestration Summary (ID: {waitlist_id}) ===")
         

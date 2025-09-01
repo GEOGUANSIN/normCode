@@ -13,6 +13,8 @@ class ConceptEntry:
     description: Optional[str] = None
     is_ground_concept: bool = False
     is_final_concept: bool = False
+    reference_data: Optional[Any] = None
+    reference_axis_names: Optional[List[str]] = None
     concept: Optional[Concept] = field(default=None, repr=False)
 
 @dataclass
@@ -40,9 +42,15 @@ class ConceptRepo:
         self._concept_map = {c.concept_name: c for c in concepts}
         # Import Concept here to ensure it's available
         try:
-            from infra import Concept
+            from infra import Concept, Reference
             for entry in concepts:
                 entry.concept = Concept(entry.concept_name)
+                if entry.reference_data is not None:
+                    data = entry.reference_data
+                    if not isinstance(data, list):
+                        data = [data]
+                    entry.concept.reference = Reference.from_data(data, axis_names=entry.reference_axis_names)
+                    logging.info(f"Added initial reference to concept '{entry.concept_name}'.")
         except ImportError:
             logging.warning("Concept class not available during initialization")
             for entry in concepts:
