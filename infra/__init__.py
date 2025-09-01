@@ -32,7 +32,8 @@ from infra._syntax import (
 
 # Orchestration (parsing and blackboard)
 from infra._orchest import (
-    _parse_normcode_grouping, _parse_normcode_quantifying, _parse_normcode_assigning, _parse_normcode_timing
+    _parse_normcode_grouping, _parse_normcode_quantifying, _parse_normcode_assigning, _parse_normcode_timing,
+    Orchestrator, ProcessTracker, ConceptEntry, InferenceEntry, ConceptRepo, InferenceRepo, WaitlistItem, Waitlist, Blackboard
 )
 
 # Logging
@@ -49,6 +50,7 @@ from infra import _agent
 from infra import _states
 from infra import _syntax
 from infra import _loggers
+from infra import _orchest
 
 # Version and module info
 __version__ = "1.0.0"
@@ -100,8 +102,19 @@ __all__ = [
     "Grouper", "Quantifier", "Assigner", "Timer",
     "_parse_normcode_grouping", "_parse_normcode_quantifying", "_parse_normcode_assigning", "_parse_normcode_timing",
     
+    # Orchestration
+    "Orchestrator",
+    "ProcessTracker",
+    "ConceptEntry",
+    "InferenceEntry",
+    "ConceptRepo",
+    "InferenceRepo",
+    "WaitlistItem",
+    "Waitlist",
+    "Blackboard",
+
     # Submodules
-    "_core", "_agent", "_states", "_syntax", "_loggers",
+    "_core", "_agent", "_states", "_syntax", "_loggers", "_orchest",
     
     # Module info
     "__version__",
