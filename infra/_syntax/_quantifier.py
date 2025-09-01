@@ -196,7 +196,7 @@ class Quantifier:
 
         return None
 
-    def retrieve_next_in_loop_element(self, concept_name: str, mode: str = 'carry_over', current_loop_index: int = 0, carry_index: int = 0) -> Reference:
+    def retrieve_next_in_loop_element(self, concept_name: str, mode: str = 'carry_over', current_loop_index: int = 0, carry_index: int = 0, initial_reference: Optional[Reference] = None) -> Reference:
         if mode == 'carry_over':
             # The current_loop_index in the original file is the *value* of the carry, not the loop iteration index
             if current_loop_index > 0:
@@ -207,7 +207,14 @@ class Quantifier:
                 next_idx = self._get_next_loop_index()
 
                 # The "current" loop index for retrieval purposes is the one just before the next one to be added
-                retrieval_idx = next_idx - 1 - (current_loop_index - 1)
+                last_added_idx = next_idx - 1
+                retrieval_idx = last_added_idx - (current_loop_index - 1)
+
+                if retrieval_idx <= 0:
+                    if initial_reference:
+                        return initial_reference
+                    else:
+                        return Reference(axes=[], shape=())
 
                 if retrieval_idx in self.current_subworkspace and concept_name in self.current_subworkspace[retrieval_idx]:
                     return self.current_subworkspace[retrieval_idx][concept_name]

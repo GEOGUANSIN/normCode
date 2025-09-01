@@ -47,7 +47,7 @@ Normcode_count = """
                 <- {unit place digit}?<:{2}> 
                 <- {number}*<:{2}>
         <- {index}* | 1.1.4. imperative/simple
-            <= ::(increment {1}<$({index})%_>) | 1.1.4.1. timing
+            <= ::(increase {1}?<$({index})%_>) by one | 1.1.4.1. timing
                 <= @after([{index} and {digit}]*) 
             <- {index}*
     <- {number}<:{1}>
@@ -77,6 +77,7 @@ def create_sequential_repositories(number: str = "123"):
             reference_data=[f"%({number})"],
             reference_axis_names=["{number}"],
             is_ground_concept=True,
+            is_invariant=True
         ),
     
         # The grouping concept for index and digit pairs
@@ -103,7 +104,7 @@ def create_sequential_repositories(number: str = "123"):
             type="{}",
             description="Current position index in the number",
             reference_data='1',
-            reference_axis_names=["{index}"],
+            reference_axis_names=["{index}*"],
             is_ground_concept=True,
         ),
         
@@ -137,12 +138,13 @@ def create_sequential_repositories(number: str = "123"):
         # The increment function for index
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="::(increment {1}<$({index})%_>)",
+            concept_name="::(increase {1}?<$({index})%_>) by one",
             type="::()",
             description="Increment the index counter",
-            reference_data='::(increment {1}<$({index})%_>)',
-            reference_axis_names=["increment"],
+            reference_data='::(increase {1}?<$({index})%_>) by one',
+            reference_axis_names=["increase"],
             # is_ground_concept = True,
+            is_invariant=True
         ),
         
         # The get digit function
@@ -159,12 +161,13 @@ def create_sequential_repositories(number: str = "123"):
         # The remove digit function
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",
+            concept_name="::(output {1}<$({number})%_> directy if there is only one digit, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",
             type="::()",
             description="Remove the rightmost digit from a number",
-            reference_data='::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)',
+            reference_data='::(output {1}<$({number})%_> directy if there is only one digit, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)',
             reference_axis_names=["remove"],
             # is_ground_concept = True,
+            is_invariant=True
         ),
         
         # The quantifier function
@@ -299,7 +302,7 @@ def create_sequential_repositories(number: str = "123"):
             inference_sequence='assigning',
             concept_to_infer=concept_repo.get_concept('{number}'),
             function_concept=concept_repo.get_concept('$+({new number}:{number})'),
-            value_concepts=[concept_repo.get_concept('{new number}')],
+            value_concepts=[concept_repo.get_concept('{new number}'), concept_repo.get_concept('{number}')],
             flow_info={'flow_index': '1.1.3'},
             working_interpretation={
                 "syntax": {
@@ -314,7 +317,7 @@ def create_sequential_repositories(number: str = "123"):
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{new number}'),
-            function_concept=concept_repo.get_concept('::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
+            function_concept=concept_repo.get_concept('::(output {1}<$({number})%_> directy if there is only one digit, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
             value_concepts=[concept_repo.get_concept('{unit place digit}?'), concept_repo.get_concept('{number}*')],
             flow_info={'flow_index': '1.1.3.2'},
             working_interpretation={
@@ -330,7 +333,7 @@ def create_sequential_repositories(number: str = "123"):
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
-            concept_to_infer=concept_repo.get_concept('::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
+            concept_to_infer=concept_repo.get_concept('::(output {1}<$({number})%_> directy if there is only one digit, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
             function_concept=concept_repo.get_concept('@after([{index} and {digit}]*)'),
             value_concepts=[concept_repo.get_concept('@after([{index} and {digit}]*)')],
             flow_info={'flow_index': '1.1.3.2.1'},
@@ -347,12 +350,12 @@ def create_sequential_repositories(number: str = "123"):
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{index}*'),
-            function_concept=concept_repo.get_concept('::(increment {1}<$({index})%_>)'),
+            function_concept=concept_repo.get_concept('::(increase {1}?<$({index})%_>) by one'),
             value_concepts=[concept_repo.get_concept('{index}*')],
             flow_info={'flow_index': '1.1.4'},
             working_interpretation={
                 "is_relation_output": False,
-                "with_thinking": False,
+                "with_thinking": True,
                 "value_order": {
                     "{index}*": 1,
                 }
@@ -362,7 +365,7 @@ def create_sequential_repositories(number: str = "123"):
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
-            concept_to_infer=concept_repo.get_concept('::(increment {1}<$({index})%_>)'),
+            concept_to_infer=concept_repo.get_concept('::(increase {1}?<$({index})%_>) by one'),
             function_concept=concept_repo.get_concept('@after([{index} and {digit}]*)'),
             value_concepts=[concept_repo.get_concept('@after([{index} and {digit}]*)')],
             flow_info={'flow_index': '1.1.4.1'},
@@ -381,6 +384,37 @@ def create_sequential_repositories(number: str = "123"):
     inference_repo = InferenceRepo(inference_entries)
     return concept_repo, inference_repo
 
+def log_concept_references(concept_repo, concept_name=None):
+    """Helper function to log concept references for debugging purposes.
+    
+    Args:
+        concept_repo: The concept repository to inspect
+        concept_name: Optional specific concept name to check. If None, logs all concepts.
+    """
+    if concept_name:
+        # Log specific concept reference
+        concept = concept_repo.get_concept(concept_name)
+        if concept:
+            logging.info(f"Concept found: {concept.concept_name}")
+            if concept.concept.reference:
+                logging.info(f"  - Reference axes: {concept.concept.reference.axes}")
+                logging.info(f"  - Reference shape: {concept.concept.reference.shape}")
+                logging.info(f"  - Reference tensor: {concept.concept.reference.tensor}")
+            else:
+                logging.warning("  - No reference found for concept")
+        else:
+            logging.error(f"Concept '{concept_name}' not found in repository")
+    else:
+        # Log all concepts in repository
+        logging.info("--- All Concepts in Repository ---")
+        for concept in concept_repo.get_all_concepts():
+            logging.info(f"  - {concept.concept_name}: {concept.type}")
+            if concept.concept.reference:
+                logging.info(f"    Reference axes: {concept.concept.reference.axes}")
+                logging.info(f"    Reference tensor: {concept.concept.reference.tensor}")
+            else:
+                logging.info(f"    No reference")
+
 if __name__ == "__main__":
     # Setup file logging with timestamp in logs directory
     log_filename = setup_orchestrator_logging(__file__)
@@ -391,14 +425,20 @@ if __name__ == "__main__":
     # 1. Create repositories 
     concept_repo, inference_repo = create_sequential_repositories()
 
-    # 2. Initialize and run the orchestrator with optional Blackboard and AgentFrameModel
+    # 2. Log the remove concept reference before execution
+    log_concept_references(concept_repo, "::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)")
+    
+    # # 3. Log all concepts in repository for debugging
+    # log_concept_references(concept_repo)
+    
+    # 4. Initialize and run the orchestrator with optional Blackboard and AgentFrameModel
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo, 
         # blackboard=Blackboard(),
         # agent_frame_model="demo",
         # body=Body("qwen-turbo-latest")
-        max_cycles=20,
+        max_cycles=30,
     )
 
     # 3. Run the orchestrator

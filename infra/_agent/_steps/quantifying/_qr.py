@@ -180,9 +180,11 @@ def quantifying_references(states: States) -> States:
                     _ensure_reference(getattr(ctx, "reference", None)),
                 )
             carry_index = in_loop_spec[ctx_name]
+            initial_ref = _ensure_reference(getattr(ctx, "reference", None))
             new_ref_for_qr = quantifier.retrieve_next_in_loop_element(
                 ctx_name,
                 current_loop_index=carry_index,
+                initial_reference=initial_ref,
             )
 
         # If an updated reference was created, add it to our list for the new QR context.

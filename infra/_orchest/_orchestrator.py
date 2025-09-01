@@ -240,10 +240,17 @@ class Orchestrator:
 
             inferred_concept_entry = support_item.inference_entry.concept_to_infer
             if not inferred_concept_entry.is_ground_concept:
-                self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
-                if inferred_concept_entry.concept:
-                    inferred_concept_entry.concept.reference = None
-                logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
+                # Check if concept is invariant - if so, skip resetting its reference
+                if inferred_concept_entry.is_invariant:
+                    logging.info(f"  - Skipping reset of invariant concept '{inferred_concept_entry.concept_name}' - keeping reference intact.")
+                    # Still set status to pending but don't clear the reference
+                    self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
+                else:
+                    # Normal reset behavior for non-invariant concepts
+                    self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
+                    if inferred_concept_entry.concept:
+                        inferred_concept_entry.concept.reference = None
+                    logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
 
     def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem):
         """Processes a single 'OR' record from the inference state, updating the concept reference."""

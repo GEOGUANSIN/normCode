@@ -13,6 +13,7 @@ class ConceptEntry:
     description: Optional[str] = None
     is_ground_concept: bool = False
     is_final_concept: bool = False
+    is_invariant: bool = False  # New attribute: prevents reference reset during quantifying loops
     reference_data: Optional[Any] = None
     reference_axis_names: Optional[List[str]] = None
     concept: Optional[Concept] = field(default=None, repr=False)

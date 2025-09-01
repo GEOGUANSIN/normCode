@@ -4,6 +4,17 @@ from typing import Optional
 from infra._core import Reference
 
 
+def _flatten_to_list(data):
+    """Recursively flattens nested lists into a single list of elements."""
+    if not isinstance(data, list):
+        return [data]
+
+    flat_list = []
+    for item in data:
+        flat_list.extend(_flatten_to_list(item))
+    return flat_list
+
+
 class Assigner:
     """Encapsulates the logic for assignment operations."""
 
@@ -30,11 +41,8 @@ class Assigner:
         source_val = source_ref.get() if source_ref else []
         dest_val = dest_ref.get() if dest_ref else []
 
-        # Ensure both are lists for concatenation
-        if not isinstance(source_val, list):
-            source_val = [source_val]
-        if not isinstance(dest_val, list):
-            dest_val = [dest_val]
+        source_flat = _flatten_to_list(source_val)
+        dest_flat = _flatten_to_list(dest_val)
 
-        new_val = dest_val + source_val
-        return Reference.from_data(new_val)
+        new_val = dest_flat + source_flat
+        return Reference.from_data(new_val, axis_names=dest_ref.axes)
