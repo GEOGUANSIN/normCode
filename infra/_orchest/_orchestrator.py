@@ -16,17 +16,17 @@ class Orchestrator:
     based on the completion of their "support" dependencies.
     """
     def __init__(self, 
-                 concept_repo: 'ConceptRepo',
-                 inference_repo: 'InferenceRepo', 
-                 blackboard: Optional['Blackboard'] = None,
+                 concept_repo: ConceptRepo,
+                 inference_repo: InferenceRepo, 
+                 blackboard: Optional[Blackboard] = None,
                  agent_frame_model: str = "demo",
-                 body: Optional['Body'] = None,
+                 body: Optional[Body] = None,
                  max_cycles: int = 30):
         self.inference_repo = inference_repo
         self.concept_repo = concept_repo
         self.agent_frame_model = agent_frame_model
         self.body = body or Body()
-        self.waitlist: Optional['Waitlist'] = None
+        self.waitlist: Optional[Waitlist] = None
         self.blackboard = blackboard or Blackboard()
         self.tracker = ProcessTracker()
         self.max_cycles = max_cycles
@@ -34,7 +34,7 @@ class Orchestrator:
         self._create_waitlist()
         self._initialize_blackboard()
 
-        self._item_by_inferred_concept: Dict[str, 'WaitlistItem'] = {
+        self._item_by_inferred_concept: Dict[str, WaitlistItem] = {
             item.inference_entry.concept_to_infer.concept_name: item for item in self.waitlist.items
         }
 
@@ -56,21 +56,40 @@ class Orchestrator:
         
         logging.info("Blackboard states initialized.")
 
-    def _is_function_concept_ready(self, item: 'WaitlistItem') -> bool:
+    def _is_function_concept_ready(self, item: WaitlistItem) -> bool:
         """Checks if the function concept for an item is ready."""
         fc = item.inference_entry.function_concept
         return (fc is None) or (self.blackboard.get_concept_status(fc.concept_name) == 'complete')
 
-    def _are_value_concepts_ready(self, item: 'WaitlistItem') -> bool:
+    def _are_value_concepts_ready(self, item: WaitlistItem) -> bool:
         """Checks if all value concepts for an item are ready."""
         return all(self.blackboard.get_concept_status(vc.concept_name) == 'complete' for vc in item.inference_entry.value_concepts)
 
-    def _is_ready(self, item: 'WaitlistItem') -> bool:
+    def _are_supporting_items_complete(self, item: WaitlistItem) -> bool:
+        """
+        Checks if all direct supporting items for a given item are in a 'completed' state.
+        This is based on the flow index hierarchy (e.g., item '1.1' supports '1').
+        """
+        supporting_items = self.waitlist.get_supporting_items(item)
+        for support_item in supporting_items:
+            support_flow_index = support_item.inference_entry.flow_info['flow_index']
+            if self.blackboard.get_item_status(support_flow_index) != 'completed':
+                return False
+        return True
+
+    def _is_ready(self, item: WaitlistItem) -> bool:
         """
         An item is ready if its dependencies are met. Certain flags can bypass checks.
         """
         flow_index = item.inference_entry.flow_info['flow_index']
         is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
+
+        # Check for completion of all supporting items, unless bypassed.
+        # This ensures procedural dependencies are met before continuing.
+        start_with_support_reference_only = getattr(item.inference_entry, 'start_with_support_reference_only', False)
+        if not start_with_support_reference_only:
+            if not self._are_supporting_items_complete(item):
+                return False
 
         # Check function concept readiness, unless bypassed
         if not item.inference_entry.start_without_function:
@@ -87,7 +106,7 @@ class Orchestrator:
 
         return self._are_value_concepts_ready(item)
 
-    def _handle_inference_failure(self, item: 'WaitlistItem', error: Exception):
+    def _handle_inference_failure(self, item: WaitlistItem, error: Exception):
         """Handles the failed execution of an inference."""
         flow_index = item.inference_entry.flow_info['flow_index']
         logging.error(f"An error occurred during inference for item {flow_index}: {error}")
@@ -95,7 +114,7 @@ class Orchestrator:
         traceback.print_exc()
         self.blackboard.set_item_result(flow_index, f"Error: {error}")
 
-    def _inference_execution(self, item: 'WaitlistItem') -> str:
+    def _inference_execution(self, item: WaitlistItem) -> str:
         """
         Executes a real inference using a fresh AgentFrame for each execution.
         Updates the item's result and returns the new status.
@@ -117,7 +136,7 @@ class Orchestrator:
             self._handle_inference_failure(item, e)
             return "failed"
 
-    def _execute_agent_frame(self, item: 'WaitlistItem', inference: 'Inference') -> 'BaseStates':
+    def _execute_agent_frame(self, item: WaitlistItem, inference: Inference) -> BaseStates:
         """Creates and executes an AgentFrame for a given inference."""
         working_interpretation = item.inference_entry.working_interpretation or {}
         working_interpretation["blackboard"] = self.blackboard
@@ -131,7 +150,7 @@ class Orchestrator:
         agent_frame.configure(inference, item.inference_entry.inference_sequence)
         return inference.execute()
 
-    def _process_inference_state(self, states: 'BaseStates', item: 'WaitlistItem') -> str:
+    def _process_inference_state(self, states: BaseStates, item: WaitlistItem) -> str:
         """
         Processes the state from an inference execution and determines the item's final status.
         """
@@ -142,14 +161,14 @@ class Orchestrator:
         
         return self._handle_regular_inference(states, item)
 
-    def _update_orchestrator_state(self, states: 'BaseStates'):
+    def _update_orchestrator_state(self, states: BaseStates):
         """Updates the orchestrator's core components from the inference state."""
         if hasattr(states, 'workspace'):
             self.workspace = states.workspace
         if hasattr(states, 'blackboard'):
             self.blackboard = states.blackboard
 
-    def _handle_timing_inference(self, states: 'BaseStates', item: 'WaitlistItem') -> str:
+    def _handle_timing_inference(self, states: BaseStates, item: WaitlistItem) -> str:
         """Handles the specific logic for timing inferences."""
         flow_index = item.inference_entry.flow_info['flow_index']
         timing_ready = getattr(states, 'timing_ready', True)
@@ -164,7 +183,7 @@ class Orchestrator:
         self.blackboard.set_concept_status(concept_name, 'complete')
         return "completed"
 
-    def _handle_regular_inference(self, states: 'BaseStates', item: 'WaitlistItem') -> str:
+    def _handle_regular_inference(self, states: BaseStates, item: WaitlistItem) -> str:
         """Handles the logic for all non-timing inferences."""
         flow_index = item.inference_entry.flow_info['flow_index']
         logging.info(f"  -> Inference executed successfully for item {flow_index}")
@@ -174,7 +193,7 @@ class Orchestrator:
         
         return "completed" if all_conditions_met else "pending"
 
-    def _update_references_and_check_completion(self, states: 'BaseStates', item: 'WaitlistItem') -> bool:
+    def _update_references_and_check_completion(self, states: BaseStates, item: WaitlistItem) -> bool:
         """
         For quantifying loops, resets supporting items first, then updates all concept references from the state.
         This "reset first, then update" approach ensures the system is correctly prepared for the next loop iteration.
@@ -198,7 +217,7 @@ class Orchestrator:
         # 4. The overall process is only "complete" if the quantifying loop is finished.
         return not (is_quantifying and not is_complete)
 
-    def _check_quantifying_completion(self, states: 'BaseStates', item: 'WaitlistItem') -> tuple[bool, bool]:
+    def _check_quantifying_completion(self, states: BaseStates, item: WaitlistItem) -> tuple[bool, bool]:
         """Checks if an item is a quantifying inference and whether it has completed."""
         is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
         if not is_quantifying:
@@ -206,7 +225,7 @@ class Orchestrator:
         is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
         return True, is_complete
 
-    def _reset_supporting_items(self, item: 'WaitlistItem'):
+    def _reset_supporting_items(self, item: WaitlistItem):
         """Resets the status of all items that support the given item."""
         supporting_items = self.waitlist.get_supporting_items(item)
         if not supporting_items:
@@ -226,7 +245,7 @@ class Orchestrator:
                     inferred_concept_entry.concept.reference = None
                 logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
 
-    def _update_concept_from_record(self, record: Any, category: str, item: 'WaitlistItem'):
+    def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem):
         """Processes a single 'OR' record from the inference state, updating the concept reference."""
         concept_name = self._get_concept_name_from_record(record, category, item)
         if not concept_name:
@@ -243,7 +262,7 @@ class Orchestrator:
         self.blackboard.set_concept_status(concept_name, 'complete')
         logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
 
-    def _get_concept_name_from_record(self, record: Any, category: str, item: 'WaitlistItem') -> Optional[str]:
+    def _get_concept_name_from_record(self, record: Any, category: str, item: WaitlistItem) -> Optional[str]:
         """Extracts the concept name from a state record."""
         if record.concept:
             return record.concept.name
@@ -251,7 +270,7 @@ class Orchestrator:
             return item.inference_entry.concept_to_infer.concept_name
         return None
 
-    def _update_execution_tracking(self, item: 'WaitlistItem', status: str):
+    def _update_execution_tracking(self, item: WaitlistItem, status: str):
         """Updates the process tracker after an item execution attempt."""
         flow_index = item.inference_entry.flow_info['flow_index']
 
@@ -271,7 +290,7 @@ class Orchestrator:
             logging.info(f"Item {flow_index} did not complete, will retry.")
             self.tracker.retry_count += 1
 
-    def _execute_item(self, item: 'WaitlistItem') -> str:
+    def _execute_item(self, item: WaitlistItem) -> str:
         """Executes a single waitlist item and updates its status and tracking info."""
         flow_index = item.inference_entry.flow_info['flow_index']
         logging.info(f"Item {flow_index} is ready. Executing.")
@@ -286,11 +305,11 @@ class Orchestrator:
 
         return new_status
 
-    def _run_cycle(self, retries_from_previous_cycle: List['WaitlistItem']) -> tuple[bool, List['WaitlistItem']]:
+    def _run_cycle(self, retries_from_previous_cycle: List[WaitlistItem]) -> tuple[bool, List[WaitlistItem]]:
         """Processes one cycle of the orchestration loop."""
         cycle_executions = 0
         cycle_successes = 0
-        next_cycle_retries: List['WaitlistItem'] = []
+        next_cycle_retries: List[WaitlistItem] = []
 
         # Get items to process for this cycle, prioritizing retries
         retried_items_set = set(retries_from_previous_cycle)
@@ -318,7 +337,7 @@ class Orchestrator:
         stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if self.blackboard.get_item_status(i.inference_entry.flow_info['flow_index']) != 'completed']
         logging.warning(f"Stuck items: {stuck_items}")
 
-    def run(self) -> List['ConceptEntry']:
+    def run(self) -> List[ConceptEntry]:
         """Runs the orchestration loop until completion or deadlock."""
         if not self.waitlist:
             logging.error("No waitlist created.")
@@ -326,7 +345,7 @@ class Orchestrator:
 
         logging.info(f"--- Starting Orchestration for Waitlist {self.waitlist.id} ---")
 
-        retries: List['WaitlistItem'] = []
+        retries: List[WaitlistItem] = []
 
         while self.blackboard.get_all_pending_or_in_progress_items() and self.tracker.cycle_count < self.max_cycles:
             self.tracker.cycle_count += 1

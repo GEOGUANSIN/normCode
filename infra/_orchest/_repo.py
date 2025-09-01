@@ -30,6 +30,7 @@ class InferenceEntry:
     start_without_value_only_once: bool = False
     start_without_function: bool = False
     start_without_function_only_once: bool = False
+    start_with_support_reference_only: bool = False
     inference: Optional['Inference'] = field(default=None, repr=False)
     working_interpretation: Optional[Dict[str, any]] = field(default=None, repr=False)
 

@@ -93,6 +93,9 @@ def create_sequential_repositories(number: str = "123"):
             concept_name="{index}*",
             type="{}",
             description="Current position index in the number",
+            reference_data='1',
+            reference_axis_names=["{index}"],
+            is_ground_concept=True,
         ),
         
         # The digit concept
@@ -109,7 +112,7 @@ def create_sequential_repositories(number: str = "123"):
             concept_name="{unit place digit}?",
             type="{}",
             description="The extracted digit from the current position",
-            reference_data='',
+            reference_data='1 digit counting from the right',
             reference_axis_names=["{unit place digit}"],
             is_ground_concept=True,
         ),
@@ -129,7 +132,7 @@ def create_sequential_repositories(number: str = "123"):
             type="::()",
             description="Increment the index counter",
             reference_data='::(increment {1}<$({index})%_>)',
-            reference_axis_names=["::(increment {1}<$({index})%_>)"],
+            reference_axis_names=["increment"],
             # is_ground_concept = True,
         ),
         
@@ -140,7 +143,7 @@ def create_sequential_repositories(number: str = "123"):
             type="::()",
             description="Extract the rightmost digit from a number",
             reference_data='::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)',
-            reference_axis_names=["::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)"],
+            reference_axis_names=["get"],
             is_ground_concept = True,
         ),
         
@@ -151,7 +154,7 @@ def create_sequential_repositories(number: str = "123"):
             type="::()",
             description="Remove the rightmost digit from a number",
             reference_data='::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)',
-            reference_axis_names=["::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)"],
+            reference_axis_names=["remove"],
             # is_ground_concept = True,
         ),
         
@@ -227,7 +230,8 @@ def create_sequential_repositories(number: str = "123"):
                 }
             },
             start_without_value_only_once=True,
-            start_without_function_only_once=True
+            start_without_function_only_once=True,
+            start_with_support_reference_only=True
         ),
 
         # --- Inferences inside the loop ---
@@ -266,12 +270,14 @@ def create_sequential_repositories(number: str = "123"):
 
         InferenceEntry(
             id=str(uuid.uuid4()),
-            inference_sequence='simple',
+            inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{digit}*'),
             function_concept=concept_repo.get_concept('::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)'),
             value_concepts=[concept_repo.get_concept('{number}'), concept_repo.get_concept('{unit place digit}?')],
             flow_info={'flow_index': '1.1.2.3'},
             working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": True,
                 "value_order": {
                     "{number}": 1,
                     "{unit place digit}?": 2,
@@ -297,12 +303,14 @@ def create_sequential_repositories(number: str = "123"):
 
         InferenceEntry(
             id=str(uuid.uuid4()),
-            inference_sequence='simple',
+            inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{new number}'),
             function_concept=concept_repo.get_concept('::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
             value_concepts=[concept_repo.get_concept('{unit place digit}?'), concept_repo.get_concept('{number}')],
             flow_info={'flow_index': '1.1.3.2'},
             working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": True,
                 "value_order": {
                     "{number}": 1,
                     "{unit place digit}?": 2,
@@ -328,12 +336,14 @@ def create_sequential_repositories(number: str = "123"):
         ),
         InferenceEntry(
             id=str(uuid.uuid4()),
-            inference_sequence='simple',
+            inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{index}*'),
             function_concept=concept_repo.get_concept('::(increment {1}<$({index})%_>)'),
             value_concepts=[concept_repo.get_concept('{index}*')],
             flow_info={'flow_index': '1.1.4'},
             working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": False,
                 "value_order": {
                     "{index}*": 1,
                 }
@@ -379,7 +389,7 @@ if __name__ == "__main__":
         # blackboard=Blackboard(),
         # agent_frame_model="demo",
         # body=Body("qwen-turbo-latest")
-        max_cycles=10,
+        max_cycles=20,
     )
 
     # 3. Run the orchestrator
