@@ -21,7 +21,7 @@ def input_working_interpretation(
         states.syntax = SimpleNamespace(**working_interpretation.get("syntax", {}))
 
         states.workspace = working_interpretation.get("workspace", {})
-        logger.debug(f"IWI Step 1] Workspace: {states.workspace}")
+        logger.debug(f"[IWI Step 1] Workspace: {states.workspace}")
 
     # Clear previous state to prevent accumulation in loops
     states.function = []

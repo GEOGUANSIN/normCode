@@ -68,8 +68,8 @@ class ProcessTracker:
         for concept_entry in concept_repo.get_all_concepts():
             if concept_entry.is_final_concept:
                 ref_tensor = concept_entry.concept.reference.tensor if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
-                logging.info(f"  - {concept_entry.concept_name}: {ref_tensor}")
+                logging.info(f"  - [Data Tensor] {concept_entry.concept_name}: {ref_tensor}")
                 ref_axis_names = concept_entry.concept.reference.axes if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
-                logging.info(f"  - {concept_entry.concept_name}: {ref_axis_names}")
+                logging.info(f"  - [Axis Names] {concept_entry.concept_name}: {ref_axis_names}")
                 ref_shape = concept_entry.concept.reference.shape if concept_entry.concept and concept_entry.concept.reference is not None else "N/A"
-                logging.info(f"  - {concept_entry.concept_name}: {ref_shape}")
+                logging.info(f"  - [Shape] {concept_entry.concept_name}: {ref_shape}")

@@ -20,6 +20,7 @@ def input_references(inference: Inference, states: States) -> States:
                     type=func.type,
                     context=func.context,
                     axis_name=func.axis_name,
+                    natural_name=func.natural_name,
                 ),
                 reference=func.reference if isinstance(func.reference, Reference) else None,
             )
@@ -38,6 +39,7 @@ def input_references(inference: Inference, states: States) -> States:
                         type=vc.type,
                         context=vc.context,
                         axis_name=vc.axis_name,
+                        natural_name=vc.natural_name,
                     ),
                     reference=vc.reference if isinstance(vc.reference, Reference) else None,
                 )
@@ -56,6 +58,7 @@ def input_references(inference: Inference, states: States) -> States:
                         type=ctx_concept.type,
                         context=ctx_concept.context,
                         axis_name=ctx_concept.axis_name,
+                        natural_name=ctx_concept.natural_name,
                     ),
                     reference=ctx_concept.reference if isinstance(ctx_concept.reference, Reference) else None,
                 )

@@ -12,6 +12,7 @@ class ConceptEntry:
     type: str
     context: str = ""  # Context from Concept class
     axis_name: Optional[str] = None  # Axis name from Concept class
+    natural_name: Optional[str] = None  # Natural name from Concept class
     description: Optional[str] = None
     is_ground_concept: bool = False
     is_final_concept: bool = False
@@ -27,6 +28,7 @@ class ConceptEntry:
             name=self.concept_name,
             context=self.context,
             axis_name=self.axis_name,
+            natural_name=self.natural_name,
             type=self.type
         )
     
@@ -36,6 +38,7 @@ class ConceptEntry:
         self.type = concept.type
         self.context = concept.context
         self.axis_name = concept.axis_name
+        self.natural_name = concept.natural_name
         if concept.reference:
             self.reference_data = concept.reference.data if hasattr(concept.reference, 'data') else None
 
@@ -72,6 +75,7 @@ class ConceptRepo:
                     name=entry.concept_name,
                     context=entry.context,
                     axis_name=entry.axis_name,
+                    natural_name=entry.natural_name,
                     type=entry.type
                 )
                 if entry.reference_data is not None:

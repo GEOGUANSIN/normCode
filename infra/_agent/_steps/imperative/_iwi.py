@@ -114,7 +114,7 @@ def _build_mfp_env_and_sequence_from_wi(
 					"template_name": translate_prompt,
 					"variables": {
 						"input_normcode": MetaValue("states.function.concept.name"),
-						"output": MetaValue("states.inference.concept.name"),
+						"output": MetaValue("states.inference.concept.natural_name"),
 					},
 				},
 				result_key="imperative_prompt",

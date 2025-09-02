@@ -68,7 +68,7 @@ CONCEPT_TYPES = {
 
 
 class Concept:
-    def __init__(self, name, context="", axis_name: Optional[str] = None, reference: Optional[Reference] = None, type="{}"):
+    def __init__(self, name, context="", axis_name: Optional[str] = None, reference: Optional[Reference] = None, type="{}", natural_name: Optional[str] = None):
         if type not in CONCEPT_TYPES:
             raise ValueError(f"Invalid concept type. Must be one of: {list(CONCEPT_TYPES.keys())}")
             
@@ -76,6 +76,7 @@ class Concept:
         self.type = type
         self.context = context
         self.axis_name = axis_name if axis_name else name
+        self.natural_name = natural_name if natural_name else self.axis_name
         self.reference: Optional[Reference] = reference
         self.id = str(uuid.uuid4())  # Generate unique identification number
     

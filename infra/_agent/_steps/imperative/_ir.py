@@ -17,6 +17,7 @@ def input_references(inference: Inference, states: States) -> States:
             type=inference.function_concept.type,
             context=inference.function_concept.context,
             axis_name=inference.function_concept.axis_name,
+            natural_name=inference.function_concept.natural_name,
         )
         states.function[0].reference = inference.function_concept.reference.copy()
 
@@ -30,6 +31,7 @@ def input_references(inference: Inference, states: States) -> States:
                 type=inference.concept_to_infer.type,
                 context=inference.concept_to_infer.context,
                 axis_name=inference.concept_to_infer.axis_name,
+                natural_name=inference.concept_to_infer.natural_name,
             )
 
     for vc in inference.value_concepts or []:
@@ -37,7 +39,7 @@ def input_references(inference: Inference, states: States) -> States:
             ReferenceRecordLite(
                 step_name="IR",
                 concept=ConceptInfoLite(
-                    id=vc.id, name=vc.name, type=vc.type, context=vc.context, axis_name=vc.axis_name
+                    id=vc.id, name=vc.name, type=vc.type, context=vc.context, axis_name=vc.axis_name, natural_name=vc.natural_name,
                 ),
                 reference=vc.reference.copy(),
             )

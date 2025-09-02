@@ -24,6 +24,7 @@ class ConceptInfoLite:
 	type: str | None
 	context: str | None
 	axis_name: str | None = None
+	natural_name: str | None = None
 
 
 @dataclass
