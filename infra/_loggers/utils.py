@@ -26,7 +26,7 @@ def setup_logging(log_file: Optional[str] = None):
     
     # File handler (if specified)
     if log_file:
-        file_handler = logging.FileHandler(log_file, mode='w')
+        file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

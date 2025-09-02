@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+import random
+import traceback
 
 # --- Infra Imports ---
 try:
@@ -437,15 +439,158 @@ def log_concept_references(concept_repo, concept_name=None):
             else:
                 logging.info(f"    No reference")
 
+def generate_random_number(length: int) -> str:
+    """
+    Generate a random number string of specified length.
+    
+    Args:
+        length: The desired length of the number (number of digits)
+        
+    Returns:
+        A string representing a random number with the specified length
+        
+    Note:
+        - The first digit will never be 0 to ensure it's a valid positive number
+        - Length must be at least 1
+    """
+    if length < 1:
+        raise ValueError("Length must be at least 1")
+    
+    # Generate first digit (1-9 to avoid leading zeros)
+    first_digit = str(random.randint(1, 9))
+    
+    # Generate remaining digits (0-9)
+    remaining_digits = ''.join(str(random.randint(0, 9)) for _ in range(length - 1))
+    
+    return first_digit + remaining_digits
+
+
+def validate_digit_counting_output(input_number: str, output_tensor: Any) -> bool:
+    """
+    Validates that the output from the quantification sequence correctly deconstructed the number.
+    Provides detailed logging on missing, incorrect, and correct digits.
+    This version is adapted to handle a complex, nested list/dict tensor structure.
+    """
+    logging.info("\n--- Detailed Validation ---")
+    
+    reported_digits_map = {}
+
+    def _get_scalar_value(data: Any) -> Optional[str]:
+        """Drills down into nested lists to find a single string value."""
+        val = data
+        while isinstance(val, list):
+            if not val: return None
+            val = val[0]
+        if isinstance(val, str):
+            return val.strip('%()')
+        return str(val) if val is not None else None
+
+    def _parse_recursive(data: Any):
+        """Recursively traverses the output tensor to find and parse digit/index pairs."""
+        if isinstance(data, list):
+            for item in data:
+                _parse_recursive(item)
+        elif isinstance(data, dict):
+            if '{index}*' in data and '{digit}*' in data:
+                index_val = _get_scalar_value(data.get('{index}*'))
+                digit_val = _get_scalar_value(data.get('{digit}*'))
+                
+                if index_val and digit_val and index_val.isdigit() and digit_val.isdigit():
+                    reported_digits_map[int(index_val)] = digit_val
+            else:
+                # Also check dict values for further nested data
+                for val in data.values():
+                    _parse_recursive(val)
+
+    try:
+        _parse_recursive(output_tensor)
+        logging.info(f"📊 Parsed {len(reported_digits_map)} unique digits from agent output.")
+
+        # Create the expected map from the input number
+        reversed_input = input_number[::-1]
+        expected_digits_map = {i + 1: digit for i, digit in enumerate(reversed_input)}
+        
+        # --- Detailed Comparison ---
+        correct_count = 0
+        incorrect_digits = []
+        missing_digits = []
+
+        expected_indices = set(expected_digits_map.keys())
+        reported_indices = set(reported_digits_map.keys())
+
+        # 1. Find missing digits
+        missing_indices = expected_indices - reported_indices
+        if missing_indices:
+            for index in sorted(list(missing_indices)):
+                missing_digits.append(f"Index {index} (expected digit '{expected_digits_map[index]}')")
+
+        # 2. Compare reported digits
+        for index, reported_digit in reported_digits_map.items():
+            if index in expected_digits_map:
+                expected_digit = expected_digits_map[index]
+                if reported_digit == expected_digit:
+                    correct_count += 1
+                else:
+                    incorrect_digits.append(f"Index {index} (reported '{reported_digit}', expected '{expected_digit}')")
+
+        # --- Logging Summary ---
+        logging.info("--- Validation Summary ---")
+        logging.info(f"Total digits expected: {len(expected_digits_map)}")
+        logging.info(f"Total digits reported by agent: {len(reported_digits_map)}")
+        logging.info(f"✅ Correctly identified digits: {correct_count}")
+
+        if incorrect_digits:
+            logging.warning(f"⚠️ Incorrectly identified digits: {len(incorrect_digits)}")
+            for item in incorrect_digits:
+                logging.warning(f"  - {item}")
+        
+        if missing_digits:
+            logging.warning(f"⚠️ Missing digits: {len(missing_digits)}")
+            for item in missing_digits:
+                logging.warning(f"  - {item}")
+
+        # Final verdict
+        is_pass = (len(missing_digits) == 0 and len(incorrect_digits) == 0)
+        
+        if is_pass and reported_digits_map: # Check if not empty
+            sorted_reported = [reported_digits_map[i] for i in sorted(reported_digits_map.keys())]
+            reconstructed_reversed = "".join(sorted_reported)
+            reconstructed_val = int(reconstructed_reversed[::-1])
+            expected_val = int(input_number)
+            if reconstructed_val != expected_val:
+                logging.error("❌ Validation Failed: Final integer value mismatch. This may indicate extra non-zero digits.")
+                is_pass = False
+
+        if is_pass:
+            logging.info("✅ Validation Passed!")
+        else:
+            logging.error("❌ Validation Failed.")
+            
+        return is_pass
+
+    except Exception as e:
+        logging.error(f"❌ An unexpected error occurred during validation: {e}")
+        traceback.print_exc()
+        return False
+
+
 if __name__ == "__main__":
     # Setup file logging with timestamp in logs directory
     log_filename = setup_orchestrator_logging(__file__)
     
     # --- Main Execution Logic ---
     logging.info("=== Starting Orchestrator Demo ===")
-    
+
+    # --- Data Definitions ---
+    length = 30
+    number = generate_random_number(length)
+    logging.info(f"Input number: {number}")
+    logging.info(f"Input number length: {length}")
+
+    # --- End of Data Definitions ---
+
     # 1. Create repositories 
-    concept_repo, inference_repo = create_sequential_repositories()
+    concept_repo, inference_repo = create_sequential_repositories(number)
 
     # 2. Log the remove concept reference before execution
     log_concept_references(concept_repo, "::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)")
@@ -457,21 +602,29 @@ if __name__ == "__main__":
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo, 
-        # blackboard=Blackboard(),
-        # agent_frame_model="demo",
-        # body=Body("qwen-turbo-latest")
-        max_cycles=30,
+        max_cycles=10*length,
     )
 
     # 3. Run the orchestrator
     final_concepts = orchestrator.run()
     
     logging.info("--- Final Concepts Returned ---")
-    if final_concepts:
-        for concept in final_concepts:
-            ref_tensor = concept.concept.reference.tensor if concept.concept and concept.concept.reference is not None else "N/A"
-            logging.info(f"  - {concept.concept_name}: {ref_tensor}")
+    final_concept_entry = next((c for c in final_concepts if c.is_final_concept), None)
+
+    if final_concept_entry:
+        ref = final_concept_entry.concept.reference
+        ref_tensor = ref.tensor if ref is not None else "N/A"
+        logging.info(f"  - Final Concept '{final_concept_entry.concept_name}': {ref_tensor}")
+        
+        if ref is not None:
+            validation_result = validate_digit_counting_output(number, ref_tensor)
+            print(f"\nInput number was: {number}")
+            print(f"Validation Result: {'✅ PASSED' if validation_result else '❌ FAILED'}")
+        else:
+            print("💥 Validation failed! No reference found in the final concept.")
+
     else:
         logging.info("  No final concepts were returned.")
+        print("💥 Validation failed! No final concept was returned by the orchestrator.")
 
     logging.info(f"=== Orchestrator Demo Complete - Log saved to {log_filename} ===") 
