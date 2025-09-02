@@ -13,21 +13,21 @@ def setup_logging(log_file: Optional[str] = None):
     
     # Setup root logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     
     # Clear any existing handlers
     logger.handlers.clear()
     
     # Console handler
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     
     # File handler (if specified)
     if log_file:
         file_handler = logging.FileHandler(log_file, mode='w')
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
         logging.info(f"Logging to file: {log_file}")

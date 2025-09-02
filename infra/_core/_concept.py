@@ -23,6 +23,7 @@ CONCEPT_TYPES = {
     "$::": {"description": "nominalization", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$.": {"description": "specification", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$%": {"description": "abstraction", "type_class": TYPE_CLASS_SYNTACTICAL},
+    "$+": {"description": "continuation", "type_class": TYPE_CLASS_SYNTACTICAL},
     
     # Sequencing operators (SYNTACTICAL)
     "@by": {"description": "by", "type_class": TYPE_CLASS_SYNTACTICAL},

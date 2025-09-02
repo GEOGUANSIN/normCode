@@ -34,10 +34,19 @@ def memory_value_perception(states: States) -> States:
             ordered_names.append(name)
 
     if ordered_refs:
-        # Step 1: Cross product to get lists of values.
-        crossed_ref = cross_product(ordered_refs)
+        # Step 1: Strip wrappers like %() from each reference before cross-product.
+        def strip_wrapper(element: Any) -> Any:
+            """Strips the '%(...)' wrapper if it exists."""
+            if isinstance(element, str) and element.startswith("%(") and element.endswith(")"):
+                return element[2:-1]
+            return element
 
-        # Step 2: Use element_action to convert lists to dicts with generic keys.
+        stripped_refs = [element_action(strip_wrapper, [ref]) for ref in ordered_refs]
+
+        # Step 2: Cross product to get lists of values.
+        crossed_ref = cross_product(stripped_refs)
+
+        # Step 3: Use element_action to convert lists to dicts with generic keys.
         # The keys "input_1", "input_2", etc. match the prompt templates.
         def list_to_dict(values_list: List[Any]) -> Dict[str, Any]:
             """Creates a dict with keys like 'input_1', 'input_2'."""

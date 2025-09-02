@@ -35,7 +35,12 @@ class Grouper:
             if len(lst) != len(annotation_list):
                 return self.skip_value
 
-            annotation_dict = {annotation: lst[i] for i, annotation in enumerate(annotation_list)}
+            annotation_dict = {}
+            for i, annotation in enumerate(annotation_list):
+                value = lst[i]
+                if isinstance(value, list) and len(value) == 1 and isinstance(value[0], list):
+                    value = value[0]
+                annotation_dict[annotation] = value
             return annotation_dict
 
         return element_action(annotate_list, [reference])

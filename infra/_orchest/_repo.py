@@ -10,6 +10,8 @@ class ConceptEntry:
     id: str
     concept_name: str
     type: str
+    context: str = ""  # Context from Concept class
+    axis_name: Optional[str] = None  # Axis name from Concept class
     description: Optional[str] = None
     is_ground_concept: bool = False
     is_final_concept: bool = False
@@ -17,6 +19,25 @@ class ConceptEntry:
     reference_data: Optional[Any] = None
     reference_axis_names: Optional[List[str]] = None
     concept: Optional[Concept] = field(default=None, repr=False)
+    
+    def to_concept(self) -> 'Concept':
+        """Convert this ConceptEntry to a Concept object with all attributes."""
+        from infra import Concept
+        return Concept(
+            name=self.concept_name,
+            context=self.context,
+            axis_name=self.axis_name,
+            type=self.type
+        )
+    
+    def update_from_concept(self, concept: 'Concept'):
+        """Update this ConceptEntry with attributes from a Concept object."""
+        self.concept_name = concept.name
+        self.type = concept.type
+        self.context = concept.context
+        self.axis_name = concept.axis_name
+        if concept.reference:
+            self.reference_data = concept.reference.data if hasattr(concept.reference, 'data') else None
 
 @dataclass
 class InferenceEntry:
@@ -46,7 +67,13 @@ class ConceptRepo:
         try:
             from infra import Concept, Reference
             for entry in concepts:
-                entry.concept = Concept(entry.concept_name)
+                # Initialize Concept with all available attributes from ConceptEntry
+                entry.concept = Concept(
+                    name=entry.concept_name,
+                    context=entry.context,
+                    axis_name=entry.axis_name,
+                    type=entry.type
+                )
                 if entry.reference_data is not None:
                     data = entry.reference_data
                     if not isinstance(data, list):
@@ -72,6 +99,9 @@ class ConceptRepo:
             if not isinstance(data, list):
                 data = [data]
             concept_entry.concept.reference = Reference.from_data(data, axis_names=axis_names)
+            # Update the ConceptEntry with the new reference data
+            concept_entry.reference_data = data
+            concept_entry.reference_axis_names = axis_names
             logging.info(f"Added reference to concept '{concept_name}'.")
         else:
             logging.warning(f"Could not find concept '{concept_name}' to add reference.")

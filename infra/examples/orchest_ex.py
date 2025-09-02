@@ -33,20 +33,20 @@ def create_sequential_repositories():
     # Create concept entries
     concept_entries = [
         # ConceptEntry(id=str(uuid.uuid4()), concept_name='input_data', type='data', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_1', type='data'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_2', type='data'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_1', type='{}'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='intermediate_data_2', type='{}'),
         # ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='data', is_final_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_1', type='function'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='::({1}<$({number})%_> add 1)', type='::', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_3', type='function', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='assign_function', type='function', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='grouping_function', type='function', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='grouped_data', type='data'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='timing_after_1_3', type='function', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='quant_function', type='function'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='items_to_loop*', type='data'),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='items_to_loop', type='data', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result_after_quantifying', type='data', is_final_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_1', type='::({})'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='::({1}<$({number})%_> add 1)', type='::({})', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='process_function_3', type='::({})', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='assign_function', type='$.', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='grouping_function', type='&in', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='grouped_data', type='{}'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='timing_after_1_3', type='@after', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='quant_function', type='*every'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='items_to_loop*', type='{}'),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='items_to_loop', type='{}', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result_after_quantifying', type='{}', is_final_concept=True),
     ]
     
     # Create concept repository
@@ -116,7 +116,8 @@ def create_sequential_repositories():
                 }
             },
             start_without_value_only_once=True,
-            start_without_function_only_once=True
+            start_without_function_only_once=True,
+            start_with_support_reference_only=True
         ),
         # --- Inferences inside the loop ---
         InferenceEntry(
