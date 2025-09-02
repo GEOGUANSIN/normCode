@@ -12,6 +12,7 @@ class ProcessTracker:
     cycle_count: int = 0
     total_executions: int = 0
     successful_executions: int = 0
+    failed_executions: int = 0
     retry_count: int = 0
     
     def add_execution_record(self, cycle: int, flow_index: str, inference_type: str, 
@@ -34,7 +35,11 @@ class ProcessTracker:
         """Calculates the success rate as a percentage."""
         if self.total_executions == 0:
             return 0.0
-        return (self.successful_executions / self.total_executions) * 100
+
+        terminal_executions = self.successful_executions + self.failed_executions
+        if terminal_executions == 0:
+            return 0.0
+        return (self.successful_executions / terminal_executions) * 100
     
     def log_summary(self, waitlist_id: str, waitlist_items: List[WaitlistItem], blackboard, concept_repo: ConceptRepo):
         """Logs a comprehensive summary of the orchestration process."""
@@ -48,12 +53,13 @@ class ProcessTracker:
             status = blackboard.get_item_status(fi)
             logging.info(f"  - Item {fi:<10} ({it:<12}): {status}")
         
-        logging.info("--- Process Statistics ---")
+        logging.info(f"--- Process Statistics ---")
         logging.info(f"  - Total cycles: {self.cycle_count}")
         logging.info(f"  - Total executions: {self.total_executions}")
         logging.info(f"  - Successful completions: {self.successful_executions}")
-        logging.info(f"  - Retry attempts: {self.retry_count}")
-        logging.info(f"  - Success rate: {self.get_success_rate():.1f}%")
+        logging.info(f"  - Failed executions: {self.failed_executions}")
+        logging.info(f"  - Benign retries (pending): {self.retry_count}")
+        logging.info(f"  - Success rate (successful/(successful+failed)): {self.get_success_rate():.1f}%")
         
         logging.info("--- Completion Order ---")
         for i, flow_index in enumerate(self.completion_order, 1):
@@ -61,7 +67,7 @@ class ProcessTracker:
         
         logging.info("--- Execution Flow ---")
         for record in self.execution_history:
-            status_symbol = "[OK]" if record['status'] == 'completed' else "[RETRY]"
+            status_symbol = "[OK]" if record['status'] == 'completed' else "[RETRY]" if record['status'] == 'pending' else "[FAIL]"
             logging.info(f"  Cycle {record['cycle']}: {status_symbol} {record['flow_index']} ({record['inference_type']}) -> {record['concept_inferred']}")
 
         logging.info("--- Final Concepts ---")

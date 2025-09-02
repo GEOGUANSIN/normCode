@@ -293,7 +293,10 @@ class Orchestrator:
             logging.info(f"Item {flow_index} COMPLETED.")
             self.tracker.successful_executions += 1
             self.tracker.record_completion(flow_index)
-        else:
+        elif status == 'failed':
+            logging.error(f"Item {flow_index} FAILED.")
+            self.tracker.failed_executions += 1
+        elif status == 'pending':
             logging.info(f"Item {flow_index} did not complete, will retry.")
             self.tracker.retry_count += 1
 
