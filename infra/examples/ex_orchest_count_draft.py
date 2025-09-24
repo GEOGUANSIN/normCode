@@ -30,6 +30,67 @@ except Exception:
 
 # --- Normcode for this example ---
 
+failed_count_natural = """
+Process a number from right to left: 
+at each step, 
+extract the rightmost digit with its position, 
+then remove that digit. 
+Continue until the number is empty."""
+
+Normcode_raw_paragraph_reversed = """
+To obtain all pairs of index and digit of a number, 
+we process the number step by step. In each step, 
+we obtain the digit of the step by getting the unit place value of the number,
+group the index and digit of the step as a pair,
+and collect this pair.
+After that, 
+we increase the index of the step by one.
+and continue with the new number, 
+which is obtained by removing the digit of the step from the number,
+and stop when the number is single digit.
+"""
+
+
+Normcode_count_natural_paragraph = """
+To obtain all the pairs of index and digit of the number, 
+we take the number in a continuous step-by-step process.
+For every number in each step of the process, 
+we assign the current pair of index and digit to the collection of all the pair of index and digit of the number
+The current pair of index and digit is obtained by grouping the current index and current digit as a one-one pair.
+Where The current digit is obtained by getting the unit place value of the current leftover number.
+and The current index is inherited from the previous step of the process.
+After we have obtained the current pairs of index and digit of the number, 
+we increment the index by one.
+and continue with the new leftover number in the process, 
+which is obtained by removing the current digit from the current leftover number, unless the number is single digit, in which case we keep the number to stop the process.
+"""
+
+Normcode_count_natural = """
+all pairs of index and digit of number | 1. quantifying
+    <= for every number and their index in the leftover number collection | 1.1. assigning
+        <= assign the current pair of index and digit 
+        <- current pair of index and digit | 1.1.2. grouping
+            <= group the current index and current digit as a one-to-one pair
+            <- the current index
+            <- the current digit | 1.1.2.3. imperative
+                <= get the unit place value of the current leftover number
+                <- the meaning of unit place value
+                <- the current leftover number
+        <- the leftover number collection | 1.1.3. assigning
+            <= add the new leftover number to the leftover number collection
+            <- the new leftover number | 1.1.3.2. imperative
+                <= if the number is not single digit, then remove the current digit from the current leftover number | 1.1.3.2.1. timing
+                     <= after the current pair of index and digit is obtained 
+                <- the current leftover number
+        <- the current index | 1.1.4. imperative
+            <= increase the current index by one | 1.1.4.1. timing
+                <= after the current pair of index and digit is obtained 
+            <- the current index
+    <- the number as the leftover number collection
+"""
+
+
+
 Normcode_count = """
 [all {index} and {digit} of number] | 1. quantifying
     <= *every({number})%:[{number}]@[{index}^1] | 1.1. assigning
