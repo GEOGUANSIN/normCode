@@ -17,5 +17,6 @@ class States(BaseStates):
         self.syntax: SimpleNamespace = SimpleNamespace(
             marker=None,
             assign_source=None,
-            assign_destination=None
+            assign_destination=None,
+            by_axes=[]
         )

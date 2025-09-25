@@ -177,9 +177,8 @@ def _parse_normcode_assigning(expr: str) -> dict:
     }
     
     try:
-        # Match the pattern: $marker(source:destination)
-        # The marker can be . or + (specification or continuation)
-        pattern = r"\$([.+])\(([^:]+):([^)]+)\)"
+        # Match the pattern: $marker(source:destination) with an optional %:[by_axes]
+        pattern = r"\$([.+])\(([^:]+):([^)]+)\)(?:%:\[([^\]]+)\])?"
         match = re.match(pattern, expr)
         
         if not match:
@@ -189,6 +188,13 @@ def _parse_normcode_assigning(expr: str) -> dict:
         result["marker"] = match.group(1).strip()
         result["assign_source"] = match.group(2).strip()
         result["assign_destination"] = match.group(3).strip()
+        
+        # Extract optional by_axes
+        if match.group(4):
+            by_axes_str = match.group(4).strip()
+            result["by_axes"] = [axis.strip() for axis in by_axes_str.split(';') if axis.strip()]
+        else:
+            result["by_axes"] = []
         
         logger.debug(f"Parsed assigning expression: {result}")
         return result

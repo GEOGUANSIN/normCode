@@ -38,7 +38,7 @@ def assigning_references(states: States) -> States:
 
     elif syntax_marker == "+":  # Continuation
         logging.info(f"Performing continuation (+): Adding '{source_record.concept.name}' reference to '{assign_destination_name}'.")
-        output_ref = assigner.continuation(source_ref, dest_ref)
+        output_ref = assigner.continuation(source_ref, dest_ref, by_axes=states.syntax.by_axes)
 
     else:
         logging.warning(f"Unknown syntax marker: {syntax_marker}. No assignment performed.")

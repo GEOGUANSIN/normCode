@@ -19,6 +19,7 @@ def input_working_interpretation(
         states.syntax.marker = syntax_info.get("marker")
         states.syntax.assign_source = syntax_info.get("assign_source")
         states.syntax.assign_destination = syntax_info.get("assign_destination")
+        states.syntax.by_axes = syntax_info.get("by_axes", [])
 
     # Seed lists with empty records for each step
     for step in ["AR", "OR"]:

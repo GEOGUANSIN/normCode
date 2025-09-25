@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from infra._core import Reference
 
@@ -33,16 +33,27 @@ class Assigner:
         # If both are None, return an empty reference
         return Reference(axes=["result"], shape=(0,))
 
-    def continuation(self, source_ref: Optional[Reference], dest_ref: Optional[Reference]) -> Reference:
+    def continuation(self, source_ref: Optional[Reference], dest_ref: Optional[Reference], by_axes: Optional[List[str]] = None) -> Reference:
         """
-        Performs continuation (addition/concatenation).
-        Returns a new reference with the source's data appended to the destination's data.
+        Performs continuation (addition/concatenation) using the Reference.append() method.
+        Appends the data from source_ref to dest_ref.
+        If dest_ref has data, appends along the axis specified in by_axes, or the first axis if not specified.
+        If dest_ref is None or empty, it effectively returns a copy of source_ref.
         """
-        source_val = source_ref.get() if source_ref else []
-        dest_val = dest_ref.get() if dest_ref else []
+        if dest_ref is None:
+            return source_ref.copy() if source_ref else Reference.from_data([])
 
-        source_flat = _flatten_to_list(source_val)
-        dest_flat = _flatten_to_list(dest_val)
+        if source_ref is None:
+            return dest_ref.copy()
 
-        new_val = dest_flat + source_flat
-        return Reference.from_data(new_val, axis_names=dest_ref.axes)
+        logging.debug(f"Continuation called with by_axes: {by_axes}")
+
+        if by_axes and by_axes[0] in dest_ref.axes:
+            append_axis = by_axes[0]
+        else:
+            append_axis = dest_ref.axes[0]
+            if by_axes:
+                logging.warning(f"Provided axis '{by_axes[0]}' not in destination axes {dest_ref.axes}. Defaulting to '{append_axis}'.")
+
+        logging.debug(f"Appending with axis: '{append_axis}'")
+        return dest_ref.append(source_ref, by_axis=append_axis)
