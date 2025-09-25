@@ -74,6 +74,7 @@ class Orchestrator:
         for support_item in supporting_items:
             support_flow_index = support_item.inference_entry.flow_info['flow_index']
             if self.blackboard.get_item_status(support_flow_index) != 'completed':
+                logging.debug(f"    - Support item '{support_flow_index}' is NOT 'completed' (Status: {self.blackboard.get_item_status(support_flow_index)})")
                 return False
         return True
 
@@ -83,28 +84,52 @@ class Orchestrator:
         """
         flow_index = item.inference_entry.flow_info['flow_index']
         is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
+        logging.debug(f"--- Checking readiness for item {flow_index} (Cycle: {self.tracker.cycle_count}, Execution Count: {self.blackboard.get_execution_count(flow_index)}) ---")
 
         # Check for completion of all supporting items, unless bypassed.
         # This ensures procedural dependencies are met before continuing.
         start_with_support_reference_only = getattr(item.inference_entry, 'start_with_support_reference_only', False)
         if not start_with_support_reference_only:
             if not self._are_supporting_items_complete(item):
+                logging.debug(f"  - RESULT: NOT READY. Supporting items are not complete.")
                 return False
+        else:
+            logging.debug(f"  - Bypassed supporting items check.")
 
         # Check function concept readiness, unless bypassed
         if not item.inference_entry.start_without_function:
             if not (item.inference_entry.start_without_function_only_once and is_first_execution):
                 if not self._is_function_concept_ready(item):
+                    fc_name = item.inference_entry.function_concept.concept_name if item.inference_entry.function_concept else "N/A"
+                    status = self.blackboard.get_concept_status(fc_name) if fc_name != "N/A" else "N/A"
+                    logging.debug(f"  - RESULT: NOT READY. Function concept '{fc_name}' is not complete (Status: {status}).")
                     return False
+            else:
+                logging.debug(f"  - Bypassed function concept check (first execution only).")
+        else:
+            logging.debug(f"  - Bypassed function concept check (always).")
+
 
         # Check value concept readiness, unless bypassed
         if item.inference_entry.start_without_value:
+            logging.debug(f"  - RESULT: IS READY (start_without_value is True).")
             return True
 
         if item.inference_entry.start_without_value_only_once and is_first_execution:
+            logging.debug(f"  - RESULT: IS READY (start_without_value_only_once on first execution).")
             return True
 
-        return self._are_value_concepts_ready(item)
+        if not self._are_value_concepts_ready(item):
+            pending_vcs = [
+                f"'{vc.concept_name}' (Status: {self.blackboard.get_concept_status(vc.concept_name)})"
+                for vc in item.inference_entry.value_concepts
+                if self.blackboard.get_concept_status(vc.concept_name) != 'complete'
+            ]
+            logging.debug(f"  - RESULT: NOT READY. Value concepts are not ready. Pending: {', '.join(pending_vcs)}")
+            return False
+            
+        logging.debug(f"  - RESULT: IS READY. All checks passed.")
+        return True
 
     def _handle_inference_failure(self, item: WaitlistItem, error: Exception):
         """Handles the failed execution of an inference."""
@@ -212,7 +237,7 @@ class Orchestrator:
             if hasattr(states, category):
                 for record in getattr(states, category):
                     if record.step_name == 'OR' and record.reference is not None:
-                        self._update_concept_from_record(record, category, item)
+                        self._update_concept_from_record(record, category, item, is_quantifying, is_complete)
 
         # 4. The overall process is only "complete" if the quantifying loop is finished.
         return not (is_quantifying and not is_complete)
@@ -237,6 +262,11 @@ class Orchestrator:
         for support_item in supporting_items:
             support_flow_index = support_item.inference_entry.flow_info['flow_index']
             self.blackboard.set_item_status(support_flow_index, 'pending')
+            self.blackboard.reset_execution_count(support_flow_index)
+
+            # If the supporting item is a quantifying loop, clear its state from the workspace.
+            if support_item.inference_entry.inference_sequence == 'quantifying':
+                self._clear_quantifier_workspace_state(support_item)
 
             inferred_concept_entry = support_item.inference_entry.concept_to_infer
             if not inferred_concept_entry.is_ground_concept:
@@ -252,7 +282,18 @@ class Orchestrator:
                         inferred_concept_entry.concept.reference = None
                     logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
 
-    def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem):
+    def _clear_quantifier_workspace_state(self, item: WaitlistItem):
+        """Clears the state of a quantifier from the workspace."""
+        syntax = item.inference_entry.working_interpretation.get("syntax", {})
+        loop_base = syntax.get("LoopBaseConcept")
+        q_index = syntax.get("quantifier_index")
+        if loop_base and q_index is not None:
+            workspace_key = f"{q_index}_{loop_base}"
+            if workspace_key in self.workspace:
+                del self.workspace[workspace_key]
+                logging.info(f"  - Cleared workspace state for quantifier '{workspace_key}'.")
+
+    def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem, is_quantifying: bool, is_complete: bool):
         """Processes a single 'OR' record from the inference state, updating the concept reference."""
         concept_name = self._get_concept_name_from_record(record, category, item)
         if not concept_name:
@@ -266,8 +307,13 @@ class Orchestrator:
         concept_entry.concept.reference = record.reference.copy()
         logging.info(f"Updated reference for concept '{concept_name}' from inference state.")
 
-        self.blackboard.set_concept_status(concept_name, 'complete')
-        logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
+        # For quantifying loops, only set the concept to 'complete' when the loop itself is finished.
+        # This rule only applies to the main inferred concept, not context concepts.
+        if category == 'context' or not is_quantifying or (is_quantifying and is_complete):
+            self.blackboard.set_concept_status(concept_name, 'complete')
+            logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
+        else:
+            logging.info(f"Concept '{concept_name}' reference updated, but status remains 'pending' as quantifying loop is not complete.")
 
     def _get_concept_name_from_record(self, record: Any, category: str, item: WaitlistItem) -> Optional[str]:
         """Extracts the concept name from a state record."""

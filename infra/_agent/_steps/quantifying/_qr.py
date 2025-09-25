@@ -37,12 +37,40 @@ def quantifying_references(states: States) -> States:
     loop_base_concept_name = get_syntax_attr("LoopBaseConcept")
     concept_to_infer_list = get_syntax_attr("ConceptToInfer", [])
     in_loop_spec = get_syntax_attr("InLoopConcept")
+    quantifier_index = get_syntax_attr("quantifier_index", 0)
+
+    # Resolve in-loop concept names, supporting both old and new syntax formats for backward compatibility.
+    resolved_in_loop_concepts = {}
+    if in_loop_spec:
+        for name, spec in in_loop_spec.items():
+            if isinstance(spec, int):
+                # Old format compatibility: {"{index}*": 1}
+                current_name = name
+                base_name = current_name[:-1] if current_name.endswith("*") else current_name
+                resolved_in_loop_concepts[current_name] = {
+                    "carry_over": spec,
+                    "base_name": base_name,
+                }
+            elif isinstance(spec, dict):
+                # New format: {"{index}": {"current_name": "{index}*", "carry_over": 1}}
+                base_name = name
+                current_name = spec.get("current_name")
+                if not current_name:
+                    current_name = f"{base_name}*"
+                resolved_in_loop_concepts[current_name] = {
+                    "carry_over": spec.get("carry_over", 0),
+                    "base_name": base_name,
+                }
 
     if not loop_base_concept_name or not concept_to_infer_list:
         logger.warning("[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping.")
         return states
     concept_to_infer_name = concept_to_infer_list[0]
-    current_loop_base_concept_name = f"{loop_base_concept_name}*"
+    
+    # Determine the name for the current loop item, using explicit syntax first, then falling back to convention.
+    current_loop_base_concept_name = get_syntax_attr("CurrentLoopBaseConcept")
+    if not current_loop_base_concept_name:
+        current_loop_base_concept_name = f"{loop_base_concept_name}*"
 
     # 2) Get to-loop elements reference (from GR step)
     to_loop_elements: Optional[Reference] = None
@@ -92,7 +120,11 @@ def quantifying_references(states: States) -> States:
         f"current_loop_base_element_opt = {current_loop_base_element_opt.tensor if current_loop_base_element_opt else 'None'}"
     )
     # 6) Initialize quantifier and retrieve next element
-    quantifier = Quantifier(workspace=workspace, loop_base_concept_name=loop_base_concept_name)
+    quantifier = Quantifier(
+        workspace=workspace,
+        loop_base_concept_name=loop_base_concept_name,
+        loop_concept_index=quantifier_index,
+    )
     next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
         to_loop_element_reference=to_loop_elements,
         current_loop_base_element=current_loop_base_element_opt,
@@ -168,7 +200,7 @@ def quantifying_references(states: States) -> States:
             new_ref_for_qr = next_current_loop_base_element.copy()
 
         # Determine the new reference for any in-loop concepts to be carried over
-        elif in_loop_spec is not None and ctx_name in in_loop_spec:
+        elif resolved_in_loop_concepts and ctx_name in resolved_in_loop_concepts:
             if not isinstance(ctx_name, str):
                 continue
 
@@ -179,7 +211,7 @@ def quantifying_references(states: States) -> States:
                     ctx_name,
                     _ensure_reference(getattr(ctx, "reference", None)),
                 )
-            carry_index = in_loop_spec[ctx_name]
+            carry_index = resolved_in_loop_concepts[ctx_name]["carry_over"]
             initial_ref = _ensure_reference(getattr(ctx, "reference", None))
             new_ref_for_qr = quantifier.retrieve_next_in_loop_element(
                 ctx_name,

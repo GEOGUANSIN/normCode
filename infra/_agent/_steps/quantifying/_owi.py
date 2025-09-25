@@ -24,7 +24,12 @@ def output_working_interpretation(states: States) -> States:
         f"[OWI Step 1] Checking if loop is complete. Loop base concept name: {loop_base_concept_name}, To loop elements: {to_loop_elements}"
     )
     if loop_base_concept_name and to_loop_elements:
-        quantifier = Quantifier(workspace=states.workspace, loop_base_concept_name=loop_base_concept_name)
+        quantifier_index = getattr(syntax_data, "quantifier_index", 0)
+        quantifier = Quantifier(
+            workspace=states.workspace,
+            loop_base_concept_name=loop_base_concept_name,
+            loop_concept_index=quantifier_index,
+        )
         concept_to_infer_name = (getattr(syntax_data, "ConceptToInfer") or [""])[0]
         if quantifier.check_all_base_elements_looped(
             to_loop_elements, in_loop_element_name=concept_to_infer_name

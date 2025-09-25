@@ -59,6 +59,11 @@ class Blackboard:
     def increment_execution_count(self, flow_index: str):
         self.item_execution_counts[flow_index] = self.get_execution_count(flow_index) + 1
 
+    def reset_execution_count(self, flow_index: str):
+        """Resets the execution count for a specific item to 0."""
+        self.item_execution_counts[flow_index] = 0
+        logging.debug(f"Execution count for item {flow_index} reset to 0.")
+
     def get_all_pending_or_in_progress_items(self) -> bool:
         return any(s in ['pending', 'in_progress'] for s in self.item_statuses.values())
 
