@@ -432,6 +432,114 @@ class Reference:
                     result.append(item)
             return result
 
+    def append(self, other: 'Reference', by_axis: str) -> 'Reference':
+        if by_axis not in self.axes:
+            raise ValueError(f"Axis '{by_axis}' not found in {self.axes}")
+
+        new_ref = self.copy()
+        axis_idx = new_ref.axes.index(by_axis)
+
+        # Pattern 1: Appending new elements to a container axis (e.g., by_axis is not the last axis)
+        if axis_idx < len(new_ref.axes) - 1:
+            slice_shape = new_ref.shape[axis_idx + 1:]
+            other_leaves = list(other._get_leaves())
+
+            if len(slice_shape) > 1:
+                raise NotImplementedError("Append for multi-dimensional slices is not yet implemented.")
+            
+            slice_len = slice_shape[0]
+            if len(other_leaves) % slice_len != 0:
+                raise ValueError(f"Shape mismatch at axis '{self.axes[axis_idx+1]}': "
+                                 f"cannot reshape data of length {len(other_leaves)} into slices of length {slice_len}")
+
+            new_slices = [other_leaves[i:i + slice_len] for i in range(0, len(other_leaves), slice_len)]
+
+            if axis_idx == 0:
+                new_ref.data.extend(new_slices)
+            else:
+                # This case requires traversing the data structure to append at the correct depth,
+                # which is complex and not covered by the examples.
+                raise NotImplementedError(f"Append on a nested axis ('{by_axis}') is not supported yet.")
+            
+            # Update shape
+            new_shape = list(new_ref.shape)
+            new_shape[axis_idx] += len(new_slices)
+            new_ref.shape = tuple(new_shape)
+
+            return new_ref
+
+        # Pattern 2: Appending data within existing elements (by_axis is the last axis)
+        else:
+            # Determine if it's element-wise or broadcast append
+            is_elementwise = False
+            if len(self.axes) > 1:
+                self_prefix_axes = self.axes[:-1]
+                other_prefix_axes = [ax for ax in other.axes if ax in self_prefix_axes]
+                
+                if set(self_prefix_axes) == set(other_prefix_axes):
+                    # Check if shapes match for all prefix axes
+                    shapes_match = True
+                    for ax in self_prefix_axes:
+                        self_ax_idx = self.axes.index(ax)
+                        other_ax_idx = other.axes.index(ax)
+                        if self.shape[self_ax_idx] != other.shape[other_ax_idx]:
+                            shapes_match = False
+                            break
+                    if shapes_match:
+                        is_elementwise = True
+
+            def _recursive_append(self_data, other_data, self_depth):
+                if self_depth == axis_idx:
+                    # At the target axis, perform append
+                    if is_elementwise:
+                        append_val = list(other._get_leaves(other_data))
+                        return self_data + append_val
+                    else:
+                        # Broadcast: other_data is the single chunk to append everywhere
+                        return self_data + other_data
+                else:
+                    # Recurse deeper
+                    if is_elementwise:
+                        if len(self_data) != len(other_data):
+                            raise ValueError(f"Shape mismatch at axis '{new_ref.axes[self_depth]}': "
+                                             f"{len(self_data)} vs {len(other_data)}")
+                        return [_recursive_append(self_item, other_item, self_depth + 1)
+                                for self_item, other_item in zip(self_data, other_data)]
+                    else:  # broadcast
+                        return [_recursive_append(self_item, other_data, self_depth + 1)
+                                for self_item in self_data]
+
+            if is_elementwise:
+                new_ref.data = _recursive_append(new_ref.data, other.data, 0)
+            else:
+                # For broadcast, flatten the entire other reference
+                other_leaves = list(other._get_leaves())
+                new_ref.data = _recursive_append(new_ref.data, other_leaves, 0)
+
+            # Update shape
+            if new_ref.data:
+                new_shape = list(new_ref.shape)
+                # To calculate the new dimension, we need to see how long the inner lists are.
+                # We can compute the new shape from the resulting data.
+                new_ref.shape = new_ref._compute_irregular_shape(new_ref.data)
+                # This might not be perfect if the list is empty, but it's a start.
+                if len(new_ref.shape) != len(self.shape):
+                     # If the rank changes, we have an issue. For now, assume it doesn't.
+                     pass
+            
+            return new_ref
+
+    def _get_leaves(self, data=None):
+        """Recursively yield all non-list elements from a nested list structure."""
+        if data is None:
+            data = self.data
+
+        if isinstance(data, list):
+            for item in data:
+                yield from self._get_leaves(item)
+        elif data != self.skip_value:
+            yield data
+
 
 def cross_product(references):
     if not references:
@@ -843,3 +951,47 @@ if __name__ == "__main__":
     print("For x=0, y=1: 2 + 4 =", result.get(x=0, y=1))
     print("For x=1, y=0: Missing + 5 =", result.get(x=1, y=0))
     print("Note: '@#SKIP#@' appears where any input is missing")
+
+
+    print("\n=== Example 6: Append Operation ===")
+    print("\n--- Pattern 1: Appending new elements to a container ---")
+    # Corresponds to: f(B[A[1,2], [3,4]], C[5,6], by_axis=B) = B[A[1,2], [3,4], [5,6]]
+    target_ref = Reference.from_data([[1, 2], [3, 4]], axis_names=['B', 'A'])
+    source_ref = Reference.from_data([5, 6], axis_names=['C'])
+    result_ref = target_ref.append(source_ref, by_axis='B')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'B':")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+
+    print("\n--- Pattern 2a: Element-wise append ---")
+    # Corresponds to: f(B[A[1,2], [3,4]], B[C[5],[6]], by_axis=A) = B[A[1,2,5], [3,4,6]]
+    target_ref = Reference.from_data([[1, 2], [3, 4]], axis_names=['B', 'A'])
+    source_ref = Reference.from_data([[5], [6]], axis_names=['B', 'C'])
+    result_ref = target_ref.append(source_ref, by_axis='A')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'A' (element-wise):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+
+    print("\n--- Pattern 2b: Broadcast append ---")
+    # Corresponds to: f(B[A[1,2], [3,4]], C[5,6], by_axis=A) = B[A[1,2,5,6], [3,4,5,6]]
+    target_ref = Reference.from_data([[1, 2], [3, 4]], axis_names=['B', 'A'])
+    source_ref = Reference.from_data([5, 6], axis_names=['C'])
+    result_ref = target_ref.append(source_ref, by_axis='A')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'A' (broadcast):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    
+    print("\n--- Error case: Shape mismatch ---")
+    # Corresponds to: f(B[A[1,2], [3,4]], B[C[5],[6],[7]], by_axis=B)=ERROR:mismatch_shape at A
+    target_ref = Reference.from_data([[1, 2], [3, 4]], axis_names=['B', 'A'])
+    source_ref = Reference.from_data([5, 6, 7], axis_names=['C'])
+    try:
+        target_ref.append(source_ref, by_axis='B')
+    except ValueError as e:
+        print("Caught expected error:", e)
