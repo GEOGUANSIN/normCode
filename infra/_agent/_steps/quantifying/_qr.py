@@ -22,9 +22,12 @@ def quantifying_references(states: States) -> States:
 
     # 1) Read syntax data (parsed quantification)
     syntax_data = getattr(states, "syntax", {})
-    if not isinstance(syntax_data, SimpleNamespace) and not isinstance(syntax_data, dict):
+    if not isinstance(syntax_data, SimpleNamespace) and not isinstance(
+        syntax_data, dict
+    ):
         logger.warning(
-            "[QR] states.syntax is not a dict or SimpleNamespace; QR step requires parsed syntax data. Skipping."
+            "[QR] states.syntax is not a dict or SimpleNamespace; "
+            "QR step requires parsed syntax data. Skipping."
         )
         return states
 
@@ -46,7 +49,11 @@ def quantifying_references(states: States) -> States:
             if isinstance(spec, int):
                 # Old format compatibility: {"{index}*": 1}
                 current_name = name
-                base_name = current_name[:-1] if current_name.endswith("*") else current_name
+                base_name = (
+                    current_name[:-1]
+                    if current_name.endswith("*")
+                    else current_name
+                )
                 resolved_in_loop_concepts[current_name] = {
                     "carry_over": spec,
                     "base_name": base_name,
@@ -63,10 +70,12 @@ def quantifying_references(states: States) -> States:
                 }
 
     if not loop_base_concept_name or not concept_to_infer_list:
-        logger.warning("[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping.")
+        logger.warning(
+            "[QR] Missing LoopBaseConcept or ConceptToInfer in syntax data. Skipping."
+        )
         return states
     concept_to_infer_name = concept_to_infer_list[0]
-    
+
     # Determine the name for the current loop item, using explicit syntax first, then falling back to convention.
     current_loop_base_concept_name = get_syntax_attr("CurrentLoopBaseConcept")
     if not current_loop_base_concept_name:
@@ -76,11 +85,16 @@ def quantifying_references(states: States) -> States:
     to_loop_elements: Optional[Reference] = None
     values_block = getattr(states, "values", []) or []
     for item in values_block:
-        if getattr(item, "step_name", None) == "GR" and getattr(item, "reference", None) is not None:
+        if (
+            getattr(item, "step_name", None) == "GR"
+            and getattr(item, "reference", None) is not None
+        ):
             to_loop_elements = item.reference
             break
     if to_loop_elements is None:
-        logger.warning("[QR] No to-loop elements found in states.values for step 'GR'. Skipping.")
+        logger.warning(
+            "[QR] No to-loop elements found in states.values for step 'GR'. Skipping."
+        )
         return states
 
     # 3) Prepare workspace
@@ -104,7 +118,9 @@ def quantifying_references(states: States) -> States:
 
     current_loop_base_element_opt = None
     if current_loop_base_context_item is not None:
-        current_loop_base_element_opt = getattr(current_loop_base_context_item, "reference", None)
+        current_loop_base_element_opt = getattr(
+            current_loop_base_context_item, "reference", None
+        )
 
     # 5) Determine current concept element from function block (first available reference)
     current_concept_element_opt = None
@@ -125,7 +141,10 @@ def quantifying_references(states: States) -> States:
         loop_base_concept_name=loop_base_concept_name,
         loop_concept_index=quantifier_index,
     )
-    next_current_loop_base_element_opt, _ = quantifier.retireve_next_base_element(
+    (
+        next_current_loop_base_element_opt,
+        _,
+    ) = quantifier.retireve_next_base_element(
         to_loop_element_reference=to_loop_elements,
         current_loop_base_element=current_loop_base_element_opt,
     )
@@ -136,9 +155,13 @@ def quantifying_references(states: States) -> States:
 
     # 7) Decide if current loop baseelement is new
     is_new = False
-    if current_loop_base_element_opt is not None and isinstance(current_loop_base_element_opt, Reference):
-        is_new_check_result = quantifier._check_new_base_element_by_looped_base_element(
-            current_looped_element_reference=current_loop_base_element_opt, 
+    if current_loop_base_element_opt is not None and isinstance(
+        current_loop_base_element_opt, Reference
+    ):
+        is_new_check_result = (
+            quantifier._check_new_base_element_by_looped_base_element(
+                current_looped_element_reference=current_loop_base_element_opt,
+            )
         )
         logger.debug(
             f"[QR Step 7] Checking if '{current_loop_base_element_opt.tensor if current_loop_base_element_opt else 'None'}' is a new base element. Result: {is_new_check_result}"
@@ -163,10 +186,14 @@ def quantifying_references(states: States) -> States:
 
     # Store is_quantifier_progress as an attribute of states
     setattr(states, "is_quantifier_progress", is_new)
-    logger.debug(f"[QR Step 7] Stored is_quantifier_progress attribute: {is_new}")
+    logger.debug(
+        f"[QR Step 7] Stored is_quantifier_progress attribute: {is_new}"
+    )
 
     # 8) Ensure references
-    next_current_loop_base_element = _ensure_reference(next_current_loop_base_element_opt)
+    next_current_loop_base_element = _ensure_reference(
+        next_current_loop_base_element_opt
+    )
     current_concept_element = _ensure_reference(current_concept_element_opt)
     current_loop_base_element = _ensure_reference(current_loop_base_element)
 
@@ -174,8 +201,12 @@ def quantifying_references(states: States) -> States:
     if is_new:
         if not quantifier._is_reference_empty(current_loop_base_element):
             # First, create the entry for the new base element and get its loop index.
-            logger.debug(f"[QR Step 9] Storing NEW base element: {current_loop_base_element.tensor}")
-            loop_index = quantifier.store_new_base_element(current_loop_base_element)
+            logger.debug(
+                f"[QR Step 9] Storing NEW base element: {current_loop_base_element.tensor}"
+            )
+            loop_index = quantifier.store_new_base_element(
+                current_loop_base_element
+            )
 
             # Now, safely store the inferred concept using the obtained index.
             if not quantifier._is_reference_empty(current_concept_element):
@@ -200,12 +231,16 @@ def quantifying_references(states: States) -> States:
             new_ref_for_qr = next_current_loop_base_element.copy()
 
         # Determine the new reference for any in-loop concepts to be carried over
-        elif resolved_in_loop_concepts and ctx_name in resolved_in_loop_concepts:
+        elif (
+            resolved_in_loop_concepts and ctx_name in resolved_in_loop_concepts
+        ):
             if not isinstance(ctx_name, str):
                 continue
 
             # For new elements, store the initial value of the in-loop concept (e.g., initial partial_sum).
-            if is_new and not quantifier._is_reference_empty(current_loop_base_element):
+            if is_new and not quantifier._is_reference_empty(
+                current_loop_base_element
+            ):
                 quantifier.store_new_in_loop_element(
                     current_loop_base_element,
                     ctx_name,
@@ -222,7 +257,11 @@ def quantifying_references(states: States) -> States:
         # If an updated reference was created, add it to our list for the new QR context.
         if new_ref_for_qr:
             new_qr_context_records.append(
-                ReferenceRecordLite(step_name="QR", concept=ctx.concept, reference=new_ref_for_qr)
+                ReferenceRecordLite(
+                    step_name="QR",
+                    concept=ctx.concept,
+                    reference=new_ref_for_qr,
+                )
             )
 
     # Prepend the new QR records to the list so they are found first. The original IR records are preserved.
@@ -231,21 +270,30 @@ def quantifying_references(states: States) -> States:
     # 11) Combine all stored references for the inferred concept
     combined_reference: Optional[Reference] = None
     if is_new:
-        combined_reference = quantifier.combine_all_looped_elements_by_concept(
-            to_loop_element_reference=to_loop_elements,
-            concept_name=concept_to_infer_name,
+        combined_reference = (
+            quantifier.combine_all_looped_elements_by_concept(
+                to_loop_element_reference=to_loop_elements,
+                concept_name=concept_to_infer_name,
+            )
         )
         if combined_reference is not None:
             # Axis normalization
             loop_base_axis, current_loop_axis = None, None
             for v in values_block:
                 ci = getattr(v, "concept", None)
-                if ci and getattr(ci, "name", None) == loop_base_concept_name:
+                if (
+                    ci
+                    and getattr(ci, "name", None) == loop_base_concept_name
+                ):
                     loop_base_axis = getattr(ci, "axis_name", None)
                     break
             for c in context_block:
                 ci = getattr(c, "concept", None)
-                if ci and getattr(ci, "name", None) == current_loop_base_concept_name:
+                if (
+                    ci
+                    and getattr(ci, "name", None)
+                    == current_loop_base_concept_name
+                ):
                     current_loop_axis = getattr(ci, "axis_name", None)
                     break
 
@@ -253,7 +301,9 @@ def quantifying_references(states: States) -> States:
                 new_axes = combined_reference.axes.copy()
                 new_axes[-1] = concept_to_infer_name
                 if current_loop_axis in new_axes:
-                    new_axes[new_axes.index(current_loop_axis)] = loop_base_axis
+                    new_axes[
+                        new_axes.index(current_loop_axis)
+                    ] = loop_base_axis
                 combined_reference.axes = new_axes
 
     # 12) Write result into states.inference under QR if the entry exists

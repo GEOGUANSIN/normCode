@@ -30,44 +30,57 @@ except Exception:
 
 # --- Normcode for this example ---
 
-Normcode_old_identity = """
-{new number pair}| 1. quantifying
-    <= *every({number pair})%:[{number pair}]@(1) | 1.1. quantifying
-        <= *every({number pair}*1)%:[{number}]@(2) | 1.1.1. assigning
-            <= $.({number pair}*1*2)
-            <- {number pair}*1*2
-        <- {number pair}*1  
-    <- {number pair} |ref. %(number pair)=[%(number)=[123, 98], [12, 9], [1, 0]]
-"""
-
-
-Normcode_new_appending = """
-{new number pair}| 1. quantifying
+Normcode_new_with_appending = """
+{new number pair} | 1. quantifying
     <= *every({number pair})%:[{number pair}]@(1) | 1.1. assigning
-        <= $.({new number pair in loop})
+        <= $.({new number pair in loop}) 
         <- {new number pair in loop} | 1.1.2. quantifying
             <= *every({number pair}*1)%:[{number}]@(2) | 1.1.2.1. assigning
                 <= $.({number pair}*1*2)
                 <- {number pair}*1*2
             <- {number pair}*1
 
-        <- {number pair}<$={1}> 
-            <= $+({new number pair}:{number pair})%:[{number pair}] 
-            <- {number pair to append} 
-                <= *every({number pair}*1)%:[{number}]@(2) | 1.1.2.2. assigning
-                    <= ::(remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>) 
-                    <- {unit place digit}?<:{2}> 
-                    <- {number pair}*1*2
+        <- {number pair}<$={1}> | 1.1.3. assigning
+            <= $+({number pair to append}:{number pair})%:[{number pair}] 
+
+                <- @if
+            <- {number pair to append} | 1.1.3.2. quantifying
+                <= *every({number pair}*1)%:[{number}]@(3) | 1.1.3.2.1. assigning
+                    <= $.({number with last digit removed}) 
+                    <- {number with last digit removed} | 1.1.3.2.1.2. imperative
+                        <= ::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>) 
+                        <- {unit place digit}?<:{2}> 
+                        <- {number pair}*1*3<:{1}>
                 <- {number pair}*1
         
-    <- {number pair}<$={1}> |ref. %(number pair)=[%(number)=[123, 98], [12, 9], [1, 0]]
+    <- {number pair}<$={1}> |ref. %(number pair)=[%(number)=[123, 98]]
 """
 
 # --- Data Definitions ---
-def create_sequential_repositories():
-    """Creates concept and inference repositories for a waitlist scenario with two intermediate data concepts and three functions."""
-    # Create concept entries
+
+def create_appending_repositories_new():
+    """Creates concept and inference repositories for the appending scenario."""
+    # --- Concept Entries ---
     concept_entries = [
+        # --- Ground & Final Concepts ---
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number pair}",
+            type="{}",
+            axis_name="number pair",
+            description="The collection of number pairs.",
+            reference_data=[["%(123)", "%(98)"]],
+            reference_axis_names=["number pair", "number"],
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{new number pair}",
+            type="{}",
+            axis_name="new number pair",
+            description="The final collection of new number pairs generated.",
+            is_final_concept=True,
+        ),
         # The unit place digit concept (result of get operation)
         ConceptEntry(
             id=str(uuid.uuid4()),
@@ -80,88 +93,129 @@ def create_sequential_repositories():
             reference_axis_names=["unit place digit"],
             is_ground_concept=True,
         ),
-        
 
-        # 1. Final Concept: The result of the addition.
-        ConceptEntry(
-            id=str(uuid.uuid4()),
-            concept_name="{new number pair}",
-            type="{}",
-            axis_name="new number pair",
-            description="The resulting number pair after the addition process.",
-            is_final_concept=True,
-        ),
-        
-        # 2. Ground Concept: The pair of numbers to be added
-        ConceptEntry(
-            id=str(uuid.uuid4()),
-            concept_name="{number pair}",
-            type="{}",
-            axis_name="number pair",
-            description="The pair of numbers to perform addition on.",
-            reference_data=[["%(123)", "%(98)"], ["%(12)", "%(9)"], ["%(1)", "%(0)"]],
-            reference_axis_names=["number pair", "number"],
-            is_ground_concept=True,
-        ),
-        
-        # 4. Intermediate Concept: The current pair being processed by the outer loop
-        ConceptEntry(
-            id=str(uuid.uuid4()),
-            concept_name="{number pair}*1",
-            type="{}",
-            axis_name="current number pair",
-            description="The specific pair of numbers being processed in the current iteration of the outer loop.",
-        ),
-
-        # 5. Intermediate Concept: The current number being processed by the inner loop
-        ConceptEntry(
-            id=str(uuid.uuid4()),
-            concept_name="{number pair}*1*2",
-            type="{}",
-            axis_name="current number from pair",
-            description="The specific number being processed in the current iteration of the inner loop.",
-        ),
-
-        # 6. Concept for individual number
+        # --- Intermediate Concepts ---
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="{number}",
             type="{}",
             axis_name="number",
             description="An individual number, part of a pair.",
+            context="An individual number, part of a pair.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number pair}*1",
+            type="{}",
+            axis_name="current number pair",
+            description="The specific pair of numbers being processed in the current iteration of the outer loop.",
+            context="The specific pair of numbers being processed in the current iteration of the outer loop.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number pair}*1*2",
+            type="{}",
+            axis_name="current number from pair",
+            description="The specific number being processed in the current iteration of the inner loop.",
+            context="The specific number being processed in the current iteration of the inner loop.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number pair}*1*3",
+            type="{}",
+            axis_name="current number from pair for appending",
+            description="The specific number being processed in the current iteration of the appending loop.",
+            context="The specific number being processed in the current iteration of the appending loop.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{new number pair in loop}",
+            type="{}",
+            axis_name="new number pair in loop",
+            description="A new number pair created inside the main loop.",
+            context="A new number pair created inside the main loop.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number pair to append}",
+            type="{}",
+            axis_name="number pair to append",
+            description="A new number pair to be appended to the main collection.",
+            context="A new number pair to be appended to the main collection.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{number with last digit removed}",
+            type="{}",
+            axis_name="number with last digit removed",
+            description="The number after removing its last digit.",
+            context="The number after removing its last digit.",
         ),
 
-        # --- Quantifier (Function) Concepts ---
+        # --- Function Concepts ---
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="*every({number pair})%:[{number pair}]@(1)",
             type="*every",
-            description="Outer loop quantifier: iterates through the number pair.",
+            description="Outer loop quantifier: iterates through each number pair in the collection.",
         ),
-        
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="*every({number pair}*1)%:[{number}]@(2)",
             type="*every",
-            description="Inner loop quantifier: iterates over the digits for the current position.",
+            description="Inner loop quantifier: iterates over each number in a pair.",
         ),
-
-        # The dollar function for collection
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="*every({number pair}*1)%:[{number}]@(3)",
+            type="*every",
+            description="Inner loop quantifier for appending: iterates over each number in a pair.",
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="$.({new number pair in loop})",
+            type="$.",
+            description="Pass-through function for the new number pair in the loop.",
+            is_ground_concept=True,
+        ),
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="$.({number pair}*1*2)",
             type="$.",
-            description="Collect the number from the pair",
-            is_ground_concept = True,
+            description="Pass-through function for an individual number.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="$+({number pair to append}:{number pair})",
+            type="$+",
+            description="Append a new number pair to the main collection.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="$.({number with last digit removed})",
+            type="$.",
+            description="Pass-through function for the number with last digit removed.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",
+            type="::({})",
+            description="Remove the unit place digit from a number.",
+            is_ground_concept=True,
+            reference_data='::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)',
+            reference_axis_names=["remove"],
+            # is_ground_concept = True,
+            is_invariant=True
         ),
     ]
-    
-    # Create concept repository
     concept_repo = ConceptRepo(concept_entries)
-    # --- End of initial references ---
 
+    # --- Inference Entries ---
     inference_entries = [
-        # Inference 1: Outer Quantifying Loop for the addition process
+        # 1. Main quantifying inference for {new number pair}
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='quantifying',
@@ -185,44 +239,54 @@ def create_sequential_repositories():
             start_without_function_only_once=True,
             start_with_support_reference_only=True
         ),
-
-        # Inference 2: Inner Quantifying Loop to calculate sum at the current position
+        # 1.1. Assigning result of each outer loop iteration
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='assigning',
+            concept_to_infer=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)'),
+            function_concept=concept_repo.get_concept('$.({new number pair in loop})'),
+            value_concepts=[concept_repo.get_concept('{new number pair in loop}')],
+            flow_info={'flow_index': '1.1'},
+            working_interpretation={
+                "syntax": {
+                    "marker": ".",
+                    "assign_source": "{new number pair in loop}",
+                    "assign_destination": "*every({number pair})%:[{number pair}]@(1)"
+                }
+            },
+        ),
+        # 1.1.2. Quantifying {new number pair in loop}
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='quantifying',
-            concept_to_infer=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)'), # This would be updated through the outer loop
+            concept_to_infer=concept_repo.get_concept('{new number pair in loop}'),
             function_concept=concept_repo.get_concept('*every({number pair}*1)%:[{number}]@(2)'),
-            value_concepts=[concept_repo.get_concept('{number pair}*1')], # Represents the pair of digits
-            context_concepts=[
-                concept_repo.get_concept('{number pair}*1*2'),
-            ],
-            flow_info={'flow_index': '1.1'},
+            value_concepts=[concept_repo.get_concept('{number pair}*1')],
+            context_concepts=[concept_repo.get_concept('{number pair}*1*2')],
+            flow_info={'flow_index': '1.1.2'},
             working_interpretation={
                 "syntax": {
                     "marker": "every",
                     "quantifier_index": 2,
-                    "LoopBaseConcept": "{number pair}*1", # This would be the concept holding the digits for the position
+                    "LoopBaseConcept": "{number pair}*1",
                     "CurrentLoopBaseConcept": "{number pair}*1*2",
                     "group_base": "number",
                     "InLoopConcept": {},
-                    "ConceptToInfer": ["*every({number pair})%:[{number pair}]@(1)"], # Placeholder
+                    "ConceptToInfer": ["{new number pair in loop}"],
                 }
             },
             start_without_value_only_once=True,
             start_without_function_only_once=True,
             start_with_support_reference_only=True
         ),
-
-        # Inference 3: Assigning the value for the inner loop
+        # 1.1.2.1. Assigning value for inner loop
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='assigning',
             concept_to_infer=concept_repo.get_concept('*every({number pair}*1)%:[{number}]@(2)'),
             function_concept=concept_repo.get_concept('$.({number pair}*1*2)'),
-            value_concepts=[
-                concept_repo.get_concept('{number pair}*1*2'),
-            ],
-            flow_info={'flow_index': '1.1.1'},
+            value_concepts=[concept_repo.get_concept('{number pair}*1*2')],
+            flow_info={'flow_index': '1.1.2.1'},
             working_interpretation={
                 "syntax": {
                     "marker": ".",
@@ -231,8 +295,87 @@ def create_sequential_repositories():
                 }
             },
         ),
+        # 1.1.3. Appending new pair to {number pair}
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='assigning',
+            concept_to_infer=concept_repo.get_concept('{number pair}'),
+            function_concept=concept_repo.get_concept('$+({number pair to append}:{number pair})'),
+            value_concepts=[
+                concept_repo.get_concept('{number pair to append}'),
+                concept_repo.get_concept('{number pair}'),
+            ],
+            flow_info={'flow_index': '1.1.3'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "+",
+                    "assign_source": "{number pair to append}",
+                    "assign_destination": "{number pair}",
+                    "by_axes": ["number pair"]
+                }
+            },
+        ),
+        # 1.1.3.2. Quantifying {number pair to append}
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='quantifying',
+            concept_to_infer=concept_repo.get_concept('{number pair to append}'),
+            function_concept=concept_repo.get_concept('*every({number pair}*1)%:[{number}]@(3)'),
+            value_concepts=[concept_repo.get_concept('{number pair}*1')],
+            context_concepts=[concept_repo.get_concept('{number pair}*1*3')],
+            flow_info={'flow_index': '1.1.3.2'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "every",
+                    "quantifier_index": 3,
+                    "LoopBaseConcept": "{number pair}*1",
+                    "CurrentLoopBaseConcept": "{number pair}*1*3",
+                    "group_base": "number",
+                    "InLoopConcept": {},
+                    "ConceptToInfer": ["{number pair to append}"],
+                }
+            },
+            start_without_value_only_once=True,
+            start_without_function_only_once=True,
+            start_with_support_reference_only=True
+        ),
+        # 1.1.3.2.1. Assigning value for the appending loop
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='assigning',
+            concept_to_infer=concept_repo.get_concept('*every({number pair}*1)%:[{number}]@(3)'),
+            function_concept=concept_repo.get_concept('$.({number with last digit removed})'),
+            value_concepts=[concept_repo.get_concept('{number with last digit removed}')],
+            flow_info={'flow_index': '1.1.3.2.1'},
+            working_interpretation={
+                "syntax": {
+                    "marker": ".",
+                    "assign_source": "{number with last digit removed}",
+                    "assign_destination": "*every({number pair}*1)%:[{number}]@(3)"
+                }
+            },
+        ),
+        # 1.1.3.2.1.2. Imperative step to remove digit
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='imperative',
+            concept_to_infer=concept_repo.get_concept('{number with last digit removed}'),
+            function_concept=concept_repo.get_concept('::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)'),
+            value_concepts=[
+                concept_repo.get_concept('{number pair}*1*3'),
+                concept_repo.get_concept('{unit place digit}?'),
+            ],
+            flow_info={'flow_index': '1.1.3.2.1.2'},
+            working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": True,
+                "value_order": {
+                    "{number pair}*1*3": 1,
+                    "{unit place digit}?": 2,
+                }
+            },
+        ),
     ]
-    
     inference_repo = InferenceRepo(inference_entries)
     return concept_repo, inference_repo
 
@@ -274,13 +417,13 @@ if __name__ == "__main__":
     logging.info("=== Starting Orchestrator Demo ===")
 
     # 1. Create repositories
-    concept_repo, inference_repo = create_sequential_repositories()
+    concept_repo, inference_repo = create_appending_repositories_new()
 
     # 2. Initialize and run the orchestrator
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        max_cycles=10,
+        max_cycles=40,
     )
 
     # 3. Run the orchestrator
@@ -288,14 +431,13 @@ if __name__ == "__main__":
 
     # 4. Log the final result
     logging.info("--- Final Concepts Returned ---")
-    final_concept_entry = next((c for c in final_concepts if c.is_final_concept), None)
-
-    if final_concept_entry and final_concept_entry.concept.reference:
-        ref_tensor = final_concept_entry.concept.reference.tensor
-        logging.info(f"  - Final Concept '{final_concept_entry.concept_name}': {ref_tensor}")
-        print(f"\nFinal concept tensor: {ref_tensor}")
-    else:
-        logging.warning("No final concept with a reference was returned.")
-        print("\nNo final concept with a reference was returned.")
+    for final_concept_entry in final_concepts:
+        if final_concept_entry and final_concept_entry.concept.reference:
+            ref_tensor = final_concept_entry.concept.reference.tensor
+            logging.info(f"  - Final Concept '{final_concept_entry.concept_name}': {ref_tensor}")
+            print(f"\nFinal concept '{final_concept_entry.concept_name}' tensor: {ref_tensor}")
+        else:
+            logging.warning(f"No reference found for final concept '{final_concept_entry.concept_name}'.")
+            print(f"\nNo reference found for final concept '{final_concept_entry.concept_name}'.")
 
     logging.info(f"=== Orchestrator Demo Complete - Log saved to {log_filename} ===") 

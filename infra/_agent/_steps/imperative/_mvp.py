@@ -36,9 +36,15 @@ def memory_value_perception(states: States) -> States:
     if ordered_refs:
         # Step 1: Strip wrappers like %() from each reference before cross-product.
         def strip_wrapper(element: Any) -> Any:
-            """Strips the '%(...)' wrapper if it exists."""
-            if isinstance(element, str) and element.startswith("%(") and element.endswith(")"):
-                return element[2:-1]
+            """Strips the '%...(...)' wrapper if it exists."""
+            if isinstance(element, str) and element.startswith("%"):
+                open_paren_index = element.find("(")
+                # To handle nested parentheses in the wrapped content, find the last closing parenthesis.
+                close_paren_index = element.rfind(")")
+
+                # Check for a valid wrapper structure, e.g., %code(...)
+                if open_paren_index > 0 and close_paren_index == len(element) - 1:
+                    return element[open_paren_index + 1 : close_paren_index]
             return element
 
         stripped_refs = [element_action(strip_wrapper, [ref]) for ref in ordered_refs]
