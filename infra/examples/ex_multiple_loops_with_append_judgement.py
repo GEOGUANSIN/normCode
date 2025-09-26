@@ -58,12 +58,12 @@ Normcode_new_with_appending = """
                     <= @after({number pair to append}<$={1}>)
                 <- {number pair to append}<$={1}><:{1}>
         
-    <- {number pair}<$={1}> |ref. %(number pair)=[%(number)=[f"{number_1}", f"{number_2}"]]
+    <- {number pair}<$={1}> |ref. %(number pair)=[%(number)=[123, 98]]
 """
 
 # --- Data Definitions ---
 
-def create_appending_repositories_new(number_1: str = "123", number_2: str = "98"):
+def create_appending_repositories_new():
     """Creates concept and inference repositories for the appending scenario."""
     # --- Concept Entries ---
     concept_entries = [
@@ -74,7 +74,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             type="{}",
             axis_name="number pair",
             description="The collection of number pairs.",
-            reference_data=[[f"%({number_1})", f"%({number_2})"]],
+            reference_data=[["%(123)", "%(98)"]],
             reference_axis_names=["number pair", "number"],
             is_ground_concept=True,
         ),
@@ -421,20 +421,14 @@ if __name__ == "__main__":
     log_filename = setup_orchestrator_logging(__file__)
     logging.info("=== Starting Orchestrator Demo ===")
 
-    number_1 = "12342"
-    number_2 = "98"
-
     # 1. Create repositories
-    concept_repo, inference_repo = create_appending_repositories_new(
-        number_1=number_1,
-        number_2=number_2
-    )
+    concept_repo, inference_repo = create_appending_repositories_new()
 
     # 2. Initialize and run the orchestrator
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        max_cycles=55,
+        max_cycles=40,
     )
 
     # 3. Run the orchestrator

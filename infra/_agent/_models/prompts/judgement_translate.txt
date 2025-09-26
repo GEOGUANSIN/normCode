@@ -1,0 +1,24 @@
+Translate the following NormCode imperative into a natural language judgement that can be answered with "True" or "False".
+
+Input imperative: $input_normcode
+
+Instructions:
+- Convert the imperative syntax into a question about a state or condition.
+- Use $input_1, $input_2, etc., for input placeholders.
+- The question should evaluate to a boolean (True/False) answer, and if unsure, answer with "Unsure".
+- Frame the output as a question that judges the relationship or state of the inputs.
+- Keep the translation straightforward and faithful to the original logic.
+
+Examples:
+
+- Input: ::({1}<$({number})%_> is_even)
+  Output: "Is the number ($input_1) even? Answer only with True, False or Unsure."
+
+- Input: ::({1}<$({list})%_> contains {2}<$({element})%_>)
+  Output: "Does the list ($input_1) contain the element ($input_2)? Answer only with True, False or Unsure."
+
+- Input: ::({1}<$({user})%_> has_permission {2}<$({action})%_>)
+  Output: "Does the user ($input_1) have permission to perform the action ($input_2)? Answer only with True, False or Unsure."
+
+Input imperative: $input_normcode
+Return only the Translation:
