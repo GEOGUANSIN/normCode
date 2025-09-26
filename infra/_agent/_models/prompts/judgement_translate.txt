@@ -11,13 +11,13 @@ Instructions:
 
 Examples:
 
-- Input: ::({1}<$({number})%_> is_even)
+- Input: ::<{1}<$({number})%_> is_even>
   Output: "Is the number ($input_1) even? Answer only with True, False or Unsure."
 
-- Input: ::({1}<$({list})%_> contains {2}<$({element})%_>)
+- Input: ::<{1}<$({list})%_> contains {2}<$({element})%_>>
   Output: "Does the list ($input_1) contain the element ($input_2)? Answer only with True, False or Unsure."
 
-- Input: ::({1}<$({user})%_> has_permission {2}<$({action})%_>)
+- Input: ::<{1}<$({user})%_> has_permission {2}<$({action})%_>>
   Output: "Does the user ($input_1) have permission to perform the action ($input_2)? Answer only with True, False or Unsure."
 
 Input imperative: $input_normcode

@@ -38,8 +38,8 @@ def _build_demo_concepts() -> tuple[Concept, List[Concept], Concept]:
 
     # Function concept is now a judgement normcode string
     ref_f = Reference(axes=["f"], shape=(1,))
-    ref_f.set("::({1}<$({number})%_> is_greater_than {2}<$({number})%_>)", f=0)
-    function_concept = Concept(name="::({1}<$({number})%_> is_greater_than {2}<$({number})%_>)", context="judging if number 1 is greater than number 2", type="::", reference=ref_f)
+    ref_f.set("::<{1}<$({number})%_> is_greater_than {2}<$({number})%_>>", f=0)
+    function_concept = Concept(name="::<{1}<$({number})%_> is_greater_than {2}<$({number})%_>>", context="judging if number 1 is greater than number 2", type="::", reference=ref_f)
     logger.info(f"ref_f: {ref_f.tensor}")
 
     concept_to_infer = Concept(name="judgement", context="judgement result", type="{}")
