@@ -78,10 +78,32 @@ class Orchestrator:
                 return False
         return True
 
+    def _propagate_skip_state(self, item: WaitlistItem, parent_flow_index: str):
+        """Marks the current item as skipped because its parent triggered a skip."""
+        flow_index = item.inference_entry.flow_info['flow_index']
+        logging.info(f"Item {flow_index} is being skipped because its parent {parent_flow_index} triggered a skip.")
+
+        self.blackboard.set_item_status(flow_index, 'completed')
+        self.blackboard.set_item_completion_detail(flow_index, 'skipped')
+        self.blackboard.set_item_result(flow_index, f"Skipped due to parent {parent_flow_index}")
+
+        concept_name = item.inference_entry.concept_to_infer.concept_name
+        self.blackboard.set_concept_status(concept_name, 'complete')
+
+        # Manually update tracking for this skipped item
+        self._update_execution_tracking(item, 'completed')
+
     def _is_ready(self, item: WaitlistItem) -> bool:
         """
         An item is ready if its dependencies are met. Certain flags can bypass checks.
         """
+        # First, check for skipped dependencies to propagate the skipped state.
+        for support_item in self.waitlist.get_supporting_items(item):
+            support_flow_index = support_item.inference_entry.flow_info['flow_index']
+            if self.blackboard.get_item_completion_detail(support_flow_index) == 'skipped':
+                self._propagate_skip_state(item, support_flow_index)
+                return False  # Not "ready" for execution, as it has been skipped.
+
         flow_index = item.inference_entry.flow_info['flow_index']
         is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
         logging.debug(f"--- Checking readiness for item {flow_index} (Cycle: {self.tracker.cycle_count}, Execution Count: {self.blackboard.get_execution_count(flow_index)}) ---")
@@ -194,16 +216,30 @@ class Orchestrator:
             self.blackboard = states.blackboard
 
     def _handle_timing_inference(self, states: BaseStates, item: WaitlistItem) -> str:
-        """Handles the specific logic for timing inferences."""
+        """
+        Handles the specific logic for timing inferences.
+        This item itself completes, but may trigger a skip for its children.
+        """
         flow_index = item.inference_entry.flow_info['flow_index']
-        timing_ready = getattr(states, 'timing_ready', True)
 
+        # If timing condition is not met, retry later.
+        timing_ready = getattr(states, 'timing_ready', False)
         if not timing_ready:
             logging.info(f"Timing condition for item {flow_index} not met. Item will be retried.")
             return "pending"
         
-        logging.info(f"Timing condition for item {flow_index} met. Item will be completed.")
+        # The timing item itself has completed successfully.
+        logging.info(f"Timing condition for item {flow_index} met. Item completed successfully.")
         self.blackboard.set_item_result(flow_index, "Success")
+        
+        # Now, check if this successful completion should trigger a skip for its children.
+        if getattr(states, 'to_be_skipped', False):
+            logging.info(f"Timing item {flow_index} is now triggering a skip for its dependent items.")
+            dependent_items = self.waitlist.get_dependent_items(item)
+            for dependent in dependent_items:
+                self._propagate_skip_state(dependent, flow_index)
+
+        # Mark the timing concept as complete, allowing dependent items to be checked.
         concept_name = item.inference_entry.concept_to_infer.concept_name
         self.blackboard.set_concept_status(concept_name, 'complete')
         return "completed"
@@ -213,6 +249,12 @@ class Orchestrator:
         flow_index = item.inference_entry.flow_info['flow_index']
         logging.info(f"  -> Inference executed successfully for item {flow_index}")
         self.blackboard.set_item_result(flow_index, "Success")
+        
+        if item.inference_entry.inference_sequence == 'judgement':
+            condition_met = getattr(states, 'condition_met', True)
+            if not condition_met:
+                logging.info(f"Judgement condition for item {flow_index} not met. Marking as 'condition_not_met'.")
+                self.blackboard.set_item_completion_detail(flow_index, 'condition_not_met')
         
         all_conditions_met = self._update_references_and_check_completion(states, item)
         
@@ -336,8 +378,14 @@ class Orchestrator:
         )
 
         if status == 'completed':
-            logging.info(f"Item {flow_index} COMPLETED.")
-            self.tracker.successful_executions += 1
+            detail = self.blackboard.get_item_completion_detail(item.inference_entry.flow_info['flow_index'])
+            if detail == 'skipped':
+                logging.info(f"Item {flow_index} SKIPPED.")
+                self.tracker.skipped_executions += 1
+            else:  # 'success', 'condition_not_met', or None
+                logging.info(f"Item {flow_index} COMPLETED.")
+                self.tracker.successful_executions += 1
+            
             self.tracker.record_completion(flow_index)
         elif status == 'failed':
             logging.error(f"Item {flow_index} FAILED.")

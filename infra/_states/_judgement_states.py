@@ -21,6 +21,8 @@ class States(BaseStates):
             SequenceStepSpecLite(step_name="OWI"),
         ]
         self.body: Any | None = None
+        self.condition: Any | None = None
+        self.condition_met: bool = False
         self.mfp_env_spec: ModelEnvSpecLite | None = None
         self.mfp_sequence_spec: ModelSequenceSpecLite | None = None
         self.value_order: Dict[str, Any] = field(default_factory=dict)

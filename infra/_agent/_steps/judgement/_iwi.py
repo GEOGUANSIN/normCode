@@ -175,13 +175,17 @@ def input_working_interpretation(
     # Extract and store value_order directly
     ir_func_record = next((f for f in states.function if f.step_name == "IR"), None)
     func_name = ir_func_record.concept.name if ir_func_record and ir_func_record.concept else ""
-    states.value_order = (working_interpretation or {}).get("value_order", None) 
+    states.value_order = (working_interpretation or {}).get("value_order", None)
     if not states.value_order:
-        states.value_order = (working_interpretation or {}).get(func_name, {}).get("value_order", None) 
+        states.value_order = (working_interpretation or {}).get(func_name, {}).get("value_order", None)
+
+    states.condition = (working_interpretation or {}).get("condition", None)
+    if not states.condition:
+        states.condition = (working_interpretation or {}).get(func_name, {}).get("condition", None)
 
     # Build and store MFP specs based on flags
     env_spec, sequence_spec = _build_mfp_env_and_sequence_from_wi(
-        working_interpretation, 
+        working_interpretation,
         is_relation_output=is_relation,
         with_thinking=with_thinking
     )

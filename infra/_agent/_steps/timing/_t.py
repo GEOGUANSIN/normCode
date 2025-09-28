@@ -19,20 +19,32 @@ def timing(states: States) -> States:
         
     timer = Timer(states.blackboard)
     
-    condition_met = False
+    states.timing_ready = False  # Default to not ready
+    
     # Check if conditions are met based on marker type
     if marker == "after":
-        condition_met = timer.check_progress_condition(condition)
-        logger.info(f"@after condition '{condition}' met: {condition_met}")
+        if timer.check_progress_condition(condition):
+            states.timing_ready = True
+        logger.info(f"@after condition '{condition}' met: {states.timing_ready}")
+
+    elif marker == "if":
+        is_ready, to_be_skipped = timer.check_if_condition(condition)
+        if is_ready:
+            states.timing_ready = True
+            if to_be_skipped:
+                states.to_be_skipped = True
+
     else:
         logger.warning(f"Unknown or unsupported timing marker: {marker}")
     
-    # Execute if conditions are met
-    if condition_met:
-        logger.info(f"Conditions met - proceeding with execution")
-        states.timing_ready = True
+    # Log outcome
+    if states.timing_ready:
+        if states.to_be_skipped:
+            logger.info(f"Timing condition '{condition}' resulted in a skip.")
+        else:
+            logger.info(f"Timing conditions met for '{condition}' - proceeding with execution.")
     else:
-        logger.info("Conditions not met, skipping execution")
+        logger.info(f"Timing conditions not met for '{condition}', pending execution.")
     
     states.set_current_step("T")
     return states 

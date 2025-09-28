@@ -42,7 +42,7 @@ Normcode_new_with_appending = """
 
         <- {number pair}<$={1}> | 1.1.3. assigning
             <= $+({number pair to append}:{number pair})%:[{number pair}] | 1.1.3.1. timing
-                <= @if(<some non-0 number exists>)
+                <= @if(<some number is not 0>)
 
             <- {number pair to append}<$={1}> | 1.1.3.2. quantifying
                 <= *every({number pair}*1)%:[{number}]@(3) | 1.1.3.2.1. assigning
@@ -53,8 +53,8 @@ Normcode_new_with_appending = """
                         <- {number pair}*1*3<:{1}>
                 <- {number pair}*1
 
-            <- <some non-0 number exists> | 1.1.3.3. judgement
-                <= ::<numbers in {1}<$({number pair})%_>are not all 0> | 1.1.3.3.1. timing
+            <- <some number is not 0> | 1.1.3.3. judgement
+                <= :%(False):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
                     <= @after({number pair to append}<$={1}>)
                 <- {number pair to append}<$={1}><:{1}>
         
@@ -157,6 +157,15 @@ def create_appending_repositories_new():
             context="The number after removing its last digit.",
         ),
 
+        # --- Statement Concepts ---
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="<some number is not 0>",
+            type="<>",
+            axis_name="some number is not 0",
+            description="A boolean concept indicating if some number is not zero.",
+        ),
+
         # --- Function Concepts ---
         ConceptEntry(
             id=str(uuid.uuid4()),
@@ -214,6 +223,30 @@ def create_appending_repositories_new():
             reference_axis_names=["remove"],
             # is_ground_concept = True,
             is_invariant=True
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name=":%(False):<{1}<$({number})%_> is 0>",
+            type="<{}>",
+            description="Judgement function to check if a number is not zero.",
+            is_ground_concept=True,
+            reference_data='::<{1}<$({number})%_> is 0>',
+            reference_axis_names=["is_0"],
+            is_invariant=True
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="@if(<some number is not 0>)",
+            type="@if",
+            description="Timing condition to check if a non-zero number exists.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="@after({number pair to append}<$={1}>)",
+            type="@after",
+            description="Timing condition to execute after a number pair is ready for appending.",
+            is_ground_concept=True,
         ),
     ]
     concept_repo = ConceptRepo(concept_entries)
@@ -320,6 +353,21 @@ def create_appending_repositories_new():
                 }
             },
         ),
+        # 1.1.3.1. Timing for appending
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='timing',
+            concept_to_infer=concept_repo.get_concept('$+({number pair to append}:{number pair})'),
+            function_concept=concept_repo.get_concept('@if(<some number is not 0>)'),
+            value_concepts=[concept_repo.get_concept('<some number is not 0>')],
+            flow_info={'flow_index': '1.1.3.1'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "if",
+                    "condition": "<some number is not 0>"
+                }
+            }
+        ),
         # 1.1.3.2. Quantifying {number pair to append}
         InferenceEntry(
             id=str(uuid.uuid4()),
@@ -379,6 +427,40 @@ def create_appending_repositories_new():
                     "{unit place digit}?": 2,
                 }
             },
+        ),
+        # 1.1.3.3. Judgement for non-zero number
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='judgement',
+            concept_to_infer=concept_repo.get_concept('<some number is not 0>'),
+            function_concept=concept_repo.get_concept(':%(False):<{1}<$({number})%_> is 0>'),
+            value_concepts=[
+                concept_repo.get_concept('{number pair to append}'),
+            ],
+            flow_info={'flow_index': '1.1.3.3'},
+            working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": True,
+                "value_order": {
+                    "{number pair to append}": 1
+                },
+                "condition": "False"
+            }
+        ),
+        # 1.1.3.3.1. Timing for judgement
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='timing',
+            concept_to_infer=concept_repo.get_concept(':%(False):<{1}<$({number})%_> is 0>'),
+            function_concept=concept_repo.get_concept('@after({number pair to append}<$={1}>)'),
+            value_concepts=[concept_repo.get_concept('{number pair to append}')],
+            flow_info={'flow_index': '1.1.3.3.1'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "after",
+                    "condition": "{number pair to append}"
+                }
+            }
         ),
     ]
     inference_repo = InferenceRepo(inference_entries)

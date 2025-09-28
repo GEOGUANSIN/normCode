@@ -50,7 +50,8 @@ def _build_demo_working_interpretation() -> Dict[str, Any]:
 	return {
 		"is_greater_than": {
 			"value_order": {"A": 0, "B": 1}
-		}
+		},
+		"condition": "True"
 	}
 
 

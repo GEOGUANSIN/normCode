@@ -12,6 +12,7 @@ class ProcessTracker:
     cycle_count: int = 0
     total_executions: int = 0
     successful_executions: int = 0
+    skipped_executions: int = 0
     failed_executions: int = 0
     retry_count: int = 0
     
@@ -51,12 +52,17 @@ class ProcessTracker:
             fi = item.inference_entry.flow_info['flow_index']
             it = item.inference_entry.inference_sequence
             status = blackboard.get_item_status(fi)
+            if status == 'completed':
+                detail = blackboard.get_item_completion_detail(fi)
+                if detail in ['skipped', 'condition_not_met']:
+                    status = detail  # Use the more descriptive detail
             logging.info(f"  - Item {fi:<10} ({it:<12}): {status}")
         
         logging.info(f"--- Process Statistics ---")
         logging.info(f"  - Total cycles: {self.cycle_count}")
         logging.info(f"  - Total executions: {self.total_executions}")
         logging.info(f"  - Successful completions: {self.successful_executions}")
+        logging.info(f"  - Skipped completions: {self.skipped_executions}")
         logging.info(f"  - Failed executions: {self.failed_executions}")
         logging.info(f"  - Benign retries (pending): {self.retry_count}")
         logging.info(f"  - Success rate (successful/(successful+failed)): {self.get_success_rate():.1f}%")

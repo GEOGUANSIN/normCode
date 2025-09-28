@@ -20,4 +20,5 @@ class States(BaseStates):
             condition=None,
         )
         self.blackboard: Optional[Blackboard] = None
-        self.timing_ready: bool = False 
+        self.timing_ready: bool = False
+        self.to_be_skipped: bool = False 

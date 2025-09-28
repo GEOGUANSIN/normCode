@@ -43,3 +43,29 @@ class Waitlist:
             item for item in self.items
             if item != target_item and item.inference_entry.flow_info['flow_index'].startswith(target_flow_index + '.')
         ]
+
+    def get_dependent_items(self, parent_item: WaitlistItem) -> List[WaitlistItem]:
+        """
+        Retrieves a list of items that depend on the concept inferred by the parent item.
+        An item is a "dependent" if the parent's inferred concept is in its
+        value_concepts or is its function_concept.
+        """
+        parent_inferred_concept_name = parent_item.inference_entry.concept_to_infer.concept_name
+        dependents = []
+
+        for item in self.items:
+            if item == parent_item:
+                continue
+
+            # Check value concepts
+            value_concept_names = {vc.concept_name for vc in item.inference_entry.value_concepts}
+            if parent_inferred_concept_name in value_concept_names:
+                dependents.append(item)
+                continue  # Move to next item once dependency is found
+
+            # Check function concept
+            if item.inference_entry.function_concept:
+                if item.inference_entry.function_concept.concept_name == parent_inferred_concept_name:
+                    dependents.append(item)
+
+        return dependents
