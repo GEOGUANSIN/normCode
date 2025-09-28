@@ -97,13 +97,6 @@ class Orchestrator:
         """
         An item is ready if its dependencies are met. Certain flags can bypass checks.
         """
-        # First, check for skipped dependencies to propagate the skipped state.
-        for support_item in self.waitlist.get_supporting_items(item):
-            support_flow_index = support_item.inference_entry.flow_info['flow_index']
-            if self.blackboard.get_item_completion_detail(support_flow_index) == 'skipped':
-                self._propagate_skip_state(item, support_flow_index)
-                return False  # Not "ready" for execution, as it has been skipped.
-
         flow_index = item.inference_entry.flow_info['flow_index']
         is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
         logging.debug(f"--- Checking readiness for item {flow_index} (Cycle: {self.tracker.cycle_count}, Execution Count: {self.blackboard.get_execution_count(flow_index)}) ---")
