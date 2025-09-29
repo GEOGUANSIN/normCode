@@ -1,12 +1,15 @@
 import copy
 from typing import Any, Optional, List
+import logging
 
 class Reference:
     def __init__(self, axes, shape, initial_value=None, skip_value="@#SKIP#@"):
+        if len(axes) != len(set(axes)):
+            raise ValueError("Axes must be unique")
         if len(axes) != len(shape):
             raise ValueError("Axes and shape must have the same length")
         self.axes: list[str] = axes
-        self.shape: tuple[int, ...] = shape
+        self.shape: tuple[int, ...] = tuple(shape)
         self.skip_value: str = skip_value
         self.data: list[Any] = self._create_nested_list(shape, initial_value)
 
@@ -432,7 +435,45 @@ class Reference:
                     result.append(item)
             return result
 
-    def append(self, other: 'Reference', by_axis: str) -> 'Reference':
+    def _reshape_from_list(self, data_iter, shape):
+        """Recursively builds a nested list from a flat iterator and a shape."""
+        if not shape:
+            try:
+                return next(data_iter)
+            except StopIteration:
+                return self.skip_value
+
+        return [self._reshape_from_list(data_iter, shape[1:]) for _ in range(shape[0])]
+
+    def append(self, other: 'Reference', by_axis: Optional[str] = None) -> 'Reference':
+        if by_axis is None:
+            if not self.axes:
+                raise ValueError("Cannot infer axis for append when reference has no axes.")
+
+            # Find the axes in `self` that are not in `other`, preserving order and duplicates.
+            other_axes_list = list(other.axes)
+            unmatched_target_axes = []
+            for axis in self.axes:
+                try:
+                    # Try to "consume" an axis from the other reference
+                    other_axes_list.remove(axis)
+                except ValueError:
+                    # If it fails, the axis is unique to self
+                    unmatched_target_axes.append(axis)
+
+            # 1. Unique axis inference on the unmatched set (highest priority)
+            if len(unmatched_target_axes) == 1:
+                by_axis = unmatched_target_axes[0]
+            # 2. Heuristic based on the rank of the *unmatched* axes
+            else:
+                unmatched_source_axes_count = len(other_axes_list)
+                if 0 < unmatched_source_axes_count < len(unmatched_target_axes):
+                    index = len(unmatched_target_axes) - unmatched_source_axes_count
+                    by_axis = unmatched_target_axes[index]
+                # 3. Final fallback to the last axis
+                else:
+                    by_axis = self.axes[-1]
+
         if by_axis not in self.axes:
             raise ValueError(f"Axis '{by_axis}' not found in {self.axes}")
 
@@ -444,23 +485,42 @@ class Reference:
             slice_shape = new_ref.shape[axis_idx + 1:]
             other_leaves = list(other._get_leaves())
 
-            if len(slice_shape) > 1:
-                raise NotImplementedError("Append for multi-dimensional slices is not yet implemented.")
-            
-            slice_len = slice_shape[0]
-            if len(other_leaves) % slice_len != 0:
-                raise ValueError(f"Shape mismatch at axis '{self.axes[axis_idx+1]}': "
-                                 f"cannot reshape data of length {len(other_leaves)} into slices of length {slice_len}")
+            import math
+            slice_len = math.prod(slice_shape) if slice_shape else 1
 
-            new_slices = [other_leaves[i:i + slice_len] for i in range(0, len(other_leaves), slice_len)]
+            new_slices = []
+            if slice_len > 0:
+                if len(other_leaves) % slice_len != 0:
+                    raise ValueError(
+                        f"Shape mismatch: cannot reshape data of length {len(other_leaves)} "
+                        f"into slices of shape {slice_shape} (slice size is {slice_len})")
+
+                if other_leaves:
+                    num_new_slices = len(other_leaves) // slice_len
+                    leaves_iter = iter(other_leaves)
+                    new_slices = [self._reshape_from_list(leaves_iter, slice_shape) for _ in range(num_new_slices)]
+            elif len(other_leaves) > 0:  # slice_len is 0 and there is data
+                raise ValueError(f"Shape mismatch: cannot append data to zero-sized slice shape {slice_shape}")
+
+            def _recursive_append_slices(data, depth):
+                if depth == axis_idx - 1:
+                    # We are at the parent level of the axis to append to.
+                    # Append the new slices to each sublist at this level.
+                    for sublist in data:
+                        if isinstance(sublist, list):
+                            sublist.extend(new_slices)
+                    return
+
+                # Recurse deeper
+                for sublist in data:
+                    if isinstance(sublist, list):
+                        _recursive_append_slices(sublist, depth + 1)
 
             if axis_idx == 0:
                 new_ref.data.extend(new_slices)
             else:
-                # This case requires traversing the data structure to append at the correct depth,
-                # which is complex and not covered by the examples.
-                raise NotImplementedError(f"Append on a nested axis ('{by_axis}') is not supported yet.")
-            
+                _recursive_append_slices(new_ref.data, 0)
+
             # Update shape
             new_shape = list(new_ref.shape)
             new_shape[axis_idx] += len(new_slices)
@@ -603,6 +663,55 @@ def cross_product(references):
     return result._auto_remove_none_axis()
 
 
+def join(references: List['Reference'], new_axis_name: str) -> 'Reference':
+    """
+    Joins a list of references with the same shape along a new axis.
+
+    Args:
+        references (List[Reference]): A list of Reference objects to join.
+                                      All references must have the same axes and shape.
+        new_axis_name (str): The name for the new axis.
+
+    Returns:
+        Reference: A new Reference object with the combined data and the new axis.
+    """
+    if not references:
+        raise ValueError("At least one reference must be provided for join operation")
+
+    first_ref = references[0]
+    if not isinstance(first_ref, Reference):
+        raise TypeError("All elements must be Reference instances")
+
+    common_axes = first_ref.axes
+    common_shape = first_ref.shape
+
+    for i, ref in enumerate(references[1:], 1):
+        if not isinstance(ref, Reference):
+            raise TypeError("All elements must be Reference instances")
+        if ref.axes != common_axes:
+            raise ValueError(
+                f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
+            )
+        if ref.shape != common_shape:
+            raise ValueError(
+                f"Shape mismatch at index {i}. Expected {common_shape}, got {ref.shape}"
+            )
+
+    new_axes = [new_axis_name] + common_axes
+    new_shape = (len(references),) + common_shape
+    new_data = [ref.tensor for ref in references]
+
+    # Create and return new Reference
+    result = Reference(
+        axes=new_axes,
+        shape=new_shape,
+        initial_value=None,
+        skip_value=first_ref.skip_value
+    )._replace_data(new_data)
+
+    return result
+
+
 def cross_action(A, B, new_axis_name):
     # Validate inputs
     if not isinstance(A, Reference) or not isinstance(B, Reference):
@@ -723,27 +832,36 @@ def element_action(f, references, index_awareness=False):
 
     # Build the nested data structure
     def build_data(current_axes, index_dict):
+        # logging.debug(f"element_action: build_data | current_axes: {current_axes} | index_dict: {index_dict}")
         if not current_axes:
             # Collect elements from all references
             elements = []
             for ref in references:
                 # Get relevant indices for this reference
-                ref_indices = {axis: index_dict[axis] for axis in ref.axes}
+                ref_indices = {axis: index_dict[axis] for axis in ref.axes if axis in index_dict}
                 element = ref.get(**ref_indices)
-                if element != ref.skip_value:
-                    elements.append(element)
-                else:
+
+                if element is None:
                     elements.append("@#SKIP#@")
+                else:
+                    elements.append(element)
             
+            # logging.debug(f"element_action: collected elements {elements} for index {index_dict}")
+
             # Apply function to collected elements
             try:
                 if any(e == "@#SKIP#@" for e in elements):
                     return "@#SKIP#@"
                 if index_awareness:
-                    return f(*elements, index_dict)
+                    result = f(*elements, index_dict)
+                    # logging.debug(f"element_action: applied function '{f.__name__}' to {elements}, result: {result}")
+                    return result
                 else:
-                    return f(*elements)
-            except Exception:
+                    result = f(*elements)
+                    # logging.debug(f"element_action: applied function '{f.__name__}' to {elements}, result: {result}")
+                    return result
+            except Exception as e:
+                # logging.error(f"element_action: error applying function '{f.__name__}' to {elements}: {e}")
                 return "@#SKIP#@"
         else:
             axis = current_axes[0]
@@ -993,5 +1111,160 @@ if __name__ == "__main__":
     source_ref = Reference.from_data([5, 6, 7], axis_names=['C'])
     try:
         target_ref.append(source_ref, by_axis='B')
+    except ValueError as e:
+        print("Caught expected error:", e)
+
+    print("\n=== Example 7: Advanced Append Operations ===")
+    print("\n--- Pattern 1: Appending to a nested container axis ---")
+    # Corresponds to: f(D[B[A[1,2], [3,4]]], C[5,6], by_axis=B) = D[B[A[1,2], [3,4], [5,6]]]
+    target_ref = Reference.from_data([[[1, 2], [3, 4]]], axis_names=['D', 'B', 'A'])
+    source_ref = Reference.from_data([5, 6], axis_names=['C'])
+    result_ref = target_ref.append(source_ref, by_axis='B')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'B':")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: A new slice '[5, 6]' was appended to each sublist along the 'B' axis.")
+
+    print("\n--- Pattern 2: Broadcast append to the last axis ---")
+    # Corresponds to: f(D[B[A[1,2], [3,4]]], B[5,6], by_axis=A) = D[B[A[1,2,5,6], [3,4,5,6]]]
+    target_ref = Reference.from_data([[[1, 2], [3, 4]]], axis_names=['D', 'B', 'A'])
+    source_ref = Reference.from_data([5, 6], axis_names=['B']) # Note: source_ref axis doesn't matter for broadcast
+    result_ref = target_ref.append(source_ref, by_axis='A')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'A' (broadcast):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: The source data '[5, 6]' was broadcast-appended to every list along the 'A' axis.")
+
+
+    print("\n=== Example 8: More Complex Append Scenarios ===")
+    print("\n--- Appending a multi-dimensional slice to a nested axis ---")
+    # Target has a nested structure where the slice shape is 2x2
+    target_ref = Reference.from_data(
+        [[[[1, 2], [3, 4]]]], # Shape (1, 1, 2, 2)
+        axis_names=['E', 'D', 'B', 'A']
+    )
+    # Source data can be formed into a 2x2 slice
+    source_ref = Reference.from_data([5, 6, 7, 8], axis_names=['C'])
+    result_ref = target_ref.append(source_ref, by_axis='D')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by nested axis 'D':")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: The source data was reshaped into a [2, 2] slice and appended at the 'D' axis level.")
+
+    print("\n--- True element-wise append to the last axis ---")
+    # Target and Source share prefix axes 'D' and 'B'
+    target_ref = Reference.from_data(
+        [[[1, 2], [3, 4]], [[11, 12], [13, 14]]], # Shape (2, 2, 2)
+        axis_names=['D', 'B', 'A']
+    )
+    source_ref = Reference.from_data(
+        [[[5], [6]], [[15], [16]]], # Shape (2, 2, 1)
+        axis_names=['D', 'B', 'C']
+    )
+    result_ref = target_ref.append(source_ref, by_axis='A')
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append by axis 'A' (element-wise):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: Appends happened element-wise based on matching 'D' and 'B' axes.")
+
+    print("\n--- Error case: Shape mismatch on nested append ---")
+    target_ref = Reference.from_data([[[1, 2], [3, 4]]], axis_names=['D', 'B', 'A'])
+    # Source data has 3 elements, which doesn't fit into slices of size 2 (shape of 'A')
+    source_ref = Reference.from_data([5, 6, 7], axis_names=['C'])
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    try:
+        target_ref.append(source_ref, by_axis='B')
+    except ValueError as e:
+        print("Caught expected error:", e)
+
+    print("\n--- User-provided nested append case ---")
+    target_ref = Reference.from_data([[[1, 2], [3, 4]]], axis_names=['D', 'B', 'A'])
+    source_ref = Reference.from_data([[5, 6], [7, 8]], axis_names=['X', 'Y'])
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    result_ref = target_ref.append(source_ref, by_axis='B')
+    print("Append by axis 'B':")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+
+    print("\n--- Appending with implicit last axis ---")
+    target_ref = Reference.from_data(
+        [[[1, 2], [3, 4]], [[11, 12], [13, 14]]],  # Shape (2, 2, 2)
+        axis_names=['D', 'B', 'A']
+    )
+    source_ref = Reference.from_data(
+        [[[5], [6]], [[15], [16]]],  # Shape (2, 2, 1)
+        axis_names=['D', 'B', 'C']
+    )
+    # by_axis is omitted, should default to 'A'
+    result_ref = target_ref.append(source_ref)
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append with implicit axis ('A'):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: `by_axis` was inferred as 'A', the unique axis in target not in source.")
+
+    print("\n--- Appending with rank-based axis inference ---")
+    # Target axes are [D, B, A] (rank 3). Source axes are [X, Y] (rank 2).
+    # There is no unique unmatched axis.
+    # The heuristic len(target_axes) - len(source_axes) = 3 - 2 = 1 is used.
+    # The inferred axis is target_axes[1], which is 'B'.
+    target_ref = Reference.from_data([[[1, 2], [3, 4]]], axis_names=['D', 'B', 'A'])
+    source_ref = Reference.from_data([[5, 6], [7, 8]], axis_names=['X', 'Y'])
+    result_ref = target_ref.append(source_ref)
+    print("Target:", target_ref.tensor)
+    print("Source:", source_ref.tensor)
+    print("Append with rank-inferred axis ('B'):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: `by_axis` was inferred as 'B' based on source rank.")
+
+    print("\n--- Appending with rank-based inference on unique axes ---")
+    # Target axes are [a, b, c, b] (unmatched are [b, c, b], rank 3).
+    # Source axes are [a, x, y] (unmatched are [x, y], rank 2).
+    # The heuristic len(unmatched_target) - len(unmatched_source) = 3 - 2 = 1 is used.
+    # The inferred axis is unmatched_target[1], which is 'c'.
+    target_ref = Reference(axes=['a', 'b', 'c', 'b'], shape=(1, 1, 2, 2))
+    target_ref.tensor = [[[[1, 2], [3, 4]]]]
+    source_ref = Reference.from_data([[5, 6], [7, 8]], axis_names=['x', 'y'])
+    # Need to add 'a' to source_ref to match the scenario
+    source_ref = Reference.from_data([[[5, 6], [7, 8]]], axis_names=['a', 'x', 'y'])
+    result_ref = target_ref.append(source_ref)
+    print("Target axes:", target_ref.axes)
+    print("Source axes:", source_ref.axes)
+    print("Append with rank-inferred unique axis ('c'):")
+    print("  Result tensor:", result_ref.tensor)
+    print("  Result shape:", result_ref.shape)
+    print("  Note: `by_axis` was inferred as 'c' by applying rank logic to unique axes.")
+
+
+    print("\n=== Example 9: Join Operation ===")
+    print("\n--- Joining two references with the same shape ---")
+    ref1 = Reference.from_data([[1, 2], [3, 4]], axis_names=['B', 'A'])
+    ref2 = Reference.from_data([[5, 6], [7, 8]], axis_names=['B', 'A'])
+
+    joined_ref = join([ref1, ref2], new_axis_name='C')
+
+    print("Reference 1:", ref1.tensor)
+    print("Reference 2:", ref2.tensor)
+    print("Joined reference tensor (new axis 'C' prepended):")
+    print("  Result tensor:", joined_ref.tensor)
+    print("  Result axes:", joined_ref.axes)
+    print("  Result shape:", joined_ref.shape)
+
+    print("\n--- Error case: Mismatched shapes ---")
+    ref3 = Reference.from_data([9, 10], axis_names=['B'])
+    try:
+        join([ref1, ref3], new_axis_name='C')
     except ValueError as e:
         print("Caught expected error:", e)

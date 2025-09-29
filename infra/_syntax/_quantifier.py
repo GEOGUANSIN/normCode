@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from infra._core import Reference, element_action, cross_product
+from infra._core import Reference, element_action, cross_product, join
 
 
 class Quantifier:
@@ -181,7 +181,7 @@ class Quantifier:
         logging.debug("[check_all_looped] All elements checked and found in workspace. Loop IS complete. Returning True.")
         return True
 
-    def combine_all_looped_elements_by_concept(self, to_loop_element_reference: Reference, concept_name: str) -> Optional[Reference]:
+    def combine_all_looped_elements_by_concept(self, to_loop_element_reference: Reference, concept_name: str, axis_name: str = None) -> Optional[Reference]:
         all_concept_references = []
 
         # Sort by loop index to ensure order
@@ -191,10 +191,16 @@ class Quantifier:
             if concept_name in self.current_subworkspace[loop_index]:
                  all_concept_references.append(self.current_subworkspace[loop_index][concept_name])
 
-        if all_concept_references:
-            return cross_product(all_concept_references)
+        if not all_concept_references:
+            return None
 
-        return None
+        # If axis_name is not provided, use a default that reflects the looping structure.
+        join_axis_name = axis_name if axis_name is not None else 'loop_index'
+
+        # Join all references along the new axis.
+        combined_ref = join(all_concept_references, new_axis_name=join_axis_name)
+
+        return combined_ref
 
     def retrieve_next_in_loop_element(self, concept_name: str, mode: str = 'carry_over', current_loop_index: int = 0, carry_index: int = 0, initial_reference: Optional[Reference] = None) -> Reference:
         if mode == 'carry_over':

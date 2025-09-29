@@ -30,6 +30,7 @@ def tool_inference_perception(states: States) -> States:
             all_match = _check_all_match(tensor_data, condition)
 
         states.condition_met = all_match
+        logging.debug(f"TIP condition met: {all_match}")
 
         if all_match:
             tip_ref = Reference.from_data(["$(T)%"], axis_names=['condition_met'])

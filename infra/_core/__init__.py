@@ -8,7 +8,7 @@ intelligent agent systems with formal reasoning capabilities.
 
 # Core classes
 from ._concept import Concept, CONCEPT_TYPES, TYPE_CLASS_SYNTACTICAL, TYPE_CLASS_SEMANTICAL, TYPE_CLASS_INFERENTIAL
-from ._reference import Reference, cross_product, cross_action, element_action
+from ._reference import Reference, cross_product, cross_action, element_action, join
 from ._inference import Inference, register_inference_sequence
 
 
@@ -28,6 +28,7 @@ __all__ = [
     "cross_product",
     "cross_action", 
     "element_action",
+    "join",
     "register_inference_sequence",
     
     # Constants

@@ -28,6 +28,7 @@ CONCEPT_TYPES = {
     # Sequencing operators (SYNTACTICAL)
     "@by": {"description": "by", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@if": {"description": "if", "type_class": TYPE_CLASS_SYNTACTICAL},
+    "@if!": {"description": "if not", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@onlyIf": {"description": "onlyIf", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@ifOnlyIf": {"description": "ifOnlyIf", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@after": {"description": "after", "type_class": TYPE_CLASS_SYNTACTICAL},

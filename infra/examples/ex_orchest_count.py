@@ -582,7 +582,7 @@ if __name__ == "__main__":
     logging.info("=== Starting Orchestrator Demo ===")
 
     # --- Data Definitions ---
-    length = 100
+    length = 2
     number = generate_random_number(length)
     logging.info(f"Input number: {number}")
     logging.info(f"Input number length: {length}")

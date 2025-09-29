@@ -5,6 +5,7 @@ from infra._states._quantifying_states import States
 from infra._core._reference import Reference
 from infra._syntax._quantifier import Quantifier
 from infra._states._common_states import ReferenceRecordLite
+from infra._loggers.utils import log_workspace_details
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -101,7 +102,8 @@ def quantifying_references(states: States) -> States:
     if not hasattr(states, "workspace") or getattr(states, "workspace") is None:
         setattr(states, "workspace", {})
     workspace = getattr(states, "workspace")
-    logger.debug(f"[QR Step 3] Workspace: {workspace}")
+    logger.debug(f"[QR Step 3]")
+    log_workspace_details(workspace, logger)
 
     # 4) Current loop base element from context (if any)
     current_loop_base_context_item = None
@@ -274,37 +276,29 @@ def quantifying_references(states: States) -> States:
             quantifier.combine_all_looped_elements_by_concept(
                 to_loop_element_reference=to_loop_elements,
                 concept_name=concept_to_infer_name,
+                axis_name=concept_to_infer_name,
             )
         )
         if combined_reference is not None:
-            # Axis normalization
-            loop_base_axis, current_loop_axis = None, None
+            # --- Semantic Axis Renaming ---
+            loop_base_ref_axes = []
             for v in values_block:
                 ci = getattr(v, "concept", None)
-                if (
-                    ci
-                    and getattr(ci, "name", None) == loop_base_concept_name
-                ):
-                    loop_base_axis = getattr(ci, "axis_name", None)
-                    break
-            for c in context_block:
-                ci = getattr(c, "concept", None)
-                if (
-                    ci
-                    and getattr(ci, "name", None)
-                    == current_loop_base_concept_name
-                ):
-                    current_loop_axis = getattr(ci, "axis_name", None)
-                    break
+                if v.step_name == "IR" and ci and ci.name == loop_base_concept_name:
+                    ref = getattr(v, "reference", None)
+                    if ref:
+                        loop_base_ref_axes = ref.axes
+                        break
 
-            if loop_base_axis is not None and current_loop_axis is not None:
-                new_axes = combined_reference.axes.copy()
-                new_axes[-1] = concept_to_infer_name
-                if current_loop_axis in new_axes:
-                    new_axes[
-                        new_axes.index(current_loop_axis)
-                    ] = loop_base_axis
-                combined_reference.axes = new_axes
+            current_axes = combined_reference.axes.copy()
+            final_axes = current_axes
+
+            if current_axes and loop_base_ref_axes:
+                final_axes[0] = loop_base_ref_axes[0]
+                final_axes = [ 'value' if ax == '_none_axis' else ax for ax in final_axes]
+                
+                if len(final_axes) == len(set(final_axes)):
+                    combined_reference.axes = final_axes
 
     # 12) Write result into states.inference under QR if the entry exists
     if combined_reference is not None:

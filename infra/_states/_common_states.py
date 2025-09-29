@@ -56,6 +56,14 @@ class BaseStates:
 				return record.reference
 		return None
 
+	def get_first_record(self, category: str, step_name: str) -> Optional[ReferenceRecordLite]:
+		"""Gets the first record from a category matching the step name."""
+		cat_list = getattr(self, category, [])
+		for record in cat_list:
+			if record.step_name == step_name:
+				return record
+		return None
+
 	def set_reference(self, category: str, step_name: str, ref: Reference) -> None:
 		"""Helper to set a reference in a specific category and step."""
 		cat_list = getattr(self, category, [])

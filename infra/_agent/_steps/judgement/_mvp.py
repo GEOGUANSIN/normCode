@@ -38,6 +38,7 @@ def memory_value_perception(states: States) -> States:
         def strip_wrapper(element: Any) -> Any:
             """Strips the '%...(...)' wrapper if it exists."""
             if isinstance(element, str) and element.startswith("%"):
+                # logging.debug(f"Stripping wrapper Element: {element}")
                 open_paren_index = element.find("(")
                 # To handle nested parentheses in the wrapped content, find the last closing parenthesis.
                 close_paren_index = element.rfind(")")
@@ -47,10 +48,17 @@ def memory_value_perception(states: States) -> States:
                     return element[open_paren_index + 1 : close_paren_index]
             return element
 
+
+        # logging.debug(f"Ordered refs: {[ref.tensor for ref in ordered_refs]}")
+
         stripped_refs = [element_action(strip_wrapper, [ref]) for ref in ordered_refs]
+
+        logging.debug(f"Stripped refs: {[ref.tensor for ref in stripped_refs]}")
 
         # Step 2: Cross product to get lists of values.
         crossed_ref = cross_product(stripped_refs)
+
+        logging.debug(f"Crossed ref: {crossed_ref.tensor}")
 
         # Step 3: Use element_action to convert lists to dicts with generic keys.
         # The keys "input_1", "input_2", etc. match the prompt templates.

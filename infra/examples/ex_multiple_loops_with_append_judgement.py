@@ -42,7 +42,7 @@ Normcode_new_with_appending = """
 
         <- {number pair}<$={1}> | 1.1.3. assigning
             <= $+({number pair to append}:{number pair})%:[{number pair}] | 1.1.3.1. timing
-                <= @if(<some number is not 0>)
+                <= @if!(<all number is 0>)
 
             <- {number pair to append}<$={1}> | 1.1.3.2. quantifying
                 <= *every({number pair}*1)%:[{number}]@(3) | 1.1.3.2.1. assigning
@@ -53,8 +53,8 @@ Normcode_new_with_appending = """
                         <- {number pair}*1*3<:{1}>
                 <- {number pair}*1
 
-            <- <some number is not 0> | 1.1.3.3. judgement
-                <= :%(False):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
+            <- <all number is 0> | 1.1.3.3. judgement
+                <= :%(True):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
                     <= @after({number pair to append}<$={1}>)
                 <- {number pair to append}<$={1}><:{1}>
         
@@ -63,7 +63,7 @@ Normcode_new_with_appending = """
 
 # --- Data Definitions ---
 
-def create_appending_repositories_new():
+def create_appending_repositories_new(number_1: str = "123", number_2: str = "98" ):
     """Creates concept and inference repositories for the appending scenario."""
     # --- Concept Entries ---
     concept_entries = [
@@ -74,7 +74,7 @@ def create_appending_repositories_new():
             type="{}",
             axis_name="number pair",
             description="The collection of number pairs.",
-            reference_data=[["%(123)", "%(98)"]],
+            reference_data=[["%(" + number_1 + ")", "%(" + number_2 + ")"]],
             reference_axis_names=["number pair", "number"],
             is_ground_concept=True,
         ),
@@ -160,10 +160,10 @@ def create_appending_repositories_new():
         # --- Statement Concepts ---
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="<some number is not 0>",
+            concept_name="<all number is 0>",
             type="<>",
-            axis_name="some number is not 0",
-            description="A boolean concept indicating if some number is not zero.",
+            axis_name="all number is 0",
+            description="A boolean concept indicating if all numbers are zero.",
         ),
 
         # --- Function Concepts ---
@@ -226,9 +226,9 @@ def create_appending_repositories_new():
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name=":%(False):<{1}<$({number})%_> is 0>",
+            concept_name=":%(True):<{1}<$({number})%_> is 0>",
             type="<{}>",
-            description="Judgement function to check if a number is not zero.",
+            description="Judgement function to check if a number is zero.",
             is_ground_concept=True,
             reference_data='::<{1}<$({number})%_> is 0>',
             reference_axis_names=["is_0"],
@@ -236,9 +236,9 @@ def create_appending_repositories_new():
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="@if(<some number is not 0>)",
-            type="@if",
-            description="Timing condition to check if a non-zero number exists.",
+            concept_name="@if!(<all number is 0>)",
+            type="@if!",
+            description="Timing condition to check if not all numbers are zero.",
             is_ground_concept=True,
         ),
         ConceptEntry(
@@ -358,13 +358,13 @@ def create_appending_repositories_new():
             id=str(uuid.uuid4()),
             inference_sequence='timing',
             concept_to_infer=concept_repo.get_concept('$+({number pair to append}:{number pair})'),
-            function_concept=concept_repo.get_concept('@if(<some number is not 0>)'),
-            value_concepts=[concept_repo.get_concept('<some number is not 0>')],
+            function_concept=concept_repo.get_concept('@if!(<all number is 0>)'),
+            value_concepts=[concept_repo.get_concept('<all number is 0>')],
             flow_info={'flow_index': '1.1.3.1'},
             working_interpretation={
                 "syntax": {
-                    "marker": "if",
-                    "condition": "<some number is not 0>"
+                    "marker": "if!",
+                    "condition": "<all number is 0>"
                 }
             }
         ),
@@ -432,8 +432,8 @@ def create_appending_repositories_new():
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='judgement',
-            concept_to_infer=concept_repo.get_concept('<some number is not 0>'),
-            function_concept=concept_repo.get_concept(':%(False):<{1}<$({number})%_> is 0>'),
+            concept_to_infer=concept_repo.get_concept('<all number is 0>'),
+            function_concept=concept_repo.get_concept(':%(True):<{1}<$({number})%_> is 0>'),
             value_concepts=[
                 concept_repo.get_concept('{number pair to append}'),
             ],
@@ -444,14 +444,14 @@ def create_appending_repositories_new():
                 "value_order": {
                     "{number pair to append}": 1
                 },
-                "condition": "False"
+                "condition": "True"
             }
         ),
         # 1.1.3.3.1. Timing for judgement
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
-            concept_to_infer=concept_repo.get_concept(':%(False):<{1}<$({number})%_> is 0>'),
+            concept_to_infer=concept_repo.get_concept(':%(True):<{1}<$({number})%_> is 0>'),
             function_concept=concept_repo.get_concept('@after({number pair to append}<$={1}>)'),
             value_concepts=[concept_repo.get_concept('{number pair to append}')],
             flow_info={'flow_index': '1.1.3.3.1'},
@@ -504,13 +504,18 @@ if __name__ == "__main__":
     logging.info("=== Starting Orchestrator Demo ===")
 
     # 1. Create repositories
-    concept_repo, inference_repo = create_appending_repositories_new()
+    number_1 = "12"
+    number_2 = "9"
+    concept_repo, inference_repo = create_appending_repositories_new(
+        number_1=number_1,
+        number_2=number_2
+    )
 
     # 2. Initialize and run the orchestrator
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        max_cycles=40,
+        max_cycles=25,
     )
 
     # 3. Run the orchestrator

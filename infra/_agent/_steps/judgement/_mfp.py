@@ -29,14 +29,17 @@ def model_function_perception(states: States) -> States:
 
     mfp_states_proxy = _MfpStateProxy(states)
 
+    ir_func_record = next((f for f in states.function if f.step_name == "IR"), None)
+
     # Run the sequence
     if sequence_spec:
         meta = ModelSequenceRunner(mfp_states_proxy, sequence_spec).run()
         # The result of MFP is a callable function. We wrap it in a Reference.
         instruction_fn = meta.get("instruction_fn")  # This key comes from your sequence spec
         if instruction_fn:
-            ref = Reference(axes=["f"], shape=(1,))
-            ref.set(instruction_fn, f=0)
+            axis_name = ir_func_record.reference.axes[0] if ir_func_record and ir_func_record.reference else "f"
+            ref = Reference(axes=[axis_name], shape=(1,))
+            ref.set(instruction_fn, **{axis_name: 0})
             states.set_reference("function", "MFP", ref)
 
     states.set_current_step("MFP")

@@ -28,7 +28,18 @@ def timing(states: States) -> States:
         logger.info(f"@after condition '{condition}' met: {states.timing_ready}")
 
     elif marker == "if":
+        logger.debug(f"Processing '@if' timing marker for condition: {condition}")
         is_ready, to_be_skipped = timer.check_if_condition(condition)
+        logger.debug(f"is_ready: {is_ready}, to_be_skipped: {to_be_skipped}")
+        if is_ready:
+            states.timing_ready = True
+            if to_be_skipped:
+                states.to_be_skipped = True
+
+    elif marker == "if!":
+        logger.debug(f"Processing '@if!' timing marker for condition: {condition}")
+        is_ready, to_be_skipped = timer.check_if_not_condition(condition)
+        logger.debug(f"is_ready: {is_ready}, to_be_skipped: {to_be_skipped}")
         if is_ready:
             states.timing_ready = True
             if to_be_skipped:

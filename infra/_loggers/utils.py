@@ -114,3 +114,38 @@ def _log_inference_result(result_concept, value_concepts, function_concept):
             logger.info(f"All info axes: {all_info_reference.axes}")
     else:
         logger.warning("Answer concept reference is None")
+
+def log_workspace_details(workspace: dict, logger_instance: Optional[logging.Logger] = None):
+    """Logs the detailed contents of a quantifier workspace."""
+    if logger_instance is None:
+        logger_instance = logging.getLogger(__name__)
+
+    if not workspace:
+        logger_instance.info("Workspace is empty.")
+        return
+
+    logger_instance.info("--- Workspace Details ---")
+    for subworkspace_key, subworkspace in workspace.items():
+        logger_instance.info(f"  Sub-workspace: '{subworkspace_key}'")
+        if not subworkspace:
+            logger_instance.info("    (Empty)")
+            continue
+        
+        # Sort by loop index to ensure order
+        sorted_loop_indices = sorted(subworkspace.keys())
+        for loop_index in sorted_loop_indices:
+            concepts = subworkspace[loop_index]
+            logger_instance.info(f"    Loop Index: {loop_index}")
+            if not concepts:
+                logger_instance.info("      (No concepts)")
+                continue
+            
+            for concept_name, reference in concepts.items():
+                logger_instance.info(f"      Concept: '{concept_name}'")
+                if isinstance(reference, Reference):
+                    logger_instance.info(f"        Reference Axes: {reference.axes}")
+                    logger_instance.info(f"        Reference Shape: {reference.shape}")
+                    logger_instance.info(f"        Reference Tensor: {reference.tensor}")
+                else:
+                    logger_instance.info(f"        Value: {reference}")
+    logger_instance.info("-------------------------")

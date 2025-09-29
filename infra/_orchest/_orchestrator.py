@@ -244,8 +244,11 @@ class Orchestrator:
         self.blackboard.set_item_result(flow_index, "Success")
         
         if item.inference_entry.inference_sequence == 'judgement':
-            condition_met = getattr(states, 'condition_met', True)
-            if not condition_met:
+            condition_met = getattr(states, 'condition_met', None)
+            if condition_met is True:
+                logging.info(f"Judgement condition for item {flow_index} met. Marking as 'success'.")
+                self.blackboard.set_item_completion_detail(flow_index, 'success')
+            elif condition_met is False:
                 logging.info(f"Judgement condition for item {flow_index} not met. Marking as 'condition_not_met'.")
                 self.blackboard.set_item_completion_detail(flow_index, 'condition_not_met')
         
