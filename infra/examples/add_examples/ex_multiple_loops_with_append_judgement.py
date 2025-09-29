@@ -22,7 +22,7 @@ try:
 except Exception:
     import pathlib
     here = pathlib.Path(__file__).parent
-    sys.path.insert(0, str(here.parent.parent))
+    sys.path.insert(0, str(here.parent.parent.parent))
     from infra import ConceptEntry, InferenceEntry, ConceptRepo, InferenceRepo, Orchestrator, Blackboard, Body
     from infra._loggers.utils import setup_orchestrator_logging
 
