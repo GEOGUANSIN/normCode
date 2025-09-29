@@ -504,8 +504,8 @@ if __name__ == "__main__":
     logging.info("=== Starting Orchestrator Demo ===")
 
     # 1. Create repositories
-    number_1 = "12"
-    number_2 = "9"
+    number_1 = "125632345566776543245543234556765432"
+    number_2 = "9232"
     concept_repo, inference_repo = create_appending_repositories_new(
         number_1=number_1,
         number_2=number_2
@@ -515,7 +515,7 @@ if __name__ == "__main__":
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        max_cycles=25,
+        max_cycles=45,
     )
 
     # 3. Run the orchestrator
