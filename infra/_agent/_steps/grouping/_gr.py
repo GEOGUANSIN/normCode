@@ -6,11 +6,21 @@ from infra._syntax._grouper import Grouper
 
 def grouping_references(states: States) -> States:
     """Perform the core grouping logic."""
-    context_refs = [r.reference for r in states.context if r.reference]
+    by_axis_concepts = getattr(states.syntax, 'by_axis_concepts', None)
+
+    if by_axis_concepts:
+        context_refs = [
+            r.reference for r in states.context
+            if r.reference and r.concept and r.concept.name in by_axis_concepts
+        ]
+    else:
+        context_refs = [r.reference for r in states.context if r.reference]
+
     value_refs = [r.reference for r in states.values if r.reference]
     value_concept_names = [c.concept.name for c in states.values if c.concept]
 
     by_axes = [ref.axes for ref in context_refs]
+    logging.debug(f"By axes: {by_axes}")
 
     grouper = Grouper()
     result_ref = None

@@ -36,17 +36,46 @@ def memory_value_perception(states: States) -> States:
     if ordered_refs:
         # Step 1: Strip wrappers like %() from each reference before cross-product.
         def strip_wrapper(element: Any) -> Any:
-            """Strips the '%...(...)' wrapper if it exists."""
-            if isinstance(element, str) and element.startswith("%"):
-                # logging.debug(f"Stripping wrapper Element: {element}")
-                open_paren_index = element.find("(")
-                # To handle nested parentheses in the wrapped content, find the last closing parenthesis.
-                close_paren_index = element.rfind(")")
+            """
+            Strips the '%...(...)' wrapper from strings in an element.
+            If the element is a list or contains lists, it flattens the structure,
+            processes each item, and joins them into a formatted string.
+            """
+            from typing import List
 
-                # Check for a valid wrapper structure, e.g., %code(...)
-                if open_paren_index > 0 and close_paren_index == len(element) - 1:
-                    return element[open_paren_index + 1 : close_paren_index]
-            return element
+            flat_list: List[Any] = []
+
+            def flatten(el: Any):
+                if isinstance(el, list):
+                    for item in el:
+                        flatten(item)
+                elif isinstance(el, dict):
+                    for value in el.values():
+                        flatten(value)
+                else:
+                    flat_list.append(el)
+
+            flatten(element)
+
+            stripped_list = []
+            for item in flat_list:
+                if isinstance(item, str) and item.startswith("%"):
+                    open_paren_index = item.find("(")
+                    close_paren_index = item.rfind(")")
+                    if open_paren_index > 0 and close_paren_index == len(item) - 1:
+                        stripped_list.append(item[open_paren_index + 1 : close_paren_index])
+                    else:
+                        stripped_list.append(item)
+                else:
+                    stripped_list.append(item)
+
+            if not stripped_list:
+                return ""
+            if len(stripped_list) == 1:
+                return str(stripped_list[0])
+            if len(stripped_list) == 2:
+                return f"{stripped_list[0]}, and {stripped_list[1]}"
+            return ", ".join(map(str, stripped_list[:-1])) + f", and {stripped_list[-1]}"
 
 
         # logging.debug(f"Ordered refs: {[ref.tensor for ref in ordered_refs]}")

@@ -16,11 +16,12 @@ def input_working_interpretation(
     """Initialize states with syntax info and placeholder records."""
     if working_interpretation:
         states.syntax.marker = working_interpretation.get("syntax", {}).get("marker")
+        states.syntax.by_axis_concepts = working_interpretation.get("syntax", {}).get("by_axis_concepts", [])
 
     # Seed lists with empty records for each step
     for step in ["GR", "OR"]:
         states.inference.append(ReferenceRecordLite(step_name=step))
 
     states.set_current_step("IWI")
-    logging.debug(f"IWI completed. Syntax marker: {states.syntax.marker}")
+    logging.debug(f"IWI completed. Syntax marker: {states.syntax.marker}. By axis concepts: {states.syntax.by_axis_concepts}")
     return states 
