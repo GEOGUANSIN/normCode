@@ -77,18 +77,16 @@ Normcode_new_with_appending = """
             <- <carry-over number is 0> | 1.1.3.4. judgement
                 <= :%(True):<{1}<$({carry-over number})%_> is 0> | 1.1.3.4.1. timing
                     <= @after({number pair to append}<$={1}>)
-                <- {carry-over number}*1<:{1}>
+                <- {carry-over number}*1 | 1.1.3.4.2. grouping
+                    <= &across({carry-over number}*1:{carry-over number}*1<--<!_>>)
+                    <- {carry-over number}*1 | 1.1.3.4.2.2. imperative
+                        <= ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.3.4.2.2.1. timing
+                            <= @after({digit sum})
+                        <- {quotient}?<:{1}>
+                        <- {digit sum}<:{2}>
 
-        <- {carry-over number}*1 | 1.1.4. grouping
-            <= &across({carry-over number}*1:{carry-over number}*1<--<!_>>)
-            <- {carry-over number}*1 | 1.1.4.2. imperative
-                <= ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.4.2.1. timing
-                    <= @after({digit sum})
-                <- {quotient}?<:{1}>
-                <- {digit sum}<:{2}>
-
-        <- {remainder} | 1.1.5. imperative
-            <= ::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.5.1. timing
+        <- {remainder} | 1.1.4. imperative
+            <= ::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.4.1. timing
                 <= @after({digit sum})
             <- {remainder}?<:{1}>
             <- {digit sum}<:{2}>
@@ -363,7 +361,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             description="Gets the unit place digit from a number.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["get unit place digit"],
+            reference_data=["::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)"],
             reference_axis_names=["get unit place digit"],
         ),
         ConceptEntry(
@@ -397,7 +395,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             description="Gets the carry-over number from a digit sum.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["get carry-over"],
+            reference_data=["::(get the {1}?<$({carry-over number})%_> of {2}<$({digit sum})%_>)"],
             reference_axis_names=["get carry-over"],
         ),
         ConceptEntry(
@@ -407,7 +405,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             description="Finds the quotient of a digit sum divided by 10.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["find quotient by dividing by 10"],
+            reference_data=["::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)"],
             reference_axis_names=["find quotient"],
         ),
         ConceptEntry(
@@ -417,7 +415,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             description="Gets the remainder of a digit sum divided by 10.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["get remainder by dividing by 10"],
+            reference_data=["::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)"],
             reference_axis_names=["get remainder"],
         ),
         ConceptEntry(
@@ -805,7 +803,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 }
             }
         ),
-        # 1.1.4. Grouping for {carry-over number}*1
+        # 1.1.3.4.2. Grouping for {carry-over number}*1
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='grouping',
@@ -819,7 +817,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{quotient}?')
             ],
-            flow_info={'flow_index': '1.1.4'},
+            flow_info={'flow_index': '1.1.3.4.2'},
             working_interpretation={
                 "syntax": {
                     "marker": "across",
@@ -832,7 +830,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 }
             }
         ),
-        # 1.1.4.2. Imperative for {carry-over number}*1
+        # 1.1.3.4.2.2. Imperative for {carry-over number}*1
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
@@ -842,7 +840,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{quotient}?'),
             ],
-            flow_info={'flow_index': '1.1.4.2'},
+            flow_info={'flow_index': '1.1.3.4.2.2'},
             working_interpretation={
                 "is_relation_output": False,
                 "with_thinking": True,
@@ -852,14 +850,14 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 }
             },
         ),
-        # 1.1.4.2.1. Timing for imperative
+        # 1.1.3.4.2.2.1. Timing for imperative
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
             concept_to_infer=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
             function_concept=concept_repo.get_concept('@after({digit sum})'),
             value_concepts=[concept_repo.get_concept('{digit sum}')],
-            flow_info={'flow_index': '1.1.4.2.1'},
+            flow_info={'flow_index': '1.1.3.4.2.2.1'},
             working_interpretation={
                 "syntax": {
                     "marker": "after",
@@ -867,7 +865,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 }
             }
         ),
-        # 1.1.5. Imperative for {remainder}
+        # 1.1.4. Imperative for {remainder}
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
@@ -878,7 +876,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{remainder}?'),
             ],
-            flow_info={'flow_index': '1.1.5'},
+            flow_info={'flow_index': '1.1.4'},
             working_interpretation={
                 "is_relation_output": False,
                 "with_thinking": True,
@@ -888,7 +886,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 }
             },
         ),
-        # 1.1.5.1. Timing for imperative
+        # 1.1.4.1. Timing for imperative
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
@@ -896,7 +894,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 '::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)'),
             function_concept=concept_repo.get_concept('@after({digit sum})'),
             value_concepts=[concept_repo.get_concept('{digit sum}')],
-            flow_info={'flow_index': '1.1.5.1'},
+            flow_info={'flow_index': '1.1.4.1'},
             working_interpretation={
                 "syntax": {
                     "marker": "after",
@@ -1169,7 +1167,9 @@ if __name__ == "__main__":
         logging.info("=== Starting Orchestrator Demo ===")
 
         # 1. Create repositories
-        number_1, number_2 = quick_generate(min_length=1, max_length=2, seed=25)
+        # number_1, number_2 = quick_generate(min_length=1, max_length=2, seed=25)
+        number_1 = "12"
+        number_2 = "82"
         logging.info(f"Generated numbers: {number_1} + {number_2}")
 
         # number_1 = args.number1

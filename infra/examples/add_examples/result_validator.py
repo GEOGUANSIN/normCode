@@ -56,20 +56,24 @@ class ResultValidator:
         # Basic structure validation
         self._validate_structure(data_tensor, axis_names, shape, errors, warnings)
         
-        # Extract and validate the actual number pairs
+        # Extract and validate the result digits
         if not errors:
-            extracted_pairs = self._extract_number_pairs(data_tensor, axis_names)
-            actual_values['extracted_pairs'] = extracted_pairs
+            result_digits = self._extract_result_digits(data_tensor, axis_names)
+            actual_values['result_digits'] = result_digits
             
-            # Calculate expected values
-            expected_pairs = self._calculate_expected_pairs(input_numbers)
-            expected_values['expected_pairs'] = expected_pairs
+            # Calculate expected result
+            expected_result = self._calculate_expected_result(input_numbers)
+            expected_values['expected_result'] = expected_result
+            
+            # Build actual result from digits (reverse order)
+            actual_result = self._build_result_from_digits(result_digits)
+            actual_values['actual_result'] = actual_result
             
             # Digit-by-digit analysis
-            digit_analysis = self._analyze_digits(extracted_pairs, expected_pairs, input_numbers)
+            digit_analysis = self._analyze_result(result_digits, expected_result, input_numbers)
             
             # Validate the results
-            self._validate_calculations(extracted_pairs, expected_pairs, errors, warnings)
+            self._validate_result(actual_result, expected_result, errors, warnings)
             
         return ValidationResult(
             is_valid=len(errors) == 0,
@@ -122,30 +126,37 @@ class ResultValidator:
             if isinstance(element, list):
                 self._validate_tensor_depth(element, shape, errors, depth + 1)
     
-    def _extract_number_pairs(self, data_tensor: List, axis_names: List[str]) -> List[Tuple[str, str]]:
-        """Extract number pairs from the nested tensor structure."""
-        pairs = []
+    def _extract_result_digits(self, data_tensor: List, axis_names: List[str]) -> List[str]:
+        """
+        Extract result digits from the nested tensor structure.
         
-        # Navigate through the nested structure to find the actual number pairs
-        # Based on the log, the structure is: [[[[[[['%00d(4)']]]]]], [[[[[['%7fd(0)']]]]]], [[[[[['%9a8(1)']]]]]]]
+        The final dimension is 'carry-over number' which contains encoded remainder digits.
+        Each element represents one digit of the final sum result.
+        """
+        digits = []
         
-        for pair_data in data_tensor:
+        # Navigate through the nested structure to find the carry-over numbers
+        # Structure: [[[[[[['%41a(3)']]]]]], [[[[[['%144(9)']]]]]], ...]
+        # The deepest level contains encoded strings like '%41a(3)' where (3) is the digit
+        
+        for element in data_tensor:
             # Navigate to the deepest level where the actual data is stored
-            current = pair_data
+            current = element
             while isinstance(current, list) and len(current) == 1:
                 current = current[0]
                 
-            # Extract the number pair from the deepest level
-            if isinstance(current, list) and len(current) >= 2:
-                # Parse the encoded numbers
-                num1_encoded = self._extract_encoded_number(current[0])
-                num2_encoded = self._extract_encoded_number(current[1]) if len(current) > 1 else "0"
-                
-                pairs.append((num1_encoded, num2_encoded))
+            # Extract the digit from the encoded string
+            if isinstance(current, str):
+                digit = self._extract_encoded_number(current)
+                digits.append(digit)
+            elif isinstance(current, list) and len(current) > 0:
+                # Sometimes there might be nested lists with the encoded value
+                digit = self._extract_encoded_number(current[0] if isinstance(current[0], str) else "0")
+                digits.append(digit)
             else:
-                pairs.append(("0", "0"))
+                digits.append("0")
                 
-        return pairs
+        return digits
     
     def _extract_encoded_number(self, encoded_str: str) -> str:
         """Extract the actual number from an encoded string like '%00d(4)'."""
@@ -163,132 +174,99 @@ class ResultValidator:
             numbers = re.findall(r'\d+', encoded_str)
             return numbers[0] if numbers else "0"
     
-    def _calculate_expected_pairs(self, input_numbers: Tuple[str, str]) -> List[Tuple[str, str]]:
-        """Calculate what the expected number pairs should be."""
+    def _calculate_expected_result(self, input_numbers: Tuple[str, str]) -> str:
+        """Calculate the expected sum result."""
         num1, num2 = input_numbers
         
         # Convert to integers for calculation
         try:
             n1 = int(num1)
             n2 = int(num2)
+            result = n1 + n2
+            return str(result)
         except ValueError:
-            return [("0", "0")]
-            
-        # Simulate the digit-by-digit addition process
-        expected_pairs = []
-        
-        # Pad numbers to same length
-        max_len = max(len(num1), len(num2))
-        num1_padded = num1.zfill(max_len)
-        num2_padded = num2.zfill(max_len)
-        
-        carry = 0
-        result_digits = []
-        
-        # Process from right to left (least significant digit first)
-        for i in range(max_len - 1, -1, -1):
-            digit1 = int(num1_padded[i])
-            digit2 = int(num2_padded[i])
-            
-            # Calculate sum with carry
-            digit_sum = digit1 + digit2 + carry
-            result_digit = digit_sum % 10
-            carry = digit_sum // 10
-            
-            result_digits.append(str(result_digit))
-            
-            # Create intermediate pairs for validation
-            # Remove processed digits from numbers
-            remaining_num1 = num1_padded[:i+1] if i+1 < len(num1_padded) else "0"
-            remaining_num2 = num2_padded[:i+1] if i+1 < len(num2_padded) else "0"
-            
-            expected_pairs.append((remaining_num1, remaining_num2))
-        
-        # Add final pair if there's a carry
-        if carry > 0:
-            expected_pairs.append(("0", "0"))
-            
-        return expected_pairs
+            return "0"
     
-    def _analyze_digits(self, actual_pairs: List[Tuple[str, str]], 
-                       expected_pairs: List[Tuple[str, str]], 
-                       input_numbers: Tuple[str, str]) -> Dict[str, Any]:
-        """Perform digit-by-digit analysis."""
+    def _build_result_from_digits(self, digits: List[str]) -> str:
+        """
+        Build the final result number from the extracted digits.
+        
+        The digits are in the order they were processed (rightmost first),
+        so we need to reverse them to get the actual result.
+        """
+        if not digits:
+            return "0"
+        
+        # Reverse the digits to get the correct order
+        reversed_digits = digits[::-1]
+        
+        # Join and remove leading zeros
+        result = ''.join(reversed_digits).lstrip('0')
+        
+        return result if result else "0"
+    
+    def _analyze_result(self, result_digits: List[str], 
+                        expected_result: str,
+                        input_numbers: Tuple[str, str]) -> Dict[str, Any]:
+        """Perform analysis of the result digits."""
+        actual_result = self._build_result_from_digits(result_digits)
+        expected_digits = list(expected_result)[::-1]  # Reverse to match processing order
+        
         analysis = {
             'input_numbers': input_numbers,
-            'total_pairs': len(actual_pairs),
+            'expected_sum': expected_result,
+            'actual_sum': actual_result,
+            'matches': actual_result == expected_result,
             'digit_comparisons': [],
             'errors_by_position': {},
             'summary': {}
         }
         
-        max_pairs = max(len(actual_pairs), len(expected_pairs))
+        # Pad to same length for comparison
+        max_len = max(len(result_digits), len(expected_digits))
+        padded_actual = result_digits + ['0'] * (max_len - len(result_digits))
+        padded_expected = expected_digits + ['0'] * (max_len - len(expected_digits))
         
-        for i in range(max_pairs):
-            actual = actual_pairs[i] if i < len(actual_pairs) else ("0", "0")
-            expected = expected_pairs[i] if i < len(expected_pairs) else ("0", "0")
+        # Compare each digit position
+        for i in range(max_len):
+            actual_digit = padded_actual[i]
+            expected_digit = padded_expected[i]
             
             comparison = {
                 'position': i,
-                'actual': actual,
-                'expected': expected,
-                'matches': actual == expected,
-                'num1_match': actual[0] == expected[0],
-                'num2_match': actual[1] == expected[1]
+                'actual': actual_digit,
+                'expected': expected_digit,
+                'matches': actual_digit == expected_digit
             }
             
-            # Detailed digit analysis
             if not comparison['matches']:
-                comparison['digit_errors'] = []
-                
-                # Compare each digit position
-                max_len = max(len(actual[0]), len(expected[0]), len(actual[1]), len(expected[1]))
-                
-                for digit_pos in range(max_len):
-                    actual_digit1 = actual[0][-(digit_pos+1)] if digit_pos < len(actual[0]) else '0'
-                    expected_digit1 = expected[0][-(digit_pos+1)] if digit_pos < len(expected[0]) else '0'
-                    actual_digit2 = actual[1][-(digit_pos+1)] if digit_pos < len(actual[1]) else '0'
-                    expected_digit2 = expected[1][-(digit_pos+1)] if digit_pos < len(expected[1]) else '0'
-                    
-                    if actual_digit1 != expected_digit1 or actual_digit2 != expected_digit2:
-                        comparison['digit_errors'].append({
-                            'digit_position': digit_pos,
-                            'actual_digits': (actual_digit1, actual_digit2),
-                            'expected_digits': (expected_digit1, expected_digit2)
-                        })
-                        
-                        analysis['errors_by_position'][f'pair_{i}_digit_{digit_pos}'] = {
-                            'actual': (actual_digit1, actual_digit2),
-                            'expected': (expected_digit1, expected_digit2)
-                        }
+                analysis['errors_by_position'][f'digit_{i}'] = {
+                    'actual': actual_digit,
+                    'expected': expected_digit
+                }
             
             analysis['digit_comparisons'].append(comparison)
         
         # Summary statistics
-        total_comparisons = len(analysis['digit_comparisons'])
-        matching_pairs = sum(1 for comp in analysis['digit_comparisons'] if comp['matches'])
+        total_digits = len(analysis['digit_comparisons'])
+        matching_digits = sum(1 for comp in analysis['digit_comparisons'] if comp['matches'])
         
         analysis['summary'] = {
-            'total_pairs': total_comparisons,
-            'matching_pairs': matching_pairs,
-            'accuracy_percentage': (matching_pairs / total_comparisons * 100) if total_comparisons > 0 else 0,
-            'total_digit_errors': len(analysis['errors_by_position'])
+            'total_digits': total_digits,
+            'matching_digits': matching_digits,
+            'accuracy_percentage': (matching_digits / total_digits * 100) if total_digits > 0 else 0,
+            'total_errors': len(analysis['errors_by_position'])
         }
         
         return analysis
     
-    def _validate_calculations(self, actual_pairs: List[Tuple[str, str]], 
-                              expected_pairs: List[Tuple[str, str]], 
-                              errors: List[str], warnings: List[str]):
-        """Validate that the calculations are correct."""
+    def _validate_result(self, actual_result: str, 
+                        expected_result: str,
+                        errors: List[str], warnings: List[str]):
+        """Validate that the result is correct."""
         
-        if len(actual_pairs) != len(expected_pairs):
-            warnings.append(f"Different number of pairs: actual {len(actual_pairs)} vs expected {len(expected_pairs)}")
-        
-        # Check each pair
-        for i, (actual, expected) in enumerate(zip(actual_pairs, expected_pairs)):
-            if actual != expected:
-                errors.append(f"Pair {i}: actual {actual} != expected {expected}")
+        if actual_result != expected_result:
+            errors.append(f"Result mismatch: actual '{actual_result}' != expected '{expected_result}'")
     
     def validate_from_log_entry(self, log_entry: Dict[str, Any]) -> ValidationResult:
         """
@@ -331,31 +309,29 @@ class ResultValidator:
             for warning in result.warnings:
                 print(f"  - {warning}")
         
-        # Digit analysis summary
+        # Result analysis
         if result.digit_analysis:
             analysis = result.digit_analysis
-            print(f"\n📊 DIGIT ANALYSIS:")
+            print(f"\n📊 RESULT ANALYSIS:")
             print(f"  - Input Numbers: {analysis['input_numbers']}")
-            print(f"  - Total Pairs: {analysis['total_pairs']}")
+            print(f"  - Expected Sum: {analysis['expected_sum']}")
+            print(f"  - Actual Sum: {analysis['actual_sum']}")
+            print(f"  - Match: {'✓' if analysis['matches'] else '✗'}")
             
             if 'summary' in analysis:
                 summary = analysis['summary']
-                print(f"  - Matching Pairs: {summary['matching_pairs']}/{summary['total_pairs']}")
+                print(f"\n📐 DIGIT-BY-DIGIT BREAKDOWN:")
+                print(f"  - Total Digits: {summary['total_digits']}")
+                print(f"  - Matching Digits: {summary['matching_digits']}/{summary['total_digits']}")
                 print(f"  - Accuracy: {summary['accuracy_percentage']:.1f}%")
-                print(f"  - Digit Errors: {summary['total_digit_errors']}")
+                print(f"  - Digit Errors: {summary['total_errors']}")
             
-            # Show detailed comparisons
-            print(f"\n🔍 DETAILED COMPARISONS:")
-            for comp in analysis['digit_comparisons']:
-                status = "✓" if comp['matches'] else "✗"
-                print(f"  {status} Position {comp['position']}: {comp['actual']} vs {comp['expected']}")
-                
-                if not comp['matches'] and 'digit_errors' in comp:
-                    for digit_error in comp['digit_errors']:
-                        pos = digit_error['digit_position']
-                        actual = digit_error['actual_digits']
-                        expected = digit_error['expected_digits']
-                        print(f"    ❌ Digit {pos}: {actual} vs {expected}")
+            # Show detailed comparisons only if there are errors
+            if not analysis['matches'] and 'digit_comparisons' in analysis:
+                print(f"\n🔍 DETAILED DIGIT COMPARISONS:")
+                for comp in analysis['digit_comparisons']:
+                    status = "✓" if comp['matches'] else "✗"
+                    print(f"  {status} Position {comp['position']}: actual={comp['actual']}, expected={comp['expected']}")
         
         print("\n" + "="*60)
 
@@ -372,7 +348,7 @@ def create_test_data():
         'axis_names': ['number pair', 'get remainder', 'remainder explanation', 'sum', 
                       'get unit place digit', 'unit place digit', 'carry-over number'],
         'shape': (3, 1, 1, 1, 1, 1, 1),
-        'input_numbers': ('12', '92')
+        'input_numbers': ('12', '92')  # Expected sum: 104 (digits: 4, 0, 1 reversed)
     }
 
 
