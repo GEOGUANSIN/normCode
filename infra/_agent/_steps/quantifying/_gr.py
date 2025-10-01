@@ -35,8 +35,7 @@ def grouping_references(states: States) -> States:
     # 3. Perform grouping. For quantification, this is essentially a flattening operation.
     grouper = Grouper()
     # For quantification, we always use or_across pattern
-    # Pass a copy of the axes to prevent destructive modification of the original reference.
-    by_axes = [[loop_base_axis] if loop_base_axis else ref.axes.copy() for ref in value_refs]
+    by_axes = [loop_base_axis] if loop_base_axis else []
     to_loop_ref = grouper.or_across(
         references=value_refs,
         by_axes=by_axes,

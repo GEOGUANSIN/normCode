@@ -14,11 +14,13 @@ if CURRENT_DIR not in sys.path:
 # Import core components
 try:
 	from infra import Inference, Concept, Reference, AgentFrame, BaseStates, Body
+	from infra._syntax._grouper import Grouper
 except Exception:
 	import sys, pathlib
 	here = pathlib.Path(__file__).parent
 	sys.path.insert(0, str(here.parent.parent))  # Add workspace root to path
 	from infra import Inference, Concept, Reference, AgentFrame, BaseStates, Body
+	from infra._syntax._grouper import Grouper
 
 
 # --- Demo Setup ---
@@ -216,8 +218,142 @@ def run_complex_grouping_sequence() -> BaseStates:
     return states
 
 
+# --- Direct Grouper Demos: Understanding by_axes (NEW SIMPLIFIED LOGIC) ---
+
+"""
+UNDERSTANDING by_axes IN GROUPER (SIMPLIFIED):
+
+The `by_axes` parameter now accepts a simple list of strings (`List[str]`). 
+Each string is the name of an axis to be removed (collapsed).
+
+Key Concepts:
+1. `by_axes=None`: No axes are removed. All shared axes from the input references are preserved.
+2. `by_axes=['axis1', 'axis2']`: `axis1` and `axis2` will be removed from the final result.
+   All other axes will be preserved.
+
+The complex `pop` logic has been removed.
+"""
+
+def demo_simplified_grouper_logic():
+    """
+    Demonstrates the new, simplified Grouper logic.
+    `by_axes` is now a simple list of axis names to remove.
+    """
+    print("\n" + "="*80)
+    print("GROUPER by_axes DEMONSTRATIONS (SIMPLIFIED LOGIC)")
+    print("="*80)
+    
+    grouper = Grouper()
+    
+    # --- Setup ---
+    # Ref 1: Student names
+    ref_students = Reference(axes=["student_id"], shape=(2,))
+    ref_students.set("Alice", student_id=0)
+    ref_students.set("Bob", student_id=1)
+    
+    # Ref 2: Grades across subjects
+    ref_grades = Reference(axes=["student_id", "subject_id"], shape=(2, 3))
+    grades = [[90, 85, 92], [88, 91, 86]]
+    for i in range(2):
+        for j in range(3):
+            ref_grades.set(grades[i][j], student_id=i, subject_id=j)
+            
+    print("\n--- Setup Complete ---")
+    print(f"Students axes: {ref_students.axes}")
+    print(f"Grades axes: {ref_grades.axes}")
+
+    # --- Demo Cases ---
+    
+    # Demo 1: No by_axes (preserve all shared axes)
+    print("\n" + "-"*80)
+    print("DEMO 1: by_axes=None (Preserve all shared axes)")
+    print("-"*80)
+    result1 = grouper.and_in(
+        references=[ref_students, ref_grades],
+        annotation_list=["student", "grade"],
+        by_axes=None
+    )
+    print(f"Result axes: {result1.axes}")
+    print(f"Result shape: {result1.shape}")
+    print("Result tensor:")
+    for item in result1.get_tensor(ignore_skip=True):
+        print(f"  {item}")
+
+    # Demo 2: Collapse 'subject_id'
+    print("\n" + "-"*80)
+    print("DEMO 2: by_axes=['subject_id'] (Collapse one axis)")
+    print("       'student_id' should be preserved.")
+    print("-"*80)
+    result2 = grouper.and_in(
+        references=[ref_students, ref_grades],
+        annotation_list=["student", "grade"],
+        by_axes=['subject_id']
+    )
+    print(f"Result axes: {result2.axes}")
+    print(f"Result shape: {result2.shape}")
+    print("Result tensor:")
+    for item in result2.get_tensor(ignore_skip=True):
+        print(f"  {item}")
+
+    # Demo 3: Collapse 'student_id'
+    print("\n" + "-"*80)
+    print("DEMO 3: by_axes=['student_id'] (Collapse another axis)")
+    print("       'subject_id' should be preserved.")
+    print("-"*80)
+    result3 = grouper.and_in(
+        references=[ref_students, ref_grades],
+        annotation_list=["student", "grade"],
+        by_axes=['student_id']
+    )
+    print(f"Result axes: {result3.axes}")
+    print(f"Result shape: {result3.shape}")
+    print("Result tensor:")
+    for item in result3.get_tensor(ignore_skip=True):
+        print(f"  {item}")
+        
+    # Demo 4: Collapse ALL axes
+    print("\n" + "-"*80)
+    print("DEMO 4: by_axes=['student_id', 'subject_id'] (Collapse all axes)")
+    print("       Result should have a `_none_axis`.")
+    print("-"*80)
+    result4 = grouper.and_in(
+        references=[ref_students, ref_grades],
+        annotation_list=["student", "grade"],
+        by_axes=['student_id', 'subject_id']
+    )
+    print(f"Result axes: {result4.axes}")
+    print(f"Result shape: {result4.shape}")
+    print("Result tensor:")
+    for item in result4.get_tensor(ignore_skip=True):
+        print(f"  {item}")
+        
+    # Demo 5: or_across with collapsing
+    print("\n" + "-"*80)
+    print("DEMO 5: or_across with by_axes=['subject_id']")
+    print("       Should preserve 'student_id' and flatten the grades for each student.")
+    print("-"*80)
+    result5 = grouper.or_across(
+        references=[ref_students, ref_grades],
+        by_axes=['subject_id']
+    )
+    print(f"Result axes: {result5.axes}")
+    print(f"Result shape: {result5.shape}")
+    print("Result tensor:")
+    for item in result5.get_tensor(ignore_skip=True):
+        print(f"  {item}")
+
+    print("\n" + "="*80)
+    print("END OF SIMPLIFIED GROUPER DEMONSTRATIONS")
+    print("="*80)
+
+
 if __name__ == "__main__":
+    # Original demos
     print("--- Running Simple Demo ---")
     run_grouping_sequence()
     print("\n\n--- Running Complex Demo ---")
     run_complex_grouping_sequence()
+    
+    # New simplified demo
+    print("\n\n")
+    demo_simplified_grouper_logic()

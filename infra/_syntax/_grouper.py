@@ -73,25 +73,16 @@ class Grouper:
 
         return element_actuation
 
-    def and_in(self, references: List[Reference], annotation_list: List[str], by_axes: Optional[List[List[str]]] = None, template: Optional[Template] = None, pop: bool = True) -> Reference:
+    def and_in(self, references: List[Reference], annotation_list: List[str], by_axes: Optional[List[str]] = None, template: Optional[Template] = None) -> Reference:
         shared_axes = self.find_share_axes(references)
         sliced_refs = [ref.slice(*shared_axes) for ref in references]
 
         result = cross_product(sliced_refs)
         result = self.annotate_element(result, annotation_list)
 
-        if by_axes is not None and len(by_axes) > 0:
-            preserve_axes = [axis for axis in result.axes if not any(axis in sublist for sublist in by_axes)]
-
-            by_axes_copy = copy(by_axes)
-            if pop:
-                for i in range(len(by_axes_copy)):
-                    if by_axes_copy[i]:
-                        by_axes_copy[i].pop()
-
-            axes_in_all_groups = [axis for axis in result.axes if all(axis in sublist for sublist in by_axes_copy)] if by_axes_copy and by_axes_copy[0] else []
-            final_slice_axes = preserve_axes + axes_in_all_groups
-            result = result.slice(*final_slice_axes)
+        if by_axes is not None:
+            preserve_axes = [axis for axis in result.axes if axis not in by_axes]
+            result = result.slice(*preserve_axes)
 
         if template:
             element_actuation = self.create_unified_element_actuation(template, annotation_list)
@@ -99,24 +90,15 @@ class Grouper:
 
         return result
 
-    def or_across(self, references: List[Reference], by_axes: Optional[List[List[str]]] = None, template: Optional[Template] = None, pop: bool = True) -> Reference:
+    def or_across(self, references: List[Reference], by_axes: Optional[List[str]] = None, template: Optional[Template] = None) -> Reference:
         shared_axes = self.find_share_axes(references)
         sliced_refs = [ref.slice(*shared_axes) for ref in references]
 
         result = cross_product(sliced_refs)
 
-        if by_axes is not None and len(by_axes) > 0:
-            preserve_axes = [axis for axis in result.axes if not any(axis in sublist for sublist in by_axes)]
-
-            by_axes_copy = copy(by_axes)
-            if pop:
-                for i in range(len(by_axes_copy)):
-                    if by_axes_copy[i]:
-                        by_axes_copy[i].pop()
-
-            axes_in_all_groups = [axis for axis in result.axes if all(axis in sublist for sublist in by_axes_copy)] if by_axes_copy and by_axes_copy[0] else []
-            final_slice_axes = preserve_axes + axes_in_all_groups
-            result = result.slice(*final_slice_axes)
+        if by_axes is not None:
+            preserve_axes = [axis for axis in result.axes if axis not in by_axes]
+            result = result.slice(*preserve_axes)
 
         result = self.flatten_element(result)
 

@@ -190,7 +190,7 @@ def run_quantifying_sequence() -> BaseStates:
         print("\n--- Final Output (OR) ---")
         # The result is a list of all the intermediate sums
         print(f"Tensor: {tensor_content}")
-        # Expected: [['%(1)'], ['%(9)'], ['%(11)'], ['%(16)']]
+        # Expected: [['%(2)'], ['%(9)'], ['%(3)'], ['%(6)']]
     
     return final_states
 

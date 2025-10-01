@@ -19,21 +19,26 @@ def grouping_references(states: States) -> States:
     value_refs = [r.reference for r in states.values if r.reference]
     value_concept_names = [c.concept.name for c in states.values if c.concept]
 
-    by_axes = [ref.axes for ref in context_refs]
-    logging.debug(f"By axes: {by_axes}")
+    by_axes_lists = [ref.axes for ref in context_refs]
+    # Flatten the list of lists and remove duplicates, preserving order
+    by_axes = list(dict.fromkeys([axis for sublist in by_axes_lists for axis in sublist]))
+    protect_axes = getattr(states.syntax, 'protect_axes', None)
+    if protect_axes:
+        by_axes = [axis for axis in by_axes if axis not in protect_axes]
+    logging.debug(f"By axes (to be removed): {by_axes}")
 
     grouper = Grouper()
     result_ref = None
 
     if states.syntax.marker == "in":
-        logging.debug(f"Performing 'and_in' grouping with by_axes: {by_axes}")
+        logging.debug(f"Performing 'and_in' grouping, removing by_axes: {by_axes}")
         result_ref = grouper.and_in(
             value_refs,
             value_concept_names,
             by_axes=by_axes,
         )
     elif states.syntax.marker == "across":
-        logging.debug(f"Performing 'or_across' grouping with by_axes: {by_axes}")
+        logging.debug(f"Performing 'or_across' grouping, removing by_axes: {by_axes}")
         result_ref = grouper.or_across(
             value_refs,
             by_axes=by_axes,

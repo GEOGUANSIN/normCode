@@ -32,46 +32,29 @@ except Exception:
 
 Normcode_new_with_appending = """
 {new number pair} | 1. quantifying
-    <= *every({number pair})%:[{number pair}]@(1) | 1.1. assigning
-        # <= $.({new number pair in loop}) 
-        # <- {new number pair in loop} | 1.1.2. quantifying
-            <= *every({number pair}*1)%:[{number}]@(2) | 1.1.2.1. assigning
-                <= $.({number pair}*1*2)
-                <- {number pair}*1*2
-            <- {number pair}*1
+    <= *every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>] | 1.1. assigning
 
         <= $.({digit sum}) 
         <- {digit sum} | 1.1.2. imperative
-            <= ::(sum {1}<$({number})%_> and {2}<$({carry-over number})%_> to get {3}?<$({sum})%_>)
+            <= ::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)
             <- {sum}?<:{3}>
-            <- {carry-over number}*1<:{2}> | set this to 0 for the first iteration
-            <- [all {unit place value} of numbers]<:{1}> | 1.1.2.4 grouping
-                <= &in({unit place value}:{number})
-                <- {unit place value} | 1.1.2.4.2 quantifying
-                    <= *every({number pair}*1)%:[{number}]@(2) | 1.1.2.4.2.1 assigning
+            <- {carry-over number}*1<:{2}> 
+            <- [all {unit place value} of numbers]<:{1}> | 1.1.2.4. grouping
+                <= &across({unit place value}:{number pair}*1)
+                <- {unit place value} | 1.1.2.4.2. quantifying
+                    <= *every({number pair}*1)%:[{number}]@(2) | 1.1.2.4.2.1. assigning
                         <= $.({single unit place value})
-                        <- {single unit place value} | 1.1.2.4.2.1.2 imperative
-                            <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>) 
+                        <- {single unit place value} | 1.1.2.4.2.1.2. imperative
+                            <= ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)
                             <- {unit place digit}?<:{2}>
                             <- {number pair}*1*2
                     <- {number pair}*1
 
-        # <- {carry-over number}*1
-        #     <= ::(get the {carry-over number}? of {digit sum})
-        #         <= @after({digit sum}*1)
-        #     <- {carry-over number}?
-        #     <- {digit sum}*1
-
         # <- {remainder}*1
-            <= ::(get the {remainder}? of {digit sum} in base 10)
-                <= @after({digit sum}*1)
-            <- {remainder}?
-            <- {digit sum}*1
-
-        # <- {position}*1 | 1.1.4. imperative/simple
-            <= ::(increase {1}?<$({position})%_>) by one) | 1.1.4.1. timing
-                <= @after([{carry-over number}*1) 
-            <- {position}*1
+        #     <= ::(get the {remainder}? of {digit sum} in base 10)
+        #         <= @after({digit sum}*1)
+        #     <- {remainder}?
+        #     <- {digit sum}*1
 
         <- {number pair}<$={1}> | 1.1.3. assigning
             <= $+({number pair to append}:{number pair})%:[{number pair}] | 1.1.3.1. timing
@@ -90,7 +73,15 @@ Normcode_new_with_appending = """
                 <= :%(True):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
                     <= @after({number pair to append}<$={1}>)
                 <- {number pair to append}<$={1}><:{1}>
-        
+
+        <- {carry-over number}*1 | 1.1.4. grouping
+            <= &across({carry-over number}*1:{carry-over number}*1<--<!_>>)
+            <- {carry-over number}*1 | 1.1.4.2. imperative
+                <= ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.4.2.1. timing
+                    <= @after({digit sum})
+                <- {quotient}?<:{1}>
+                <- {digit sum}<:{2}>
+
     <- {number pair}<$={1}> |ref. %(number pair)=[%(number)=[123, 98]]
 """
 
@@ -133,6 +124,26 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         ),
 
         # --- Intermediate Concepts ---
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{carry-over number}?",
+            type="{}",
+            axis_name="carry-over number query",
+            description="A query for the carry-over number from a sum.",
+            reference_data=["1 if the number is larger than 10"],
+            reference_axis_names=["carry-over number"],
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{quotient}?",
+            type="{}",
+            axis_name="quotient",
+            description="A query for the quotient of a division.",
+            reference_data=["the quotient when dividing by 10"],
+            reference_axis_names=["quotient"],
+            is_ground_concept=True,
+        ),
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="{number}",
@@ -184,16 +195,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             reference_axis_names=["sum"],
             is_ground_concept=True,
         ),
-        ConceptEntry(
-            id=str(uuid.uuid4()),
-            concept_name="{carry-over number}",
-            type="{}",
-            axis_name="carry-over number",
-            description="The carry-over value for the next digit position.",
-            reference_data=["%(0)"],
-            reference_axis_names=["carry-over number"],
-            is_ground_concept=True,
-        ),
+
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name="{carry-over number}*1",
@@ -254,7 +256,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         # --- Function Concepts ---
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="*every({number pair})%:[{number pair}]@(1)",
+            concept_name="*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]",
             type="*every",
             description="Outer loop quantifier: iterates through each number pair in the collection.",
         ),
@@ -317,19 +319,53 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="::(sum {1}<$({number})%_> and {2}<$({carry-over number})%_> to get {3}?<$({sum})%_>)",
+            concept_name="::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)",
             type="::({})",
             description="Adds the digits at the current unit place and the carry-over.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["::(sum {1}<$({number})%_> and {2}<$({carry-over number})%_> to get {3}?<$({sum})%_>)"],
+            reference_data=["::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)"],
             reference_axis_names=["sum"],
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="&in({unit place value}:{number})",
-            type="&in",
+            concept_name="&across({unit place value}:{number pair}*1)",
+            type="&across",
             description="Groups unit place values from numbers.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="&across({carry-over number}*1:{carry-over number}*1<--<!_>>)",
+            type="&across",
+            description="Groups carry-over number with by_axis_concepts as inferring concepts excluding base concept variants.",
+            is_ground_concept=True,
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="::(get the {1}?<$({carry-over number})%_> of {2}<$({digit sum})%_>)",
+            type="::({})",
+            description="Gets the carry-over number from a digit sum.",
+            is_ground_concept=True,
+            is_invariant=True,
+            reference_data=["get carry-over"],
+            reference_axis_names=["get carry-over"],
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+            type="::({})",
+            description="Finds the quotient of a digit sum divided by 10.",
+            is_ground_concept=True,
+            is_invariant=True,
+            reference_data=["find quotient by dividing by 10"],
+            reference_axis_names=["find quotient"],
+        ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="@after({digit sum})",
+            type="@after",
+            description="Timing condition to execute after digit sum is calculated.",
             is_ground_concept=True,
         ),
         ConceptEntry(
@@ -377,9 +413,9 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             id=str(uuid.uuid4()),
             inference_sequence='quantifying',
             concept_to_infer=concept_repo.get_concept('{new number pair}'),
-            function_concept=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)'),
+            function_concept=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]'),
             value_concepts=[concept_repo.get_concept('{number pair}')],
-            context_concepts=[concept_repo.get_concept('{number pair}*1')],
+            context_concepts=[concept_repo.get_concept('{number pair}*1'), concept_repo.get_concept('{carry-over number}*1')],
             flow_info={'flow_index': '1'},
             working_interpretation={
                 "syntax": {
@@ -388,7 +424,9 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                     "LoopBaseConcept": "{number pair}",
                     "CurrentLoopBaseConcept": "{number pair}*1",
                     "group_base": "number pair",
-                    "InLoopConcept": {},
+                    "InLoopConcept": {
+                        "{carry-over number}*1": 1,
+                    },
                     "ConceptToInfer": ["{new number pair}"],
                 }
             },
@@ -400,7 +438,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='assigning',
-            concept_to_infer=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)'),
+            concept_to_infer=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]'),
             function_concept=concept_repo.get_concept('$.({digit sum})'),
             value_concepts=[concept_repo.get_concept('{digit sum}')],
             flow_info={'flow_index': '1.1'},
@@ -408,7 +446,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 "syntax": {
                     "marker": ".",
                     "assign_source": "{digit sum}",
-                    "assign_destination": "*every({number pair})%:[{number pair}]@(1)"
+                    "assign_destination": "*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]"
                 }
             },
         ),
@@ -417,10 +455,11 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{digit sum}'),
-            function_concept=concept_repo.get_concept('::(sum {1}<$({number})%_> and {2}<$({carry-over number})%_> to get {3}?<$({sum})%_>)'),
+            function_concept=concept_repo.get_concept('::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)'),
             value_concepts=[
                 concept_repo.get_concept('[all {unit place value} of numbers]'),
                 concept_repo.get_concept('{carry-over number}*1'),
+                concept_repo.get_concept('{sum}?'),
             ],
             flow_info={'flow_index': '1.1.2'},
             working_interpretation={
@@ -438,14 +477,17 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             id=str(uuid.uuid4()),
             inference_sequence='grouping',
             concept_to_infer=concept_repo.get_concept('[all {unit place value} of numbers]'),
-            function_concept=concept_repo.get_concept('&in({unit place value}:{number})'),
+            function_concept=concept_repo.get_concept('&across({unit place value}:{number pair}*1)'),
             value_concepts=[
                 concept_repo.get_concept('{unit place value}'),
             ],
+            context_concepts=[concept_repo.get_concept('{number pair}*1')],
             flow_info={'flow_index': '1.1.2.4'},
             working_interpretation={
                 "syntax": {
-                    "marker": "in",
+                    "marker": "across",
+                    "by_axis_concepts": "{number pair}*1"
+
                 }
             }
         ),
@@ -635,6 +677,68 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 "syntax": {
                     "marker": "after",
                     "condition": "{number pair to append}"
+                }
+            }
+        ),
+        # 1.1.4. Grouping for {carry-over number}*1
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='grouping',
+            concept_to_infer=concept_repo.get_concept('{carry-over number}*1'),
+            function_concept=concept_repo.get_concept('&across({carry-over number}*1:{carry-over number}*1<--<!_>>)'),
+            value_concepts=[
+                concept_repo.get_concept('{carry-over number}*1'),
+            ],
+            context_concepts=[
+                concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
+                concept_repo.get_concept('{digit sum}'),
+                concept_repo.get_concept('{quotient}?')
+            ],
+            flow_info={'flow_index': '1.1.4'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "across",
+                    "by_axis_concepts": [
+                        "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+                        "{digit sum}",
+                        "{quotient}?"
+                    ],
+                    "protect_axes": ["carry-over number"]
+                }
+            }
+        ),
+        # 1.1.4.2. Imperative for {carry-over number}*1
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='imperative',
+            concept_to_infer=concept_repo.get_concept('{carry-over number}*1'),
+            function_concept=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
+            value_concepts=[
+                concept_repo.get_concept('{digit sum}'),
+                concept_repo.get_concept('{quotient}?'),
+            ],
+            flow_info={'flow_index': '1.1.4.2'},
+            working_interpretation={
+                "is_relation_output": False,
+                "with_thinking": True,
+                "value_order": {
+                    "{quotient}?": 1,
+                    "{digit sum}": 2
+                }
+            },
+        ),
+        # 1.1.4.2.1. Timing for imperative
+        InferenceEntry(
+            id=str(uuid.uuid4()),
+            inference_sequence='timing',
+            concept_to_infer=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
+            function_concept=concept_repo.get_concept('@after({digit sum})'),
+            value_concepts=[concept_repo.get_concept('{digit sum}')],
+            flow_info={'flow_index': '1.1.4.2.1'},
+            working_interpretation={
+                "syntax": {
+                    "marker": "after",
+                    "condition": "{digit sum}"
                 }
             }
         ),

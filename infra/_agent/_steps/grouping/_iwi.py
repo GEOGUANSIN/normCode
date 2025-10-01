@@ -17,6 +17,7 @@ def input_working_interpretation(
     if working_interpretation:
         states.syntax.marker = working_interpretation.get("syntax", {}).get("marker")
         states.syntax.by_axis_concepts = working_interpretation.get("syntax", {}).get("by_axis_concepts", [])
+        states.syntax.protect_axes = working_interpretation.get("syntax", {}).get("protect_axes", [])
 
     # Seed lists with empty records for each step
     for step in ["GR", "OR"]:
