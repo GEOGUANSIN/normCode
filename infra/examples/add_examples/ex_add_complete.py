@@ -80,13 +80,13 @@ Normcode_new_with_appending = """
                 <- {carry-over number}*1 | 1.1.3.4.2. grouping
                     <= &across({carry-over number}*1:{carry-over number}*1<--<!_>>)
                     <- {carry-over number}*1 | 1.1.3.4.2.2. imperative
-                        <= ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12) | 1.1.3.4.2.2.1. timing
+                        <= ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.3.4.2.2.1. timing
                             <= @after({digit sum})
                         <- {quotient}?<:{1}>
                         <- {digit sum}<:{2}>
 
         <- {remainder} | 1.1.4. imperative
-            <= ::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 12) | 1.1.4.1. timing
+            <= ::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10) | 1.1.4.1. timing
                 <= @after({digit sum})
             <- {remainder}?<:{1}>
             <- {digit sum}<:{2}>
@@ -149,7 +149,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             type="{}",
             axis_name="quotient",
             description="A query for the quotient of a division.",
-            reference_data=["the quotient when dividing by 12"],
+            reference_data=["the quotient when dividing by 10"],
             reference_axis_names=["quotient"],
             is_ground_concept=True,
         ),
@@ -159,7 +159,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             type="{}",
             axis_name="remainder explanation",
             description="A query for the remainder of a division.",
-            reference_data=["the remainder when dividing by 12"],
+            reference_data=["the remainder when dividing by 10"],
             reference_axis_names=["remainder explanation"],
             is_ground_concept=True,
         ),
@@ -208,7 +208,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             concept_name="{remainder}",
             type="{}",
             axis_name="remainder",
-            description="The remainder of a digit sum divided by 12.",
+            description="The remainder of a digit sum divided by 10.",
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
@@ -400,22 +400,22 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)",
+            concept_name="::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
             type="::({})",
-            description="Finds the quotient of a digit sum divided by 12.",
+            description="Finds the quotient of a digit sum divided by 10.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)"],
+            reference_data=["::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)"],
             reference_axis_names=["find quotient"],
         ),
         ConceptEntry(
             id=str(uuid.uuid4()),
-            concept_name="::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 12)",
+            concept_name="::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)",
             type="::({})",
-            description="Gets the remainder of a digit sum divided by 12.",
+            description="Gets the remainder of a digit sum divided by 10.",
             is_ground_concept=True,
             is_invariant=True,
-            reference_data=["::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 12)"],
+            reference_data=["::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)"],
             reference_axis_names=["get remainder"],
         ),
         ConceptEntry(
@@ -813,7 +813,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 concept_repo.get_concept('{carry-over number}*1'),
             ],
             context_concepts=[
-                concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)'),
+                concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{quotient}?')
             ],
@@ -822,7 +822,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
                 "syntax": {
                     "marker": "across",
                     "by_axis_concepts": [
-                        "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)",
+                        "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
                         "{digit sum}",
                         "{quotient}?"
                     ],
@@ -835,7 +835,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             id=str(uuid.uuid4()),
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{carry-over number}*1'),
-            function_concept=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)'),
+            function_concept=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
             value_concepts=[
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{quotient}?'),
@@ -854,7 +854,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='timing',
-            concept_to_infer=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 12)'),
+            concept_to_infer=concept_repo.get_concept('::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)'),
             function_concept=concept_repo.get_concept('@after({digit sum})'),
             value_concepts=[concept_repo.get_concept('{digit sum}')],
             flow_info={'flow_index': '1.1.3.4.2.2.1'},
@@ -871,7 +871,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             inference_sequence='imperative',
             concept_to_infer=concept_repo.get_concept('{remainder}'),
             function_concept=concept_repo.get_concept(
-                '::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 12)'),
+                '::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)'),
             value_concepts=[
                 concept_repo.get_concept('{digit sum}'),
                 concept_repo.get_concept('{remainder}?'),
@@ -891,7 +891,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             id=str(uuid.uuid4()),
             inference_sequence='timing',
             concept_to_infer=concept_repo.get_concept(
-                '::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 12)'),
+                '::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)'),
             function_concept=concept_repo.get_concept('@after({digit sum})'),
             value_concepts=[concept_repo.get_concept('{digit sum}')],
             flow_info={'flow_index': '1.1.4.1'},
@@ -1167,10 +1167,10 @@ if __name__ == "__main__":
         logging.info("=== Starting Orchestrator Demo ===")
 
         # 1. Create repositories
-        length_max = 10
-        # number_1, number_2 = quick_generate(min_length=3, max_length=length_max, seed=25)
-        number_1 = "84"
-        number_2 = "77"
+        length_max = 500
+        number_1, number_2 = quick_generate(min_length=150, max_length=length_max, seed=25)
+        # number_1 = "12"
+        # number_2 = "82"
         # number_1 = args.number1
         # number_2 = args.number2
         logging.info(f"Generated numbers: {number_1} + {number_2}")
@@ -1184,7 +1184,8 @@ if __name__ == "__main__":
         orchestrator = Orchestrator(
             concept_repo=concept_repo,
             inference_repo=inference_repo,
-            max_cycles=20*length_max,
+            # max_cycles=20*length_max,
+            max_cycles=50,
         )
 
         # 3. Run the orchestrator
