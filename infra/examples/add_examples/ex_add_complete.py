@@ -1167,7 +1167,7 @@ if __name__ == "__main__":
         logging.info("=== Starting Orchestrator Demo ===")
 
         # 1. Create repositories
-        length_max = 500
+        length_max = 200
         number_1, number_2 = quick_generate(min_length=150, max_length=length_max, seed=25)
         # number_1 = "12"
         # number_2 = "82"
