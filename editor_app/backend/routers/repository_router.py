@@ -1,24 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from typing import List
 import os
 
 from schemas.repository_schemas import (
     RepositorySetSchema,
     RepositorySetData,
-    RepositorySetListResponse,
-    RepositorySetResponse,
-    RepositorySetSaveResponse,
-    RunRepositorySetRequest,
-    RunResponse,
-    LogContentResponse,
-    ErrorResponse,
-    ConceptEntrySchema,
-    InferenceEntrySchema
+    ErrorResponse
 )
 from services.repository_service import RepositoryService
 from services.concept_service import ConceptService
 from services.inference_service import InferenceService
-from services.normcode_execution_service import NormcodeExecutionService
 
 
 # --- Constants for paths ---
@@ -46,14 +37,6 @@ def get_repository_service(
     """Dependency to get repository service instance."""
     repo_storage_dir = os.path.join(DATA_DIR, 'repositories')
     return RepositoryService(repo_storage_dir, concept_service, inference_service)
-
-
-def get_normcode_execution_service() -> NormcodeExecutionService:
-    """Dependency to get normcode execution service instance."""
-    project_root = os.path.abspath(os.path.join(EDITOR_APP_ROOT, '..'))
-    # Logs directory for normcode execution logs (e.g., in 'logs' subdirectory within repo_storage_dir)
-    logs_dir = os.path.join(DATA_DIR, 'logs')
-    return NormcodeExecutionService(project_root, logs_dir)
 
 
 router = APIRouter(prefix="/api/repositories", tags=["repositories"])
@@ -103,123 +86,3 @@ async def delete_repository_set(
 ):
     """Deletes a specific RepositorySet by name."""
     return repo_service.delete_repository_set(name)
-
-
-# --- Concept Management Endpoints ---
-
-@router.get("/{name}/concepts", response_model=List[ConceptEntrySchema])
-async def get_concepts(
-    name: str,
-    concept_service: ConceptService = Depends(get_concept_service)
-):
-    """Retrieves all concepts from a repository set."""
-    return concept_service.get_concepts(name)
-
-@router.get("/{name}/concepts/{concept_id}", response_model=ConceptEntrySchema)
-async def get_concept(
-    name: str,
-    concept_id: str,
-    concept_service: ConceptService = Depends(get_concept_service)
-):
-    """Retrieves a single concept by its ID."""
-    return concept_service.get_concept(name, concept_id)
-
-@router.post("/{name}/concepts", response_model=ConceptEntrySchema)
-async def add_concept(
-    name: str,
-    concept: ConceptEntrySchema,
-    concept_service: ConceptService = Depends(get_concept_service)
-):
-    """Adds a new concept to a repository set."""
-    return concept_service.add_concept(name, concept)
-
-@router.put("/{name}/concepts/{concept_id}", response_model=ConceptEntrySchema)
-async def update_concept(
-    name: str,
-    concept_id: str,
-    concept_update: ConceptEntrySchema,
-    concept_service: ConceptService = Depends(get_concept_service)
-):
-    """Updates an existing concept in a repository set."""
-    return concept_service.update_concept(name, concept_id, concept_update)
-
-@router.delete("/{name}/concepts/{concept_id}")
-async def delete_concept(
-    name: str,
-    concept_id: str,
-    concept_service: ConceptService = Depends(get_concept_service)
-):
-    """Deletes a concept from a repository set."""
-    return concept_service.delete_concept(name, concept_id)
-
-
-# --- Inference Management Endpoints ---
-
-@router.get("/{name}/inferences", response_model=List[InferenceEntrySchema])
-async def get_inferences(
-    name: str,
-    inference_service: InferenceService = Depends(get_inference_service)
-):
-    """Retrieves all inferences from a repository set."""
-    return inference_service.get_inferences(name)
-
-@router.get("/{name}/inferences/{inference_id}", response_model=InferenceEntrySchema)
-async def get_inference(
-    name: str,
-    inference_id: str,
-    inference_service: InferenceService = Depends(get_inference_service)
-):
-    """Retrieves a single inference by its ID."""
-    return inference_service.get_inference(name, inference_id)
-
-@router.post("/{name}/inferences", response_model=InferenceEntrySchema)
-async def add_inference(
-    name: str,
-    inference: InferenceEntrySchema,
-    inference_service: InferenceService = Depends(get_inference_service)
-):
-    """Adds a new inference to a repository set."""
-    return inference_service.add_inference(name, inference)
-
-@router.put("/{name}/inferences/{inference_id}", response_model=InferenceEntrySchema)
-async def update_inference(
-    name: str,
-    inference_id: str,
-    inference_update: InferenceEntrySchema,
-    inference_service: InferenceService = Depends(get_inference_service)
-):
-    """Updates an existing inference in a repository set."""
-    return inference_service.update_inference(name, inference_id, inference_update)
-
-@router.delete("/{name}/inferences/{inference_id}")
-async def delete_inference(
-    name: str,
-    inference_id: str,
-    inference_service: InferenceService = Depends(get_inference_service)
-):
-    """Deletes an inference from a repository set."""
-    return inference_service.delete_inference(name, inference_id)
-
-
-# --- Normcode Execution Endpoints ---
-
-@router.post("/run", response_model=RunResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
-async def run_normcode_repository_set(
-    request: RunRepositorySetRequest,
-    repo_service: RepositoryService = Depends(get_repository_service),
-    exec_service: NormcodeExecutionService = Depends(get_normcode_execution_service)
-):
-    """Runs a specified RepositorySet using the normcode engine."""
-    repo_set_data = repo_service.get_repository_set_data(request.repository_set_name)
-    log_file = exec_service.run_repository_set(repo_set_data)
-    return RunResponse(status="started", log_file=log_file)
-
-
-@router.get("/logs/{log_filename}", response_model=LogContentResponse, responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
-async def get_normcode_logs(
-    log_filename: str,
-    exec_service: NormcodeExecutionService = Depends(get_normcode_execution_service)
-):
-    """Retrieves the content of a specific normcode execution log file."""
-    content = exec_service.get_log_content(log_filename)
-    return LogContentResponse(content=content)

@@ -1,71 +1,52 @@
 import React from 'react';
+import { SidebarMode } from '../state';
+import './Sidebar.css';
 
 interface SidebarProps {
-  repositorySets: string[];
-  selectedRepo: string | null;
-  onRepoSelect: (repoName: string) => void;
-  onNewRepo: () => void;
-  onLoadRepo: () => void;
-  onSaveRepo: () => void;
-  onDeleteRepo: () => void;
-  onRunRepo: () => void;
-  isRunning: boolean;
-  disabled: boolean;
+  mode: SidebarMode;
+  onModeChange: (mode: SidebarMode) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  repositorySets,
-  selectedRepo,
-  onRepoSelect,
-  onNewRepo,
-  onLoadRepo,
-  onSaveRepo,
-  onDeleteRepo,
-  onRunRepo,
-  isRunning,
-  disabled
-}) => {
+const Sidebar: React.FC<SidebarProps> = ({ mode, onModeChange }) => {
   return (
     <div className="sidebar">
-      <h2>Repository Sets</h2>
-      <select
-        className="repo-selector"
-        size={10}
-        value={selectedRepo || ''}
-        onChange={(e) => onRepoSelect(e.target.value)}
-        disabled={disabled}
-      >
-        {repositorySets.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      <div className="sidebar-header">
+        <h1 className="sidebar-title">Normcode</h1>
+        <p className="sidebar-subtitle">Editor</p>
+      </div>
       
-      <div className="controls">
-        <button onClick={onNewRepo} disabled={disabled}>
-          New
-        </button>
-        <button onClick={onLoadRepo} disabled={disabled || !selectedRepo}>
-          Load
-        </button>
-        <button onClick={onSaveRepo} disabled={disabled} className="success">
-          Save
-        </button>
-        <button 
-          onClick={onDeleteRepo} 
-          disabled={disabled || !selectedRepo}
-          className="danger"
+      <nav className="sidebar-nav">
+        <button
+          className={`sidebar-nav-item ${mode === 'concepts' ? 'active' : ''}`}
+          onClick={() => onModeChange('concepts')}
         >
-          Delete
+          <span className="sidebar-nav-icon">📝</span>
+          <span className="sidebar-nav-label">Concepts</span>
         </button>
-        <button 
-          onClick={onRunRepo} 
-          disabled={disabled || (!selectedRepo && !isRunning)}
-          className={isRunning ? 'danger' : 'success'}
+        
+        <button
+          className={`sidebar-nav-item ${mode === 'inferences' ? 'active' : ''}`}
+          onClick={() => onModeChange('inferences')}
         >
-          {isRunning ? 'Stop' : 'Run'}
+          <span className="sidebar-nav-icon">🔄</span>
+          <span className="sidebar-nav-label">Inferences</span>
         </button>
+        
+        <button
+          className={`sidebar-nav-item ${mode === 'repositories' ? 'active' : ''}`}
+          onClick={() => onModeChange('repositories')}
+        >
+          <span className="sidebar-nav-icon">📦</span>
+          <span className="sidebar-nav-label">Repositories</span>
+        </button>
+      </nav>
+
+      <div className="sidebar-footer">
+        <p className="sidebar-footer-text">
+          {mode === 'concepts' && 'Manage global concepts'}
+          {mode === 'inferences' && 'Manage global inferences'}
+          {mode === 'repositories' && 'Configure repositories'}
+        </p>
       </div>
     </div>
   );

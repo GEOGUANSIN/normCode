@@ -3,7 +3,7 @@ import json
 from typing import List, Optional
 from fastapi import HTTPException
 
-from schemas.repository_schemas import ConceptEntrySchema, ConceptFileSchema
+from schemas.concept_schemas import ConceptEntrySchema, ConceptFileSchema
 
 
 class ConceptService:

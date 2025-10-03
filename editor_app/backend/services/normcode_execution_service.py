@@ -7,89 +7,87 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from fastapi import HTTPException
 
 # Import normcode components
-# TODO: Uncomment these when normcode is properly installed and accessible
-# from infra._core.concept import ConceptEntry, ConceptRepository
-# from infra._core.inference import InferenceEntry, InferenceRepository  
-# from infra._orchest.orchestrator import Orchestrator
-
-# Mock classes for MVP testing
-class MockConceptEntry:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-class MockConceptRepository:
-    def __init__(self, entries):
-        self.entries = entries
-    def get_concept(self, name):
-        return MockConceptEntry(concept_name=name)
-
-class MockInferenceEntry:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-class MockInferenceRepository:
-    def __init__(self, entries):
-        self.entries = entries
-
-class MockOrchestrator:
-    def __init__(self, concept_repo, inference_repo):
-        self.concept_repo = concept_repo
-        self.inference_repo = inference_repo
-    def run(self):
-        print("Mock orchestrator running...")
-        print("Processing concepts and inferences...")
-        print("Simulating normcode execution...")
-        print("Execution completed successfully!")
-
-from schemas.repository_schemas import RepositorySetSchema
+from infra._orchest._repo import ConceptEntry, ConceptRepo, InferenceEntry, InferenceRepo
+from infra._orchest._orchestrator import Orchestrator
+from schemas.repository_schemas import RepositorySetData
 
 
 class NormcodeExecutionService:
-    """Service class for executing normcode programs from RepositorySetSchema."""
+    """Service class for executing normcode programs from RepositorySetData."""
 
     def __init__(self, project_root: str, logs_dir: str):
         self.project_root = project_root
         self.logs_dir = logs_dir
         os.makedirs(self.logs_dir, exist_ok=True)
 
-    def _create_normcode_repos_from_schema(self, repo_set: RepositorySetSchema) -> tuple[MockConceptRepository, MockInferenceRepository]:
-        """Converts a RepositorySetSchema into MockConceptRepository and MockInferenceRepository objects."""
-        concept_entries = []
+    def _create_normcode_repos_from_schema(self, repo_set: RepositorySetData) -> tuple[ConceptRepo, InferenceRepo]:
+        """Converts a RepositorySetData into ConceptRepo and InferenceRepo objects."""
+        concept_entries_map: Dict[str, ConceptEntry] = {}
         for c_schema in repo_set.concepts:
-            # Using mock classes for MVP
-            concept_entries.append(MockConceptEntry(
+            entry = ConceptEntry(
+                id=c_schema.id,
                 concept_name=c_schema.concept_name,
-                concept_type=c_schema.concept_type,
+                type=c_schema.type,
+                context=c_schema.context,
+                axis_name=c_schema.axis_name,
+                natural_name=c_schema.natural_name,
                 description=c_schema.description,
                 reference_data=c_schema.reference_data,
                 reference_axis_names=c_schema.reference_axis_names,
-                is_final_concept=c_schema.is_final_concept
-            ))
-        concept_repo = MockConceptRepository(concept_entries)
+                is_final_concept=c_schema.is_final_concept,
+                is_ground_concept=c_schema.is_ground_concept,
+                is_invariant=c_schema.is_invariant
+            )
+            concept_entries_map[entry.concept_name] = entry
+        
+        concept_entries = list(concept_entries_map.values())
+        concept_repo = ConceptRepo(concept_entries)
 
         inference_entries = []
         for i_schema in repo_set.inferences:
-            # Using mock classes for MVP
-            inference_entries.append(MockInferenceEntry(
-                concept_to_infer=concept_repo.get_concept(i_schema.concept_to_infer),
-                function_concept=concept_repo.get_concept(i_schema.function_concept),
-                value_concepts=[concept_repo.get_concept(vc) for vc in i_schema.value_concepts],
-                context_concepts=[concept_repo.get_concept(cc) for cc in i_schema.context_concepts] if i_schema.context_concepts else [],
+            concept_to_infer = concept_entries_map.get(i_schema.concept_to_infer)
+            if not concept_to_infer:
+                raise ValueError(f"Concept '{i_schema.concept_to_infer}' not found for inference.")
+
+            function_concept = concept_entries_map.get(i_schema.function_concept)
+            if not function_concept:
+                raise ValueError(f"Function concept '{i_schema.function_concept}' not found for inference.")
+            
+            value_concepts = [concept_entries_map.get(vc) for vc in i_schema.value_concepts]
+            if not all(value_concepts):
+                raise ValueError(f"One or more value concepts not found for inference.")
+
+            context_concepts = []
+            if i_schema.context_concepts:
+                context_concepts = [concept_entries_map.get(cc) for cc in i_schema.context_concepts]
+                if not all(context_concepts):
+                    raise ValueError(f"One or more context concepts not found for inference.")
+            
+            inference_entries.append(InferenceEntry(
+                id=i_schema.id,
+                inference_sequence=i_schema.inference_sequence,
+                concept_to_infer=concept_to_infer,
+                function_concept=function_concept,
+                value_concepts=value_concepts,
+                context_concepts=context_concepts,
                 flow_info=i_schema.flow_info,
                 working_interpretation=i_schema.working_interpretation,
-                inference_type=i_schema.inference_type,
-                condition=i_schema.condition
+                start_without_value=i_schema.start_without_value,
+                start_without_value_only_once=i_schema.start_without_value_only_once,
+                start_without_function=i_schema.start_without_function,
+                start_without_function_only_once=i_schema.start_without_function_only_once,
+                start_with_support_reference_only=i_schema.start_with_support_reference_only,
+                # 'condition' and 'inference_type' from schema are not directly in InferenceEntry,
+                # might be part of working_interpretation or handled differently.
             ))
-        inference_repo = MockInferenceRepository(inference_entries)
+        inference_repo = InferenceRepo(inference_entries)
         return concept_repo, inference_repo
 
-    def _execute_normcode_in_background(self, repo_set: RepositorySetSchema, log_filepath: str, repo_set_name: str):
+    def _execute_normcode_in_background(self, repo_set: RepositorySetData, log_filepath: str, repo_set_name: str):
         """Internal method to execute normcode and write logs in a separate thread."""
         try:
             concept_repo, inference_repo = self._create_normcode_repos_from_schema(repo_set)
-            orchestrator = MockOrchestrator(concept_repo, inference_repo)
+            orchestrator = Orchestrator(concept_repo, inference_repo)
 
             with open(log_filepath, 'w', encoding='utf-8') as log_file:
                 # Redirect stdout and stderr to the log file for the orchestrator run
@@ -115,7 +113,7 @@ class NormcodeExecutionService:
                 log_file.write(f"\nError during background normcode execution setup: {e}\n")
             print(f"Error executing normcode {repo_set_name} in background: {e}")
 
-    def run_repository_set(self, repo_set: RepositorySetSchema) -> str:
+    def run_repository_set(self, repo_set: RepositorySetData) -> str:
         """Starts execution of a RepositorySet in a background thread and returns log file name."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         log_filename = f"{repo_set.name}_log_{timestamp}.txt"

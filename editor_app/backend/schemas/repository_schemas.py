@@ -1,30 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Literal, Optional, Union
-import uuid
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 
-
-class ConceptEntrySchema(BaseModel):
-    """Pydantic schema for ConceptEntry."""
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    concept_name: str
-    concept_type: Literal["ground", "intermediate", "function", "final"]
-    description: Optional[str] = None
-    reference_data: Optional[Any] = None  # Can be a list, dict, or scalar
-    reference_axis_names: Optional[List[str]] = None
-    is_final_concept: bool = False
-
-
-class InferenceEntrySchema(BaseModel):
-    """Pydantic schema for InferenceEntry."""
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    concept_to_infer: str
-    function_concept: str
-    value_concepts: List[str]
-    context_concepts: Optional[List[str]] = None
-    flow_info: Optional[Dict[str, Any]] = None
-    working_interpretation: Optional[Dict[str, Any]] = None
-    inference_type: Literal["default", "conditional"] = "default"
-    condition: Optional[str] = None
+from .concept_schemas import ConceptEntrySchema
+from .inference_schemas import InferenceEntrySchema
 
 
 class RepositorySetSchema(BaseModel):
@@ -38,14 +16,6 @@ class RepositorySetData(BaseModel):
     """Pydantic schema for a collection of ConceptEntry and InferenceEntry objects."""
     name: str
     concepts: List[ConceptEntrySchema]
-    inferences: List[InferenceEntrySchema]
-
-
-class ConceptFileSchema(BaseModel):
-    concepts: List[ConceptEntrySchema]
-
-
-class InferenceFileSchema(BaseModel):
     inferences: List[InferenceEntrySchema]
 
 

@@ -1,0 +1,18 @@
+{
+    "concepts": [
+        {
+            "id": "eca11c95-b95f-4f6d-874a-be1d48fa3883",
+            "concept_name": "dfg",
+            "type": "{}",
+            "context": "fdg",
+            "axis_name": "dfg",
+            "natural_name": "dfg",
+            "description": "fdg",
+            "is_ground_concept": true,
+            "is_final_concept": false,
+            "is_invariant": false,
+            "reference_data": null,
+            "reference_axis_names": null
+        }
+    ]
+}
