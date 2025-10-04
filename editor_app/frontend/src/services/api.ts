@@ -5,7 +5,8 @@ import {
   InferenceEntry,
   RunResponse, 
   LogContentResponse,
-  ApiError 
+  ApiError,
+  FlowData
 } from '../types';
 
 const BASE_URL = 'http://localhost:8001';
@@ -192,6 +193,21 @@ class ApiService {
       method: 'DELETE',
     });
     await this.handleResponse(response);
+  }
+
+  // Flow Management
+  async getFlow(repoName: string): Promise<FlowData> {
+    const response = await fetch(`${API_BASE_URL}/${repoName}/flow`);
+    return this.handleResponse<FlowData>(response);
+  }
+
+  async saveFlow(repoName: string, flowData: FlowData): Promise<FlowData> {
+    const response = await fetch(`${API_BASE_URL}/${repoName}/flow`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(flowData)
+    });
+    return this.handleResponse<FlowData>(response);
   }
 }
 

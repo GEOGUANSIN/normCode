@@ -103,3 +103,44 @@ class RepositoryService:
             return {"status": "success", "detail": f"Repository set '{name}' deleted."}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting repository set {name}: {e}")
+    
+    def get_flow(self, name: str):
+        """Retrieves the flow data for a specific repository set."""
+        import json
+        flow_file_path = os.path.join(self.storage_dir, f"{name}_flow.json")
+        
+        # Return empty flow if file doesn't exist
+        if not os.path.exists(flow_file_path):
+            return {"nodes": [], "edges": []}
+        
+        try:
+            with open(flow_file_path, 'r') as f:
+                flow_data = json.load(f)
+            return flow_data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error reading flow data: {e}")
+    
+    def save_flow(self, name: str, flow_data):
+        """Saves the flow data for a specific repository set."""
+        import json
+        
+        # Verify repository exists
+        repo_file_path = os.path.join(self.storage_dir, f"{name}.json")
+        if not os.path.exists(repo_file_path):
+            raise HTTPException(status_code=404, detail=f"Repository set '{name}' not found")
+        
+        flow_file_path = os.path.join(self.storage_dir, f"{name}_flow.json")
+        
+        try:
+            # Convert Pydantic model to dict if needed
+            if hasattr(flow_data, 'dict'):
+                flow_dict = flow_data.dict()
+            else:
+                flow_dict = flow_data
+            
+            with open(flow_file_path, 'w') as f:
+                json.dump(flow_dict, f, indent=2)
+            
+            return flow_data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error saving flow data: {e}")

@@ -2,6 +2,7 @@
 data/
 local_phil/
 editor_app/data/
+editor_app/editor_app_data/
 
 # Python
 __pycache__/

@@ -5,7 +5,8 @@ import os
 from schemas.repository_schemas import (
     RepositorySetSchema,
     RepositorySetData,
-    ErrorResponse
+    ErrorResponse,
+    FlowDataSchema
 )
 from services.repository_service import RepositoryService
 from services.concept_service import ConceptService
@@ -86,3 +87,24 @@ async def delete_repository_set(
 ):
     """Deletes a specific RepositorySet by name."""
     return repo_service.delete_repository_set(name)
+
+
+# --- Flow Management Endpoints ---
+
+@router.get("/{name}/flow", response_model=FlowDataSchema, responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+async def get_flow(
+    name: str,
+    repo_service: RepositoryService = Depends(get_repository_service)
+):
+    """Retrieves the flow data for a specific RepositorySet."""
+    return repo_service.get_flow(name)
+
+
+@router.put("/{name}/flow", response_model=FlowDataSchema, responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+async def save_flow(
+    name: str,
+    flow_data: FlowDataSchema,
+    repo_service: RepositoryService = Depends(get_repository_service)
+):
+    """Saves the flow data for a specific RepositorySet."""
+    return repo_service.save_flow(name, flow_data)

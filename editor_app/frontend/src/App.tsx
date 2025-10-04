@@ -8,6 +8,7 @@ import ConceptCard from './components/ConceptCard';
 import InferenceCard from './components/InferenceCard';
 import ConceptForm from './components/ConceptForm';
 import InferenceForm from './components/InferenceForm';
+import FlowEditor from './components/FlowEditor';
 
 const conceptTypes: ConceptType[] = [
   "<=", "<-", "$what?", "$how?", "$when?", "$=", "$::", "$.", "$%", "$+",
@@ -29,12 +30,14 @@ const App: React.FC = () => {
     inferences,
     viewMode,
     logs,
+    logsCollapsed,
     message,
     isRunning,
     showConceptForm,
     showInferenceForm,
     conceptForm,
     inferenceForm,
+    flowData,
   } = state;
 
   useEffect(() => {
@@ -78,6 +81,15 @@ const App: React.FC = () => {
         apiService.getInferences(selectedRepoName)
       ]);
       dispatch({ type: 'SET_REPO_DATA', payload: { concepts: conceptsData, inferences: inferencesData } });
+      
+      // Load flow data
+      try {
+        const flowDataResult = await apiService.getFlow(selectedRepoName);
+        dispatch({ type: 'SET_FLOW_DATA', payload: flowDataResult });
+      } catch (flowError) {
+        // Flow might not exist yet, that's okay
+        dispatch({ type: 'SET_FLOW_DATA', payload: { nodes: [], edges: [] } });
+      }
     } catch (error) {
       showMessage('error', 'Failed to load repository data');
     }
@@ -142,15 +154,13 @@ const App: React.FC = () => {
     try {
       const newInference: InferenceEntry = {
         id: crypto.randomUUID(),
-        inference_sequence: inferenceForm.inference_sequence,
+        inference_sequence: inferenceForm.inference_sequence!,
         concept_to_infer: inferenceForm.concept_to_infer,
         function_concept: inferenceForm.function_concept,
         value_concepts: inferenceForm.value_concepts || [],
         context_concepts: inferenceForm.context_concepts,
-        inference_type: inferenceForm.inference_type || 'default',
         flow_info: inferenceForm.flow_info,
         working_interpretation: inferenceForm.working_interpretation,
-        condition: inferenceForm.condition,
         start_without_value: inferenceForm.start_without_value || false,
         start_without_value_only_once: inferenceForm.start_without_value_only_once || false,
         start_without_function: inferenceForm.start_without_function || false,
@@ -291,6 +301,18 @@ const App: React.FC = () => {
     }
   };
 
+  const saveFlow = async (newFlowData: typeof flowData) => {
+    if (!selectedRepoName) return;
+    
+    try {
+      await apiService.saveFlow(selectedRepoName, newFlowData);
+      dispatch({ type: 'SET_FLOW_DATA', payload: newFlowData });
+      showMessage('success', 'Flow saved successfully');
+    } catch (error) {
+      showMessage('error', 'Failed to save flow');
+    }
+  };
+
   // Render Views
   const renderGlobalConceptsView = () => (
     <div className="content-wrapper">
@@ -350,6 +372,7 @@ const App: React.FC = () => {
             onSubmit={addGlobalInference}
             onCancel={() => dispatch({ type: 'RESET_INFERENCE_FORM' })}
             isGlobal
+            concepts={globalConcepts}
           />
         )}
 
@@ -444,10 +467,23 @@ const App: React.FC = () => {
             >
               Inferences ({inferences.length})
             </button>
+            <button
+              className={`tab ${viewMode === 'flow' ? 'tab-active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW_MODE', payload: 'flow' })}
+            >
+              🔀 Flow
+            </button>
           </div>
 
-          <div className="content-wrapper">
-            {viewMode === 'concepts' ? (
+          <div className="content-wrapper" style={{ height: viewMode === 'flow' ? 'calc(100vh - 180px)' : 'auto' }}>
+            {viewMode === 'flow' ? (
+              <FlowEditor 
+                concepts={concepts}
+                inferences={inferences}
+                initialFlowData={flowData}
+                onSave={saveFlow}
+              />
+            ) : viewMode === 'concepts' ? (
               <>
                 <div className="picker-card">
                   <h4>Add from Global Concepts</h4>
@@ -533,11 +569,18 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="logs-panel">
-          <div className="logs-header">Execution Logs</div>
-          <div className="logs-content">
-            {logs || 'No logs yet. Run a repository to see execution logs.'}
+        <div className={`logs-panel ${logsCollapsed ? 'collapsed' : ''}`}>
+          <div className="logs-header" onClick={() => dispatch({ type: 'TOGGLE_LOGS_COLLAPSED' })}>
+            <span>Execution Logs</span>
+            <button className="logs-toggle-btn">
+              {logsCollapsed ? '▲' : '▼'}
+            </button>
           </div>
+          {!logsCollapsed && (
+            <div className="logs-content">
+              {logs || 'No logs yet. Run a repository to see execution logs.'}
+            </div>
+          )}
         </div>
       </div>
     );

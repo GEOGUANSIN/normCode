@@ -69,3 +69,36 @@ export interface ApiError {
   message: string;
   status?: number;
 }
+
+// Flow-related types for the visual flow editor
+export interface FlowNode {
+  id: string;
+  type: 'inference' | 'concept';
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    inferenceId?: string;
+    conceptId?: string;
+    details?: InferenceEntry | ConceptEntry;
+  };
+}
+
+export interface FlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  type?: string;
+}
+
+export interface FlowData {
+  nodes: FlowNode[];
+  edges: FlowEdge[];
+}
+
+export interface RepositorySetMetadataWithFlow {
+  name: string;
+  concepts: string[];
+  inferences: string[];
+  flow?: FlowData;
+}

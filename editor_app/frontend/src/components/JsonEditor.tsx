@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css';
-import { RepositorySet } from '../types';
+import { RepositorySetData } from '../types';
 
 interface JsonEditorProps {
-  data: RepositorySet | null;
-  onDataChange: (data: RepositorySet) => void;
+  data: RepositorySetData | null;
+  onDataChange: (data: RepositorySetData) => void;
   onError: (error: string) => void;
 }
 
@@ -13,7 +13,7 @@ const JsonEditorComponent: React.FC<JsonEditorProps> = ({ data, onDataChange, on
   const editorRef = useRef<HTMLDivElement>(null);
   const jsonEditorRef = useRef<JSONEditor | null>(null);
   const isInternalChangeRef = useRef<boolean>(false);
-  const lastDataRef = useRef<RepositorySet | null>(null);
+  const lastDataRef = useRef<RepositorySetData | null>(null);
 
   // Initialize the editor once
   useEffect(() => {

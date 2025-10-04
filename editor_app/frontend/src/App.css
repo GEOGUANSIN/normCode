@@ -512,6 +512,12 @@ textarea.form-control {
   display: flex;
   flex-direction: column;
   background: white;
+  transition: width 0.3s ease;
+}
+
+.logs-panel.collapsed {
+  width: auto;
+  min-width: auto;
 }
 
 .logs-header {
@@ -519,6 +525,30 @@ textarea.form-control {
   border-bottom: 1px solid var(--gray-200);
   font-weight: 600;
   font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.logs-header:hover {
+  background: var(--gray-50);
+}
+
+.logs-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--gray-600);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.15s ease;
+}
+
+.logs-toggle-btn:hover {
+  color: var(--gray-900);
 }
 
 .logs-content {

@@ -1,6 +1,6 @@
-import { RepositorySetMetadata, ConceptEntry, InferenceEntry } from './types';
+import { RepositorySetMetadata, ConceptEntry, InferenceEntry, FlowData } from './types';
 
-export type ViewMode = 'concepts' | 'inferences';
+export type ViewMode = 'concepts' | 'inferences' | 'flow';
 export type SidebarMode = 'concepts' | 'inferences' | 'repositories';
 
 export interface AppState {
@@ -13,12 +13,14 @@ export interface AppState {
   inferences: InferenceEntry[];
   viewMode: ViewMode;
   logs: string;
+  logsCollapsed: boolean;
   message: { type: 'error' | 'success', text: string } | null;
   isRunning: boolean;
   showConceptForm: boolean;
   showInferenceForm: boolean;
   conceptForm: Partial<ConceptEntry>;
   inferenceForm: Partial<InferenceEntry>;
+  flowData: FlowData;
 }
 
 export const initialConceptForm: Partial<ConceptEntry> = {
@@ -37,7 +39,7 @@ export const initialInferenceForm: Partial<InferenceEntry> = {
   concept_to_infer: '',
   function_concept: '',
   value_concepts: [],
-  inference_sequence: '',
+  inference_sequence: undefined,
   start_without_value: false,
   start_without_value_only_once: false,
   start_without_function: false,
@@ -55,12 +57,14 @@ export const initialState: AppState = {
   inferences: [],
   viewMode: 'concepts',
   logs: '',
+  logsCollapsed: false,
   message: null,
   isRunning: false,
   showConceptForm: false,
   showInferenceForm: false,
   conceptForm: initialConceptForm,
   inferenceForm: initialInferenceForm,
+  flowData: { nodes: [], edges: [] },
 };
 
 export type Action =
@@ -73,6 +77,7 @@ export type Action =
   | { type: 'DELETE_REPO' }
   | { type: 'SET_VIEW_MODE'; payload: ViewMode }
   | { type: 'SET_LOGS'; payload: string }
+  | { type: 'TOGGLE_LOGS_COLLAPSED' }
   | { type: 'SHOW_MESSAGE'; payload: { type: 'error' | 'success'; text: string } }
   | { type: 'HIDE_MESSAGE' }
   | { type: 'SET_RUNNING'; payload: boolean }
@@ -81,7 +86,8 @@ export type Action =
   | { type: 'UPDATE_CONCEPT_FORM'; payload: Partial<ConceptEntry> }
   | { type: 'UPDATE_INFERENCE_FORM'; payload: Partial<InferenceEntry> }
   | { type: 'RESET_CONCEPT_FORM' }
-  | { type: 'RESET_INFERENCE_FORM' };
+  | { type: 'RESET_INFERENCE_FORM' }
+  | { type: 'SET_FLOW_DATA'; payload: FlowData };
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -103,6 +109,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, viewMode: action.payload };
     case 'SET_LOGS':
       return { ...state, logs: action.payload };
+    case 'TOGGLE_LOGS_COLLAPSED':
+      return { ...state, logsCollapsed: !state.logsCollapsed };
     case 'SHOW_MESSAGE':
       return { ...state, message: action.payload };
     case 'HIDE_MESSAGE':
@@ -121,6 +129,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, conceptForm: initialConceptForm, showConceptForm: false };
     case 'RESET_INFERENCE_FORM':
       return { ...state, inferenceForm: initialInferenceForm, showInferenceForm: false };
+    case 'SET_FLOW_DATA':
+      return { ...state, flowData: action.payload };
     default:
       return state;
   }

@@ -54,3 +54,27 @@ class LogContentResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Generic error response schema."""
     detail: str
+
+
+# Flow-related schemas
+class FlowNodeSchema(BaseModel):
+    """Schema for a flow node."""
+    id: str
+    type: str  # 'inference' or 'concept'
+    position: Dict[str, float]
+    data: Dict[str, Any]
+
+
+class FlowEdgeSchema(BaseModel):
+    """Schema for a flow edge."""
+    id: str
+    source: str
+    target: str
+    label: Optional[str] = None
+    type: Optional[str] = None
+
+
+class FlowDataSchema(BaseModel):
+    """Schema for flow data."""
+    nodes: List[FlowNodeSchema]
+    edges: List[FlowEdgeSchema]
