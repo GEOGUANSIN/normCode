@@ -118,7 +118,7 @@ class ApiService {
 
   // Execution
   async runRepositorySet(name: string): Promise<string> {
-    const response = await fetch(`${API_BASE_URL}run/`, {
+    const response = await fetch(`${API_BASE_URL}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repository_set_name: name })
@@ -128,7 +128,7 @@ class ApiService {
   }
 
   async getLogContent(logFilename: string): Promise<string> {
-    const response = await fetch(`${API_BASE_URL}logs/${logFilename}/`);
+    const response = await fetch(`${API_BASE_URL}/logs/${logFilename}`);
     const data = await this.handleResponse<LogContentResponse>(response);
     return data.content;
   }
@@ -193,6 +193,19 @@ class ApiService {
       method: 'DELETE',
     });
     await this.handleResponse(response);
+  }
+
+  // Add concept from global to repository
+  async addConceptFromGlobal(
+    repoName: string, 
+    data: { global_concept_id: string; reference_data: any; reference_axis_names: string[] }
+  ): Promise<ConceptEntry> {
+    const response = await fetch(`${API_BASE_URL}/${repoName}/concepts/from_global`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<ConceptEntry>(response);
   }
 
   // Flow Management

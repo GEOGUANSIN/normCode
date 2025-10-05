@@ -8,7 +8,7 @@ from services.concept_service import ConceptService
 
 # --- Constants for paths ---
 EDITOR_APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-DATA_DIR = os.path.join(EDITOR_APP_ROOT, "editor_app_data")
+DATA_DIR = os.path.join(EDITOR_APP_ROOT, "data")
 GLOBAL_CONCEPTS_NAME = "_global"  # Special name for global concepts storage
 
 # --- Dependency ---

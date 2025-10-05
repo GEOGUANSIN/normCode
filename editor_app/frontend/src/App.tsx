@@ -9,6 +9,7 @@ import InferenceCard from './components/InferenceCard';
 import ConceptForm from './components/ConceptForm';
 import InferenceForm from './components/InferenceForm';
 import FlowEditor from './components/FlowEditor';
+import AddConceptFromGlobalForm from './components/AddConceptFromGlobalForm';
 
 const conceptTypes: ConceptType[] = [
   "<=", "<-", "$what?", "$how?", "$when?", "$=", "$::", "$.", "$%", "$+",
@@ -38,6 +39,7 @@ const App: React.FC = () => {
     conceptForm,
     inferenceForm,
     flowData,
+    showAddConceptFromGlobalForm,
   } = state;
 
   useEffect(() => {
@@ -249,17 +251,20 @@ const App: React.FC = () => {
     }
   };
 
-  const addGlobalConceptToRepo = async (conceptId: string) => {
+  const addGlobalConceptToRepo = async (data: {
+    global_concept_id: string;
+    reference_data: any;
+    reference_axis_names: string[];
+  }) => {
     if (!selectedRepoName) return;
-    const concept = globalConcepts.find(c => c.id === conceptId);
-    if (!concept) return;
 
     try {
-      await apiService.addConcept(selectedRepoName, concept);
+      await apiService.addConceptFromGlobal(selectedRepoName, data);
       await loadRepositoryData();
+      dispatch({ type: 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM' });
       showMessage('success', 'Concept added to repository');
     } catch (error) {
-      showMessage('error', 'Failed to add concept');
+      showMessage('error', 'Failed to add concept to repository');
     }
   };
 
@@ -487,23 +492,19 @@ const App: React.FC = () => {
               <>
                 <div className="picker-card">
                   <h4>Add from Global Concepts</h4>
-                  <div className="picker-list">
-                    {globalConcepts.filter(gc => !concepts.find(c => c.id === gc.id)).length === 0 ? (
-                      <div className="picker-empty">All global concepts are already added</div>
-                    ) : (
-                      globalConcepts.filter(gc => !concepts.find(c => c.id === gc.id)).map(concept => (
-                        <div key={concept.id} className="picker-item">
-                          <div className="picker-item-info">
-                            <h5>{concept.concept_name}</h5>
-                            <p>{concept.type} • {concept.description || 'No description'}</p>
-                          </div>
-                          <button className="btn btn-success btn-sm" onClick={() => addGlobalConceptToRepo(concept.id)}>
-                            Add
-                          </button>
-                        </div>
-                      ))
-                    )}
+                  <div className="section-header">
+                    <button className="btn" onClick={() => dispatch({ type: 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM' })}>
+                      {showAddConceptFromGlobalForm ? '✕ Cancel' : '+ Add Concept with Reference Data'}
+                    </button>
                   </div>
+
+                  {showAddConceptFromGlobalForm && (
+                    <AddConceptFromGlobalForm
+                      globalConcepts={globalConcepts}
+                      onSubmit={addGlobalConceptToRepo}
+                      onCancel={() => dispatch({ type: 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM' })}
+                    />
+                  )}
                 </div>
 
                 <div className="section">

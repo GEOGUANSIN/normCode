@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
 
 # Create data directories if they don't exist
-DATA_ROOT = os.path.join(PROJECT_ROOT, 'editor_app_data')
+DATA_ROOT = os.path.join(PROJECT_ROOT, 'data')
 REPO_STORAGE_DIR = os.path.join(DATA_ROOT, 'repositories')
 LOGS_DIR = os.path.join(DATA_ROOT, 'logs')
 CONCEPTS_DIR = os.path.join(DATA_ROOT, 'concepts')

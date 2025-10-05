@@ -3,8 +3,11 @@ from typing import List
 import os
 
 from schemas.concept_schemas import ConceptEntrySchema
-from schemas.repository_schemas import ErrorResponse
+from schemas.repository_schemas import ErrorResponse, AddConceptFromGlobalRequest
 from services.concept_service import ConceptService
+from services.repository_service import RepositoryService
+from services.inference_service import InferenceService
+
 
 # --- Constants for paths ---
 EDITOR_APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -15,6 +18,21 @@ def get_concept_service() -> ConceptService:
     """Dependency to get concept service instance."""
     storage_dir = os.path.join(DATA_DIR, 'concepts')
     return ConceptService(storage_dir)
+
+def get_inference_service() -> InferenceService:
+    """Dependency to get inference service instance."""
+    storage_dir = os.path.join(DATA_DIR, 'inferences')
+    return InferenceService(storage_dir)
+
+
+def get_repository_service(
+    concept_service: ConceptService = Depends(get_concept_service),
+    inference_service: InferenceService = Depends(get_inference_service)
+) -> RepositoryService:
+    """Dependency to get repository service instance."""
+    repo_storage_dir = os.path.join(DATA_DIR, 'repositories')
+    return RepositoryService(repo_storage_dir, concept_service, inference_service)
+
 
 router = APIRouter(prefix="/api/repositories/{name}/concepts", tags=["concepts"])
 
@@ -43,6 +61,22 @@ async def add_concept(
 ):
     """Adds a new concept to a repository set."""
     return concept_service.add_concept(name, concept)
+
+
+@router.post("/from_global", response_model=ConceptEntrySchema, responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+async def add_concept_from_global(
+    name: str,
+    request: AddConceptFromGlobalRequest,
+    repo_service: RepositoryService = Depends(get_repository_service)
+):
+    """Adds a concept from global to a repository with reference data."""
+    return repo_service.add_global_concept_to_repository(
+        name=name,
+        global_concept_id=request.global_concept_id,
+        reference_data=request.reference_data,
+        reference_axis_names=request.reference_axis_names
+    )
+
 
 @router.put("/{concept_id}", response_model=ConceptEntrySchema)
 async def update_concept(

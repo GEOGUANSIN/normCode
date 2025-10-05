@@ -2,8 +2,10 @@ import os
 import json
 from typing import List, Optional
 from fastapi import HTTPException
+from uuid import uuid4
 
 from schemas.repository_schemas import RepositorySetSchema, RepositorySetData
+from schemas.concept_schemas import ConceptEntrySchema
 from .concept_service import ConceptService
 from .inference_service import InferenceService
 
@@ -103,7 +105,40 @@ class RepositoryService:
             return {"status": "success", "detail": f"Repository set '{name}' deleted."}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting repository set {name}: {e}")
-    
+
+    def add_global_concept_to_repository(self, name: str, global_concept_id: str,
+                                         reference_data: Optional[any] = None,
+                                         reference_axis_names: Optional[List[str]] = None) -> ConceptEntrySchema:
+        """Adds a copy of a global concept to a repository with new reference data."""
+        # 1. Get the global concept
+        global_concept = self.concept_service.get_concept("_global", global_concept_id)
+
+        # 2. Create a copy and update it
+        new_concept = global_concept.copy(deep=True)
+        new_concept.id = str(uuid4())  # Assign a new ID
+        new_concept.reference_data = reference_data
+        new_concept.reference_axis_names = reference_axis_names
+
+        # 3. Add the new concept to the repository's concept list
+        self.concept_service.add_concept(name, new_concept)
+
+        # 4. Update the repository set to include the new concept ID
+        repo_set = self.get_repository_set(name)
+        if new_concept.id not in repo_set.concepts:
+            repo_set.concepts.append(new_concept.id)
+            filepath = self._get_filepath(name)
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(repo_set.dict(), f, indent=4)
+            except Exception as e:
+                # Rollback adding the concept if updating the repo set fails
+                concepts = self.concept_service.get_concepts(name)
+                concepts = [c for c in concepts if c.id != new_concept.id]
+                self.concept_service._save_concepts(name, concepts)
+                raise HTTPException(status_code=500, detail=f"Error updating repository set {name}: {e}")
+
+        return new_concept
+
     def get_flow(self, name: str):
         """Retrieves the flow data for a specific repository set."""
         import json

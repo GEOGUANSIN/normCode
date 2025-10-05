@@ -44,12 +44,11 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .content-wrapper {
   flex: 1;
-  overflow-y: auto;
   padding: 2rem;
   background: var(--gray-50);
 }

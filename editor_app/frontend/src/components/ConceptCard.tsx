@@ -34,6 +34,13 @@ const ConceptCard: React.FC<ConceptCardProps> = ({ concept, onDelete, actionLabe
             {concept.natural_name && <div><strong>Natural Name:</strong> {concept.natural_name}</div>}
           </div>
         )}
+
+        {concept.reference_data && (
+            <div className="card-details">
+                <strong>Reference Data:</strong>
+                <pre>{JSON.stringify(concept.reference_data, null, 2)}</pre>
+            </div>
+        )}
       </div>
     </div>
   );

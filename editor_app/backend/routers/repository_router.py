@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 import os
 
@@ -8,6 +8,7 @@ from schemas.repository_schemas import (
     ErrorResponse,
     FlowDataSchema
 )
+from schemas.concept_schemas import ConceptEntrySchema
 from services.repository_service import RepositoryService
 from services.concept_service import ConceptService
 from services.inference_service import InferenceService
@@ -108,3 +109,15 @@ async def save_flow(
 ):
     """Saves the flow data for a specific RepositorySet."""
     return repo_service.save_flow(name, flow_data)
+@router.get("/_debug_list_files", tags=["debug"])
+async def debug_list_files(
+    repo_service: RepositoryService = Depends(get_repository_service)
+):
+    """Debug endpoint to list files in the repository storage directory."""
+    try:
+        files = os.listdir(repo_service.storage_dir)
+        return {"files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+

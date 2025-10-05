@@ -56,6 +56,13 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
+class AddConceptFromGlobalRequest(BaseModel):
+    """Schema for adding a concept from global to a repository."""
+    global_concept_id: str
+    reference_data: Optional[Any] = None
+    reference_axis_names: Optional[List[str]] = None
+
+
 # Flow-related schemas
 class FlowNodeSchema(BaseModel):
     """Schema for a flow node."""
