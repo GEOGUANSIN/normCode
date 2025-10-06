@@ -9,15 +9,22 @@ from schemas.concept_schemas import ConceptEntrySchema, ConceptFileSchema
 class ConceptService:
     """Service class for managing concepts."""
 
-    def __init__(self, storage_dir: str):
+    def __init__(self, storage_dir: str, repositories_dir: str):
         self.storage_dir = storage_dir
+        self.repositories_dir = repositories_dir
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def _get_filepath(self, name: str) -> str:
         """Helper to get the full path for a concept file."""
         if ".." in name or name.startswith("/"):
             raise HTTPException(status_code=400, detail="Invalid name.")
-        return os.path.join(self.storage_dir, f"{name}.json")
+        
+        if name == "_global":
+            return os.path.join(self.storage_dir, f"{name}.json")
+        else:
+            repo_path = os.path.join(self.repositories_dir, name)
+            os.makedirs(repo_path, exist_ok=True)
+            return os.path.join(repo_path, "concepts.json")
 
     def _load_concepts(self, name: str) -> List[ConceptEntrySchema]:
         """Loads a list of concepts from a JSON file."""

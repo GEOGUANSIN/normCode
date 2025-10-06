@@ -7,6 +7,9 @@ interface AddConceptFromGlobalFormProps {
     global_concept_id: string;
     reference_data: any;
     reference_axis_names: string[];
+    is_ground_concept: boolean;
+    is_final_concept: boolean;
+    is_invariant: boolean;
   }) => void;
   onCancel: () => void;
 }
@@ -19,6 +22,9 @@ const AddConceptFromGlobalForm: React.FC<AddConceptFromGlobalFormProps> = ({
   const [selectedConceptId, setSelectedConceptId] = useState<string>('');
   const [referenceData, setReferenceData] = useState<string>('');
   const [axisNames, setAxisNames] = useState<string>('');
+  const [isGroundConcept, setIsGroundConcept] = useState<boolean>(false);
+  const [isFinalConcept, setIsFinalConcept] = useState<boolean>(false);
+  const [isInvariant, setIsInvariant] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
   const handleSubmit = () => {
@@ -41,6 +47,9 @@ const AddConceptFromGlobalForm: React.FC<AddConceptFromGlobalFormProps> = ({
       global_concept_id: selectedConceptId,
       reference_data: parsedReferenceData,
       reference_axis_names: axisNamesArray,
+      is_ground_concept: isGroundConcept,
+      is_final_concept: isFinalConcept,
+      is_invariant: isInvariant,
     });
   };
 
@@ -88,6 +97,35 @@ const AddConceptFromGlobalForm: React.FC<AddConceptFromGlobalFormProps> = ({
             value={axisNames}
             onChange={(e) => setAxisNames(e.target.value)}
           />
+        </div>
+
+        <div className="form-group form-group-full">
+          <div className="checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isGroundConcept}
+                onChange={(e) => setIsGroundConcept(e.target.checked)}
+              />
+              <span>Ground Concept</span>
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isFinalConcept}
+                onChange={(e) => setIsFinalConcept(e.target.checked)}
+              />
+              <span>Final Concept</span>
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={isInvariant}
+                onChange={(e) => setIsInvariant(e.target.checked)}
+              />
+              <span>Invariant</span>
+            </label>
+          </div>
         </div>
       </div>
 

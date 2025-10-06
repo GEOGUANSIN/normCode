@@ -61,6 +61,21 @@ class AddConceptFromGlobalRequest(BaseModel):
     global_concept_id: str
     reference_data: Optional[Any] = None
     reference_axis_names: Optional[List[str]] = None
+    is_ground_concept: bool = False
+    is_final_concept: bool = False
+    is_invariant: bool = False
+
+
+class AddInferenceFromGlobalRequest(BaseModel):
+    """Schema for adding an inference from global to a repository."""
+    global_inference_id: str
+    flow_info: Optional[Dict[str, Any]] = None
+    working_interpretation: Optional[Dict[str, Any]] = None
+    start_without_value: bool = False
+    start_without_value_only_once: bool = False
+    start_without_function: bool = False
+    start_without_function_only_once: bool = False
+    start_with_support_reference_only: bool = False
 
 
 # Flow-related schemas

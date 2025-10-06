@@ -198,7 +198,14 @@ class ApiService {
   // Add concept from global to repository
   async addConceptFromGlobal(
     repoName: string, 
-    data: { global_concept_id: string; reference_data: any; reference_axis_names: string[] }
+    data: {
+      global_concept_id: string;
+      reference_data: any;
+      reference_axis_names: string[];
+      is_ground_concept: boolean;
+      is_final_concept: boolean;
+      is_invariant: boolean;
+    }
   ): Promise<ConceptEntry> {
     const response = await fetch(`${API_BASE_URL}/${repoName}/concepts/from_global`, {
       method: 'POST',
@@ -206,6 +213,28 @@ class ApiService {
       body: JSON.stringify(data)
     });
     return this.handleResponse<ConceptEntry>(response);
+  }
+
+  // Add inference from global to repository
+  async addInferenceFromGlobal(
+    repoName: string,
+    data: {
+      global_inference_id: string;
+      flow_info: any;
+      working_interpretation: any;
+      start_without_value: boolean;
+      start_without_value_only_once: boolean;
+      start_without_function: boolean;
+      start_without_function_only_once: boolean;
+      start_with_support_reference_only: boolean;
+    }
+  ): Promise<InferenceEntry> {
+    const response = await fetch(`${API_BASE_URL}/${repoName}/inferences/from_global`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return this.handleResponse<InferenceEntry>(response);
   }
 
   // Flow Management

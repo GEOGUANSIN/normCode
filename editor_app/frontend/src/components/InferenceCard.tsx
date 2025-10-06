@@ -21,13 +21,33 @@ const InferenceCard: React.FC<InferenceCardProps> = ({ inference, onDelete, acti
           </button>
         </div>
         
-        <div className="card-details">
-          <div><strong>Values:</strong> {inference.value_concepts.join(', ') || 'none'}</div>
-          {inference.context_concepts && inference.context_concepts.length > 0 && (
-            <div><strong>Context:</strong> {inference.context_concepts.join(', ')}</div>
-          )}
+        <div className="card-meta">
+          <span className="badge">{inference.inference_sequence}</span>
+          {/* You can add more badges for flags if needed */}
         </div>
-        
+
+        <div className="card-details">
+            <div><strong>Infer:</strong> {inference.concept_to_infer}</div>
+            <div><strong>Using:</strong> {inference.function_concept}</div>
+            {inference.value_concepts && inference.value_concepts.length > 0 && (
+                <div><strong>With:</strong> {inference.value_concepts.join(', ')}</div>
+            )}
+        </div>
+
+        {inference.flow_info && (
+          <div className="card-details">
+            <strong>Flow Info:</strong>
+            <pre>{JSON.stringify(inference.flow_info, null, 2)}</pre>
+          </div>
+        )}
+
+        {inference.working_interpretation && (
+            <div className="card-details">
+                <strong>Working Interpretation:</strong>
+                <pre>{JSON.stringify(inference.working_interpretation, null, 2)}</pre>
+            </div>
+        )}
+
         {(inference.start_without_value || inference.start_without_function || inference.start_with_support_reference_only) && (
           <div className="card-flags">
             {inference.start_without_value && <span className="flag">Start w/o value</span>}

@@ -13,8 +13,9 @@ GLOBAL_INFERENCES_NAME = "_global"  # Special name for global inferences storage
 # --- Dependency ---
 def get_inference_service() -> InferenceService:
     """Dependency to get inference service instance."""
-    storage_dir = os.path.join(DATA_DIR, 'inferences')
-    return InferenceService(storage_dir)
+    inferences_dir = os.path.join(DATA_DIR, 'inferences')
+    repositories_dir = os.path.join(DATA_DIR, 'repositories')
+    return InferenceService(inferences_dir, repositories_dir)
 
 router = APIRouter(prefix="/api/inferences", tags=["global-inferences"])
 

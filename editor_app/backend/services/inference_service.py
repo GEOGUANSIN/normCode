@@ -9,15 +9,22 @@ from schemas.inference_schemas import InferenceEntrySchema, InferenceFileSchema
 class InferenceService:
     """Service class for managing inferences."""
 
-    def __init__(self, storage_dir: str):
+    def __init__(self, storage_dir: str, repositories_dir: str):
         self.storage_dir = storage_dir
+        self.repositories_dir = repositories_dir
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def _get_filepath(self, name: str) -> str:
         """Helper to get the full path for an inference file."""
         if ".." in name or name.startswith("/"):
             raise HTTPException(status_code=400, detail="Invalid name.")
-        return os.path.join(self.storage_dir, f"{name}.json")
+        
+        if name == "_global":
+            return os.path.join(self.storage_dir, f"{name}.json")
+        else:
+            repo_path = os.path.join(self.repositories_dir, name)
+            os.makedirs(repo_path, exist_ok=True)
+            return os.path.join(repo_path, "inferences.json")
 
     def _load_inferences(self, name: str) -> List[InferenceEntrySchema]:
         """Loads a list of inferences from a JSON file."""

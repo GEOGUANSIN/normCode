@@ -16,13 +16,15 @@ DATA_DIR = os.path.join(EDITOR_APP_ROOT, "data")
 # --- Dependency ---
 def get_concept_service() -> ConceptService:
     """Dependency to get concept service instance."""
-    storage_dir = os.path.join(DATA_DIR, 'concepts')
-    return ConceptService(storage_dir)
+    concepts_dir = os.path.join(DATA_DIR, 'concepts')
+    repositories_dir = os.path.join(DATA_DIR, 'repositories')
+    return ConceptService(concepts_dir, repositories_dir)
 
 def get_inference_service() -> InferenceService:
     """Dependency to get inference service instance."""
-    storage_dir = os.path.join(DATA_DIR, 'inferences')
-    return InferenceService(storage_dir)
+    inferences_dir = os.path.join(DATA_DIR, 'inferences')
+    repositories_dir = os.path.join(DATA_DIR, 'repositories')
+    return InferenceService(inferences_dir, repositories_dir)
 
 
 def get_repository_service(
@@ -74,7 +76,10 @@ async def add_concept_from_global(
         name=name,
         global_concept_id=request.global_concept_id,
         reference_data=request.reference_data,
-        reference_axis_names=request.reference_axis_names
+        reference_axis_names=request.reference_axis_names,
+        is_ground_concept=request.is_ground_concept,
+        is_final_concept=request.is_final_concept,
+        is_invariant=request.is_invariant
     )
 
 

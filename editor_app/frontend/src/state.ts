@@ -22,6 +22,7 @@ export interface AppState {
   inferenceForm: Partial<InferenceEntry>;
   flowData: FlowData;
   showAddConceptFromGlobalForm: boolean;
+  showAddInferenceFromGlobalForm: boolean;
 }
 
 export const initialConceptForm: Partial<ConceptEntry> = {
@@ -67,6 +68,7 @@ export const initialState: AppState = {
   inferenceForm: initialInferenceForm,
   flowData: { nodes: [], edges: [] },
   showAddConceptFromGlobalForm: false,
+  showAddInferenceFromGlobalForm: false,
 };
 
 export type Action =
@@ -90,6 +92,7 @@ export type Action =
   | { type: 'RESET_CONCEPT_FORM' }
   | { type: 'RESET_INFERENCE_FORM' }
   | { type: 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM' }
+  | { type: 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM' }
   | { type: 'SET_FLOW_DATA'; payload: FlowData };
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -134,6 +137,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, inferenceForm: initialInferenceForm, showInferenceForm: false };
     case 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM':
       return { ...state, showAddConceptFromGlobalForm: !state.showAddConceptFromGlobalForm };
+    case 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM':
+      return { ...state, showAddInferenceFromGlobalForm: !state.showAddInferenceFromGlobalForm };
     case 'SET_FLOW_DATA':
       return { ...state, flowData: action.payload };
     default:

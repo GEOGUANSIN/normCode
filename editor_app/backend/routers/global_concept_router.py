@@ -14,8 +14,9 @@ GLOBAL_CONCEPTS_NAME = "_global"  # Special name for global concepts storage
 # --- Dependency ---
 def get_concept_service() -> ConceptService:
     """Dependency to get concept service instance."""
-    storage_dir = os.path.join(DATA_DIR, 'concepts')
-    return ConceptService(storage_dir)
+    concepts_dir = os.path.join(DATA_DIR, 'concepts')
+    repositories_dir = os.path.join(DATA_DIR, 'repositories')
+    return ConceptService(concepts_dir, repositories_dir)
 
 router = APIRouter(prefix="/api/concepts", tags=["global-concepts"])
 

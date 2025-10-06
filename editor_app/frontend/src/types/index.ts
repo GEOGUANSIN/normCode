@@ -75,12 +75,7 @@ export interface FlowNode {
   id: string;
   type: 'inference' | 'concept';
   position: { x: number; y: number };
-  data: {
-    label: string;
-    inferenceId?: string;
-    conceptId?: string;
-    details?: InferenceEntry | ConceptEntry;
-  };
+  data: InferenceEntry;
 }
 
 export interface FlowEdge {

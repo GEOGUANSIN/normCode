@@ -117,54 +117,96 @@ const InferenceForm: React.FC<InferenceFormProps> = ({
           </div>
         </div>
 
-        <div className="form-group form-group-full">
-          <div className="checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.start_without_value || false}
-                onChange={(e) => onUpdate({ start_without_value: e.target.checked })}
+        {!isGlobal && (
+          <>
+            <div className="form-group form-group-full">
+              <label>Working Interpretation (JSON)</label>
+              <textarea
+                className="form-control"
+                placeholder='Enter JSON data, e.g., {"key": "value"}'
+                value={form.working_interpretation ? JSON.stringify(form.working_interpretation, null, 2) : ''}
+                onChange={(e) => {
+                  try {
+                    onUpdate({ working_interpretation: JSON.parse(e.target.value) });
+                  } catch {
+                    // Ignore JSON parsing errors on change
+                  }
+                }}
+                rows={5}
               />
-              <span>Start without value</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.start_without_value_only_once || false}
-                onChange={(e) => onUpdate({ start_without_value_only_once: e.target.checked })}
+            </div>
+
+            <div className="form-group form-group-full">
+              <label>Flow Info (JSON)</label>
+              <textarea
+                className="form-control"
+                placeholder='Enter JSON data, e.g., {"key": "value"}'
+                value={form.flow_info ? JSON.stringify(form.flow_info, null, 2) : ''}
+                onChange={(e) => {
+                  try {
+                    onUpdate({ flow_info: JSON.parse(e.target.value) });
+                  } catch {
+                    // Ignore JSON parsing errors on change
+                  }
+                }}
+                rows={5}
               />
-              <span>Only once (value)</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.start_without_function || false}
-                onChange={(e) => onUpdate({ start_without_function: e.target.checked })}
-              />
-              <span>Start without function</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.start_without_function_only_once || false}
-                onChange={(e) => onUpdate({ start_without_function_only_once: e.target.checked })}
-              />
-              <span>Only once (function)</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.start_with_support_reference_only || false}
-                onChange={(e) => onUpdate({ start_with_support_reference_only: e.target.checked })}
-              />
-              <span>Support reference only</span>
-            </label>
+            </div>
+          </>
+        )}
+        
+        {isGlobal && (
+          <div className="form-group form-group-full">
+            <div className="alert alert-info">
+              Behavioral flags like 'Start Without Value' are configured when adding the inference to a repository.
+            </div>
           </div>
-        </div>
+        )}
+
+        {!isGlobal && (
+          <div className="form-group form-group-full checkbox-grid">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.start_without_value || false}
+                  onChange={(e) => onUpdate({ start_without_value: e.target.checked })}
+                />
+                <span>Start Without Value</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.start_without_value_only_once || false}
+                  onChange={(e) => onUpdate({ start_without_value_only_once: e.target.checked })}
+                />
+                <span>... Only Once</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.start_without_function || false}
+                  onChange={(e) => onUpdate({ start_without_function: e.target.checked })}
+                />
+                <span>Start Without Function</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.start_without_function_only_once || false}
+                  onChange={(e) => onUpdate({ start_without_function_only_once: e.target.checked })}
+                />
+                <span>... Only Once</span>
+              </label>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.start_with_support_reference_only || false}
+                  onChange={(e) => onUpdate({ start_with_support_reference_only: e.target.checked })}
+                />
+                <span>Start With Support Reference Only</span>
+              </label>
+          </div>
+        )}
       </div>
 
       <div className="form-actions">

@@ -49,19 +49,19 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
   }
 
   const [flowLines, setFlowLines] = useState<FlowLine[]>(() => {
-    // Only load inference lines from initial data; concepts are auto-displayed
+    // Reconstruct the flow lines from the inference data
     const initialLines = initialFlowData?.nodes
-      ?.filter(node => node.type === 'inference')
-      .map((node) => ({
+      ?.map((node): FlowLine => ({ // Add explicit type here
         id: node.id,
-        index: '',
-        type: node.type as 'inference' | 'concept',
-        depth: 0,
-        inferenceId: node.data.inferenceId,
-        conceptId: node.data.conceptId,
+        index: node.data.flow_info?.index || '',
+        type: 'inference',
+        depth: node.data.flow_info?.depth || 0,
+        inferenceId: node.data.id,
+        conceptId: undefined,
         data: node.data,
       })) || [];
-    return recalculateIndices(initialLines);
+    // Do not recalculate indices on initial load as they come from the backend
+    return initialLines;
   });
   
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
@@ -139,7 +139,13 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
         id: line.id,
         type: line.type,
         position: { x: 0, y: 0 }, // Not used in line-by-line mode
-        data: line.data,
+        data: {
+          ...line.data,
+          flow_info: {
+            index: line.index,
+            depth: line.depth,
+          },
+        },
       })),
       edges: [], // Auto-generated from hierarchy
     };

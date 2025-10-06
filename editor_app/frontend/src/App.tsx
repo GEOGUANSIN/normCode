@@ -10,6 +10,7 @@ import ConceptForm from './components/ConceptForm';
 import InferenceForm from './components/InferenceForm';
 import FlowEditor from './components/FlowEditor';
 import AddConceptFromGlobalForm from './components/AddConceptFromGlobalForm';
+import AddInferenceFromGlobalForm from './components/AddInferenceFromGlobalForm';
 
 const conceptTypes: ConceptType[] = [
   "<=", "<-", "$what?", "$how?", "$when?", "$=", "$::", "$.", "$%", "$+",
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     inferenceForm,
     flowData,
     showAddConceptFromGlobalForm,
+    showAddInferenceFromGlobalForm,
   } = state;
 
   useEffect(() => {
@@ -255,6 +257,9 @@ const App: React.FC = () => {
     global_concept_id: string;
     reference_data: any;
     reference_axis_names: string[];
+    is_ground_concept: boolean;
+    is_final_concept: boolean;
+    is_invariant: boolean;
   }) => {
     if (!selectedRepoName) return;
 
@@ -268,17 +273,25 @@ const App: React.FC = () => {
     }
   };
 
-  const addGlobalInferenceToRepo = async (inferenceId: string) => {
+  const addGlobalInferenceToRepo = async (data: {
+    global_inference_id: string;
+    flow_info: any;
+    working_interpretation: any;
+    start_without_value: boolean;
+    start_without_value_only_once: boolean;
+    start_without_function: boolean;
+    start_without_function_only_once: boolean;
+    start_with_support_reference_only: boolean;
+  }) => {
     if (!selectedRepoName) return;
-    const inference = globalInferences.find(i => i.id === inferenceId);
-    if (!inference) return;
 
     try {
-      await apiService.addInference(selectedRepoName, inference);
+      await apiService.addInferenceFromGlobal(selectedRepoName, data);
       await loadRepositoryData();
+      dispatch({ type: 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM' });
       showMessage('success', 'Inference added to repository');
     } catch (error) {
-      showMessage('error', 'Failed to add inference');
+      showMessage('error', 'Failed to add inference to repository');
     }
   };
 
@@ -529,23 +542,18 @@ const App: React.FC = () => {
               <>
                 <div className="picker-card">
                   <h4>Add from Global Inferences</h4>
-                  <div className="picker-list">
-                    {globalInferences.filter(gi => !inferences.find(i => i.id === gi.id)).length === 0 ? (
-                      <div className="picker-empty">All global inferences are already added</div>
-                    ) : (
-                      globalInferences.filter(gi => !inferences.find(i => i.id === gi.id)).map(inference => (
-                        <div key={inference.id} className="picker-item">
-                          <div className="picker-item-info">
-                            <h5>{inference.concept_to_infer} ← {inference.function_concept}</h5>
-                            <p>Sequence: {inference.inference_sequence}</p>
-                          </div>
-                          <button className="btn btn-success btn-sm" onClick={() => addGlobalInferenceToRepo(inference.id)}>
-                            Add
-                          </button>
-                        </div>
-                      ))
-                    )}
+                  <div className="section-header">
+                    <button className="btn" onClick={() => dispatch({ type: 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM' })}>
+                      {showAddInferenceFromGlobalForm ? '✕ Cancel' : '+ Add Inference with Custom Data'}
+                    </button>
                   </div>
+                  {showAddInferenceFromGlobalForm && (
+                    <AddInferenceFromGlobalForm
+                      globalInferences={globalInferences}
+                      onSubmit={addGlobalInferenceToRepo}
+                      onCancel={() => dispatch({ type: 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM' })}
+                    />
+                  )}
                 </div>
 
                 <div className="section">

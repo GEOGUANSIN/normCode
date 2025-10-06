@@ -96,32 +96,40 @@ const ConceptForm: React.FC<ConceptFormProps> = ({
 
         <div className="form-group form-group-full">
           <div className="checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.is_ground_concept || false}
-                onChange={(e) => onUpdate({ is_ground_concept: e.target.checked })}
-              />
-              <span>Ground Concept</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.is_final_concept || false}
-                onChange={(e) => onUpdate({ is_final_concept: e.target.checked })}
-              />
-              <span>Final Concept</span>
-            </label>
-            
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={form.is_invariant || false}
-                onChange={(e) => onUpdate({ is_invariant: e.target.checked })}
-              />
-              <span>Invariant</span>
-            </label>
+            {isGlobal ? (
+              <div className="alert alert-info">
+                Behavioral flags like 'Ground Concept' are configured when adding the concept to a repository.
+              </div>
+            ) : (
+              <>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.is_ground_concept || false}
+                    onChange={(e) => onUpdate({ is_ground_concept: e.target.checked })}
+                  />
+                  <span>Ground Concept</span>
+                </label>
+                
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.is_final_concept || false}
+                    onChange={(e) => onUpdate({ is_final_concept: e.target.checked })}
+                  />
+                  <span>Final Concept</span>
+                </label>
+                
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={form.is_invariant || false}
+                    onChange={(e) => onUpdate({ is_invariant: e.target.checked })}
+                  />
+                  <span>Invariant</span>
+                </label>
+              </>
+            )}
           </div>
         </div>
       </div>
