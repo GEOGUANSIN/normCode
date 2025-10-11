@@ -9,6 +9,7 @@ import InferenceCard from './components/InferenceCard';
 import ConceptForm from './components/ConceptForm';
 import InferenceForm from './components/InferenceForm';
 import FlowEditor from './components/FlowEditor';
+import FlowGraphView from './components/FlowGraphView';
 import AddConceptFromGlobalForm from './components/AddConceptFromGlobalForm';
 import AddInferenceFromGlobalForm from './components/AddInferenceFromGlobalForm';
 
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     conceptForm,
     inferenceForm,
     flowData,
+    graphData,
     showAddConceptFromGlobalForm,
     showAddInferenceFromGlobalForm,
   } = state;
@@ -54,6 +56,12 @@ const App: React.FC = () => {
       loadRepositoryData();
     }
   }, [selectedRepoName]);
+
+  useEffect(() => {
+    if (selectedRepoName && viewMode === 'graph') {
+      loadGraphData();
+    }
+  }, [selectedRepoName, viewMode]);
 
   const loadGlobalData = async () => {
     try {
@@ -96,6 +104,17 @@ const App: React.FC = () => {
       }
     } catch (error) {
       showMessage('error', 'Failed to load repository data');
+    }
+  };
+
+  const loadGraphData = async () => {
+    if (!selectedRepoName) return;
+    try {
+      const graphDataResult = await apiService.getGraph(selectedRepoName);
+      dispatch({ type: 'SET_GRAPH_DATA', payload: graphDataResult });
+    } catch (error) {
+      showMessage('error', 'Failed to load graph data');
+      dispatch({ type: 'SET_GRAPH_DATA', payload: null });
     }
   };
 
@@ -489,17 +508,29 @@ const App: React.FC = () => {
               className={`tab ${viewMode === 'flow' ? 'tab-active' : ''}`}
               onClick={() => dispatch({ type: 'SET_VIEW_MODE', payload: 'flow' })}
             >
-              🔀 Flow
+              📝 Flow Editor
+            </button>
+            <button
+              className={`tab ${viewMode === 'graph' ? 'tab-active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_VIEW_MODE', payload: 'graph' })}
+            >
+              🔀 Graph View
             </button>
           </div>
 
-          <div className="content-wrapper" style={{ height: viewMode === 'flow' ? 'calc(100vh - 180px)' : 'auto' }}>
+          <div className="content-wrapper" style={{ height: (viewMode === 'flow' || viewMode === 'graph') ? 'calc(100vh - 180px)' : 'auto' }}>
             {viewMode === 'flow' ? (
               <FlowEditor 
                 concepts={concepts}
                 inferences={inferences}
                 initialFlowData={flowData}
                 onSave={saveFlow}
+              />
+            ) : viewMode === 'graph' ? (
+              <FlowGraphView
+                concepts={concepts}
+                inferences={inferences}
+                graphData={graphData}
               />
             ) : viewMode === 'concepts' ? (
               <>

@@ -1,6 +1,6 @@
 import { RepositorySetMetadata, ConceptEntry, InferenceEntry, FlowData } from './types';
 
-export type ViewMode = 'concepts' | 'inferences' | 'flow';
+export type ViewMode = 'concepts' | 'inferences' | 'flow' | 'graph';
 export type SidebarMode = 'concepts' | 'inferences' | 'repositories';
 
 export interface AppState {
@@ -21,6 +21,7 @@ export interface AppState {
   conceptForm: Partial<ConceptEntry>;
   inferenceForm: Partial<InferenceEntry>;
   flowData: FlowData;
+  graphData: any | null;
   showAddConceptFromGlobalForm: boolean;
   showAddInferenceFromGlobalForm: boolean;
 }
@@ -67,6 +68,7 @@ export const initialState: AppState = {
   conceptForm: initialConceptForm,
   inferenceForm: initialInferenceForm,
   flowData: { nodes: [], edges: [] },
+  graphData: null,
   showAddConceptFromGlobalForm: false,
   showAddInferenceFromGlobalForm: false,
 };
@@ -93,7 +95,8 @@ export type Action =
   | { type: 'RESET_INFERENCE_FORM' }
   | { type: 'TOGGLE_ADD_CONCEPT_FROM_GLOBAL_FORM' }
   | { type: 'TOGGLE_ADD_INFERENCE_FROM_GLOBAL_FORM' }
-  | { type: 'SET_FLOW_DATA'; payload: FlowData };
+  | { type: 'SET_FLOW_DATA'; payload: FlowData }
+  | { type: 'SET_GRAPH_DATA'; payload: any };
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -141,6 +144,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, showAddInferenceFromGlobalForm: !state.showAddInferenceFromGlobalForm };
     case 'SET_FLOW_DATA':
       return { ...state, flowData: action.payload };
+    case 'SET_GRAPH_DATA':
+      return { ...state, graphData: action.payload };
     default:
       return state;
   }

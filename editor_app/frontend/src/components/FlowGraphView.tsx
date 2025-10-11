@@ -1,0 +1,325 @@
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { ConceptEntry, InferenceEntry, FlowData } from '../types';
+import './FlowGraphView.css';
+
+interface FlowGraphViewProps {
+  concepts: ConceptEntry[];
+  inferences: InferenceEntry[];
+  graphData: any | null;
+}
+
+interface GraphNode {
+  id: string;
+  label: string;
+  type: 'concept';
+  x: number;
+  y: number;
+  level: number;
+}
+
+interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  type: 'function' | 'value';
+  inferenceSequence: string;
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+const FlowGraphView: React.FC<FlowGraphViewProps> = ({ 
+  concepts,
+  inferences,
+  graphData: graphDataProp
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+
+  const graphData = useMemo((): GraphData => {
+    if (!graphDataProp || !graphDataProp.nodes || graphDataProp.nodes.length === 0) {
+      return { nodes: [], edges: [] };
+    }
+
+    // Convert backend graph data to frontend format
+    const nodes: GraphNode[] = graphDataProp.nodes.map((node: any) => ({
+      id: node.id,
+      label: node.label,
+      type: node.type,
+      x: node.x,
+      y: node.y,
+      level: node.level
+    }));
+
+    const edges: GraphEdge[] = graphDataProp.edges.map((edge: any) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      label: edge.label,
+      type: edge.type,
+      inferenceSequence: edge.inferenceSequence
+    }));
+
+    return { nodes, edges };
+  }, [graphDataProp]);
+
+  // Calculate SVG viewBox based on node positions
+  const viewBox = useMemo(() => {
+    if (graphData.nodes.length === 0) {
+      return '0 0 800 600';
+    }
+
+    const padding = 100;
+    const minX = Math.min(...graphData.nodes.map(n => n.x)) - padding;
+    const maxX = Math.max(...graphData.nodes.map(n => n.x)) + padding;
+    const minY = Math.min(...graphData.nodes.map(n => n.y)) - padding;
+    const maxY = Math.max(...graphData.nodes.map(n => n.y)) + padding;
+
+    const width = Math.max(800, maxX - minX);
+    const height = Math.max(600, maxY - minY);
+
+    return `${minX} ${minY} ${width} ${height}`;
+  }, [graphData.nodes]);
+
+  const getEdgePath = (edge: GraphEdge): string => {
+    const sourceNode = graphData.nodes.find(n => n.id === edge.source);
+    const targetNode = graphData.nodes.find(n => n.id === edge.target);
+
+    if (!sourceNode || !targetNode) return '';
+
+    const x1 = sourceNode.x + 80; // Right edge of source node
+    const y1 = sourceNode.y;
+    const x2 = targetNode.x - 80; // Left edge of target node
+    const y2 = targetNode.y;
+
+    // Create a curved path
+    const midX = (x1 + x2) / 2;
+    
+    return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+  };
+
+  const getArrowEnd = (edge: GraphEdge): { x: number; y: number; angle: number } => {
+    const sourceNode = graphData.nodes.find(n => n.id === edge.source);
+    const targetNode = graphData.nodes.find(n => n.id === edge.target);
+
+    if (!sourceNode || !targetNode) return { x: 0, y: 0, angle: 0 };
+
+    const x = targetNode.x - 80;
+    const y = targetNode.y;
+    const angle = Math.atan2(targetNode.y - sourceNode.y, targetNode.x - sourceNode.x) * (180 / Math.PI);
+
+    return { x, y, angle };
+  };
+
+  if (!graphDataProp || graphData.nodes.length === 0) {
+    return (
+      <div className="flow-graph-empty">
+        <div className="flow-empty-state">
+          <p>No flow data to visualize.</p>
+          <p className="flow-hint">
+            Build your flow in the Flow Editor tab first, then come back here to see the graph visualization.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flow-graph-container">
+      <div className="flow-graph-header">
+        <h3>Flow Graph View</h3>
+        <div className="flow-graph-legend">
+          <div className="legend-item">
+            <div className="legend-line function-edge"></div>
+            <span>Function (&lt;=)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-line value-edge"></div>
+            <span>Value (&lt;-)</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flow-graph-canvas">
+        <svg 
+          ref={svgRef} 
+          className="flow-graph-svg"
+          viewBox={viewBox}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <marker
+              id="arrowhead-function"
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path d="M0,0 L0,6 L9,3 z" fill="#4a90e2" />
+            </marker>
+            <marker
+              id="arrowhead-value"
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path d="M0,0 L0,6 L9,3 z" fill="#7b68ee" />
+            </marker>
+          </defs>
+
+          {/* Render edges first (so they appear behind nodes) */}
+          {graphData.edges.map(edge => {
+            const path = getEdgePath(edge);
+            const isSelected = selectedEdge === edge.id;
+            
+            return (
+              <g key={edge.id}>
+                <path
+                  d={path}
+                  className={`graph-edge ${edge.type}-edge ${isSelected ? 'selected' : ''}`}
+                  markerEnd={`url(#arrowhead-${edge.type})`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEdge(edge.id);
+                    setSelectedNode(null);
+                  }}
+                />
+                {isSelected && (
+                  <text
+                    x={(graphData.nodes.find(n => n.id === edge.source)!.x + graphData.nodes.find(n => n.id === edge.target)!.x) / 2}
+                    y={(graphData.nodes.find(n => n.id === edge.source)!.y + graphData.nodes.find(n => n.id === edge.target)!.y) / 2 - 10}
+                    className="edge-label"
+                    textAnchor="middle"
+                  >
+                    {edge.inferenceSequence}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Render nodes */}
+          {graphData.nodes.map(node => {
+            const isSelected = selectedNode === node.id;
+            const incomingEdges = graphData.edges.filter(e => e.target === node.id);
+            const outgoingEdges = graphData.edges.filter(e => e.source === node.id);
+
+            return (
+              <g 
+                key={node.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedNode(node.id);
+                  setSelectedEdge(null);
+                }}
+              >
+                <rect
+                  x={node.x - 75}
+                  y={node.y - 30}
+                  width="150"
+                  height="60"
+                  className={`graph-node ${isSelected ? 'selected' : ''}`}
+                  rx="8"
+                />
+                <text
+                  x={node.x}
+                  y={node.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="node-label"
+                >
+                  {node.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Info panel */}
+      <div className="flow-graph-info">
+        {selectedNode && (
+          <div className="info-panel">
+            <h4>Concept: {selectedNode}</h4>
+            <div className="info-section">
+              <strong>Incoming connections:</strong>
+              <ul>
+                {graphData.edges
+                  .filter(e => e.target === selectedNode)
+                  .map(e => (
+                    <li key={e.id}>
+                      {e.source} 
+                      <span className={`edge-type-badge ${e.type}`}>
+                        {e.type === 'function' ? '<=' : '<-'}
+                      </span>
+                      {e.inferenceSequence}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+            <div className="info-section">
+              <strong>Outgoing connections:</strong>
+              <ul>
+                {graphData.edges
+                  .filter(e => e.source === selectedNode)
+                  .map(e => (
+                    <li key={e.id}>
+                      → {e.target}
+                      <span className={`edge-type-badge ${e.type}`}>
+                        {e.type === 'function' ? '<=' : '<-'}
+                      </span>
+                      {e.inferenceSequence}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
+        )}
+        {selectedEdge && (
+          <div className="info-panel">
+            <h4>Connection Details</h4>
+            {(() => {
+              const edge = graphData.edges.find(e => e.id === selectedEdge);
+              if (!edge) return null;
+              return (
+                <>
+                  <p><strong>From:</strong> {edge.source}</p>
+                  <p><strong>To:</strong> {edge.target}</p>
+                  <p><strong>Type:</strong> {edge.type === 'function' ? 'Function (<=)' : 'Value (<-)'}</p>
+                  <p><strong>Inference:</strong> {edge.inferenceSequence}</p>
+                </>
+              );
+            })()}
+          </div>
+        )}
+        {!selectedNode && !selectedEdge && (
+          <div className="info-panel info-hint">
+            <p>Click on nodes or edges to see details</p>
+            <div className="stats">
+              <div className="stat">
+                <strong>{graphData.nodes.length}</strong>
+                <span>Concepts</span>
+              </div>
+              <div className="stat">
+                <strong>{graphData.edges.length}</strong>
+                <span>Connections</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FlowGraphView;
+

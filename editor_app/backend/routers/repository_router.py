@@ -12,6 +12,7 @@ from schemas.concept_schemas import ConceptEntrySchema
 from services.repository_service import RepositoryService
 from services.concept_service import ConceptService
 from services.inference_service import InferenceService
+from services.graph_service import GraphService
 
 
 # --- Constants for paths ---
@@ -111,6 +112,22 @@ async def save_flow(
 ):
     """Saves the flow data for a specific RepositorySet."""
     return repo_service.save_flow(name, flow_data)
+
+
+@router.get("/{name}/graph", responses={404: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+async def get_graph(
+    name: str,
+    repo_service: RepositoryService = Depends(get_repository_service)
+):
+    """Computes and returns the graph structure from the flow data."""
+    try:
+        flow_data = repo_service.get_flow(name)
+        graph_data = GraphService.compute_graph_from_flow(flow_data.dict())
+        return graph_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to compute graph: {str(e)}")
+
+
 @router.get("/_debug_list_files", tags=["debug"])
 async def debug_list_files(
     repo_service: RepositoryService = Depends(get_repository_service)

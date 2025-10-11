@@ -9,7 +9,7 @@ import {
   FlowData
 } from '../types';
 
-const BASE_URL = 'http://localhost:8001';
+const BASE_URL = 'http://127.0.0.1:8000';
 const API_BASE_URL = `${BASE_URL}/api/repositories`;
 const CONCEPTS_API = `${BASE_URL}/api/concepts`;
 const INFERENCES_API = `${BASE_URL}/api/inferences`;
@@ -250,6 +250,12 @@ class ApiService {
       body: JSON.stringify(flowData)
     });
     return this.handleResponse<FlowData>(response);
+  }
+
+  // Graph Management
+  async getGraph(repoName: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/${repoName}/graph`);
+    return this.handleResponse<any>(response);
   }
 }
 

@@ -57,7 +57,7 @@ async def root():
 
 if __name__ == "__main__":
     # This allows running the app directly for simple testing, though uvicorn is preferred.
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 # Create data directories if they don't exist

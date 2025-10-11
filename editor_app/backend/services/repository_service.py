@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import HTTPException
 from uuid import uuid4
 
-from schemas.repository_schemas import RepositorySetSchema, RepositorySetData
+from schemas.repository_schemas import RepositorySetSchema, RepositorySetData, FlowDataSchema
 from schemas.concept_schemas import ConceptEntrySchema
 from schemas.inference_schemas import InferenceEntrySchema
 from .concept_service import ConceptService
@@ -188,12 +188,12 @@ class RepositoryService:
 
         return new_inference
 
-    def get_flow(self, name: str):
+    def get_flow(self, name: str) -> FlowDataSchema:
         """Retrieves the flow data by reconstructing it from inference objects."""
         # Verify repository exists to prevent errors on new repos
         repo_file_path = self._get_filepath(name)
         if not os.path.exists(repo_file_path):
-            return {"nodes": [], "edges": []}
+            return FlowDataSchema(nodes=[], edges=[])
 
         all_inferences = self.inference_service.get_inferences(name)
 
@@ -219,7 +219,7 @@ class RepositoryService:
                 "data": inference.dict()  # Send the full inference data back
             })
 
-        return {"nodes": nodes, "edges": []}
+        return FlowDataSchema(nodes=nodes, edges=[])
 
     def save_flow(self, name: str, flow_data):
         """Saves the flow data by merging it into the individual inference objects."""
