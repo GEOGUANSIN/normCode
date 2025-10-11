@@ -83,6 +83,10 @@
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }
 
+.graph-node.dimmed {
+  opacity: 0.3;
+}
+
 .graph-node.selected {
   fill: #bbdefb;
   stroke: #1976d2;
@@ -116,6 +120,10 @@
 .graph-edge:hover {
   stroke-width: 3;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.graph-edge.dimmed {
+  opacity: 0.2;
 }
 
 .graph-edge.selected {

@@ -31,6 +31,13 @@ interface GraphData {
   edges: GraphEdge[];
 }
 
+const truncateLabel = (label: string, maxLength: number = 15): string => {
+  if (label.length > maxLength) {
+    return label.substring(0, maxLength) + '...';
+  }
+  return label;
+};
+
 const FlowGraphView: React.FC<FlowGraphViewProps> = ({ 
   concepts,
   inferences,
@@ -91,28 +98,17 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
 
     if (!sourceNode || !targetNode) return '';
 
-    const x1 = sourceNode.x + 80; // Right edge of source node
+    const nodeWidth = 150;
+    const arrowWidth = 10; // Leave space for the arrowhead
+    const x1 = sourceNode.x - nodeWidth / 2;
     const y1 = sourceNode.y;
-    const x2 = targetNode.x - 80; // Left edge of target node
+    const x2 = targetNode.x + nodeWidth / 2 + arrowWidth;
     const y2 = targetNode.y;
 
     // Create a curved path
     const midX = (x1 + x2) / 2;
     
     return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
-  };
-
-  const getArrowEnd = (edge: GraphEdge): { x: number; y: number; angle: number } => {
-    const sourceNode = graphData.nodes.find(n => n.id === edge.source);
-    const targetNode = graphData.nodes.find(n => n.id === edge.target);
-
-    if (!sourceNode || !targetNode) return { x: 0, y: 0, angle: 0 };
-
-    const x = targetNode.x - 80;
-    const y = targetNode.y;
-    const angle = Math.atan2(targetNode.y - sourceNode.y, targetNode.x - sourceNode.x) * (180 / Math.PI);
-
-    return { x, y, angle };
   };
 
   if (!graphDataProp || graphData.nodes.length === 0) {
@@ -180,12 +176,14 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
           {graphData.edges.map(edge => {
             const path = getEdgePath(edge);
             const isSelected = selectedEdge === edge.id;
+            const isRelated = selectedNode && (edge.source === selectedNode || edge.target === selectedNode);
+            const isDimmed = selectedNode && !isRelated;
             
             return (
               <g key={edge.id}>
                 <path
                   d={path}
-                  className={`graph-edge ${edge.type}-edge ${isSelected ? 'selected' : ''}`}
+                  className={`graph-edge ${edge.type}-edge ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
                   markerEnd={`url(#arrowhead-${edge.type})`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -210,8 +208,7 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
           {/* Render nodes */}
           {graphData.nodes.map(node => {
             const isSelected = selectedNode === node.id;
-            const incomingEdges = graphData.edges.filter(e => e.target === node.id);
-            const outgoingEdges = graphData.edges.filter(e => e.source === node.id);
+            const isDimmed = selectedNode && !isSelected;
 
             return (
               <g 
@@ -222,12 +219,13 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
                   setSelectedEdge(null);
                 }}
               >
+                <title>{node.label}</title>
                 <rect
                   x={node.x - 75}
                   y={node.y - 30}
                   width="150"
                   height="60"
-                  className={`graph-node ${isSelected ? 'selected' : ''}`}
+                  className={`graph-node ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
                   rx="8"
                 />
                 <text
@@ -237,7 +235,7 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
                   dominantBaseline="middle"
                   className="node-label"
                 >
-                  {node.label}
+                  {truncateLabel(node.label)}
                 </text>
               </g>
             );
