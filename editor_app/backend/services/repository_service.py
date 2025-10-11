@@ -198,12 +198,12 @@ class RepositoryService:
         all_inferences = self.inference_service.get_inferences(name)
 
         # Filter inferences that are part of the flow
-        flow_inferences = [inf for inf in all_inferences if inf.flow_info and inf.flow_info.get('index')]
+        flow_inferences = [inf for inf in all_inferences if inf.flow_info and inf.flow_info.get('flow_index')]
 
         # Sort inferences based on the flow index
         def sort_key(inference):
             # Convert index string like "1.2.1" to a tuple of integers for correct sorting
-            return tuple(map(int, (inference.flow_info['index'].split('.'))))
+            return tuple(map(int, (inference.flow_info['flow_index'].split('.'))))
 
         flow_inferences.sort(key=sort_key)
 
@@ -211,7 +211,7 @@ class RepositoryService:
         nodes = []
         for inference in flow_inferences:
             # The frontend expects a unique ID for each node in the flow editor UI
-            node_id = f"inference-{inference.id}-{inference.flow_info.get('index')}"
+            node_id = f"inference-{inference.id}-{inference.flow_info.get('flow_index')}"
             nodes.append({
                 "id": node_id,
                 "type": "inference",

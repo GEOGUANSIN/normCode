@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>NormCode Guide</title>
+    
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+h2 {
+    border-bottom: 1px solid #bdc3c7;
+    padding-bottom: 5px;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    border-left: 4px solid #3498db;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+blockquote {
+    border-left: 4px solid #3498db;
+    margin: 1em 0;
+    padding-left: 20px;
+    color: #666;
+}
+
+ul, ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin: 0.5em 0;
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 15mm;
+    }
+    
+    h1 {
+        page-break-before: avoid;
+    }
+    
+    h2, h3 {
+        page-break-after: avoid;
+    }
+}
+</style>
+
+</head>
+<body>
+<h1>NormCode Guide</h1>
+<h2>1. Introduction</h2>
+<p>NormCode is a formal language used to construct a <strong>plan of inferences</strong>. It is designed to represent complex reasoning and data processing tasks not as a single, monolithic script, but as a structured combination of multiple, distinct inferences.</p>
+<p>Each <strong>inference</strong> within the plan is a self-contained logical operation. The entire Normcode script orchestrates how these individual inferences connect and flow to achieve a larger goal.</p>
+<h2>2. Core Syntax: Inferences, Concepts, and Sequences</h2>
+<p>The fundamental unit of a Normcode plan is the <strong>inference</strong>. An inference is defined by a functional concept and its associated value concepts.</p>
+<ul>
+<li>
+<p><strong>Functional Concept (<code>&lt;=</code>)</strong>: This is the cornerstone of an inference. It "pins down" the inference by defining its core logic, function, or operation. Crucially, the functional concept is responsible for <strong>invoking a sequence</strong> (e.g., <code>quantifying</code>, <code>imperative</code>), which is the underlying engine that executes the inference's logic.</p>
+</li>
+<li>
+<p><strong>Value Concept (<code>&lt;-</code>)</strong>: This concept provides the concrete data for the inference. It specifies the inputs, outputs, parameters, or results that the functional concept operates on or produces.</p>
+</li>
+</ul>
+<p>The entire plan is represented in a hierarchical, vertical format. An inference begins with a root concept, followed by an indented functional concept (<code>&lt;=</code>) that defines the operation. The value concepts (<code>&lt;-</code>) are then supplied at the same or a more deeply nested level.</p>
+<p>A line in Normcode can also have optional annotations for clarity and control:</p>
+<p><code>_concept_definition_ | _annotation_ // _comment_</code></p>
+<ul>
+<li><strong><code>_concept_definition_</code></strong>: The core functional (<code>&lt;=</code>) or value (<code>&lt;-</code>) statement.</li>
+<li><strong><code>_annotation_</code></strong>: Optional metadata following the <code>|</code> symbol. This can be a <strong>flow index</strong> (e.g., <code>1.1.2</code>), an intended <strong>data reference</strong>, or the name of the invoked <strong>sequence</strong>.</li>
+<li><strong><code>// _comment_</code></strong>: Human-readable comments.</li>
+</ul>
+<p><strong>Example Structure of an Inference:</strong></p>
+<div class="codehilite"><pre><span></span><code>_<span class="n">concept_to_infer_</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">overall</span><span class="w"> </span><span class="n">goal</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">inference</span>
+<span class="w">    </span><span class="o">&lt;=</span><span class="w"> </span>_<span class="n">functional_concept_defining_the_operation_</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">    </span><span class="n">quantifying</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">invokes</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="s">&#39;quantifying&#39;</span><span class="w"> </span><span class="n">sequence</span>
+<span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span>_<span class="n">input_value_concept_1_</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">input</span><span class="w"> </span><span class="kr">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span>
+<span class="w">    </span><span class="n">operation</span>
+<span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span>_<span class="n">input_value_concept_2_</span>
+</code></pre></div>
+
+<p><strong>Example of a Concrete Inference:</strong></p>
+<p>The following snippet from an addition algorithm shows an <code>imperative</code> inference.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">&lt;-</span><span class="w"> </span><span class="p">{</span><span class="n">digit</span><span class="w"> </span><span class="n">sum</span><span class="p">}</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="m">1.1</span><span class="n">.</span><span class="m">2</span><span class="n">.</span><span class="w"> </span><span class="n">imperative</span>
+<span class="w">    </span><span class="o">&lt;=</span><span class="w"> </span><span class="o">::</span><span class="p">(</span><span class="n">sum</span><span class="w"> </span><span class="p">{</span><span class="m">1</span><span class="p">}</span><span class="o">&lt;$</span><span class="p">({</span><span class="n">numbers</span><span class="p">})</span><span class="o">%_&gt; and {2}&lt;$({number})%</span>_<span class="o">&gt;</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">get</span><span class="w"> </span><span class="p">{</span><span class="m">3</span><span class="p">}</span><span class="o">?&lt;$</span><span class="p">({</span><span class="n">number</span><span class="p">})</span>%_<span class="o">&gt;</span><span class="p">)</span>
+<span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">[</span><span class="n">all</span><span class="w"> </span><span class="p">{</span><span class="n">unit</span><span class="w"> </span><span class="n">place</span><span class="w"> </span><span class="n">value</span><span class="p">}</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">numbers</span><span class="p">]</span><span class="o">&lt;:</span><span class="p">{</span><span class="m">1</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">{</span><span class="n">carry</span><span class="o">-</span><span class="n">over</span><span class="w"> </span><span class="n">number</span><span class="p">}</span><span class="o">&lt;:</span><span class="p">{</span><span class="m">2</span><span class="p">}</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">{</span><span class="n">sum</span><span class="p">}</span><span class="o">?&lt;:</span><span class="p">{</span><span class="m">3</span><span class="p">}</span><span class="o">&gt;</span>
+</code></pre></div>
+
+<ul>
+<li><strong>Goal</strong>: The overall goal is to produce a <code>{digit sum}</code>.</li>
+<li><strong>Functional Concept (<code>&lt;=</code>)</strong>: The core of the inference is the <code>::</code> (imperative) concept, which defines a command to sum two numbers. This invokes the <code>imperative</code> sequence.</li>
+<li><strong>Value Concepts (<code>&lt;-</code>)</strong>: It takes two inputs (<code>[all {unit place value} of numbers]</code> and <code>{carry-over number}</code>) and specifies one output (<code>{sum}</code>).</li>
+</ul>
+<h2>3. Concept Types</h2>
+<p>Concepts are the building blocks of NormCode and are divided into two major classes: <strong>Semantical</strong> and <strong>Syntactical</strong>. The core inference operators (<code>&lt;=</code> and <code>&lt;-</code>) are explained in the Core Syntax section above.</p>
+<h3>3.1. Semantical Concept Types</h3>
+<p>Semantical concepts define the core entities and logical constructs of the domain. They can be subdivided into typically non-functional and functional types.</p>
+<h4>3.1.1. Typically Non-Functional Concept Types</h4>
+<p>These concepts represent entities, their relationships, or their roles in the inference.</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{}</code></td>
+<td>Object</td>
+<td>Represents a generic object or entity.</td>
+</tr>
+<tr>
+<td><code>&lt;&gt;</code></td>
+<td>Statement</td>
+<td>Represents a proposition or a state of affairs (non-functional).</td>
+</tr>
+<tr>
+<td><code>[]</code></td>
+<td>Relation</td>
+<td>Represents a relationship between two or more concepts.</td>
+</tr>
+<tr>
+<td><code>:S:</code></td>
+<td>Subject</td>
+<td>Marks the subject of a relation or statement.</td>
+</tr>
+<tr>
+<td><code>:&gt;:</code></td>
+<td>Input</td>
+<td>A special type of Subject that marks a concept as an input parameter.</td>
+</tr>
+<tr>
+<td><code>:&lt;:</code></td>
+<td>Output</td>
+<td>A special type of Subject that marks a concept as an output value.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong>
+- <strong>Object (<code>{}</code>):</strong> <code>{new number pair}</code> declares a concept that will hold the state of the two numbers as they are processed.
+- <strong>Statement (<code>&lt;&gt;</code>):</strong> <code>&lt;all number is 0&gt;</code> represents a condition that can be evaluated. The <code>judgement</code> sequence will determine if this statement is true or false.
+- <strong>Relation (<code>[]</code>):</strong> <code>[all {unit place value} of numbers]</code> defines a collection that will hold the digits from a specific place value of the numbers being added.</p>
+<h4>3.1.2. Typically Functional Concept Types</h4>
+<p>These concepts define operations or evaluations that often initiate an inference.</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>({})</code> or <code>::()</code></td>
+<td>Imperative</td>
+<td>Represents a command or an action to be executed.</td>
+</tr>
+<tr>
+<td><code>&lt;{}&gt;</code> or <code>&lt;...&gt;</code></td>
+<td>Judgement</td>
+<td>Represents an evaluation that results in a boolean-like assessment.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong>
+- <strong>Imperative (<code>::()</code>):</strong> <code>::(get the {1}?&lt;$({remainder})%_&gt; of {2}&lt;$({digit sum})%_&gt; divided by 10)</code> issues a command to a tool or model to perform a calculation. This is the heart of an <code>imperative</code> inference.
+- <strong>Judgement (<code>&lt;...&gt;</code>):</strong> <code>&lt;= :%(True):&lt;{1}&lt;$({carry-over number})%_&gt; is 0&gt;</code> evaluates whether the carry-over is zero. This is the core of a <code>judgement</code> inference. Note the use of <code>&lt;...&gt;</code> as a common syntax variant for a judgement.</p>
+<h3>3.2. Syntactical Concept Types</h3>
+<p>Syntactical concepts are operators that control the logic, flow, and manipulation of data within the plan of inferences. They are grouped by their function.</p>
+<h4>3.2.1. Assigning Operators</h4>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$=</code></td>
+<td>Identity</td>
+<td>Assigns a value to a concept, often used for state updates.</td>
+</tr>
+<tr>
+<td><code>$.</code></td>
+<td>Specification</td>
+<td>Specifies or isolates a particular property of a concept.</td>
+</tr>
+<tr>
+<td><code>$%</code></td>
+<td>Abstraction</td>
+<td>Creates a general template from a concrete instance for reuse.</td>
+</tr>
+<tr>
+<td><code>$+</code></td>
+<td>Continuation</td>
+<td>Appends or adds to a concept, often used in loops to update state.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong>
+- <strong>Identity (<code>$=</code>):</strong> <code>&lt;- {number pair}&lt;$={1}&gt;</code> is used to give a stable identity (<code>1</code>) to the <code>{number pair}</code> concept across multiple steps of the algorithm.
+- <strong>Specification (<code>$.</code>):</strong> <code>&lt;= $.({remainder})</code> specifies that this part of the inference is focused solely on defining the <code>{remainder}</code>.
+- <strong>Abstraction (<code>$%</code>):</strong> <code>&lt;$([all {unit place value} of numbers])%_&gt;</code> takes the concrete list of digits and abstracts it as an input parameter for the <code>sum</code> imperative.
+- <strong>Continuation (<code>$+</code>):</strong> <code>&lt;= $+({number pair to append}:{number pair})</code> defines an operation that updates the <code>{number pair}</code> for the next iteration of a loop.</p>
+<h4>3.2.2. Timing (Sequencing) Operators</h4>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@if</code></td>
+<td>If</td>
+<td>Executes if a condition is true.</td>
+</tr>
+<tr>
+<td><code>@if!</code></td>
+<td>If Not</td>
+<td>Executes if a condition is false.</td>
+</tr>
+<tr>
+<td><code>@after</code></td>
+<td>After</td>
+<td>Executes after a preceding step is complete.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong>
+- <strong>If / If Not (<code>@if</code>, <code>@if!</code>):</strong> The combination <code>@if!(&lt;all number is 0&gt;)</code> and <code>@if(&lt;carry-over number is 0&gt;)</code> forms the termination condition for the main loop, ensuring it continues as long as there are digits to process or a carry-over exists.
+- <strong>After (<code>@after</code>):</strong> <code>&lt;= @after({digit sum})</code> ensures that the remainder is only calculated <em>after</em> the <code>digit sum</code> has been computed in a prior step.</p>
+<h4>3.2.3. Grouping Operators</h4>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&amp;in</code></td>
+<td>In</td>
+<td>Groups items contained within a larger collection.</td>
+</tr>
+<tr>
+<td><code>&amp;across</code></td>
+<td>Across</td>
+<td>Groups items by iterating across a collection.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Examples:</strong>
+- <strong>Across (<code>&amp;across</code>):</strong> <code>&lt;= &amp;across({unit place value}:{number pair}*1)</code> is a <code>grouping</code> inference that iterates across the two numbers in the <code>{number pair}</code> and extracts the <code>{unit place value}</code> (the rightmost digit) from each, creating a new group of digits to be summed.
+- <strong>In (<code>&amp;in</code>):</strong> Used to create a collection from explicitly listed value concepts. The elements to be grouped are provided as <code>&lt;-</code> concepts within the inference.
+  <code>Normcode
+  &lt;- [my collection] | grouping
+      &lt;= &amp;in({item})
+      &lt;- {item A}
+      &lt;- {item B}</code></p>
+<h4>3.2.4. Quantifying (Listing) Operators</h4>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>*every</code></td>
+<td>Every</td>
+<td>Iterates over every item in a collection (a loop).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong>
+- <strong>Every (<code>*every</code>):</strong> <code>&lt;= *every({number pair})</code> defines the main loop of the addition algorithm. This functional concept invokes the <code>quantifying</code> sequence, which will continue to execute its child inferences as long as the termination condition (defined with <code>@if</code> operators) is not met.</p>
+<h4>3.2.5. Concept Markers</h4>
+<p>These markers can be appended to concepts to modify their meaning.</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>?</code></td>
+<td>Conception Query</td>
+<td>Appended to a concept to query its value or definition. E.g., <code>{sum}?</code>.</td>
+</tr>
+<tr>
+<td><code>&lt;:_number_&gt;</code></td>
+<td>Value Position</td>
+<td>To link a positional placeholder for values (e.g., <code>&lt;:{1}&gt;</code>, <code>&lt;:{2}&gt;</code>).</td>
+</tr>
+<tr>
+<td><code>&lt;$(_concept_)%_&gt;</code></td>
+<td>Instance Marker</td>
+<td>Marks a concept as an instance of an "umbrella" concept. E.g. <code>&lt;$({number})%_&gt;</code></td>
+</tr>
+<tr>
+<td><code>&lt;$={_number_}&gt;</code></td>
+<td>Identity Marker</td>
+<td>Identifies the same concept across different occurrences. E.g. <code>&lt;$={1}&gt;</code></td>
+</tr>
+<tr>
+<td><code>%:[_concept_]</code></td>
+<td>Axis Specifier</td>
+<td>Specifies the <code>by_axis</code> for an operation. E.g. <code>%:[{number pair}]</code></td>
+</tr>
+<tr>
+<td><code>@(_number_)</code></td>
+<td>Quantifier Index</td>
+<td>Specifies the index for a quantifier (<code>*every</code>) operation. E.g. <code>@(1)</code></td>
+</tr>
+<tr>
+<td><code>*_number_</code></td>
+<td>Quantifier Version</td>
+<td>Links a concept to a specific quantifier iteration. E.g. <code>{number pair}*1</code></td>
+</tr>
+</tbody>
+</table>
+<h2>4. Reference of Concepts</h2>
+<p>While concepts define the structure of a NormCode plan, the actual information is stored in a <strong>Reference</strong>. Understanding the Reference is key to grasping how data is stored, manipulated, and flows through the plan.</p>
+<p>A Reference is the container where the information for a concept is kept. Specifically, it is the <strong>semantical concepts</strong> (like <code>{object}</code>, <code>[]</code>, or <code>&lt;&gt;</code>) that have an associated Reference, as they represent the data-holding entities within the plan.</p>
+<p><strong>Key Characteristics of a Reference:</strong></p>
+<ul>
+<li><strong>Multi-dimensional Container</strong>: A Reference is multi-dimensional because a concept can exist in multiple contexts. Each context can introduce a new dimension, allowing the Reference to hold different instances or elements of the concept's information in a structured way.</li>
+<li><strong>Named Axes</strong>: Each dimension, often corresponding to a specific context, is represented as a named <strong>axis</strong>. This allows for clear organization and retrieval of information. For example, a concept like <code>{grade}</code> could have a Reference with axes named <code>student</code> and <code>assignment</code>, representing the different contexts in which a grade exists.</li>
+<li><strong>Shape</strong>: The size of each dimension defines the <code>shape</code> of the information within the Reference.</li>
+<li><strong>Data Manipulation</strong>: The core logic of the <strong>Sequences</strong> (e.g., collecting items with <code>grouping</code> or accumulating results with <code>quantifying</code>) involves manipulating the information held within these References.</li>
+</ul>
+<p><strong>Conceptual Example: The <code>{grade}</code> Concept</strong></p>
+<p>Imagine you have a concept defined as <code>{grade}</code>. This concept represents the idea of a grade in your plan.</p>
+<ul>
+<li>
+<p><strong>The <code>Concept</code></strong>: This is the semantic declaration <code>{grade}</code>. It's abstract and doesn't hold any specific grade values on its own.</p>
+</li>
+<li>
+<p><strong>The Contexts</strong>: A grade is meaningless without context. It needs to be associated with a <code>student</code> and an <code>assignment</code>. These two contexts are what give a specific grade its identity.</p>
+</li>
+<li>
+<p><strong>The <code>Reference</code></strong>: The <code>Reference</code> for <code>{grade}</code> is where the actual grade values are stored. Because the concept has two contexts (<code>student</code> and <code>assignment</code>), its Reference will be a two-dimensional container with two named axes:</p>
+<ul>
+<li><code>axis</code>: <code>student</code></li>
+<li><code>axis</code>: <code>assignment</code></li>
+</ul>
+<p>This creates a structure like a table where you can look up a specific grade by providing a value for each axis:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: center;">assignment 1</th>
+<th style="text-align: center;">assignment 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>student A</strong></td>
+<td style="text-align: center;">95</td>
+<td style="text-align: center;">88</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>student B</strong></td>
+<td style="text-align: center;">72</td>
+<td style="text-align: center;">91</td>
+</tr>
+</tbody>
+</table>
+<p>In this structure, the value <code>88</code> is the information stored in the <code>{grade}</code> concept's Reference at the intersection of <code>student = student A</code> and <code>assignment = assignment 2</code>. When an inference needs the grade for Student A on Assignment 2, it queries the <code>Reference</code> using these axes.</p>
+</li>
+</ul>
+<p>In short, a <code>Concept</code> gives information its meaning within the plan, while a <code>Reference</code> provides the structure to hold and organize that information.</p>
+<h2>5. Sequences</h2>
+<p>Sequences are pre-defined pipelines that are invoked by functional concepts to execute different types of logical operations.</p>
+<p>Common sequences include:
+-   <strong><code>quantifying</code></strong>: Manages loops and iteration (<code>*every</code>).
+-   <strong><code>grouping</code></strong>: Handles data collection (<code>&amp;across</code>, <code>&amp;in</code>).
+-   <strong><code>assigning</code></strong>: Manages variable assignment (<code>$=</code>, <code>$+</code>).
+-   <strong><code>imperative</code></strong>: Executes complex commands, often with external tools (<code>::</code>).
+-   <strong><code>judgement</code></strong>: Evaluates conditions (<code>&lt;&gt;</code>).
+-   <strong><code>timing</code></strong>: Controls conditional logic (<code>@if</code>, <code>@while</code>).
+-   <strong><code>simple</code></strong>: Dummy inference.</p>
+</body>
+</html>

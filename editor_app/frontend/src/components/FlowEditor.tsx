@@ -53,7 +53,7 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
     const initialLines = initialFlowData?.nodes
       ?.map((node): FlowLine => ({ // Add explicit type here
         id: node.id,
-        index: node.data.flow_info?.index || '',
+        index: node.data.flow_info?.flow_index || '',
         type: 'inference',
         depth: node.data.flow_info?.depth || 0,
         inferenceId: node.data.id,
@@ -142,7 +142,7 @@ const FlowEditor: React.FC<FlowEditorProps> = ({
         data: {
           ...line.data,
           flow_info: {
-            index: line.index,
+            flow_index: line.index,
             depth: line.depth,
           },
         },
