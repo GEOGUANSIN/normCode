@@ -7,18 +7,23 @@ import json
 
 class GraphNode:
     """Represents a node in the flow graph."""
-    def __init__(self, id: str, label: str, type: str, level: int):
+    def __init__(self, id: str, label: str, type: str, level: int, flow_index_tuple: tuple):
         self.id = id
         self.label = label
         self.type = type
         self.level = level
-        
+        self.flow_index_tuple = flow_index_tuple
+        self.x = 0
+        self.y = 0
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "label": self.label,
             "type": self.type,
-            "level": self.level
+            "level": self.level,
+            "x": self.x,
+            "y": self.y
         }
 
 
@@ -52,7 +57,8 @@ class GraphService:
     @staticmethod
     def compute_graph_from_flow(flow_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Compute graph structure from flow data, adhering strictly to flow_index.
+        Compute graph structure from flow data, allowing concepts to appear at multiple
+        levels to ensure arrows always point from right to left between adjacent levels.
 
         Args:
             flow_data: The flow data containing inference nodes.
@@ -74,7 +80,7 @@ class GraphService:
             )
         )
 
-        concept_map: Dict[str, Dict[str, Any]] = {}
+        nodes: Dict[str, GraphNode] = {}
         edges: List[GraphEdge] = []
 
         for idx, node in enumerate(sorted_nodes):
@@ -93,24 +99,28 @@ class GraphService:
 
             # Assign level based on flow_index depth
             level = len(flow_index_tuple) - 1
-            if concept_to_infer not in concept_map or level < concept_map[concept_to_infer]["level"]:
-                concept_map[concept_to_infer] = {
-                    "level": level,
-                    "flow_index_tuple": flow_index_tuple
-                }
+
+            # Create target node for the inferred concept
+            target_id = f"{concept_to_infer}@{level}"
+            if target_id not in nodes:
+                nodes[target_id] = GraphNode(
+                    id=target_id, label=concept_to_infer, type="concept",
+                    level=level, flow_index_tuple=flow_index_tuple
+                )
 
             input_level = level + 1
-            
+
             # Process function concept
             function_concept = node_data.get("function_concept")
             if function_concept:
-                if function_concept not in concept_map or input_level < concept_map[function_concept]["level"]:
-                    concept_map[function_concept] = {
-                        "level": input_level,
-                        "flow_index_tuple": flow_index_tuple
-                    }
+                source_id = f"{function_concept}@{input_level}"
+                if source_id not in nodes:
+                    nodes[source_id] = GraphNode(
+                        id=source_id, label=function_concept, type="concept",
+                        level=input_level, flow_index_tuple=flow_index_tuple
+                    )
                 edges.append(GraphEdge(
-                    id=f"edge-func-{node.get('id', idx)}", source=function_concept, target=concept_to_infer,
+                    id=f"edge-func-{node.get('id', idx)}", source=source_id, target=target_id,
                     label=inference_sequence, edge_type="function", inference_sequence=inference_sequence,
                     flow_index=flow_index_str
                 ))
@@ -119,26 +129,22 @@ class GraphService:
             value_concepts = node_data.get("value_concepts", [])
             if isinstance(value_concepts, list):
                 for v_idx, value_concept in enumerate(value_concepts):
-                    if value_concept not in concept_map or input_level < concept_map[value_concept]["level"]:
-                        concept_map[value_concept] = {
-                            "level": input_level,
-                            "flow_index_tuple": flow_index_tuple
-                        }
+                    source_id = f"{value_concept}@{input_level}"
+                    if source_id not in nodes:
+                        nodes[source_id] = GraphNode(
+                            id=source_id, label=value_concept, type="concept",
+                            level=input_level, flow_index_tuple=flow_index_tuple
+                        )
                     edges.append(GraphEdge(
-                        id=f"edge-value-{node.get('id', idx)}-{v_idx}", source=value_concept, target=concept_to_infer,
+                        id=f"edge-value-{node.get('id', idx)}-{v_idx}", source=source_id, target=target_id,
                         label=inference_sequence, edge_type="value", inference_sequence=inference_sequence,
                         flow_index=flow_index_str
                     ))
 
-        graph_nodes = [
-            GraphNode(id=name, label=name, type="concept", level=data["level"])
-            for name, data in concept_map.items()
-        ]
-
-        positioned_nodes = GraphService._calculate_positions(graph_nodes, concept_map)
+        positioned_nodes = GraphService._calculate_positions(list(nodes.values()))
 
         return {
-            "nodes": positioned_nodes,
+            "nodes": [node.to_dict() for node in positioned_nodes],
             "edges": [edge.to_dict() for edge in edges]
         }
 
@@ -151,8 +157,7 @@ class GraphService:
             return (0,)
 
     @staticmethod
-    def _calculate_positions(nodes: List[GraphNode],
-                             concept_map: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _calculate_positions(nodes: List[GraphNode]) -> List[GraphNode]:
         """Calculate x, y positions for nodes."""
         level_groups: Dict[int, List[GraphNode]] = {}
         for node in nodes:
@@ -162,7 +167,7 @@ class GraphService:
 
         for level in level_groups:
             level_groups[level].sort(
-                key=lambda n: concept_map[n.id]["flow_index_tuple"]
+                key=lambda n: n.flow_index_tuple
             )
 
         horizontal_spacing = 250
@@ -170,7 +175,7 @@ class GraphService:
         start_x = 150
         start_y = 100
 
-        positioned = []
+        positioned_nodes = []
         sorted_levels = sorted(level_groups.keys())
 
         max_level_height = 0
@@ -185,10 +190,9 @@ class GraphService:
             start_y_for_level = start_y + (max_level_height - total_height) / 2
 
             for idx, node in enumerate(level_nodes):
-                node_dict = node.to_dict()
-                node_dict["x"] = start_x + (level * horizontal_spacing)
-                node_dict["y"] = start_y_for_level + (idx * vertical_spacing)
-                positioned.append(node_dict)
+                node.x = start_x + (level * horizontal_spacing)
+                node.y = start_y_for_level + (idx * vertical_spacing)
+                positioned_nodes.append(node)
 
-        return positioned
+        return positioned_nodes
 

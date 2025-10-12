@@ -514,7 +514,11 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             inference_sequence='assigning',
             concept_to_infer=concept_repo.get_concept('*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]'),
             function_concept=concept_repo.get_concept('$.({remainder})'),
-            value_concepts=[concept_repo.get_concept('{remainder}')],
+            value_concepts=[
+                concept_repo.get_concept('{remainder}'),
+                concept_repo.get_concept('{digit sum}'),
+                concept_repo.get_concept('{number pair}'),
+                ],
             flow_info={'flow_index': '1.1'},
             working_interpretation={
                 "syntax": {
@@ -634,6 +638,8 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             value_concepts=[
                 concept_repo.get_concept('{number pair to append}'),
                 concept_repo.get_concept('{number pair}'),
+                concept_repo.get_concept('<all number is 0>'),
+                concept_repo.get_concept('<carry-over number is 0>'),
             ],
             flow_info={'flow_index': '1.1.3'},
             working_interpretation={
@@ -651,7 +657,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             inference_sequence='timing',
             concept_to_infer=concept_repo.get_concept('$+({number pair to append}:{number pair})'),
             function_concept=concept_repo.get_concept('@if!(<all number is 0>)'),
-            value_concepts=[concept_repo.get_concept('<all number is 0>')],
+            context_concepts=[concept_repo.get_concept('<all number is 0>')],
             flow_info={'flow_index': '1.1.3.1'},
             working_interpretation={
                 "syntax": {
@@ -666,7 +672,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             inference_sequence='timing',
             concept_to_infer=concept_repo.get_concept('@if!(<all number is 0>)'),
             function_concept=concept_repo.get_concept('@if(<carry-over number is 0>)'),
-            value_concepts=[concept_repo.get_concept('<carry-over number is 0>')],
+            context_concepts=[concept_repo.get_concept('<carry-over number is 0>')],
             flow_info={'flow_index': '1.1.3.1.1'},
             working_interpretation={
                 "syntax": {
@@ -1167,10 +1173,10 @@ if __name__ == "__main__":
         logging.info("=== Starting Orchestrator Demo ===")
 
         # 1. Create repositories
-        length_max = 200
-        number_1, number_2 = quick_generate(min_length=150, max_length=length_max, seed=25)
-        # number_1 = "12"
-        # number_2 = "82"
+        # length_max = 200
+        # number_1, number_2 = quick_generate(min_length=150, max_length=length_max, seed=25)
+        number_1 = "12"
+        number_2 = "82"
         # number_1 = args.number1
         # number_2 = args.number2
         logging.info(f"Generated numbers: {number_1} + {number_2}")
