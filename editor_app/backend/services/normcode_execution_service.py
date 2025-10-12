@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import subprocess
 import threading
 from datetime import datetime
@@ -85,33 +86,27 @@ class NormcodeExecutionService:
 
     def _execute_normcode_in_background(self, repo_set: RepositorySetData, log_filepath: str, repo_set_name: str):
         """Internal method to execute normcode and write logs in a separate thread."""
+        root_logger = logging.getLogger()
+        log_formatter = logging.Formatter('[%(levelname)s] %(message)s - %(asctime)s - root')
+        file_handler = logging.FileHandler(log_filepath, mode='w', encoding='utf-8')
+        file_handler.setFormatter(log_formatter)
+        root_logger.addHandler(file_handler)
+
         try:
             concept_repo, inference_repo = self._create_normcode_repos_from_schema(repo_set)
-            orchestrator = Orchestrator(concept_repo, inference_repo)
+            orchestrator = Orchestrator(concept_repo, inference_repo, max_cycles=1000)
+            orchestrator.run()
 
-            with open(log_filepath, 'w', encoding='utf-8') as log_file:
-                # Redirect stdout and stderr to the log file for the orchestrator run
-                # This requires temporarily redirecting sys.stdout and sys.stderr
-                import sys
-                original_stdout = sys.stdout
-                original_stderr = sys.stderr
-                sys.stdout = log_file
-                sys.stderr = log_file
-                try:
-                    orchestrator.run()
-                    with open(log_filepath, 'a', encoding='utf-8') as f:
-                        f.write("\n--- Normcode Execution Completed ---\n")
-                except Exception as e:
-                    with open(log_filepath, 'a', encoding='utf-8') as f:
-                        f.write(f"\n--- Normcode Execution Failed: {e} ---\n")
-                finally:
-                    sys.stdout = original_stdout
-                    sys.stderr = original_stderr
+            with open(log_filepath, 'a', encoding='utf-8') as f:
+                f.write("\n--- Normcode Execution Completed ---\n")
 
         except Exception as e:
-            with open(log_filepath, 'a', encoding='utf-8') as log_file:
-                log_file.write(f"\nError during background normcode execution setup: {e}\n")
-            print(f"Error executing normcode {repo_set_name} in background: {e}")
+            root_logger.error(f"Error during background normcode execution: {e}", exc_info=True)
+            with open(log_filepath, 'a', encoding='utf-8') as f:
+                f.write(f"\n--- Normcode Execution Failed: {e} ---\n")
+
+        finally:
+            root_logger.removeHandler(file_handler)
 
     def run_repository_set(self, repo_set: RepositorySetData) -> str:
         """Starts execution of a RepositorySet in a background thread and returns log file name."""

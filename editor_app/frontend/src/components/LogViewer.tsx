@@ -15,13 +15,18 @@ const LogViewer: React.FC<LogViewerProps> = ({ logContent, isRunning }) => {
   }, [logContent]);
 
   return (
-    <div className="log-viewer">
-      <h2>
-        <span className={`status-indicator ${isRunning ? 'running' : 'stopped'}`}></span>
-        Logs
-      </h2>
-      <pre ref={logOutputRef} className="log-output">
-        {logContent || 'Select a repository set and click "Run" to see logs.'}
+    <div className="log-viewer-tab">
+      <div className="log-viewer-header">
+        <h3>
+          <span className={`status-indicator ${isRunning ? 'running' : 'stopped'}`}></span>
+          Execution Logs
+        </h3>
+        <span className="log-viewer-status">
+          {isRunning ? '🔄 Running...' : '✓ Ready'}
+        </span>
+      </div>
+      <pre ref={logOutputRef} className="log-viewer-output">
+        {logContent || 'No logs yet. Click "Run" to execute the repository and see logs here.'}
       </pre>
     </div>
   );

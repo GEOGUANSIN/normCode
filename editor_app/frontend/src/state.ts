@@ -1,6 +1,6 @@
 import { RepositorySetMetadata, ConceptEntry, InferenceEntry, FlowData } from './types';
 
-export type ViewMode = 'concepts' | 'inferences' | 'flow' | 'graph';
+export type ViewMode = 'concepts' | 'inferences' | 'flow' | 'graph' | 'logs';
 export type SidebarMode = 'concepts' | 'inferences' | 'repositories';
 
 export interface AppState {
@@ -13,7 +13,6 @@ export interface AppState {
   inferences: InferenceEntry[];
   viewMode: ViewMode;
   logs: string;
-  logsCollapsed: boolean;
   message: { type: 'error' | 'success', text: string } | null;
   isRunning: boolean;
   showConceptForm: boolean;
@@ -60,7 +59,6 @@ export const initialState: AppState = {
   inferences: [],
   viewMode: 'concepts',
   logs: '',
-  logsCollapsed: false,
   message: null,
   isRunning: false,
   showConceptForm: false,
@@ -83,7 +81,6 @@ export type Action =
   | { type: 'DELETE_REPO' }
   | { type: 'SET_VIEW_MODE'; payload: ViewMode }
   | { type: 'SET_LOGS'; payload: string }
-  | { type: 'TOGGLE_LOGS_COLLAPSED' }
   | { type: 'SHOW_MESSAGE'; payload: { type: 'error' | 'success'; text: string } }
   | { type: 'HIDE_MESSAGE' }
   | { type: 'SET_RUNNING'; payload: boolean }
@@ -118,8 +115,6 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, viewMode: action.payload };
     case 'SET_LOGS':
       return { ...state, logs: action.payload };
-    case 'TOGGLE_LOGS_COLLAPSED':
-      return { ...state, logsCollapsed: !state.logsCollapsed };
     case 'SHOW_MESSAGE':
       return { ...state, message: action.payload };
     case 'HIDE_MESSAGE':

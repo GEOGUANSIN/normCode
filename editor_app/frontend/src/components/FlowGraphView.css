@@ -50,6 +50,34 @@
   background: #7b68ee;
 }
 
+.legend-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid;
+}
+
+.legend-box.semantic-function {
+  background: #ede7f6;
+  border-color: #7b68ee;
+}
+
+.legend-box.semantic-value {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.legend-box.syntactic-function {
+  background: #f1f5f9;
+  border-color: #64748b;
+}
+
+.legend-divider {
+  width: 1px;
+  background: #dee2e6;
+  margin: 0 8px;
+}
+
 .flow-graph-canvas {
   flex: 1;
   display: flex;
@@ -76,22 +104,73 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
+/* Semantic Functions: ::({}), <{}> - Light purple */
+.graph-node.semantic-function {
+  fill: #ede7f6;
+  stroke: #7b68ee;
+}
+
+.graph-node.semantic-function:hover {
+  fill: #d1c4e9;
+  stroke: #673ab7;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.graph-node.semantic-function.selected {
+  fill: #b39ddb;
+  stroke: #5e35b1;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 12px rgba(123, 104, 238, 0.3));
+}
+
+/* Semantic Values: {}, <>, [] - Light blue */
+.graph-node.semantic-value {
+  fill: #dbeafe;
+  stroke: #3b82f6;
+}
+
+.graph-node.semantic-value:hover {
+  fill: #bfdbfe;
+  stroke: #2563eb;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.graph-node.semantic-value.selected {
+  fill: #93c5fd;
+  stroke: #1d4ed8;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+}
+
+/* Syntactic Functions: everything else - Light slate/gray */
+.graph-node.syntactic-function {
+  fill: #f1f5f9;
+  stroke: #64748b;
+}
+
+.graph-node.syntactic-function:hover {
+  fill: #e2e8f0;
+  stroke: #475569;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.graph-node.syntactic-function.selected {
+  fill: #cbd5e1;
+  stroke: #334155;
+  stroke-width: 3;
+  filter: drop-shadow(0 4px 12px rgba(100, 116, 139, 0.3));
+}
+
 .graph-node:hover {
-  fill: #e3f2fd;
-  stroke: #2196f3;
   stroke-width: 3;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }
 
 .graph-node.dimmed {
   opacity: 0.3;
-}
-
-.graph-node.selected {
-  fill: #bbdefb;
-  stroke: #1976d2;
-  stroke-width: 3;
-  filter: drop-shadow(0 4px 12px rgba(33, 150, 243, 0.3));
 }
 
 .node-label {

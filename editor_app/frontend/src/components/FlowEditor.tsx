@@ -20,7 +20,7 @@ interface FlowLine {
 }
 
 const FlowEditor: React.FC<FlowEditorProps> = ({ 
-  concepts,
+  concepts: _concepts,
   inferences, 
   initialFlowData,
   onSave 

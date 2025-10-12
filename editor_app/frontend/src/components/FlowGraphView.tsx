@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { ConceptEntry, InferenceEntry, FlowData } from '../types';
+import React, { useMemo, useRef, useState } from 'react';
+import { ConceptEntry, InferenceEntry } from '../types';
 import './FlowGraphView.css';
 
 interface FlowGraphViewProps {
@@ -38,9 +38,27 @@ const truncateLabel = (label: string, maxLength: number = 15): string => {
   return label;
 };
 
+const getNodeCategory = (label: string): 'semantic-function' | 'semantic-value' | 'syntactic-function' => {
+  // Semantic functions: ::({}) and <{}>
+  if (label.includes(':(') || label.includes(':<')) {
+    return 'semantic-function';
+  }
+  
+  // Semantic values: {}, <>, []
+  // Check for these patterns at the start and end of the label
+  if ((label.startsWith('{') && label.endsWith('}')) || 
+      (label.startsWith('<') && label.endsWith('>')) || 
+      (label.startsWith('[') && label.endsWith(']'))) {
+    return 'semantic-value';
+  }
+  
+  // Syntactic functions: everything else
+  return 'syntactic-function';
+};
+
 const FlowGraphView: React.FC<FlowGraphViewProps> = ({ 
-  concepts,
-  inferences,
+  concepts: _concepts,
+  inferences: _inferences,
   graphData: graphDataProp
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -130,6 +148,19 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
         <h3>Flow Graph View</h3>
         <div className="flow-graph-legend">
           <div className="legend-item">
+            <div className="legend-box semantic-function"></div>
+            <span>Semantic Functions (::&#40;&#123;&#125;&#41;, &lt;&#123;&#125;&gt;)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-box semantic-value"></div>
+            <span>Semantic Values (&#123;&#125;, &lt;&gt;, [ ])</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-box syntactic-function"></div>
+            <span>Syntactic Functions</span>
+          </div>
+          <div className="legend-divider"></div>
+          <div className="legend-item">
             <div className="legend-line function-edge"></div>
             <span>Function (&lt;=)</span>
           </div>
@@ -209,6 +240,7 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
           {graphData.nodes.map(node => {
             const isSelected = selectedNode === node.id;
             const isDimmed = selectedNode && !isSelected;
+            const category = getNodeCategory(node.label);
 
             return (
               <g 
@@ -225,7 +257,7 @@ const FlowGraphView: React.FC<FlowGraphViewProps> = ({
                   y={node.y - 30}
                   width="150"
                   height="60"
-                  className={`graph-node ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
+                  className={`graph-node ${category} ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
                   rx="8"
                 />
                 <text
