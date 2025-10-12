@@ -49,15 +49,18 @@ class Reference:
         temp_ref = cls([], (), initial_value=None, skip_value=skip_value)
         shape = temp_ref._compute_irregular_shape(data)
         
-        # Generate axis names if not provided
+        # Generate axis names if not provided, or adjust shape if they are provided.
         if axis_names is None:
             axis_names = [f"axis_{i}" for i in range(len(shape))]
-        elif len(axis_names) != len(shape):
-            raise ValueError(f"Number of axis names ({len(axis_names)}) must match data rank ({len(shape)})")
+        else:
+            if len(axis_names) > len(shape):
+                raise ValueError(f"Number of axis names ({len(axis_names)}) cannot be greater than data rank ({len(shape)})")
+            if len(axis_names) < len(shape):
+                shape = shape[:len(axis_names)]
         
         # Create the reference
         ref = cls(axis_names, shape, initial_value=None, skip_value=skip_value)
-        ref.tensor = data  # This will pad the data appropriately
+        ref._replace_data(data)  # Use _replace_data to bypass validation and pad correctly
         return ref
 
     @staticmethod
