@@ -35,7 +35,12 @@ const AddConceptFromGlobalForm: React.FC<AddConceptFromGlobalFormProps> = ({
 
     let parsedReferenceData: any;
     try {
-      parsedReferenceData = referenceData ? JSON.parse(referenceData) : null;
+      // Convert Python-style booleans and None to JSON format
+      const jsonCompatible = referenceData
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null');
+      parsedReferenceData = referenceData ? JSON.parse(jsonCompatible) : null;
     } catch (e) {
       setError('Invalid JSON in Reference Data.');
       return;

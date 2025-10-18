@@ -1,0 +1,48 @@
+Enter Normcode: Bringing Order to the Shared Workspace
+
+When humans and AIs collaborate, the shared workspace can quickly become chaotic.
+Documents, tools, goals, and models start interacting in unpredictable ways.
+What’s missing is a common language that keeps everything transparent, aligned, and reliable.
+
+What is Normcode?
+
+Normcode is a semi-formal language that unifies human instructions, data references, and AI operations into a single, interpretable structure.
+
+It serves as a contract between human and machine:
+
+Readable — clear enough for humans to understand and audit.
+
+Executable — structured enough for AIs to act on consistently.
+
+Accountable — rigorous enough to ensure traceability and trust.
+
+Why it matters
+
+Without a common framework:
+
+Context fragments across apps, docs, and chats.
+
+Rules drift or get reinterpreted by different models.
+
+No one can tell why an AI acted—or whether it should have.
+
+Normcode transforms this chaos into a transparent orchestration layer.
+Every goal, constraint, and decision is encoded explicitly, allowing multiple foundation models to collaborate under shared, inspectable norms.
+
+How it works
+
+Unify. Express goals, inputs, and constraints in one declarative format.
+Translate. Semi-formal syntax bridges human clarity and machine structure.
+Orchestrate. Directs the right models and tools for each part of the task.
+Audit. Every action and decision remains traceable and explainable in Normcode terms.
+
+Analogy
+
+If the shared workspace is the operating system for human–AI collaboration,
+Normcode is the programming language that keeps it disciplined, interpretable, and aligned.
+
+In short
+
+Foundation models provide understanding.
+The shared workspace gives them context and body.
+Normcode injects structure and trust—the foundation for real alignment between human intention and machine action.

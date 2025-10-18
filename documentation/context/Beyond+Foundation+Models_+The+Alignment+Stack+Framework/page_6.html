@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="zh"><head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   现实世界例子：AI股票建议
+  </title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://d3js.org/d3.v7.min.js">
+  </script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <style>
+   body {width: 1280px; height: 720px; overflow: hidden; margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            height: 720px;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #F0F0F0 0%, #e6f2f0 100%);
+        }
+        .accent-border {
+            border-left: 5px solid #5FB5A6;
+        }
+        .comparison-card {
+            height: 500px;
+        }
+        .path-arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feature-item {
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            transform: translateY(-3px);
+        }
+    
+html {
+    overflow: hidden;
+}
+  </style>
+ <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.relative{position:relative}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.mr-3{margin-right:0.75rem}.mr-4{margin-right:1rem}.mt-1{margin-top:0.25rem}.flex{display:flex}.h-12{height:3rem}.h-20{height:5rem}.h-full{height:100%}.w-12{width:3rem}.w-20{width:5rem}.w-5\/12{width:41.666667%}.flex-1{flex:1 1 0%}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235 / var(--tw-bg-opacity, 1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213 / var(--tw-bg-opacity, 1))}.bg-orange-50{--tw-bg-opacity:1;background-color:rgb(255 247 237 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-teal-500{--tw-gradient-from:#14b8a6 var(--tw-gradient-from-position);--tw-gradient-to:rgb(20 184 166 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-purple-600{--tw-gradient-to:#9333ea var(--tw-gradient-to-position)}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-16{padding-left:4rem;padding-right:4rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-12{padding-bottom:3rem}.pl-6{padding-left:1.5rem}.pr-6{padding-right:1.5rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-orange-600{--tw-text-opacity:1;color:rgb(234 88 12 / var(--tw-text-opacity, 1))}.text-teal-600{--tw-text-opacity:1;color:rgb(13 148 136 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-500{--tw-text-opacity:1;color:rgb(234 179 8 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style></head>
+ <body class="">
+  <div class="slide gradient-bg flex flex-col" style=" overflow: hidden;">
+   <!-- Header -->
+   <div class="px-16 py-6">
+    <h1 class="text-3xl font-bold text-gray-800">
+     现实世界例子：AI股票建议
+    </h1>
+   </div>
+   <!-- Main Content -->
+   <div class="flex flex-1 px-16 pb-8 relative justify-between items-center">
+    <!-- Left Side: Generic AI Advice -->
+    <div class="w-5/12 pr-6 flex flex-col">
+     <div class="bg-white rounded-lg shadow-lg p-6 accent-border comparison-card">
+      <div class="flex items-center mb-5">
+       <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+        <i class="fas fa-robot text-2xl text-gray-600">
+        </i>
+       </div>
+       <h2 class="text-2xl font-semibold text-gray-700">
+        通用AI建议
+       </h2>
+      </div>
+      <div class="mb-6">
+       <div class="bg-gray-100 rounded-lg p-4 mb-4">
+        <p class="text-gray-700 italic">
+         &#34;在缺乏特定背景的情况下，基础模型可能提供广泛的、统计上常见的建议，例如推荐通用的科技股。&#34;
+        </p>
+       </div>
+      </div>
+      <div class="space-y-4">
+       <div class="feature-item flex items-start bg-gray-50 p-3 rounded-lg">
+        <i class="fas fa-chart-line text-gray-500 mt-1 mr-3">
+        </i>
+        <span>
+         根据一般市场趋势提供
+         <span class="font-semibold">
+          通用建议
+         </span>
+        </span>
+       </div>
+       <div class="feature-item flex items-start bg-gray-50 p-3 rounded-lg">
+        <i class="fas fa-users text-gray-500 mt-1 mr-3">
+        </i>
+        <span>
+         缺乏针对个人情况的
+         <span class="font-semibold">
+          个性化
+         </span>
+         建议
+        </span>
+       </div>
+       <div class="feature-item flex items-start bg-gray-50 p-3 rounded-lg">
+        <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-3">
+        </i>
+        <span>
+         可能与用户的
+         <span class="font-semibold">
+          风险承受能力
+         </span>
+         或财务目标不一致
+        </span>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Center Path Arrow -->
+    <div class="path-arrow">
+     <div class="w-20 h-20 rounded-full bg-gradient-to-r from-teal-500 to-purple-600 flex items-center justify-center shadow-lg">
+      <i class="fas fa-arrow-right text-white text-3xl">
+      </i>
+     </div>
+    </div>
+    <!-- Right Side: Shared Workspace Advice -->
+    <div class="w-5/12 pl-6 flex flex-col">
+     <div class="bg-white rounded-lg shadow-lg p-6 accent-border comparison-card" style="border-left-color: #F7B267;">
+      <div class="flex items-center mb-5">
+       <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+        <i class="fas fa-puzzle-piece text-2xl text-orange-600">
+        </i>
+       </div>
+       <h2 class="text-2xl font-semibold text-gray-700">
+        共享工作区建议
+       </h2>
+      </div>
+      <div class="mb-6">
+       <div class="bg-orange-50 rounded-lg p-4 mb-4">
+        <p class="text-gray-700 italic">
+         &#34;在共享工作区中，AI整合了您的特定财务概况、目标和风险承受能力，以起草一份个性化投资计划。&#34;
+        </p>
+       </div>
+      </div>
+      <div class="space-y-4">
+       <div class="feature-item flex items-start bg-orange-50 p-3 rounded-lg">
+        <i class="fas fa-user-check text-orange-600 mt-1 mr-3">
+        </i>
+        <span>
+         整合
+         <span class="font-semibold">
+          个人财务概况
+         </span>
+         （投资、收入、支出）
+        </span>
+       </div>
+       <div class="feature-item flex items-start bg-orange-50 p-3 rounded-lg">
+        <i class="fas fa-bullseye text-orange-600 mt-1 mr-3">
+        </i>
+        <span>
+         考虑
+         <span class="font-semibold">
+          个人目标
+         </span>
+         （退休、首付款）
+        </span>
+       </div>
+       <div class="feature-item flex items-start bg-orange-50 p-3 rounded-lg">
+        <i class="fas fa-tools text-orange-600 mt-1 mr-3">
+        </i>
+        <span>
+         使用工具访问
+         <span class="font-semibold">
+          实时市场数据
+         </span>
+         和财务模型
+        </span>
+       </div>
+       <div class="feature-item flex items-start bg-orange-50 p-3 rounded-lg">
+        <i class="fas fa-check-double text-orange-600 mt-1 mr-3">
+        </i>
+        <span>
+         呈现供用户审查和确认的
+         <span class="font-semibold">
+          可行动计划
+         </span>
+        </span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ 
+
+</body></html>

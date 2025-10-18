@@ -23,7 +23,7 @@ from random_number_generator import RandomNumberGenerator, quick_generate, gener
 # --- Normcode for this example ---
 
 Normcode_simple_addition = """
-{sum} | 1. imperative
+{final sum} | 1. imperative
     <= ::(sum the {1}<$({number pair})%_> and obtain the {2}?<$({sum})%_>)
     <- {number pair}<:{2}> |ref. %(number pair)=[[123, 98]]
     <- {sum}?<:{1}>

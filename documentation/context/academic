@@ -1,0 +1,52 @@
+**Title: Building Shared Worlds: From Foundation Models to Situated Collaboration**
+
+### 1. The Limits of Foundation Models
+
+Foundation models represent a major advance in artificial intelligence, but their power is also constrained by their nature. As Bommasani et al. (2021) describe, these models tend toward homogenization: they generate average outputs reflecting the statistical center of their training data. Similarly, Riemer et al. (2024) conceptualize generative AI as “style engines”—systems that smooth out variation to produce coherent yet generalized results. This dynamic explains why a foundation model does not directly solve a user’s real-world problem. Instead, it transforms the user’s goal into an averaged task that fits within its internal representational scope. The outcome is a superficially plausible response that still leaves a residual gap between what is asked and what is delivered.
+
+The distinction between weak and strong alignment further highlights this issue. Weak alignment involves behavior that appears consistent with human values, while strong alignment demands a deep understanding of intention and context. Khamassi et al. (2024) show that models often fail to internalize complex human values such as dignity or fairness, leading to behavior that is contextually insensitive. Moreover, current models lack faculties for real interaction within their intended environments—such as physical embodiment or grounded reasoning (Design and Development of Embodied AI Based on Foundation Models, 2025). This limitation restricts their capacity to align actions with human meaning.
+
+### 2. Bridging the Gap: Building Shared Worlds
+
+There are two main strategies for closing the gap between AI reasoning and human goals. The first, **Full Simulation (More Data and Training)**, aims to construct a unified, dynamic model of both the world and the user, enabling the AI to act and reason with real feedback. While theoretically powerful, this approach faces immense challenges in complexity, data scale, and interpretability (Lake et al., 2017; Battaglia et al., 2018).
+
+The second, **Shared Middle Ground (Post-Training Collaboration)**, takes a more pragmatic route. Instead of expanding the model itself, it builds structured spaces where humans and models can collaborate under clear assumptions. In these shared contexts, both sides understand the goals, constraints, and criteria for success. This makes interaction more direct: the model’s reasoning aligns with the human’s environment rather than remaining confined to its own statistical approximations. As recent work on world models (Ha & Schmidhuber, 2018) and reflective reasoning (Yao et al., 2023) suggests, creating intermediate frameworks for coordination can significantly enhance interpretability and control.
+
+### 3. Early Attempts to Create Shared Spaces
+
+Recent developments—such as Retrieval-Augmented Generation (RAG), multi-agent systems, reflection and reasoning frameworks, and workflow orchestration tools like the Model Context Protocol (MCP)—aim to operationalize this shared context.
+
+**Retrieval-Augmented Generation (RAG)** techniques (Lewis et al., 2020) integrate retrieval modules with generative models, allowing systems to ground responses in external knowledge rather than relying solely on memorized patterns. This approach enhances factual accuracy and contextual precision without requiring retraining of the foundation model.
+
+**Multi-agent systems** (Park et al., 2023; Lewis et al., 2023) extend this idea by enabling multiple AI entities to interact, collaborate, and communicate toward shared objectives. Such frameworks simulate social reasoning, negotiation, and emergent coordination, moving models beyond single-turn reasoning toward dynamic, situated interaction.
+
+**Reflection and reasoning frameworks** like ReAct (Yao et al., 2023) and Reflexion (Shinn et al., 2023) focus on integrating reasoning and feedback loops directly within the model’s process. These methods allow an AI to self-assess, revise, and improve its own outputs, thereby creating a recursive structure of understanding that mirrors human reflective cognition.
+
+**Workflow orchestration tools** such as the Model Context Protocol (MCP) (Anthropic, 2024) and constitutional or workflow-guided systems (Anthropic, 2024) focus on the coordination layer—structuring how models access tools, data, and environments. They represent infrastructural steps toward shared operational contexts where human goals and model behavior remain transparent and aligned.
+
+Together, these methods construct the environment where human intention and model capability meet. The shift redefines AI not as a static generator of averages but as a situated collaborator capable of meaningful action within evolving environments.
+
+### 4. Conclusion
+
+The evolution from foundation models toward shared, situated collaboration marks a structural shift in how intelligence is defined and deployed. The key insight is that meaning does not reside solely within the model but emerges in the dynamic interface between human and machine. Creating shared worlds—explicitly designed, interpretable, and goal-oriented—is essential to transforming generative AI from a predictive engine into a true partner in reasoning and creation.
+
+---
+
+### References
+
+* Anthropic. (2024). *Workflow orchestration and constitutional guidance in AI systems.* Anthropic Research Blog.
+* Battaglia, P. W., Hamrick, J. B., & Tenenbaum, J. B. (2018). *Relational inductive biases, deep learning, and graph networks.* arXiv:1806.01261.
+* Bommasani, R., Hudson, D. A., Adeli, E., et al. (2021). *On the Opportunities and Risks of Foundation Models.* arXiv:2108.07258.
+* Ha, D., & Schmidhuber, J. (2018). *World Models.* arXiv:1803.10122.
+* Khamassi, M., et al. (2024). *Toward Strong Alignment in Large Language Models: Understanding Human Values Beyond Reward Shaping.* Cognitive Systems Research.
+* Lake, B. M., Ullman, T. D., Tenenbaum, J. B., & Gershman, S. J. (2017). *Building machines that learn and think like people.* Behavioral and Brain Sciences, 40, e253.
+* Zhang, Y., Li, Y., Li, S., et al. (2024). *Chain-of-Agents: Large Language Models Collaborating on Long-Context Tasks.* NeurIPS. [https://neurips.cc/virtual/2024/poster/95563](https://neurips.cc/virtual/2024/poster/95563)
+* Bo, X., Duan, J., Qiu, X., et al. (2024). *Reflective Multi-Agent Collaboration based on Large Language Models (COPPER).* NeurIPS. [https://proceedings.neurips.cc/paper_files/paper/2024/hash/fa54b0edce5eef0bb07654e8ee800cb4-Abstract-Conference.html](https://proceedings.neurips.cc/paper_files/paper/2024/hash/fa54b0edce5eef0bb07654e8ee800cb4-Abstract-Conference.html)
+* Li, X., Wu, S., Xu, B., et al. (2024). *A survey on LLM-based multi-agent systems: workflow, methods, and prospects.* AI. [https://link.springer.com/article/10.1007/s44336-024-00009-2](https://link.springer.com/article/10.1007/s44336-024-00009-2)
+* Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., ... & Riedel, S. (2020). *Retrieval-augmented generation for knowledge-intensive NLP tasks.* arXiv:2005.11401.
+* Anthropic. (2024). *Introducing the Model Context Protocol (MCP).* [https://www.anthropic.com/news/model-context-protocol](https://www.anthropic.com/news/model-context-protocol)
+* Park, J. S., O'Brien, J. C., Cai, C. J., Morris, M. R., Liang, P., & Bernstein, M. S. (2023). *Generative agents: Interactive simulacra of human behavior.* Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology (UIST), 1–22. [https://doi.org/10.1145/3586183.3606763](https://doi.org/10.1145/3586183.3606763)
+* Riemer, M., et al. (2024). *Conceptualizing Generative AI as Style Engines.* 科学直通车.
+* Shinn, N., Cassano, F., Gopinath, A., & Hernandez, D. (2023). *Reflexion: Language agents with verbal reinforcement learning.* arXiv:2303.11366.
+* Yao, S., Zhao, E., Yu, D., et al. (2022). *ReAct: Synergizing Reasoning and Acting in Language Models.* arXiv:2210.03629.
+* Xiao, X., Chen, X., Fang, H., et al. (2025). *Robot learning in the era of foundation models: a survey.* Neurocomputing. [https://www.sciencedirect.com/science/article/abs/pii/S0925231225006356](https://www.sciencedirect.com/science/article/abs/pii/S0925231225006356)

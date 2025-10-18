@@ -39,7 +39,12 @@ const AddInferenceFromGlobalForm: React.FC<AddInferenceFromGlobalFormProps> = ({
 
     let parsedFlowInfo: any;
     try {
-      parsedFlowInfo = flowInfo ? JSON.parse(flowInfo) : null;
+      // Convert Python-style booleans and None to JSON format
+      const jsonCompatible = flowInfo
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null');
+      parsedFlowInfo = flowInfo ? JSON.parse(jsonCompatible) : null;
     } catch (e) {
       setError('Invalid JSON in Flow Info.');
       return;
@@ -47,7 +52,12 @@ const AddInferenceFromGlobalForm: React.FC<AddInferenceFromGlobalFormProps> = ({
 
     let parsedWorkingInterpretation: any;
     try {
-        parsedWorkingInterpretation = workingInterpretation ? JSON.parse(workingInterpretation) : null;
+      // Convert Python-style booleans and None to JSON format
+      const jsonCompatible = workingInterpretation
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null');
+      parsedWorkingInterpretation = workingInterpretation ? JSON.parse(jsonCompatible) : null;
     } catch (e) {
       setError('Invalid JSON in Working Interpretation.');
       return;

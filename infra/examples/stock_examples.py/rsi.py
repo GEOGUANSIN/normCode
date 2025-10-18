@@ -21,15 +21,25 @@ when it falls below 50, losses dominate (bearish momentum);
 
 """
 
-    {RSI(14)'s momentum status}
-        <= $%
-        <- {bullish}
-            <= @if(<condition>)
-        <- {bearish}
-            <= @if!(<condition>)
+:<:({RSI(14)'s momentum status} in the {period})
+    <= *every({period})
+        <= $.
+        <- [{RSI(14)'s momentum status} in the {period}*]
+            <= &in[{period}*1; {RSI(14)'s momentum status}]
+                <- {period}*1
 
+                <- {RSI(14)'s momentum status}
+                    <= @by(5):({RSI(14)'s momentum status})
 
-    {a1}
+                <- <RSI above 50>
+                    <= ::<RSI above 50>
+                    <- {RSI}<$={2}>
+                        <= @by(4):({RSI})
+                        <- {period}*1
+        <- {period}
+            <= :>@time:()
+
+    <- {iniital moving average of gains or losses}
         <= ::(compute the average of gains or losses in 14-days period)        
             <- [{gains or losses}]
                 <= ::(seperate the {gains or losses} from the changes)
@@ -37,10 +47,11 @@ when it falls below 50, losses dominate (bearish momentum);
                         <= ::(compute the day-to-day changes (Δ_t = C_t - C_{t-1}))
                         <- [{series of closing prices (C_t)}]
                             <= ::(get series of closing prices (C_t) at this period)
-                            <- [{period}]@1
+                            <- [{period}]
+                                <= :<@1:([{period}])
                 <- {gains or losses}
 
-    {a2}
+    <- {new moving average of gains or losses}
         <= ::(compute new moving average by Wilder's formula)
         <- {\text{AvgGain}*t = \frac{(\text{AvgGain}*{t-1} \times 13) + \text{Gain}_t}{14}}?
             <= @if<{gains or losses} is {gains}>
@@ -48,46 +59,45 @@ when it falls below 50, losses dominate (bearish momentum);
             <= @if<{gains or losses} is {losses}>
         <- {closing prices (C_{t+1})}
             <= ::(get the period closing prices of this period)
-                <- [{period}]@2
-        <- [{previous average of gains or losses}]@2
+                <- [{period}]
+                <= :<@2:([{period}])
+        <- [{previous average of gains or losses}]
+            <= :<@2:([{previous average of gains or losses}])
 
-    {b1}
+    <- {RSI computed}
         <= ::(compute the RSI with formula)
         <- {(RSI_t = 100 - \frac{100}{1 + RS_t})}
         <- {relative strength}
             <= ::(compute the relative strength with formula)
             <- {(RS_t = \text{AvgGain}_t / \text{AvgLoss}_t)}
-            <- [{gain} and {loss}]@3
-
-
-
-
+            <- [{gain} and {loss}]
+                <= :<@3:()
 
     <- {RSI}
-        <= @by(2):({b1})
+        <= @by(3):({RSI computed})
 
         <- {average losses}
-            <= @by(2):({a2})
-                <= @if(<this period is not initial period nor the next period is the last period>)
+            <= @by(2):({new moving average of gains or losses})
+                <= @if(<this period is initial period>)
             <- {next period}
             <- {losses}?
             <- {previous average of losses}
 
         <- {average gains}
-            <= @by(2):({a2})
-                <= @if(<this period is not initial period nor the next period is the last period>)
+            <= @by(2):({new moving average of gains or losses})
+                <= @if!(<this period is initial period>)
             <- {next period}
             <- {gains}?
             <- {previous average of gains}
 
         <- {average losses}
-            <= @by(1):({a1})
-                <= @if(<this period is initial period>)
+            <= @by(1):({iniital moving average of gains or losses})
+                <= @if!(<this period is initial period>)
             <- {losses}?
             <- {period}
 
         <- {average gains}
-            <= @by(1):({a1})
+            <= @by(1):({iniital moving average of gains or losses})
                 <= @if(<this period is initial period>)
             <- {gains}?
             <- {period}
@@ -97,16 +107,32 @@ when it falls below 50, losses dominate (bearish momentum);
                 <= @if(<next period is not the last period>)
             <- {next period}
                 <= ::(period + 1)
-                <- [{period}*1]@4
+                <- [{period}*1]
+                    <= :<@4:([{period}*1])
 
-    <= *every({period})
 
-        <= ::<RSI above 50>
-        <- {RSI}
-            <= @by(4):({RSI})
-            <- {period}*1
 
-    <- {period}
+    <- <this period is initial period>
+
+        <= :%(True):<{this period} is the initial period in {all period}>
+
+        <- {this period}
+            <= :<@4:([{period}*1])
+
+        <- [all {period}]
+            <= &across({period})
+            <- {period}
+
+
+
+    <- {RSI(14)'s momentum status}
+            <= $%
+                <= @after(<RSI above 50>)
+            <- {bullish}
+                <= @if(<RSI above 50>)
+            <- {bearish}
+                <= @if!(<RSI above 50>)
+
 
 
 """

@@ -46,7 +46,7 @@ const getNodeCategory = (label: string): 'semantic-function' | 'semantic-value' 
   
   // Semantic values: {}, <>, []
   // Check for these patterns at the start and end of the label
-  if ((label.startsWith('{') && label.endsWith('}')) || 
+  if ((label.startsWith('{') && (label.endsWith('}') || label.endsWith('}?'))) || 
       (label.startsWith('<') && label.endsWith('>')) || 
       (label.startsWith('[') && label.endsWith(']'))) {
     return 'semantic-value';
