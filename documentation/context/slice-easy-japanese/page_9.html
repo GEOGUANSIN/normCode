@@ -1,8 +1,8 @@
-<!DOCTYPE html><html lang="zh"><head>
+<!DOCTYPE html><html lang="ja"><head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>
-   完整的对齐栈
+   完全なアライメントスタック
   </title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
   <script src="https://d3js.org/d3.v7.min.js">
@@ -46,7 +46,7 @@ html {
    <!-- Header -->
    <div class="px-16 py-6">
     <h1 class="text-4xl font-bold text-gray-800">
-     完整的对齐栈
+     完全なアライメントスタック
     </h1>
    </div>
    <!-- Main Content -->
@@ -58,16 +58,16 @@ html {
     <!-- Summary Box -->
     <div class="bg-white rounded-lg shadow-lg p-5 w-full max-w-4xl">
      <h3 class="text-2xl font-semibold text-gray-700 mb-3">
-      对齐栈框架
+      アライメントスタックフレームワーク
      </h3>
      <p class="text-lg text-gray-600">
-      由<span class="text-purple-600 font-medium">基础模型</span>、<span class="text-teal-600 font-medium">共享工作区</span>和<span class="text-amber-500 font-medium">规范码</span>组成的三层框架，每个组件都承担着独特而互补的功能。这种架构通过整合背景系统和规范语言，超越了单一基础模型的限制，实现了AI与人类意图的真正对齐。
+      <span class="text-purple-600 font-medium">基盤モデル</span>、<span class="text-teal-600 font-medium">共有ワークスペース</span>、<span class="text-amber-500 font-medium">ノームコード</span>で構成される3層フレームワークで、各コンポーネントが独特で補完的な機能を担います。このアーキテクチャは背景システムと規範言語を統合することで、単一の基盤モデルの制限を超越し、AIと人間の意図の真のアライメントを実現します。
      </p>
      <div class="mt-4 flex items-center bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">
       <i class="fas fa-lightbulb text-yellow-500 text-xl mr-3">
       </i>
       <p class="text-gray-700 italic">
-       &#34;这三层框架共同协作，构建了一个完整的对齐系统，实现人类意图与机器执行之间的真正对齐。&#34;
+       「この3層フレームワークが協力して、完全なアライメントシステムを構築し、人間の意図と機械の実行の間の真のアライメントを実現します。」
       </p>
      </div>
     </div>
@@ -91,29 +91,29 @@ html {
             const stackData = [
                 { 
                     id: "normcode", 
-                    name: "规范码", 
+                    name: "ノームコード", 
                     color: "#F7B267", 
                     icon: "fa-file-contract",
-                    description: "建立人类与AI之间的半形式化、可解释合约",
-                    benefit: "增强透明度和信任",
+                    description: "人間とAI間の半形式的で説明可能な契約を確立",
+                    benefit: "透明性と信頼の向上",
                     y: height * 0.1
                 },
                 { 
                     id: "shared-workspace", 
-                    name: "共享工作区", 
+                    name: "共有ワークスペース", 
                     color: "#5FB5A6", 
                     icon: "fa-table-cells",
-                    description: "将AI能力与特定情境和目标整合",
-                    benefit: "实现情境化智能协作",
+                    description: "AI能力を特定の状況と目標に統合",
+                    benefit: "状況化された知的協力の実現",
                     y: height * 0.4
                 },
                 { 
                     id: "foundation-models", 
-                    name: "基础模型", 
+                    name: "基盤モデル", 
                     color: "#6A4C93", 
                     icon: "fa-brain",
-                    description: "大规模预训练的通用AI系统",
-                    benefit: "提供广泛的理解和生成能力",
+                    description: "大規模事前訓練された汎用AIシステム",
+                    benefit: "広範囲な理解と生成能力の提供",
                     y: height * 0.7
                 }
             ];
@@ -255,7 +255,7 @@ html {
                 .attr("fill", "white")
                 .attr("font-weight", "bold")
                 .attr("font-size", "18px")
-                .text("人类意图与机器执行之间的规范对齐");
+                .text("人間の意図と機械の実行の間の規範的アライメント");
                 
             // Add subtle pulse animation to result box
             function pulseAnimation() {

@@ -108,7 +108,7 @@ when it falls below 50, losses dominate (bearish momentum);
             <- {next period}
                 <= ::(period + 1)
                 <- [{period}*1]
-                    <= :<@4:([{period}*1])
+                    <= :<:{@4}([{period}*1])
 
 
 
