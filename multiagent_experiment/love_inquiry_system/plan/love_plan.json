@@ -1,0 +1,154 @@
+{
+    "plan_name": "love_inquiry",
+    "root_concept": {
+        "id": "{Love}",
+        "type": "Object",
+        "prompt": "Let's talk about the concept of Love. According to my understanding, it's a deep feeling defined by several key aspects. Can we explore them together?",
+        "question": "What is Love?",
+        "decomposition": {
+            "operator": "@if",
+            "condition_id": "<definition satisfied>"
+        },
+        "sub_concepts": [
+            {
+                "id": "<definition satisfied>",
+                "type": "Statement",
+                "question": "How to satisfy the definition of love?",
+                "decomposition": {
+                    "operator": "::{ALL(true)}",
+                    "arguments": ["{individual conditions}"]
+                },
+                "sub_concepts": [
+                    {
+                        "id": "{individual conditions}",
+                        "type": "Object",
+                        "question": "What are the individual conditions for love?",
+                        "decomposition": {
+                            "operator": "&across"
+                        },
+                        "sub_concepts": [
+                            {
+                                "id": "<shows through actions>",
+                                "agent": "ActionAgent"
+                            },
+                            {
+                                "id": "<can be between various entities>",
+                                "agent": "EntitiesAgent"
+                            },
+                            {
+                                "id": "<means acceptance and wanting happiness>",
+                                "agent": "MeaningAgent"
+                            },
+                            {
+                                "id": "<is a dual concept>",
+                                "agent": "DualityAgent"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "{deep feeling}",
+                "type": "Object",
+                "agent": "FeelingAgent",
+                "question": "What is the deep feeling of love?",
+                "decomposition": {
+                    "operator": "$.",
+                    "arguments": ["{care or attachment}"]
+                },
+                "sub_concepts": [
+                    {
+                        "id": "{care or attachment}",
+                        "type": "Object",
+                        "question": "What is this feeling composed of?",
+                        "decomposition": { "operator": "&across" },
+                        "sub_concepts": [
+                            {"id": "{care}", "question": "Can you describe the feeling of 'care' you associate with love?"},
+                            {"id": "{attachment}", "question": "And what about 'attachment'?"}
+                        ]
+                    },
+                    {
+                        "id": "<towards someone or something>",
+                        "type": "Statement",
+                        "question": "Who or what is this feeling directed towards?",
+                        "decomposition": {
+                            "operator": "::",
+                            "judgement": "<{deep feeling} is towards {target}>"
+                        }
+                    }
+                ]
+            },
+            {
+                "id": "<shows through actions>",
+                "type": "Statement",
+                "agent": "ActionAgent",
+                "question": "How does love manifest through actions?",
+                "decomposition": {
+                    "operator": "::",
+                    "judgement": "<{deep feeling} shows through {actions}>"
+                },
+                "sub_concepts": [
+                    {
+                        "id": "{actions}",
+                        "type": "Object",
+                        "question": "What specific actions demonstrate love?",
+                        "decomposition": { "operator": "&across" },
+                        "sub_concepts": [
+                            {"id": "{kind acts}", "question": "Can you give an example of a 'kind act'?"},
+                            {"id": "{sacrifice}", "question": "What does 'sacrifice' in the context of love mean to you?"},
+                            {"id": "{caring about another person's happiness}", "question": "How do you show you care about another person's happiness?"}
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "<can be between various entities>",
+                "type": "Statement",
+                "agent": "EntitiesAgent",
+                "question": "Who can love be shared between?",
+                "decomposition": {
+                    "operator": "::",
+                    "judgement": "<{deep feeling} exists between {entities}>"
+                },
+                "sub_concepts": [
+                    {
+                        "id": "{entities}",
+                        "type": "Object",
+                        "question": "What kinds of relationships can involve love?",
+                        "decomposition": { "operator": "&across" },
+                        "sub_concepts": [
+                            {"id": "{partners}", "question": "What does love between partners look like?"},
+                            {"id": "{family}", "question": "How is love in a family expressed?"},
+                            {"id": "{friends}", "question": "What about love between friends?"},
+                            {"id": "{spiritual connections}", "question": "Could you describe what a 'spiritual connection' of love feels like?"}
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "<means acceptance and wanting happiness>",
+                "type": "Statement",
+                "agent": "MeaningAgent",
+                "question": "What does it mean to accept someone and want them to be happy in love?",
+                "decomposition": {
+                    "operator": "::",
+                    "judgement": "<{deep feeling} means meaning>"
+                }
+            },
+            {
+                "id": "<is a dual concept>",
+                "type": "Statement",
+                "agent": "DualityAgent",
+                "question": "Love is described as both an emotion and a decision. What are your thoughts on that?",
+                "decomposition": {
+                    "operator": "::",
+                    "judgement": "<{deep feeling} has a dual nature of {emotion} and {decision}>"
+                },
+                "sub_concepts": [
+                    {"id": "{emotion}", "question": "Can you describe the 'emotion' part of love?"},
+                    {"id": "{decision}", "question": "And what about the 'decision' part of love?"}
+                ]
+            }
+        ]
+    }
+}
