@@ -156,3 +156,39 @@ These markers can be appended to concepts to modify their meaning.
 | `%:[_concept_]`       | Axis Specifier       | Specifies the `by_axis` for an operation. E.g. `%:[{number pair}]`        |
 | `@(_number_)`         | Quantifier Index     | Specifies the index for a quantifier (`*every`) operation. E.g. `@(1)`       |
 | `*_number_`           | Quantifier Version   | Links a concept to a specific quantifier iteration. E.g. `{number pair}*1`  |
+
+## 4. Reference of Concepts
+
+While concepts define the structure of a NormCode plan, the actual information is stored in a **Reference**. Understanding the Reference is key to grasping how data is stored, manipulated, and flows through the plan.
+
+A Reference is the container where the information for a concept is kept. Specifically, it is the **semantical concepts** (like `{object}`, `[]`, or `<>`) that have an associated Reference, as they represent the data-holding entities within the plan.
+
+**Key Characteristics of a Reference:**
+
+-   **Multi-dimensional Container**: A Reference is multi-dimensional because a concept can exist in multiple contexts. Each context can introduce a new dimension, allowing the Reference to hold different instances or elements of the concept's information in a structured way.
+-   **Named Axes**: Each dimension, often corresponding to a specific context, is represented as a named **axis**. This allows for clear organization and retrieval of information. For example, a concept like `{grade}` could have a Reference with axes named `student` and `assignment`, representing the different contexts in which a grade exists.
+-   **Shape**: The size of each dimension defines the `shape` of the information within the Reference.
+-   **Data Manipulation**: The core logic of the **Agent's Sequences** (e.g., collecting items with `grouping` or accumulating results with `quantifying`) involves manipulating the information held within these References.
+
+**Conceptual Example: The `{grade}` Concept**
+
+Imagine you have a concept defined as `{grade}`. This concept represents the idea of a grade in your plan.
+
+-   **The `Concept`**: This is the semantic declaration `{grade}`. It's abstract and doesn't hold any specific grade values on its own.
+
+-   **The Contexts**: A grade is meaningless without context. It needs to be associated with a `student` and an `assignment`. These two contexts are what give a specific grade its identity.
+
+-   **The `Reference`**: The `Reference` for `{grade}` is where the actual grade values are stored. Because the concept has two contexts (`student` and `assignment`), its Reference will be a two-dimensional container with two named axes:
+    -   `axis`: `student`
+    -   `axis`: `assignment`
+
+    This creates a structure like a table where you can look up a specific grade by providing a value for each axis:
+
+    |               | assignment 1 | assignment 2 |
+    | :------------ | :----------: | :----------: |
+    | **student A** |      95      |      88      |
+    | **student B** |      72      |      91      |
+
+    In this structure, the value `88` is the information stored in the `{grade}` concept's Reference at the intersection of `student = student A` and `assignment = assignment 2`. When an inference needs the grade for Student A on Assignment 2, it queries the `Reference` using these axes.
+
+In short, a `Concept` gives information its meaning within the plan, while a `Reference` provides the structure to hold and organize that information.
