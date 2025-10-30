@@ -5,7 +5,7 @@
     ...: "Love is a deep feeling of care and attachment toward someone or something. It shows through kind acts, sacrifice, and caring about another person's happiness. Love can be between partners, family, friends, or even spiritual connections. Love means accepting someone and wanting them to be happy, even when it's hard. Love is both an emotion and a decision to put someone else's wellbeing first."
     ?: What is Love?
     <= $.({deep feeling})
-        /: "Love is defined as a deep feeling with several aspects."
+        ...: "Love is defined as a deep feeling with several aspects."
         ?: When is this deep feeling become love?
         <= @if(<definition satisfied>)
             /: "This deep feeling becomes love only when its defining conditions are satisfied."

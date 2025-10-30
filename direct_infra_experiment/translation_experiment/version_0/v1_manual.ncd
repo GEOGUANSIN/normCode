@@ -1,0 +1,77 @@
+
+
+:<:({normcode draft})
+
+    <= $.({normcode draft})
+
+    <- {normtext}<$={1}>
+        <= :>:{normtext}?()
+        <- {normtext}?
+            |%{prompt_location}: normtext_prompt.txt
+
+    <- {normcode draft}<$={1}> | 1.1. imperative
+        <= ::{%(direct)}({initialization prompt}: {1}<$({normtext})%>)
+        <- {initialization prompt}<:{prompt}>
+            |%{prompt_location}: initialization_prompt.txt
+        <- {normtext}<$={1}><:{1}>
+    
+    <- {normcode draft}<$={2}> | 1.2. imperative
+        <= *every({normcode draft})
+
+            <- <normcode draft is complete>
+                <= ::{completion check prompt}<{1}<$({normcode draft})%> is a complete>
+                <- {completion check prompt}<:{prompt}>
+                    |%{prompt_location}: completion_check_prompt.txt
+                <- {normcode draft}<$={2}><:{1}>
+
+            <- {normcode draft}<$={2}>
+                <= $={1}
+                    <= @before({normcode draft}<$={2}>)
+
+            <- {normcode draft}<$={2}>
+                <= $={3}
+                    <= @if!({normcode draft}<$={2}>)
+                    <- <{normcode draft} is complete>
+                <- [{concept to decomposed} and {remaining normtext}]
+                    <= ::{%(direct)}({concept identification prompt}<$(prompt)%>: {1}<$({normcode draft})%>)
+                    <- {concept identification prompt}<:{prompt}>
+                        |%{prompt_location}: concept_identification_prompt.txt
+                    <- {normcode draft}<$={2}><:{2}>
+
+                <- [{question} and {question type}]
+                    <= ::{%(direct)}({question inquiry prompt}<$(prompt)%>: {1}<$({concept to decomposed})%>, {2}<$({remaining normtext})%>)
+                    <- {question inquiry prompt}<:{prompt}>
+                        |%{prompt_location}: question_inquiry_prompt.txt
+                    <- [{concept to decomposed}<:{1}> and {remaining normtext}<:{2}>]
+                    
+                <- {functional concept}
+                    <= ::{%(direct)}({operator selection prompt}<$(prompt)%>: {1}<$({question})%>, {2}<$({concept to decomposed})%>, {3}<$({question type})%>, {4}<$({remaining normtext})%>)
+                    <- {operator selection prompt}<:{prompt}>
+                        |%{prompt_location}: operator_selection_prompt.txt
+                    <- [{concept to decomposed}<:{1}> and {remaining normtext}<:{2}>]
+                    <- [{question}<:{1}> and {question type}<:{2}>]
+
+                <- {children concepts}
+                    <= ::{%(direct)}({children concept creation prompt}<$(prompt)%>: {1}<$({functional concept})%>, {2}<$({question})%>, {3}<$({concept to decomposed})%>, {4}<$({question type})%>, {5}<$({remaining normtext})%>)
+                    <- {children concept creation prompt}<:{prompt}>
+                        |%{prompt_location}: children_concept_creation_prompt.txt
+                    <- {functional concept}<:{1}>
+                    <- [{concept to decomposed}<:{3}> and {remaining normtext}<:{5}>]
+                    <- [{question}<:{2}> and {question type}<:{4}>]
+    
+                <- {new inference}
+                    <= ::{%(direct)}({normtext distribution prompt}<$(prompt)%>: {1}<$({functional concept})%>, {2}<$({children concepts})%>, {3}<$({concept to decomposed})%>, {4}<$({remaining normtext})%>)
+                    <- {normtext distribution prompt}
+                        |%{prompt_location}: normtext_distribution_prompt.txt
+                    <- {functional concept}<:{1}>
+                    <- {children concepts}<:{2}>
+                    <- [{concept to decomposed}<:{3}> and {remaining normtext}<:{4}>]
+
+                <- {normcode draft}<$={3}>
+                    <= ::{%(direct)}({normcode draft update prompt}<$(prompt)%>: {1}<$({normcode draft})%>, {2}<$({new inference})%>)
+                    <- {normcode draft update prompt}
+                        |%{prompt_location}: normcode_draft_update_prompt.txt
+                    <- {normcode draft}<$={2}><:{1}>
+                    <- {new inference}<:{2}>
+
+        <- {normcode draft}<$={2}>

@@ -1,0 +1,64 @@
+You are an expert in NormCode, a semi-formal language for planning inferences.
+
+**Background: NormCode Fundamentals**
+
+NormCode translates natural language into a structured plan of **inferences**. The translation process works by recursively finding a concept with un-decomposed source text (`...:`) and replacing it with a more detailed block.
+
+**Your Task: Update the Main Draft**
+
+You have just finished a full decomposition cycle. You have been given:
+1.  The **Main NormCode Draft**, which still contains the original, un-decomposed concept.
+2.  The **New Decomposed Snippet**, which is the complete, structured block that should replace the original concept.
+
+Your task is to update the main draft by finding the original concept (the one that was just decomposed) and replacing it entirely with the new, decomposed snippet.
+
+**Example:**
+
+**Input:**
+*   **Main NormCode Draft:**
+    ```normcode
+    :<:(::(register a new user))
+        <= @by(:_:)
+        <- {steps}
+            ...: "first, check... second, if it does..."
+        <- {user name}
+            ...: "the provided username is provided by the user."
+    ```
+*   **New Decomposed Snippet:**
+    ```normcode
+    <- {steps}
+        ?: How are the steps composed?
+        <= &across
+        <- {step 1}
+            ...: "first, check if the provided username already exists."
+        <- {step 2}
+            ...: "second, if it does, report an error."
+    ```
+
+**Output (The Full, Updated Draft):**
+```normcode
+:<:(::(register a new user))
+    <= @by(:_:)
+    <- {steps}
+        ?: How are the steps composed?
+        <= &across
+        <- {step 1}
+            ...: "first, check if the provided username already exists."
+        <- {step 2}
+            ...: "second, if it does, report an error."
+    <- {user name}
+        ...: "the provided username is provided by the user."
+```
+**Explanation**: The original `<- {steps}` block is replaced with the new, more detailed snippet.
+
+---
+**INPUTS:**
+
+**Main NormCode Draft:**
+{normcode draft}
+
+**New Decomposed Snippet:**
+{new normcode draft}
+---
+
+Respond with the full, updated NormCode draft.
