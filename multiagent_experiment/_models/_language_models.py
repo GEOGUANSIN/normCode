@@ -23,16 +23,18 @@ class LanguageModel:
     Factory class to create LLM instances based on model name and configuration
     """
 
-    def __init__(self, model_name, settings_path=os.path.join(PROJECT_ROOT, "settings.yaml")):
+    def __init__(self, model_name, settings_path=os.path.join(PROJECT_ROOT, "settings.yaml"), prompts_dir=None):
         """
         Initialize LLM with specified model from settings
 
         Args:
             model_name (str): Name of the model to use
             settings_path (str): Path to the settings YAML file
+            prompts_dir (str, optional): Path to the directory containing prompt templates. Defaults to None.
         """
         self.model_name = model_name
         self.mock_mode = False
+        self.prompts_dir = prompts_dir or os.path.join(CURRENT_DIR, "prompts")
 
         # Load settings (fallback to mock mode if unavailable)
         self.settings = {}
@@ -72,10 +74,10 @@ class LanguageModel:
         Returns:
             Template: A string.Template object with the loaded template
         """
-        prompt_template_path = os.path.join(CURRENT_DIR, "prompts", f"{template_name}.txt")
+        prompt_template_path = os.path.join(self.prompts_dir, f"{template_name}.txt")
 
         if not os.path.exists(prompt_template_path):
-            raise FileNotFoundError(f"Template file '{template_name}.txt' not found in prompts directory")
+            raise FileNotFoundError(f"Template file '{template_name}.txt' not found in '{self.prompts_dir}' directory")
 
         # Force fresh read with explicit encoding and file handle management
         f = None

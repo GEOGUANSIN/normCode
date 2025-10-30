@@ -1,0 +1,18 @@
+{
+  ":<:(::(Create a verifiable multi-agent system from normtext))": "multiagent_experiment/nc_compiler/context/Create_a_verifiable_multi-agent_system_from_normtext.txt",
+  "{NormCode Methodology}": "multiagent_experiment/nc_compiler/context/NormCode_Methodology.txt",
+  "{Phase 1: Blueprinting}": "multiagent_experiment/nc_compiler/context/Phase_1_Blueprinting.txt",
+  "::(Translate normtext to NormCode plan)": "multiagent_experiment/nc_compiler/context/Translate_normtext_to_NormCode_plan.txt",
+  "{normtext}": "multiagent_experiment/nc_compiler/context/normtext.txt",
+  "{normcode plan}": "multiagent_experiment/nc_compiler/context/normcode_plan.txt",
+  "{Phase 2: Compilation}": "multiagent_experiment/nc_compiler/context/Phase_2_Compilation.txt",
+  "::(Generate source code from NormCode plan)": "multiagent_experiment/nc_compiler/context/Generate_source_code_from_NormCode_plan.txt",
+  "{agent and tool specification}": "multiagent_experiment/nc_compiler/context/agent_and_tool_specification.txt",
+  "{state specification}": "multiagent_experiment/nc_compiler/context/state_specification.txt",
+  "{system source code}": "multiagent_experiment/nc_compiler/context/system_source_code.txt",
+  "{Phase 3: Execution & Verification}": "multiagent_experiment/nc_compiler/context/Phase_3_Execution_&_Verification.txt",
+  "::(Execute system and capture trace)": "multiagent_experiment/nc_compiler/context/Execute_system_and_capture_trace.txt",
+  "{input data}": "multiagent_experiment/nc_compiler/context/input_data.txt",
+  "{execution trace}": "multiagent_experiment/nc_compiler/context/execution_trace.txt",
+  "{input normtext}": "multiagent_experiment/nc_compiler/context/input_normtext.txt"
+}
