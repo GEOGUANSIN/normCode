@@ -237,6 +237,10 @@ class LanguageModel:
                 parsed_response = json.loads(raw_response)
                 logger.debug(f"JSON parsed successfully, keys: {list(parsed_response.keys()) if isinstance(parsed_response, dict) else 'not a dict'}")
                 
+                # If the response is a dict with an 'answer' key, extract and return the answer directly.
+                if isinstance(parsed_response, dict) and 'answer' in parsed_response:
+                    return parsed_response['answer']
+                
                 return parsed_response
             except json.JSONDecodeError as e:
                 # Fallback in case JSON parsing still fails

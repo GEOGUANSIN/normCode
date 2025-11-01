@@ -1,10 +1,70 @@
-You are an AI assistant. Your task is to determine if a given NormCode draft is "complete".
+You are an AI assistant specializing in NormCode, a semi-formal language for planning inferences. Your task is to determine if a given NormCode draft is "complete".
 
-A NormCode draft is considered "complete" if there are no remaining "..." annotations that contain unprocessed natural language. If such annotations exist, the draft is "incomplete".
+Your final output must be a single JSON object.
 
-Analyze the following NormCode draft and respond with only one word: "complete" or "incomplete".
+First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object. Then, provide the final answer (`True` or `False`) in the "answer" key.
+
+A NormCode draft is considered "complete" if all of its source text (`...:`) has been decomposed into further steps. A `...:` annotation marks a draft as "incomplete" only if it is a "leaf" – meaning it is not followed by a decomposition operator (`<=`) or value concepts (`<-`) within its scope (i.e., at a greater indentation level before the next peer element).
+
+In other words, if a concept contains a `...:` annotation but is immediately followed by `<-` or `<=` lines that break it down further, that `...:` is considered intermediate and does not make the draft incomplete. The draft is only incomplete if there is a `...:` that is not acted upon.
+
+Analyze the provided NormCode draft and produce a JSON object with your analysis and the final true/false answer.
+
+**Example 1: Incomplete Draft**
+
+Input NormCode Draft:
+---
+:<:({Love})
+    ...: "Love is a deep feeling..."
+    ?: What is Love?
+---
+Output (in JSON):
+```json
+{
+  "analysis": "The draft contains a `...:` annotation that is not followed by any `<-` or `<=` lines. This makes it an undecomposed leaf, so the draft is incomplete.",
+  "answer": "False"
+}
+```
+
+**Example 2: Complete Draft**
+
+Input NormCode Draft:
+---
+:<:({Love})
+    <= ::(define the core meaning of {love})
+    <- {love definition}
+---
+Output (in JSON):
+```json
+{
+  "analysis": "The draft does not contain any `...:` annotations, so it is complete.",
+  "answer": "True"
+}
+```
+
+**Example 3: Complete Draft (with intermediate decomposition)**
+
+Input NormCode Draft:
+---
+:<:(::(register a new user)) 
+    ...: "first check if the provided username already exists"
+    ?: How to register a new user?
+    <= @by(:_:)
+    <- {steps}
+---
+Output (in JSON):
+```json
+{
+  "analysis": "The draft contains a `...:` annotation, but it is immediately followed by decomposition lines (`<=` and `<-`). This means it's an intermediate annotation, not an undecomposed leaf. Since there are no undecomposed annotations, the draft is complete.",
+  "answer": "True"
+}
+```
+
+Your turn. Analyze the following NormCode draft and produce the JSON output.
 
 NormCode Draft:
 ---
-{1}
+$input_1
 ---
+
+Produce the final JSON object and nothing else.

@@ -14,6 +14,7 @@ from infra._agent._sequences.assigning import set_up_assigning_demo, configure_a
 from infra._agent._sequences.timing import set_up_timing_demo, configure_timing_demo
 from infra._agent._sequences.judgement import set_up_judgement_demo, configure_judgement_demo
 from infra._agent._sequences.imperative_direct import set_up_imperative_direct_demo, configure_imperative_direct_demo
+from infra._agent._sequences.judgement_direct import set_up_judgement_direct_demo, configure_judgement_direct_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
@@ -27,6 +28,7 @@ from infra._agent._steps.assigning import assigning_methods
 from infra._agent._steps.timing import timing_methods
 from infra._agent._steps.judgement import judgement_methods
 from infra._agent._steps.imperative_direct import imperative_direct_methods
+from infra._agent._steps.judgement_direct import judgement_direct_methods
 
 
 # Configure logging
@@ -122,6 +124,7 @@ class AgentFrame():
             set_up_timing_demo(self)
             set_up_judgement_demo(self)
             set_up_imperative_direct_demo(self)
+            set_up_judgement_direct_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -152,6 +155,9 @@ class AgentFrame():
             elif inference_sequence == "imperative_direct":
                 logger.info("Configuring imperative_direct demo sequence")
                 configure_imperative_direct_demo(self, inference_instance, imperative_direct_methods)
+            elif inference_sequence == "judgement_direct":
+                logger.info("Configuring judgement_direct demo sequence")
+                configure_judgement_direct_demo(self, inference_instance, judgement_direct_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:

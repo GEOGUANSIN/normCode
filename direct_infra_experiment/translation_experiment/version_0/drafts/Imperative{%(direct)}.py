@@ -36,7 +36,7 @@ except Exception:
 # --- Normcode for this example ---
 Normcode_v0_manual = """
 :<:({normcode draft}) | 1. imperative
-    <= ::{%(direct)}({initialization prompt}<$({prompt})%>: {1}<$({normtext})%>)
+    <= ::{%(direct)}<{prompt}<$(initialization prompt)%>: {1}<$({normtext})%>>
     <- {initialization prompt}<:{prompt}>
         |%{prompt_location}: initialization_prompt
     <- {normtext}<$={1}><:{1}>
