@@ -3,8 +3,8 @@
     <= $.({normcode draft})
 
     <- {normtext}<$={1}> | 1.1. imperative
-        <= :>:({normtext}?<:{1}>)
-        <- {normtext}?<:{1}>
+        <= :>:({prompt}<:{normtext}>)
+        <- {normtext}?<:{prompt}>
             |%{prompt_location}: normtext_prompt
 
     <- {normcode draft}<$={1}> | 1.2. imperative

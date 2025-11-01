@@ -1,14 +1,25 @@
+import os
 from typing import Any, Dict, List
 import logging
 
 from infra._states._imperative_states import States
 from infra._core import Reference, cross_product, element_action
+try:
+    from infra._constants import PROJECT_ROOT
+except Exception:
+    import sys, pathlib
+    here = pathlib.Path(__file__).parent.parent.parent.parent.parent
+    sys.path.insert(0, str(here))
+    from infra._constants import PROJECT_ROOT
+
+PROMPTS_DIR = os.path.join(PROJECT_ROOT, 'infra', '_agent', '_models', 'prompts')
 
 
 def memory_value_perception(states: States) -> States:
     """
     Order and extract value references for user input.
     For imperative_input, we extract the prompt text and any additional context.
+    Supports both direct prompt text and %{prompt}(location) file references.
     """
     value_order = states.value_order
 
@@ -33,6 +44,30 @@ def memory_value_perception(states: States) -> States:
             ordered_names.append(name)
 
     if ordered_refs:
+        # Helper function to read prompt from file if %{prompt}(location) wrapper is detected
+        def prompt_retrieval_wrapper(location: str) -> str:
+            """
+            Handles the '%{prompt}(location)' wrapper by reading the content from the location.
+            Location can be absolute or relative to the infra/_agent/_models/prompts/ directory.
+            """
+            logger = logging.getLogger(__name__)
+            if os.path.isabs(location):
+                file_path = location
+            else:
+                file_path = os.path.join(PROMPTS_DIR, location)
+
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except FileNotFoundError:
+                error_msg = f"ERROR: Prompt file not found at location: {file_path}"
+                logger.error(error_msg)
+                return error_msg
+            except Exception as e:
+                error_msg = f"ERROR: Failed to read prompt file at {file_path}: {e}"
+                logger.error(error_msg)
+                return error_msg
+
         # Strip wrappers like %() from each reference before cross-product.
         def strip_wrapper(element: Any) -> Any:
             """
@@ -61,8 +96,18 @@ def memory_value_perception(states: States) -> States:
                 if isinstance(item, str) and item.startswith("%"):
                     open_paren_index = item.find("(")
                     close_paren_index = item.rfind(")")
+
                     if open_paren_index > 0 and close_paren_index == len(item) - 1:
-                        stripped_list.append(item[open_paren_index + 1 : close_paren_index])
+                        wrapper_type = item[1:open_paren_index]
+                        content = item[open_paren_index + 1 : close_paren_index]
+                        
+                        if wrapper_type == "{prompt}":
+                            # Read prompt from file
+                            prompt_content = prompt_retrieval_wrapper(content)
+                            stripped_list.append(prompt_content)
+                        else:
+                            # Regular wrapper, just extract content
+                            stripped_list.append(content)
                     else:
                         stripped_list.append(item)
                 else:

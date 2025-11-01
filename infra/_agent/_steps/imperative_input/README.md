@@ -8,9 +8,11 @@ The `imperative_input` sequence provides a specialized method for collecting use
 
 This sequence follows the same general pattern as `imperative_direct`, but replaces the LLM execution step with a user input prompt. The key difference is in the `TVA` (Tool Value Actuation) step, which prompts the user instead of calling a language model.
 
-### Key Feature: Direct User Input
+### Key Features
 
-The sequence extracts a prompt text from the input values and uses it to directly request input from the user via Python's `input()` function.
+1. **Direct User Input**: The sequence extracts a prompt text from the input values and uses it to directly request input from the user via Python's `input()` function.
+
+2. **Prompt File Support**: Similar to `imperative_direct`, the sequence supports the `%{prompt}(location)` wrapper pattern. When detected, the MVP step will read the prompt content from the specified file location (absolute path or relative to `infra/_agent/_models/prompts/`).
 
 ### Workflow
 
@@ -33,6 +35,7 @@ The sequence extracts a prompt text from the input values and uses it to directl
 4.  **`MVP` (Memory Value Perception - `_mvp.py`)**
     -   Orders and extracts value references based on the working configuration.
     -   Strips wrappers (like `%(...)`) from reference elements.
+    -   **Special handling for `%{prompt}(location)`**: If detected, reads the prompt content from the specified file.
     -   Performs a cross-product to get all combinations of values.
     -   Converts the result to a dictionary format where:
         -   The first value becomes `prompt_text` (the question/prompt for the user)
@@ -60,11 +63,12 @@ The sequence extracts a prompt text from the input values and uses it to directl
 
 ### NormCode Structure
 
+The `:>:` operator is the standard NormCode syntax for input operations. It marks the functional concept as an input request.
+
 ```normcode
 <- {user response} | imperative_input
-    <= ::(ask the user {1}<$({prompt text})%_> to get {2}?<$({response})%_>)
-    <- {prompt text}<:{1}>
-    <- {response}?<:{2}>
+    <= :>:({prompt}<:{user response}?>)
+    <- {user response}?<:{prompt}>
 ```
 
 ### Working Interpretation
@@ -72,8 +76,7 @@ The sequence extracts a prompt text from the input values and uses it to directl
 ```json
 {
     "value_order": {
-        "{prompt text}": 1,
-        "{response}?": 2
+        "{user response}?": 1
     }
 }
 ```
@@ -82,9 +85,9 @@ The sequence extracts a prompt text from the input values and uses it to directl
 
 1. The `IWI` step builds specs for creating an input function.
 2. The `MFP` step creates the input function using the `user_input.create_input_function` affordance.
-3. The `MVP` step extracts `{prompt text}` as the `prompt_text` and prepares it as a dictionary.
+3. The `MVP` step extracts the prompt text from `{user response}?` and prepares it as a dictionary with key `prompt_text`.
 4. The `TVA` step calls the input function with the prepared values, which prompts the user and waits for input.
-5. The user's response is stored in `{response}?` and wrapped appropriately.
+5. The user's response is stored in `{user response}` and wrapped appropriately.
 6. The final result is available in `{user response}`.
 
 ## Differences from `imperative` and `imperative_direct`
