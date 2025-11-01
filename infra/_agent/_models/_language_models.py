@@ -174,6 +174,83 @@ class LanguageModel:
             return result
         return _generate_with
 
+    def create_generation_function_with_template_in_vars(self, template_key="prompt_template"):
+        """Return a generation function that finds the template within the vars dictionary."""
+        logger.debug(f"Creating a generation function that expects template in vars with key: '{template_key}'")
+
+        def _generate_with_template_in_vars(vars: dict | None = None) -> str:
+            vars = vars or {}
+            logger.debug(f"Generating with template in vars: {vars}")
+
+            if template_key not in vars:
+                error_msg = f"ERROR: Template key '{template_key}' not found in provided variables."
+                logger.error(error_msg)
+                return error_msg
+
+            prompt_template = vars[template_key]
+            
+            # The rest of the vars are for substitution
+            substitution_vars = {k: v for k, v in vars.items() if k != template_key}
+
+            formatted_prompt = Template(str(prompt_template)).safe_substitute(substitution_vars)
+            logger.debug(f"Formatted prompt from vars: {formatted_prompt[:100]}...")
+
+            result = self.generate(formatted_prompt)
+            logger.debug(f"Generation completed, result type: {type(result).__name__}, length: {len(result) if result else 0}")
+
+            return result
+        return _generate_with_template_in_vars
+
+    def create_generation_function_with_template_in_vars_with_thinking(self, template_key="prompt_template"):
+        """Return a generation function that finds the template within the vars dictionary and expects a JSON output with thinking."""
+        import json
+        logger.debug(f"Creating a generation function with thinking that expects template in vars with key: '{template_key}'")
+
+        def _generate_with_template_in_vars_with_thinking(vars: dict | None = None) -> dict:
+            vars = vars or {}
+            logger.debug(f"Generating with thinking, with template in vars: {vars}")
+
+            if template_key not in vars:
+                error_msg = f"ERROR: Template key '{template_key}' not found in provided variables."
+                logger.error(error_msg)
+                return {"error": error_msg}
+
+            prompt_template = vars[template_key]
+            
+            # The rest of the vars are for substitution
+            substitution_vars = {k: v for k, v in vars.items() if k != template_key}
+
+            formatted_prompt = Template(str(prompt_template)).safe_substitute(substitution_vars)
+            logger.debug(f"Formatted prompt from vars for thinking JSON: {formatted_prompt[:100]}...")
+
+            # Use response_format to ensure JSON output
+            logger.debug("Calling generate with JSON response format")
+            raw_response = self.generate(
+                prompt=formatted_prompt,
+                response_format={"type": "json_object"}
+            )
+            logger.debug(f"Raw JSON response received, length: {len(raw_response) if raw_response else 0}")
+            
+            try:
+                # Parse the response as JSON (should be valid due to response_format)
+                logger.debug("Parsing JSON response")
+                parsed_response = json.loads(raw_response)
+                logger.debug(f"JSON parsed successfully, keys: {list(parsed_response.keys()) if isinstance(parsed_response, dict) else 'not a dict'}")
+                
+                return parsed_response
+            except json.JSONDecodeError as e:
+                # Fallback in case JSON parsing still fails
+                logger.error(f"JSON decode error: {e}")
+                logger.error(f"Raw response that failed to parse: {raw_response}")
+                fallback_result = {
+                    "raw_response": raw_response,
+                    "error": "Failed to parse JSON response"
+                }
+                logger.debug(f"Returning fallback result: {fallback_result}")
+                return fallback_result
+
+        return _generate_with_template_in_vars_with_thinking
+
     def create_generation_function_thinking_json(self, prompt_template: str):
         """Return a generation function that formats the template with vars and extracts JSON thinking/output."""
         import json

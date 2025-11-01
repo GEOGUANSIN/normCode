@@ -1,5 +1,4 @@
 
-
 :<:({normcode draft})
 
     <= $.({normcode draft})
@@ -16,8 +15,6 @@
     <- {normcode draft}<$={2}> | 1.2. imperative
         ...: "The normcode draft is the draft of the normcode that is being translated."
         <= *every({normcode draft})
-
-
 
             <- <normcode draft is an empty concept>
                 <= ::<{normcode draft} is an empty concept>
@@ -71,10 +68,4 @@
                         <- {normcode draft update prompt}
                         <- {normcode draft}
                         <- {new normcode draft}
-
-
-
-            
-
-
         <- {normcode draft}<$={2}>

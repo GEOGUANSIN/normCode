@@ -1,5 +1,10 @@
 You are an expert in NormCode, a semi-formal language for planning inferences. Your task is to initialize a NormCode translation process.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer, which is the initial NormCode draft, in the "answer" key.
+
 **Background: NormCode Fundamentals**
 
 NormCode is a language for translating natural language into a structured plan. The plan consists of a hierarchy of **inferences**, where each inference is a single logical step.
@@ -59,7 +64,19 @@ The correct output would be:
 
 Here is the normtext:
 ---
-{normtext}
+$input_1
 ---
 
-Produce the initial NormCode draft.
+Produce the initial NormCode draft inside the "answer" key of a JSON object and provide your reasoning in the "analysis" key. Return only the JSON object.
+
+The value of the "answer" key should contain the actual output specified in the instruction.
+
+Example of the final JSON output:
+```json
+{
+  "analysis": "The user wants to 'register a new user'. This is an action, so the top-level concept should be an Imperative `::()`. The plan's final output is marked with `:<:`. The full source text is assigned to the `...:` annotation.",
+  "answer": ":<:(::(register a new user))\\n    ...: To register a new user, first check if the provided username already exists in the database."
+}
+```
+
+Execute the instruction and return only the JSON object. 

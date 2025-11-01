@@ -5,6 +5,7 @@ from infra._core import Concept
 from infra._core import Reference, cross_product, element_action, cross_action
 from infra._core import Inference, register_inference_sequence
 from infra._agent._models import LanguageModel
+from infra._agent._body import Body
 from infra._agent._sequences.simple import set_up_simple_demo, configure_simple_demo
 from infra._agent._sequences.imperative import set_up_imperative_demo, configure_imperative_demo
 from infra._agent._sequences.grouping import set_up_grouping_demo, configure_grouping_demo
@@ -12,6 +13,7 @@ from infra._agent._sequences.quantifying import set_up_quantifying_demo, configu
 from infra._agent._sequences.assigning import set_up_assigning_demo, configure_assigning_demo
 from infra._agent._sequences.timing import set_up_timing_demo, configure_timing_demo
 from infra._agent._sequences.judgement import set_up_judgement_demo, configure_judgement_demo
+from infra._agent._sequences.imperative_direct import set_up_imperative_direct_demo, configure_imperative_direct_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
@@ -24,6 +26,7 @@ from infra._agent._steps.quantifying import quantifying_methods
 from infra._agent._steps.assigning import assigning_methods
 from infra._agent._steps.timing import timing_methods
 from infra._agent._steps.judgement import judgement_methods
+from infra._agent._steps.imperative_direct import imperative_direct_methods
 
 
 # Configure logging
@@ -94,13 +97,14 @@ def wrap_element_wrapper(element: str) -> str:
 
 
 class AgentFrame():
-    def __init__(self, AgentFrameModel: str, working_interpretation: Optional[dict]=None, llm: Optional[LanguageModel]=None, body: Optional[dict]=None):
+    def __init__(self, AgentFrameModel: str, working_interpretation: Optional[dict]=None, llm: Optional[LanguageModel]=None, body: Optional[Body]=None):
         logger.info(f"Initializing AgentFrame with model: {AgentFrameModel}")
         self.AgentFrameModel = AgentFrameModel
         self.working_interpretation = working_interpretation if working_interpretation else {}
-        self.body = body
+        self.body = body if body else Body()
         if llm:
-            self.body["llm"] = llm
+            from infra._agent._models import LanguageModel as _LM
+            self.body.llm = _LM(llm)
         self._sequence_setup()
         logger.info("AgentFrame initialized successfully")
     
@@ -117,6 +121,7 @@ class AgentFrame():
             set_up_assigning_demo(self)
             set_up_timing_demo(self)
             set_up_judgement_demo(self)
+            set_up_imperative_direct_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -144,6 +149,9 @@ class AgentFrame():
             elif inference_sequence == "judgement":
                 logger.info("Configuring judgement demo sequence")
                 configure_judgement_demo(self, inference_instance, judgement_methods)
+            elif inference_sequence == "imperative_direct":
+                logger.info("Configuring imperative_direct demo sequence")
+                configure_imperative_direct_demo(self, inference_instance, imperative_direct_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:

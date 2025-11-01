@@ -1,0 +1,10 @@
+You are an AI assistant. Your task is to determine if a given NormCode draft is "complete".
+
+A NormCode draft is considered "complete" if there are no remaining "..." annotations that contain unprocessed natural language. If such annotations exist, the draft is "incomplete".
+
+Analyze the following NormCode draft and respond with only one word: "complete" or "incomplete".
+
+NormCode Draft:
+---
+{1}
+---
