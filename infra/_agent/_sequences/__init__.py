@@ -17,6 +17,7 @@ from .imperative import set_up_imperative_demo, configure_imperative_demo
 from .assigning import set_up_assigning_demo, configure_assigning_demo
 from .timing import set_up_timing_demo, configure_timing_demo
 from .imperative_direct import set_up_imperative_direct_demo, configure_imperative_direct_demo
+from .imperative_input import set_up_imperative_input_demo, configure_imperative_input_demo
 
 # Export all setup and configuration functions
 __all__ = [
@@ -47,4 +48,8 @@ __all__ = [
     # Imperative direct sequence
     "set_up_imperative_direct_demo",
     "configure_imperative_direct_demo",
+    
+    # Imperative input sequence
+    "set_up_imperative_input_demo",
+    "configure_imperative_input_demo",
 ]

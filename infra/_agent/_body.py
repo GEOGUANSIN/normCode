@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 from infra._agent._models import PromptTool
 
 class Body:
@@ -36,3 +36,29 @@ class Body:
 		
 		self.buffer = _BufferTool()
 		self.fn = _FnTool()
+		
+		# User input tool for imperative_input sequence
+		class _UserInputTool:
+			def create_input_function(self, prompt_key: str = "prompt_text") -> Callable:
+				"""
+				Creates a function that prompts the user for input.
+				The function expects a dict with 'prompt_text' and optional context keys.
+				"""
+				from typing import Dict, Any
+				def input_fn(vars: Dict[str, Any] | None = None) -> str:
+					vars = vars or {}
+					prompt_text = vars.get(prompt_key, "Enter input: ")
+					context = {k: v for k, v in vars.items() if k.startswith("context_")}
+					
+					# Build the full prompt message
+					if context:
+						context_str = "\n".join([f"{k}: {v}" for k, v in context.items()])
+						full_prompt = f"{prompt_text}\n{context_str}\n> "
+					else:
+						full_prompt = f"{prompt_text}\n> "
+					
+					# Prompt the user and return their response
+					return input(full_prompt)
+				return input_fn
+		
+		self.user_input = _UserInputTool()
