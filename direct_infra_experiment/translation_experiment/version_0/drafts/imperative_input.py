@@ -65,7 +65,7 @@ def create_repositories():
         ConceptEntry(
             id=str(uuid.uuid4()),
             concept_name=":>:({prompt}<:{normtext}>)",
-            type=":>:()",
+            type=":>:",
             description="An input operation to collect normtext from the user.",
             is_ground_concept=True,
             is_invariant=True,

@@ -113,6 +113,7 @@ Syntactical concepts are operators that control the logic, flow, and manipulatio
 | `@if`      | If        | Executes if a condition is true.          |
 | `@if!`     | If Not    | Executes if a condition is false.         |
 | `@after`   | After     | Executes after a preceding step is complete. |
+| `@before`  | Before    | Executes if a preceding step is not yet complete. |
 
 **Examples:**
 - **If / If Not (`@if`, `@if!`):** The combination ` @if!(<all number is 0>)` and `@if(<carry-over number is 0>)` forms the termination condition for the main loop, ensuring it continues as long as there are digits to process or a carry-over exists.
