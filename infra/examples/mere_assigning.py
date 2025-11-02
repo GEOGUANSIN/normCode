@@ -40,9 +40,9 @@ def _as_list(data: Any) -> List:
     return data if isinstance(data, list) else [data]
 
 
-def run_assigning_demo(marker: str, concept_a_val: Any, concept_b_val: Any, concept_c_val: Any):
+def run_assigning_demo(demo_title: str, marker: str, concept_a_val: Any, concept_b_val: Any, concept_c_val: Any, assign_source: Any = None):
     """Sets up and runs a single assigning demonstration using the integrated infra framework."""
-    logger.info(f"\n----- Running Demo for Syntax: {marker} -----")
+    logger.info(f"\n----- {demo_title} -----")
 
     # 1. Setup concepts and working interpretation
     concept_a = Concept("a")
@@ -54,15 +54,18 @@ def run_assigning_demo(marker: str, concept_a_val: Any, concept_b_val: Any, conc
     concept_c = Concept("c")
     concept_c.reference = Reference.from_data(_as_list(concept_c_val))
 
+    final_assign_source = assign_source if assign_source is not None else concept_a.name
+
     working_interpretation = {
         "syntax": {
             "marker": marker,
-            "assign_source": concept_a.name,
+            "assign_source": final_assign_source,
             "assign_destination": concept_b.name
         }
     }
 
     logger.info(f"Initial state: Concept 'a' ref: {concept_a.reference.get()}, Concept 'b' ref: {concept_b.reference.get()}, Concept 'c' ref: {concept_c.reference.get()}")
+    logger.info(f"Working interpretation: {working_interpretation}")
 
     # 2. Setup agent and inference
     body = Body()
@@ -94,18 +97,52 @@ def run_assigning_demo(marker: str, concept_a_val: Any, concept_b_val: Any, conc
 if __name__ == "__main__":
     # Demo 1: Specification ($.) - Assigns a's reference to b
     run_assigning_demo(
+        demo_title="Demo 1: Specification ($.)",
         marker=".",
         concept_a_val=[{"id": 1, "data": "This is from A"}],
         concept_b_val=["Original value of B"],
-        concept_c_val="I am irrelevant context"
+        concept_c_val="I am irrelevant context",
+        assign_source="a"
     )
 
     # Demo 2: Continuation ($+) - Appends a's list to b's list
     run_assigning_demo(
+        demo_title="Demo 2: Continuation ($+)",
         marker="+",
         concept_a_val=[1, 2, 3],
         concept_b_val=["x", "y", "z"],
-        concept_c_val=["more", "irrelevant", "context"]
+        concept_c_val=["more", "irrelevant", "context"],
+        assign_source="a"
+    )
+
+    # Demo 3: Prioritized Specification - First source ('a') is empty, uses 'c'
+    run_assigning_demo(
+        demo_title="Demo 3: Prioritized Specification - First source ('a') is empty, uses 'c'",
+        marker=".",
+        concept_a_val=[],  # Empty reference
+        concept_b_val=["Original value of B"],
+        concept_c_val=["This is from C"],
+        assign_source=['a', 'c']
+    )
+
+    # Demo 4: Prioritized Specification - First source ('a') is valid, so 'c' is ignored
+    run_assigning_demo(
+        demo_title="Demo 4: Prioritized Specification - First source ('a') is valid",
+        marker=".",
+        concept_a_val=["This is from A"],
+        concept_b_val=["Original value of B"],
+        concept_c_val=["This is from C, but will not be used"],
+        assign_source=['a', 'c']
+    )
+
+    # Demo 5: Prioritized Specification - All sources empty, falls back to destination 'b'
+    run_assigning_demo(
+        demo_title="Demo 5: Prioritized Specification - All sources empty, falls back to 'b'",
+        marker=".",
+        concept_a_val=[],  # Empty
+        concept_b_val=["Original value of B"],  # Destination
+        concept_c_val=[],  # Empty
+        assign_source=['a', 'c']
     )
 
 

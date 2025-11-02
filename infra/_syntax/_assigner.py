@@ -18,19 +18,22 @@ def _flatten_to_list(data):
 class Assigner:
     """Encapsulates the logic for assignment operations."""
 
-    def specification(self, source_ref: Optional[Reference], dest_ref: Optional[Reference]) -> Optional[Reference]:
+    def specification(self, source_refs: List[Optional[Reference]], dest_ref: Optional[Reference]) -> Optional[Reference]:
         """
-        Performs specification (assignment).
-        Returns the source reference, or the destination reference if the source is None.
+        Performs specification (assignment) from a prioritized list of source references.
+        Returns the first valid (non-None and not empty) source reference from the list.
+        If no source is valid, returns the destination reference as a fallback.
         """
-        if source_ref:
-            return source_ref.copy()
+        for source_ref in source_refs:
+            if source_ref and source_ref.get_tensor(ignore_skip=True):
+                logging.info(f"Assigner: Found valid source reference.")
+                return source_ref.copy()
 
-        logging.warning(f"Source reference is missing for specification; using destination reference as fallback.")
+        logging.warning(f"No valid source reference found in the provided list; using destination reference as fallback.")
         if dest_ref:
             return dest_ref.copy()
 
-        # If both are None, return an empty reference
+        # If all sources and destination are None, return an empty reference
         return Reference(axes=["result"], shape=(0,))
 
     def continuation(self, source_ref: Optional[Reference], dest_ref: Optional[Reference], by_axes: Optional[List[str]] = None) -> Reference:

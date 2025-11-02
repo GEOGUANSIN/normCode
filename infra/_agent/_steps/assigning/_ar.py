@@ -15,34 +15,47 @@ def assigning_references(states: States) -> States:
         states.set_current_step("AR")
         return states
 
-    # Find the source and destination records from the values list
     value_concepts_map = {rec.concept.name: rec for rec in states.values}
-
-    source_record = value_concepts_map.get(assign_source_name)
     dest_record = value_concepts_map.get(assign_destination_name) if assign_destination_name else None
-
-    if not source_record:
-        logging.error(f"AR failed: Could not find concepts '{assign_source_name}' in value concepts.")
-        states.set_current_step("AR")
-        return states
-
-    source_ref = source_record.reference
     dest_ref = dest_record.reference if dest_record else None
-    
+
     assigner = Assigner()
     output_ref = None
 
     if syntax_marker == ".":  # Specification
-        logging.info(f"Performing specification (.): Assigning '{source_record.concept.name}' reference to '{assign_destination_name if assign_destination_name else None}'.")
-        output_ref = assigner.specification(source_ref, dest_ref)
+        source_refs = []
+        if isinstance(assign_source_name, list):
+            source_refs = [value_concepts_map.get(name).reference if value_concepts_map.get(name) else None for name in assign_source_name]
+            logging.info(f"Performing specification (.) with source candidates: {assign_source_name} for destination '{assign_destination_name}'.")
+        else:
+            source_record = value_concepts_map.get(assign_source_name)
+            if not source_record:
+                logging.error(f"AR failed: Could not find source concept '{assign_source_name}' in value concepts.")
+                states.set_current_step("AR")
+                return states
+            source_refs = [source_record.reference]
+            logging.info(f"Performing specification (.): Assigning '{assign_source_name}' reference to '{assign_destination_name if assign_destination_name else None}'.")
+
+        output_ref = assigner.specification(source_refs, dest_ref)
 
     elif syntax_marker == "+":  # Continuation
+        if isinstance(assign_source_name, list):
+            logging.error(f"AR failed for continuation (+): 'assign_source' must be a single concept, not a list.")
+            states.set_current_step("AR")
+            return states
+
+        source_record = value_concepts_map.get(assign_source_name)
+        if not source_record:
+            logging.error(f"AR failed: Could not find source concept '{assign_source_name}' in value concepts.")
+            states.set_current_step("AR")
+            return states
+
+        source_ref = source_record.reference
         logging.info(f"Performing continuation (+): Adding '{source_record.concept.name}' reference to '{assign_destination_name}'.")
         output_ref = assigner.continuation(source_ref, dest_ref, by_axes=states.syntax.by_axes)
 
     else:
         logging.warning(f"Unknown syntax marker: {syntax_marker}. No assignment performed.")
-        # If no operation, the output is just the destination's original reference
         if dest_ref:
             output_ref = dest_ref.copy()
 
