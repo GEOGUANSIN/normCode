@@ -506,7 +506,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             },
             start_without_value_only_once=True,
             start_without_function_only_once=True,
-            start_with_support_reference_only=True
+            start_without_support_reference_only_once=True
         ),
         # 1.1. Assigning result of each outer loop iteration
         InferenceEntry(
@@ -591,7 +591,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             },
             start_without_value_only_once=True,
             start_without_function_only_once=True,
-            start_with_support_reference_only=True
+            start_without_support_reference_only_once=True
         ),
         # 1.1.2.4.2.1 Assigning for inner loop
         InferenceEntry(
@@ -703,7 +703,7 @@ def create_appending_repositories_new(number_1: str = "123", number_2: str = "98
             },
             start_without_value_only_once=True,
             start_without_function_only_once=True,
-            start_with_support_reference_only=True
+            start_without_support_reference_only_once=True
         ),
         # 1.1.3.2.1. Assigning value for the appending loop
         InferenceEntry(

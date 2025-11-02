@@ -21,7 +21,7 @@ except Exception:
     # Need to go up 4 levels from here to reach project root where infra/ is located:
     # drafts -> version_0 -> translation_experiment -> direct_infra_experiment -> normCode (project root)
     here = Path(__file__).parent
-    project_root = here.parent.parent.parent.parent
+    project_root = here.parent.parent
     sys.path.insert(0, str(project_root))
     from infra import Inference, Concept, AgentFrame, Reference, BaseStates
     from infra._orchest._blackboard import Blackboard

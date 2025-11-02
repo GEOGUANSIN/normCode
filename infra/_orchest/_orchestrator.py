@@ -62,7 +62,36 @@ class Orchestrator:
         return (fc is None) or (self.blackboard.get_concept_status(fc.concept_name) == 'complete')
 
     def _are_value_concepts_ready(self, item: WaitlistItem) -> bool:
-        """Checks if all value concepts for an item are ready."""
+        """
+        Checks if value concepts are ready. For assigning inferences with multiple
+        potential sources, it only requires one of the sources to be ready.
+        """
+        # Check for the special assignment case
+        inference_sequence = item.inference_entry.inference_sequence
+        wi = item.inference_entry.working_interpretation or {}
+        syntax = wi.get("syntax", {})
+        assign_source = syntax.get("assign_source")
+
+        if inference_sequence == 'assigning' and isinstance(assign_source, list):
+            potential_source_names = set(assign_source)
+            other_value_concepts = []
+            source_value_concepts = []
+
+            for vc in item.inference_entry.value_concepts:
+                if vc.concept_name in potential_source_names:
+                    source_value_concepts.append(vc)
+                else:
+                    other_value_concepts.append(vc)
+
+            # At least one source must be ready
+            one_source_ready = any(self.blackboard.get_concept_status(vc.concept_name) == 'complete' for vc in source_value_concepts)
+            
+            # All other value concepts must be ready
+            all_others_ready = all(self.blackboard.get_concept_status(vc.concept_name) == 'complete' for vc in other_value_concepts)
+            
+            return one_source_ready and all_others_ready
+
+        # Default behavior for all other cases
         return all(self.blackboard.get_concept_status(vc.concept_name) == 'complete' for vc in item.inference_entry.value_concepts)
 
     def _are_supporting_items_complete(self, item: WaitlistItem) -> bool:
@@ -104,12 +133,17 @@ class Orchestrator:
         # Check for completion of all supporting items, unless bypassed.
         # This ensures procedural dependencies are met before continuing.
         start_with_support_reference_only = getattr(item.inference_entry, 'start_with_support_reference_only', False)
-        if not start_with_support_reference_only:
+        start_without_support_reference_only_once = getattr(item.inference_entry, 'start_without_support_reference_only_once', False)
+        if not start_with_support_reference_only and not (start_without_support_reference_only_once and is_first_execution):
             if not self._are_supporting_items_complete(item):
                 logging.debug(f"  - RESULT: NOT READY. Supporting items are not complete.")
                 return False
         else:
-            logging.debug(f"  - Bypassed supporting items check.")
+            if start_with_support_reference_only:
+                logging.debug(f"  - Bypassed supporting items check.")
+            else:
+                logging.debug(f"  - Bypassed supporting items check (first execution only).")
+
 
         # Check function concept readiness, unless bypassed
         if not item.inference_entry.start_without_function:

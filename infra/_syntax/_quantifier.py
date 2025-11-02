@@ -181,6 +181,33 @@ class Quantifier:
         logging.debug("[check_all_looped] All elements checked and found in workspace. Loop IS complete. Returning True.")
         return True
 
+    def _is_base_element_in_reference(self, base_element_to_check: Reference, to_loop_element_reference: Reference) -> bool:
+        """
+        Iteratively checks if a given base element's tensor exists in the to_loop_element_reference.
+        This uses the same iterative selection logic as retireve_next_base_element to handle complex tensor structures.
+        """
+        current_loop_index = 0
+        max_iterations = 1000  # To prevent infinite loops
+        while True:
+            get_element_function = lambda x: self._get_list_at_index(x, current_loop_index)
+            current_element_ref = element_action(get_element_function, [to_loop_element_reference.copy()])
+
+            # Check if we've reached the end of the list.
+            tensor = current_element_ref.tensor
+            elements = self._flatten_list(tensor.copy() if tensor is not None else [])
+            if all(e is None or e == "@#SKIP#@" for e in elements):
+                break
+
+            # Compare tensors to find a match.
+            if tensor == base_element_to_check.tensor:
+                return True
+
+            current_loop_index += 1
+            if current_loop_index > max_iterations:
+                logging.warning(f"[_is_base_element_in_reference] Exceeded max iterations ({max_iterations}).")
+                break
+        return False
+
     def combine_all_looped_elements_by_concept(self, to_loop_element_reference: Reference, concept_name: str, axis_name: str = None) -> Optional[Reference]:
         all_concept_references = []
 
@@ -188,8 +215,15 @@ class Quantifier:
         sorted_loop_indices = sorted(self.current_subworkspace.keys())
 
         for loop_index in sorted_loop_indices:
+            # Check if the concept to be combined exists for this iteration
             if concept_name in self.current_subworkspace[loop_index]:
-                 all_concept_references.append(self.current_subworkspace[loop_index][concept_name])
+                # Get the base element that corresponds to this iteration
+                if self.loop_base_concept_name in self.current_subworkspace[loop_index]:
+                    base_element = self.current_subworkspace[loop_index][self.loop_base_concept_name]
+
+                    # Ensure this base element is still present in the master list before including its result.
+                    if self._is_base_element_in_reference(base_element, to_loop_element_reference):
+                        all_concept_references.append(self.current_subworkspace[loop_index][concept_name])
 
         if not all_concept_references:
             return None
