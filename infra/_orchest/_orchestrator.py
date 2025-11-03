@@ -277,7 +277,7 @@ class Orchestrator:
         logging.info(f"  -> Inference executed successfully for item {flow_index}")
         self.blackboard.set_item_result(flow_index, "Success")
         
-        if item.inference_entry.inference_sequence == 'judgement':
+        if item.inference_entry.inference_sequence in ['judgement', 'judgement_direct']:
             condition_met = getattr(states, 'condition_met', None)
             if condition_met is True:
                 logging.info(f"Judgement condition for item {flow_index} met. Marking as 'success'.")

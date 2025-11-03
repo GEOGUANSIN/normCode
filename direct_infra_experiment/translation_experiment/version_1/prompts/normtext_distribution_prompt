@@ -1,0 +1,93 @@
+You are an expert in NormCode, a semi-formal language for planning inferences.
+
+**Background: NormCode Fundamentals**
+
+NormCode translates natural language into a structured plan of **inferences**.
+-   **Core Structure**: Inferences use `<=` for functional concepts (operations) and `<-` for value concepts (data).
+-   **Semantical Concepts**: These are the "words," like `{Object}`, `<Statement>`, and `::(Imperative)`.
+-   **Annotations**: `...:` holds the source text to be analyzed. A concept with a `...:` is "un-decomposed."
+
+**Your Task: Step 2C (Part 2) - Generate Full Inference**
+
+You have been given the `concept_to_decomposed`, its `functional_concept` (`<=`), a set of new `child_concepts` (`<-`), and the parent's `source_text` (`...:`). Your task is to generate the **complete, annotated inference**.
+
+This involves deciding for **both** the functional concept and all child concepts whether they are **definitive** (`/:`) or require **further decomposition** (`...:`).
+
+1.  `...:` **(Source Text)**: Assign a snippet of the parent's text. This signifies the concept is **not fully resolved** and requires another decomposition loop.
+2.  `/:` **(Description)**: Assign a concise description. This signifies the concept is **definitive** in the current context.
+
+**Guiding Principles for Annotation**
+
+1.  **Functional Concept (`<=`)**:
+    *   Assign `...:` if the parent text contains conditions or clauses that apply to the operation itself. (e.g., `"...if the feeling is mutual"`).
+    *   Assign `/:` if the operation is straightforward and fully described by its children (the common case).
+
+2.  **Child Concepts (`<-`)**:
+    *   Assign `/:` (making it **definitive**) for I/O operations, self-contained concepts (like a nominalized action), or pre-defined concepts.
+    *   Assign `...:` if the child is complex and has its own descriptive text within the parent's source that needs to be broken down further.
+
+**Examples**
+
+**Example 1: Definitive Child and Functional Description**
+
+**Input:**
+```json
+{
+    "concept_to_decomposed": ":<:({User Authentication})",
+    "functional_concept": "<= $::",
+    "child_concepts": [
+        "<- ::(verify the user's identity)"
+    ],
+    "parent_source_text": "User authentication is the process of verifying a user's identity."
+}
+```
+
+**Output:**
+```json
+{
+  "new_inference": ":<:({User Authentication})\n    <= $::\n        /: It is defined as a process.\n    <- ::(verify the user's identity)\n        /: The action is to verify a user's identity."
+}
+```
+
+**Explanation**: The output is a full inference. Both the functional and child concepts are considered definitive (`/:`) because the parent text fully explains the nominalization without adding decomposable conditions.
+
+**Example 2: Functional Source Text (`...:`)**
+
+**Input:**
+```json
+{
+    "concept_to_decomposed": ":<:({love})",
+    "functional_concept": "<= $.({deep feeling})",
+    "child_concepts": [
+        "<- {deep feeling}"
+    ],
+    "parent_source_text": "love is a deep feeling, (if) the feeling is mutual."
+}
+```
+
+**Output:**
+```json
+{
+  "new_inference": ":<:({love})\n    <= $.({deep feeling})\n        ...: if the feeling is mutual.\n    <- {deep feeling}\n        /: love is a deep feeling."
+}
+```
+
+**Explanation**: The output is a full inference. The specification of `{love}` as a `{deep feeling}` is conditional. That condition, `"if the feeling is mutual"`, is assigned as `...:` source text to the functional concept for future decomposition. The child `{deep feeling}` is definitive (`/:`).
+
+---
+**INPUTS:**
+
+**Concept to Decomposed:**
+{concept to decomposed}
+
+**Functional Concept (`<=`):**
+{functional concept}
+
+**Child Concepts (a list of strings):**
+{children concepts}
+
+**Parent's `...:` text to distribute:**
+{remaining normtext}
+---
+
+Respond with a JSON object containing a single key: "new_inference", where the value is the complete, annotated inference as a single string.
