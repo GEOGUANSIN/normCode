@@ -166,7 +166,7 @@ class LanguageModel:
             logger.debug(f"Generating with vars: {vars}")
             
             formatted_prompt = Template(prompt_template).safe_substitute(vars)
-            logger.debug(f"Formatted prompt: {formatted_prompt[:100]}...")
+            logger.debug(f"Formatted prompt: {formatted_prompt[:10000]}...")
             
             result = self.generate(formatted_prompt)
             logger.debug(f"Generation completed, result type: {type(result).__name__}, length: {len(result) if result else 0}")
@@ -193,7 +193,7 @@ class LanguageModel:
             substitution_vars = {k: v for k, v in vars.items() if k != template_key}
 
             formatted_prompt = Template(str(prompt_template)).safe_substitute(substitution_vars)
-            logger.debug(f"Formatted prompt from vars: {formatted_prompt[:100]}...")
+            logger.debug(f"Formatted prompt from vars: {formatted_prompt[:10000]}...")
 
             result = self.generate(formatted_prompt)
             logger.debug(f"Generation completed, result type: {type(result).__name__}, length: {len(result) if result else 0}")
@@ -221,7 +221,7 @@ class LanguageModel:
             substitution_vars = {k: v for k, v in vars.items() if k != template_key}
 
             formatted_prompt = Template(str(prompt_template)).safe_substitute(substitution_vars)
-            logger.debug(f"Formatted prompt from vars for thinking JSON: {formatted_prompt[:100]}...")
+            logger.debug(f"Formatted prompt from vars for thinking JSON: {formatted_prompt[:10000]}...")
 
             # Use response_format to ensure JSON output
             logger.debug("Calling generate with JSON response format")

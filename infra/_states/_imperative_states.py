@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from dataclasses import field
 from infra._states._common_states import BaseStates, SequenceStepSpecLite
 from infra._states._model_state import ModelEnvSpecLite, ModelSequenceSpecLite
@@ -22,7 +22,8 @@ class States(BaseStates):
         ]
         self.body: Any | None = None
         self.mfp_env_spec: ModelEnvSpecLite | None = None
-        self.mfp_sequence_spec: ModelSequenceSpecLite | None = None
-        self.value_order: Dict[str, Any] = field(default_factory=dict)
+        self.mfp_sequence_spec: Optional[ModelSequenceSpecLite] = None
+        self.value_order: Optional[Dict[str, int]] = None
+        self.value_selectors: Optional[Dict[str, Any]] = None
         self.is_relation_output: bool = False
         self.with_thinking: bool = False

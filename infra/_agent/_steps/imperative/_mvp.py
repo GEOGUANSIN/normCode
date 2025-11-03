@@ -5,6 +5,43 @@ from infra._states._imperative_states import States
 from infra._core import Reference, cross_product, element_action
 
 
+def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
+    """Applies a selector to a reference to extract a specific value."""
+    index = selector.get("index")
+    key = selector.get("key")
+
+    def selector_action(element):
+        import ast
+
+        processed_element = element
+        if isinstance(element, str) and element.startswith("%"):
+            open_paren_index = element.find("(")
+            close_paren_index = element.rfind(")")
+            if open_paren_index > 0 and close_paren_index == len(element) - 1:
+                content = element[open_paren_index + 1 : close_paren_index]
+                try:
+                    processed_element = ast.literal_eval(content)
+                except (ValueError, SyntaxError):
+                    processed_element = content
+        
+        selected = processed_element
+        if index is not None and isinstance(selected, list) and len(selected) > index:
+            selected = selected[index]
+        
+        if key is not None and isinstance(selected, dict):
+            selected = selected.get(key)
+            
+        return selected
+
+    # We need to handle nested lists, the tensor might be like [[{...}, {...}]]
+    def nested_selector_action(element):
+        if isinstance(element, list):
+            return [selector_action(item) for item in element]
+        return selector_action(element)
+
+    return element_action(nested_selector_action, [ref])
+
+
 def memory_value_perception(states: States) -> States:
     """Order and cross-product value references based on working_configuration."""
 
@@ -12,12 +49,19 @@ def memory_value_perception(states: States) -> States:
     func_name = ir_func_record.concept.name if ir_func_record and ir_func_record.concept else ""
 
     value_order = states.value_order
+    value_selectors = states.value_selectors or {}
 
     name_to_ref: Dict[str, Reference] = {
         v.concept.name: v.reference
         for v in states.values
         if v.step_name == "IR" and v.concept and v.reference
     }
+
+    # Apply selectors before ordering
+    for name, selector in value_selectors.items():
+        if name in name_to_ref:
+            logging.debug(f"Applying selector to '{name}': {selector}")
+            name_to_ref[name] = _apply_selector(name_to_ref[name], selector)
 
     ordered_refs: List[Reference] = []
     ordered_names: List[str] = []
