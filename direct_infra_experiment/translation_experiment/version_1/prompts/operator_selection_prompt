@@ -28,6 +28,12 @@ Annotations manage the state of the translation process:
 
 You have been given a parent concept, a specific question, its type, and the relevant source text. Your task is to analyze the `remaining_normtext` and **construct the complete, substantive Functional Concept line** (`<= ...`) that answers the question.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to construct the functional concept based on the question type and source text. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key as a dictionary containing:
+- "functional concept": The complete functional concept line starting with `<= `
+
 **Operator Construction Reference**
 
 Use the `question_type` as a key to find the correct operator pattern and construction logic.
@@ -70,34 +76,37 @@ Use the `question_type` as a key to find the correct operator pattern and constr
 Input:
 ```json
 {
-    "concept_to_decomposed": ":<:(::(Show the admin dashboard))",
-    "remaining_normtext": "...: Show the admin dashboard if the user is an admin.",
+    "concept to decomposed": ":<:(::(Show the admin dashboard))",
+    "remaining normtext": "...: Show the admin dashboard if the user is an admin.",
     "question": "Under what condition is `::(Show the admin dashboard)` executed?",
-    "question_type": "Conditional Dependency"
+    "question type": "Conditional Dependency"
 }
 ```
 
 Output:
 ```json
 {
-  "functional_concept": "<= @if(<user is an admin>)"
+  "analysis": "The question type is 'Conditional Dependency', which requires using the `@if` operator pattern. I need to extract the condition from the remaining normtext 'Show the admin dashboard if the user is an admin.' The condition is 'if the user is an admin', which should be formatted as `<user is an admin>` (a statement). The complete functional concept line should be `<= @if(<user is an admin>)`.",
+  "answer": {
+    "functional concept": "<= @if(<user is an admin>)"
+  }
 }
 ```
-**Explanation**: The `question_type` is "Conditional Dependency". The logic requires extracting the condition from the text ("if the user is an admin") and building the full operator line `<= @if(<user is an admin>)`.
+**Explanation**: The output follows the required JSON structure with `analysis` containing the reasoning and `answer` containing a dictionary with the functional concept.
 
 **Input for this task:**
 ---
 **Concept to Decomposed**: 
-{concept to decomposed}
+$input_1
 ---
 **Remaining Normtext**: 
-{remaining normtext}
+$input_2
 ---
 **Question**: 
-{question}
+$input_3
 ---
 **Question Type**: 
-{question type}
+$input_4
 ---
 
-Respond with a JSON object containing a single key: "functional_concept".
+Execute the instruction and return a JSON object with "analysis" (your reasoning) and "answer" (a dictionary with "functional concept"). Return only the JSON object.

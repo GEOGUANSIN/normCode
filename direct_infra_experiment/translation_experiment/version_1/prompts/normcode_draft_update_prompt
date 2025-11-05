@@ -12,6 +12,11 @@ You have just finished a full decomposition cycle. You have been given:
 
 Your task is to update the main draft by finding the original concept (the one that was just decomposed) and replacing it entirely with the new, decomposed snippet.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to identify the part of the draft to replace and how to perform the replacement. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final, complete, updated draft as a single string in the "answer" key.
+
 **Example:**
 
 **Input:**
@@ -35,30 +40,22 @@ Your task is to update the main draft by finding the original concept (the one t
             ...: "second, if it does, report an error."
     ```
 
-**Output (The Full, Updated Draft):**
-```normcode
-:<:(::(register a new user))
-    <= @by(:_:)
-    <- {steps}
-        ?: How are the steps composed?
-        <= &across
-        <- {step 1}
-            ...: "first, check if the provided username already exists."
-        <- {step 2}
-            ...: "second, if it does, report an error."
-    <- {user name}
-        ...: "the provided username is provided by the user."
+**Output (JSON):**
+```json
+{
+  "analysis": "The goal is to replace the `<- {steps}` block in the main draft with the new decomposed snippet. I will find the lines corresponding to `<- {steps}` and its `...:` content and replace that entire block with the new, more detailed snippet provided, while preserving the indentation and the surrounding concepts like `<- {user name}`.",
+  "answer": ":<:(::(register a new user))\n    <= @by(:_:)\n    <- {steps}\n        ?: How are the steps composed?\n        <= &across\n        <- {step 1}\n            ...: \"first, check if the provided username already exists.\"\n        <- {step 2}\n            ...: \"second, if it does, report an error.\"\n    <- {user name}\n        ...: \"the provided username is provided by the user.\""
+}
 ```
-**Explanation**: The original `<- {steps}` block is replaced with the new, more detailed snippet.
 
 ---
 **INPUTS:**
 
 **Main NormCode Draft:**
-{normcode draft}
+$input_1
 
 **New Decomposed Snippet:**
-{new normcode draft}
+$input_2
 ---
 
-Respond with the full, updated NormCode draft.
+Execute the instruction and return only the JSON object.

@@ -16,6 +16,12 @@ This involves deciding for **both** the functional concept and all child concept
 1.  `...:` **(Source Text)**: Assign a snippet of the parent's text. This signifies the concept is **not fully resolved** and requires another decomposition loop.
 2.  `/:` **(Description)**: Assign a concise description. This signifies the concept is **definitive** in the current context.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to distribute the source text and assign annotations. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key as a dictionary containing:
+- "new inference": The complete, annotated inference as a single string, with proper indentation and newline characters (`\n`)
+
 **Guiding Principles for Annotation**
 
 1.  **Functional Concept (`<=`)**:
@@ -33,61 +39,67 @@ This involves deciding for **both** the functional concept and all child concept
 **Input:**
 ```json
 {
-    "concept_to_decomposed": ":<:({User Authentication})",
-    "functional_concept": "<= $::",
-    "child_concepts": [
+    "concept to decomposed": ":<:({User Authentication})",
+    "functional concept": "<= $::",
+    "child concepts": [
         "<- ::(verify the user's identity)"
     ],
-    "parent_source_text": "User authentication is the process of verifying a user's identity."
+    "parent source text": "User authentication is the process of verifying a user's identity."
 }
 ```
 
 **Output:**
 ```json
 {
-  "new_inference": ":<:({User Authentication})\n    <= $::\n        /: It is defined as a process.\n    <- ::(verify the user's identity)\n        /: The action is to verify a user's identity."
+  "analysis": "I need to analyze the parent source text 'User authentication is the process of verifying a user's identity.' The functional concept is `<= $::` (nominalization), and there's one child concept `<- ::(verify the user's identity)`. The parent text fully explains the nominalization without adding any conditions or clauses that need further decomposition. Therefore, both the functional concept and child concept should be assigned `/:` (definitive descriptions). The functional concept gets a description explaining it's a process, and the child gets a description of the action.",
+  "answer": {
+    "new inference": ":<:({User Authentication})\n    <= $::\n        /: It is defined as a process.\n    <- ::(verify the user's identity)\n        /: The action is to verify a user's identity."
+  }
 }
 ```
 
-**Explanation**: The output is a full inference. Both the functional and child concepts are considered definitive (`/:`) because the parent text fully explains the nominalization without adding decomposable conditions.
+**Explanation**: The output follows the required JSON structure with `analysis` containing the reasoning and `answer` containing a dictionary with the complete inference.
 
 **Example 2: Functional Source Text (`...:`)**
 
 **Input:**
 ```json
 {
-    "concept_to_decomposed": ":<:({love})",
-    "functional_concept": "<= $.({deep feeling})",
-    "child_concepts": [
+    "concept to decomposed": ":<:({love})",
+    "functional concept": "<= $.({deep feeling})",
+    "child concepts": [
         "<- {deep feeling}"
     ],
-    "parent_source_text": "love is a deep feeling, (if) the feeling is mutual."
+    "parent source text": "love is a deep feeling, (if) the feeling is mutual."
 }
 ```
 
 **Output:**
 ```json
 {
-  "new_inference": ":<:({love})\n    <= $.({deep feeling})\n        ...: if the feeling is mutual.\n    <- {deep feeling}\n        /: love is a deep feeling."
+  "analysis": "I need to analyze the parent source text 'love is a deep feeling, (if) the feeling is mutual.' The functional concept is `<= $.({deep feeling})` (specification), and there's one child concept `<- {deep feeling}`. The parent text contains a conditional clause 'if the feeling is mutual' that applies to the operation itself (the specification is conditional). According to the guiding principles, when the parent text contains conditions that apply to the operation, I should assign `...:` to the functional concept. The child `{deep feeling}` is straightforward and should get a definitive description (`/:`).",
+  "answer": {
+    "new inference": ":<:({love})\n    <= $.({deep feeling})\n        ...: if the feeling is mutual.\n    <- {deep feeling}\n        /: love is a deep feeling."
+  }
 }
 ```
 
-**Explanation**: The output is a full inference. The specification of `{love}` as a `{deep feeling}` is conditional. That condition, `"if the feeling is mutual"`, is assigned as `...:` source text to the functional concept for future decomposition. The child `{deep feeling}` is definitive (`/:`).
+**Explanation**: The output follows the required JSON structure with `analysis` containing the reasoning and `answer` containing a dictionary with the complete inference.
 
 ---
 **INPUTS:**
 
 **Concept to Decomposed:**
-{concept to decomposed}
+$input_1
 
 **Functional Concept (`<=`):**
-{functional concept}
+$input_2
 
 **Child Concepts (a list of strings):**
-{children concepts}
+$input_3
 
 **Parent's `...:` text to distribute:**
-{remaining normtext}
+$input_4
 ---
 
-Respond with a JSON object containing a single key: "new_inference", where the value is the complete, annotated inference as a single string.
+Execute the instruction and return a JSON object with "analysis" (your reasoning) and "answer" (a dictionary with "new inference"). Return only the JSON object.

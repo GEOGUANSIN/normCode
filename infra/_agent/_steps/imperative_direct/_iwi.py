@@ -85,6 +85,7 @@ def input_working_interpretation(
     
     # Set value_order and initial values for MVP
     states.value_order = config.get("value_order")
+    states.value_selectors = config.get("value_selectors", {})
     values_dict = config.get("values", {})
     for key, value in values_dict.items():
         record = ReferenceRecordLite(

@@ -37,7 +37,7 @@ def model_function_perception(states: States) -> States:
         # The result of MFP is a callable function. We wrap it in a Reference.
         instruction_fn = meta.get("instruction_fn")  # This key comes from your sequence spec
         if instruction_fn:
-            axis_name = ir_func_record.reference.axes[0] if ir_func_record and ir_func_record.reference else "f"
+            axis_name = ir_func_record.reference.axes[0] if ir_func_record and ir_func_record.reference else "_none_axis"
             ref = Reference(axes=[axis_name], shape=(1,))
             ref.set(instruction_fn, **{axis_name: 0})
             states.set_reference("function", "MFP", ref)

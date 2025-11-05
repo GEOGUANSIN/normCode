@@ -37,6 +37,13 @@ Your task is to:
 1.  **Formulate the Question (`?:`)**: Based on the concept's Inference Target and its `...:` text, formulate the specific question that this decomposition step will answer.
 2.  **Classify the Question Type**: Categorize the question into one of the established types from the reference below. This classification is critical as it will determine which NormCode operator is chosen in the next step.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to formulate the question and classify its type. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key as a dictionary containing:
+- "question": The specific question (`?:`) formulated to answer this decomposition step
+- "question type": One of the established question types from the reference above (e.g., "Methodology Declaration", "Classification/Specification", etc.)
+
 **Comprehensive Question Types Reference**
 
 The question type you select is critical, as it directly determines the NormCode operator used in the next step of the translation. Below is a comprehensive list of question types, categorized by the nature of the concept being decomposed.
@@ -120,19 +127,22 @@ Input Concept to Decompose:
 Output:
 ```json
 {
-  "question": "How do you authenticate the user?",
-  "question_type": "Methodology Declaration"
+  "analysis": "I need to analyze the concept `::(Authenticate the user)` and its source text `'Authenticate the user by checking their password.'` The source text describes how to perform an action, specifically mentioning the method (`by checking their password`). This indicates a Methodology Declaration question type, where we ask 'By what method is the action performed?'. The question should be formulated to guide the decomposition toward specifying the method.",
+  "answer": {
+    "question": "How do you authenticate the user?",
+    "question type": "Methodology Declaration"
+  }
 }
 ```
 
 **Concept to Decompose:**
 ---
-{concept to decomposed}
+$input_1
 ---
 **Remaining Normtext:**
 ---
-{remaining normtext}
+$input_2
 ---
 
-Respond with a JSON object containing two keys: "question" and "question_type".
+Execute the instruction and return a JSON object with "analysis" (your reasoning) and "answer" (a dictionary with "question" and "question type"). Return only the JSON object.
 

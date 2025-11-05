@@ -51,31 +51,51 @@ def memory_value_perception(states: States) -> States:
     value_order = states.value_order
     value_selectors = states.value_selectors or {}
 
-    name_to_ref: Dict[str, Reference] = {
-        v.concept.name: v.reference
-        for v in states.values
-        if v.step_name == "IR" and v.concept and v.reference
-    }
-
-    # Apply selectors before ordering
-    for name, selector in value_selectors.items():
-        if name in name_to_ref:
-            logging.debug(f"Applying selector to '{name}': {selector}")
-            name_to_ref[name] = _apply_selector(name_to_ref[name], selector)
+    # Get all value records from the IR step, preserving duplicates.
+    ir_values = [v for v in states.values if v.step_name == "IR" and v.concept and v.reference]
+    used_ir_values = [False] * len(ir_values) # Tracker for used records
 
     ordered_refs: List[Reference] = []
     ordered_names: List[str] = []
+
     if value_order:
         sorted_items = sorted(value_order.items(), key=lambda item: item[1])
-        for name, _ in sorted_items:
-            if name in name_to_ref:
-                ordered_refs.append(name_to_ref[name])
-                ordered_names.append(name)
+        for name, _ in sorted_items:  # name is an alias or concept name
+            ref_found = False
+            
+            # Check if the name is an alias defined in the selectors
+            selector = value_selectors.get(name)
+            if selector and "source_concept" in selector:
+                source_name = selector["source_concept"]
+                # Find the first unused record that matches the source concept
+                for i, v_record in enumerate(ir_values):
+                    if not used_ir_values[i] and v_record.concept.name == source_name:
+                        logging.debug(f"Applying selector for alias '{name}' using source '{source_name}' (instance {i})")
+                        source_ref = v_record.reference
+                        # Create a copy to avoid unintended side-effects if a ref is used multiple times
+                        selected_ref = _apply_selector(source_ref.copy(), selector)
+                        ordered_refs.append(selected_ref)
+                        ordered_names.append(name)
+                        used_ir_values[i] = True  # Mark this record as used
+                        ref_found = True
+                        break
+            
+            # If not an alias, treat it as a direct concept name
+            if not ref_found:
+                # Find the first unused record that matches the name directly
+                for i, v_record in enumerate(ir_values):
+                    if not used_ir_values[i] and v_record.concept.name == name:
+                        logging.debug(f"Using direct value for '{name}' (instance {i})")
+                        ordered_refs.append(v_record.reference)
+                        ordered_names.append(name)
+                        used_ir_values[i] = True
+                        ref_found = True
+                        break
     else:
-        # Fallback if no order is specified
-        for name, ref in name_to_ref.items():
-            ordered_refs.append(ref)
-            ordered_names.append(name)
+        # Fallback if no order is specified, though this path is less common with complex inputs
+        for v_record in ir_values:
+            ordered_refs.append(v_record.reference)
+            ordered_names.append(v_record.concept.name)
 
     if ordered_refs:
         # Step 1: Strip wrappers like %() from each reference before cross-product.

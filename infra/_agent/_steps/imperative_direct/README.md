@@ -41,17 +41,69 @@ The sequence is triggered by a special wrapper in one of the input concepts' str
     -   It takes the complete data dictionary prepared by `MVP`.
     -   It calls the function with the data, which triggers the final, formatted call to the language model to get the result.
 
-## Prompt Format
+## Prompt Format and Requirements
 
-The prompt template file should be a standard text file with placeholders for substitution (e.g., `$input_1`, `$input_2`).
+To be compatible with the agent's execution logic, prompt templates must follow specific formatting rules for both input variables and output structure.
 
-### With `with_thinking`
+### 1. Input Placeholder Syntax
 
-When the `with_thinking: true` flag is set in the configuration, the LLM is expected to return a JSON object containing its reasoning and the final answer. The prompt template must instruct the model to follow this structure.
+The prompt template **must** use the `$` prefix for variable substitution, as required by Python's `string.Template` class.
 
-**Example Prompt (`prompt_with_thinking.txt`):**
+-   **Single Input:** If only one value is passed to the prompt, it will be available under the key `input`.
+    -   *Example:* `Analyze the following text: $input`
+-   **Multiple Inputs:** If multiple values are passed, they will be numbered sequentially as `input_1`, `input_2`, etc.
+    -   *Example:* `Summarize the difference between $input_1 and $input_2`
+
+> **Note:** Using other syntax like `{input}` or `%input_1%` will result in an error.
+
+### 2. Output Structure for `with_thinking` Mode
+
+When the `with_thinking: true` flag is set in the agent's configuration, the prompt **must** instruct the language model to return a single JSON object containing both its reasoning and the final answer.
+
+#### General JSON Structure
+
+The root JSON object **must** contain two keys:
+
+-   `analysis` (string): The model's step-by-step reasoning on how it arrived at the answer.
+-   `answer` (any): The final, structured answer, which varies depending on the task.
+
+**Example of the general JSON output:**
+```json
+{
+  "analysis": "Step-by-step reasoning about how to approach and solve the problem...",
+  "answer": "The actual output as specified in the instruction"
+}
 ```
-Instruction: $input_1
+
+#### Specific Structure for Relation Extraction
+
+For tasks involving the extraction of relationships, the `answer` key has a more specific, required structure: a **list of dictionaries**.
+
+-   Each dictionary in the list represents one complete relationship instance.
+-   The keys of the dictionary must correspond to the output variable names specified in the instruction.
+
+**Full JSON Example for Relation Extraction:**
+
+Imagine the task is: "From the text 'TechCorp is based in San Francisco, and Innovate Inc. is in New York.', extract all companies and their headquarters."
+
+The expected JSON output would be:
+
+```json
+{
+  "analysis": "The user wants to extract company names and their locations. The sentence mentions two companies: TechCorp in San Francisco, and Innovate Inc. in New York. This requires creating two separate dictionaries, one for each company, and putting them in the 'answer' list.",
+  "answer": [
+    {"company": "TechCorp", "location": "San Francisco"},
+    {"company": "Innovate Inc.", "location": "New York"}
+  ]
+}
+```
+
+### 3. Example Prompt Template
+
+Here is an example of a prompt file (`prompt_with_thinking.txt`) that incorporates these requirements:
+
+```
+Instruction: $input
 
 Execute the instruction. Your final output must be a single JSON object.
 
@@ -59,12 +111,12 @@ First, think step-by-step about how to solve the problem. Place your reasoning i
 Then, provide the final answer in the "answer" key.
 
 Example of the final JSON output:
-```json
+\`\`\`json
 {
   "analysis": "Step-by-step reasoning about how to approach and solve the problem...",
   "answer": "The actual output as specified in the instruction"
 }
-```
+\`\`\`
 
 Execute the instruction and return only the JSON object.
 ```

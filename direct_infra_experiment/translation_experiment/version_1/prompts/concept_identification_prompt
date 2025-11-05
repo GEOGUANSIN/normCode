@@ -34,6 +34,13 @@ From the draft below, you must extract two things:
 1.  The full line of the concept to be decomposed (e.g. `<- {steps}`).
 2.  The `...:` content of that concept.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to identify the concept. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key as a dictionary containing:
+- "concept to decomposed": The full line of the concept to be decomposed
+- "remaining normtext": The complete `...:` content(s) of that concept as a string
+
 **Example:**
 
 Input NormCode Draft:
@@ -52,15 +59,18 @@ Input NormCode Draft:
 Output:
 ```json
 {
-  "concept_to_decomposed": "<- {steps}",
-  "remaining_normtext": "...: \"first, check if the provided username already exists.\"\n...: \"second, if it does, report an error.\""
+  "analysis": "I need to scan the NormCode draft from top to bottom to find the first concept with an un-parsed `...:` annotation. Looking at the draft, I see `<- {steps}` has two `...:` lines, and `<- {user name}` also has a `...:` line. The first one encountered is `<- {steps}`, so I will extract its full line and all of its `...:` content.",
+  "answer": {
+    "concept to decomposed": "<- {steps}",
+    "remaining normtext": "...: \"first, check if the provided username already exists.\"\n...: \"second, if it does, report an error.\""
+  }
 }
 ```
-**Explanation**: The first concept with a `...:` is `{steps}`. We extract its full line and its `...:` content.
+**Explanation**: The output follows the required JSON structure with `analysis` containing the reasoning and `answer` containing a dictionary with the two required keys.
 
 **NormCode Draft:**
 ---
-{normcode draft}
+$input_1
 ---
 
-Respond with a JSON object containing two keys: "concept_to_decomposed" and "remaining_normtext".
+Execute the instruction and return a JSON object with "analysis" (your reasoning) and "answer" (a dictionary with "concept to decomposed" and "remaining normtext"). Return only the JSON object.

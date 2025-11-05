@@ -26,6 +26,12 @@ Your task is to analyze the parent concept's `remaining_normtext` and, based on 
 
 **Important**: At this stage, you should **only** create the structure of the children. Do not assign the `...:` source text annotation to them yet. That happens in a subsequent step.
 
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to create the child concepts based on the operator and source text. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key as a dictionary containing:
+- "children": A list of strings, where each string is a child concept formatted with the `<-` prefix
+
 **Operator-Specific Child Creation Logic**
 
 The operator within the `functional_concept` dictates the kind of children you must create. Analyze both the `functional_concept` and the `remaining_normtext` to identify all necessary children.
@@ -52,44 +58,47 @@ The operator within the `functional_concept` dictates the kind of children you m
 **Input:**
 ```json
 {
-    "concept_to_decomposed": ":<:({user account})",
-    "remaining_normtext": "A user account is a record containing a username and password.",
+    "concept to decomposed": ":<:({user account})",
+    "remaining normtext": "A user account is a record containing a username and password.",
     "question": "What is `{user account}` specified as?",
-    "question_type": "Classification/Specification",
-    "functional_concept": "<= $.({record})"
+    "question type": "Classification/Specification",
+    "functional concept": "<= $.({record})"
 }
 ```
 
 **Output:**
 ```json
 {
-  "children": [
-    "<- {record}",
-    "<- {username}",
-    "<- {password}"
-  ]
+  "analysis": "The functional concept is `<= $.({record})`, which uses the `$.` operator for Classification/Specification. This operator specifies the primary type of the concept. According to the operator-specific logic, I need to create children for the `{type}` specified in the operator (which is `{record}`) as well as any other components mentioned in the remaining normtext. The text mentions 'a record containing a username and password', so I should create: `<- {record}` (the primary type), `<- {username}`, and `<- {password}` (the constituent components).",
+  "answer": {
+    "children": [
+      "<- {record}",
+      "<- {username}",
+      "<- {password}"
+    ]
+  }
 }
 ```
 
-**Explanation**: The functional concept is `<= $.({record})`, which uses the `$.` operator. This operator specifies the primary type of the concept. The children should include this primary type (`{record}`) as well as any other constituent components mentioned in the `remaining_normtext` ("username" and "password").
+**Explanation**: The output follows the required JSON structure with `analysis` containing the reasoning and `answer` containing a dictionary with the children list.
 
 ---
 **INPUTS:**
 
 **Concept to Decomposed:**
-{concept to decomposed}
+$input_1
 
 **Remaining Normtext:**
-{remaining normtext}
+$input_2
 
 **Question:**
-{question}
+$input_3
 
 **Question Type:**
-{question type}
+$input_4
 
 **Functional Concept:**
-{functional concept}
+$input_5
 ---
 
-Respond with a JSON object containing a single key: "children", which is a list of strings.
+Execute the instruction and return a JSON object with "analysis" (your reasoning) and "answer" (a dictionary with "children"). Return only the JSON object.
