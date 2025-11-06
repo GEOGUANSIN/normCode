@@ -17,7 +17,7 @@
         <= &across({normcode draft})
         <- {normcode draft}<$={1}>
     
-    <- [all {normcode draft}] | 1.4. quantifying
+    <- {normcode draft}<$={5}> | 1.4. quantifying
         <= *every([all {normcode draft}]) | 1.4.1. assignment
 
             <= $.({normcode draft}<$={#}>)

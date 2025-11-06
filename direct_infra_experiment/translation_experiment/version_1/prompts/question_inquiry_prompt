@@ -107,10 +107,12 @@ These questions are used when the `...:` text is describing the logic, method, o
 *   **Methodology Declaration**: Specifies the method or means by which an action is performed.
     *   *Example Question*: "By what method is `::(Authenticate the user)` performed?" (e.g., "...: authenticate the user by checking their password...")
     *   *Explanation*: This seeks to define the implementation or procedure for carrying out the action `::(Authenticate the user)`.
+    *   *Distinction*: A methodology often describes a multi-step process. If the text lays out a sequence of actions (e.g., "first do this, then do that"), it is a Methodology Declaration, even if some of those steps contain their own conditional logic (e.g., "...if X, then report error...").
 
 *   **Conditional Dependency**: Asks about the condition required for an action to occur.
     *   *Example Question*: "Under what condition is `::(Show the admin dashboard)` executed?" (e.g., "...: show the dashboard if the user is an admin...")
     *   *Explanation*: This asks for the prerequisite boolean state (e.g., `<user is an admin>`) that must be true for the action to proceed.
+    *   *Distinction*: This applies when the *entire action* is gated by a single, primary condition. If the condition is merely one step within a larger process description, the primary type is likely Methodology Declaration.
 
 *   **Sequential Dependency**: Asks about the order of actions.
     *   *Example Question*: "After what event is `::(Show the admin dashboard)` executed?" (e.g., "...: show the dashboard after the user is authenticated...")
@@ -119,10 +121,10 @@ These questions are used when the `...:` text is describing the logic, method, o
 **Example:**
 
 Input Concept to Decompose:
-```normcode
-:<:(::(Authenticate the user))
-    ...: Authenticate the user by checking their password.
-```
+::(Authenticate the user)
+
+Remaining Normtext:
+...: Authenticate the user by checking their password.
 
 Output:
 ```json

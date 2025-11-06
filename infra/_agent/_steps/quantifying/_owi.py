@@ -1,6 +1,7 @@
 import logging
 from infra._states._quantifying_states import States
 from infra._syntax._quantifier import Quantifier
+from infra._loggers.utils import log_workspace_details
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -24,9 +25,13 @@ def output_working_interpretation(states: States) -> States:
         f"[OWI Step 1] Checking if loop is complete. Loop base concept name: {loop_base_concept_name}, To loop elements: {to_loop_elements}"
     )
     if loop_base_concept_name and to_loop_elements:
+        workspace = getattr(states, "workspace", {})
+        logger.debug("[OWI] Workspace before checking completion:")
+        log_workspace_details(workspace, logger)
+
         quantifier_index = getattr(syntax_data, "quantifier_index", 0)
         quantifier = Quantifier(
-            workspace=states.workspace,
+            workspace=workspace,
             loop_base_concept_name=loop_base_concept_name,
             loop_concept_index=quantifier_index,
         )

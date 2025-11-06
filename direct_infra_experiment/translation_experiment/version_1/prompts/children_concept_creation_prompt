@@ -26,11 +26,24 @@ Your task is to analyze the parent concept's `remaining_normtext` and, based on 
 
 **Important**: At this stage, you should **only** create the structure of the children. Do not assign the `...:` source text annotation to them yet. That happens in a subsequent step.
 
+**Guiding Principles for Hierarchical Purity**
+To maintain a clean and logical hierarchy, follow these two principles:
+
+1.  **One Action/Judgement per Step**: A decomposition should generally result in **only one** primary action (`::()`) or judgement (`<>`) child. Avoid creating multiple sibling actions. This rule does not apply to operators like `@by(:_:)` and `$::`, which have specific structural requirements.
+2.  **No Nested Actions Within a Definition**: If the `functional_concept` (the `<=` line) is itself an imperative or a judgement, its direct children (`<-` lines) must **not** be other imperatives or judgements. They should only be the parameters or components of that top-level action (e.g., `{Objects}`, `<Statements>`).
+
 Your final output must be a single JSON object.
 
 First, think step-by-step about how to create the child concepts based on the operator and source text. Place your reasoning in the "analysis" key of the JSON object.
 Then, provide the final answer in the "answer" key as a dictionary containing:
 - "children": A list of strings, where each string is a child concept formatted with the `<-` prefix
+
+**Sources of Child Concepts**
+
+Child concepts can be derived from two primary sources. You must analyze the functional concept to determine which source to use.
+
+1.  **Extracted Directly from the Functional Concept**: For operators like `@if(<condition>)` or `@after({event})`, the child concept is explicitly provided within the operator. Your task is simply to extract it and format it as a `<-` concept.
+2.  **Parsed from the Remaining Normtext**: For operators like `$.`, `::()`, or `@by`, the operator provides a template or a guide. You must analyze the `remaining_normtext` to identify and create the specific child concepts that fit that template. This often involves creating multiple children.
 
 **Operator-Specific Child Creation Logic**
 
@@ -53,7 +66,7 @@ The operator within the `functional_concept` dictates the kind of children you m
 *   `@if!(<condition>)` **(Negative Conditional)**: Creates a single child for the `<condition>`. From `...if the user is not an admin` and `<= @if!(<user is not an admin>)`, you would generate `<- <user is not an admin>`.
 *   `@after({event})` **(Sequence)**: Creates a child for the event that must complete first. From `...Show the admin dashboard after the user is authenticated.` and `<= @after({admin dashboard})`, you would generate `<- {admin dashboard}`.
 
-**Example:**
+**Example 1: Specification (`$.`)**
 
 **Input:**
 ```json
@@ -69,12 +82,64 @@ The operator within the `functional_concept` dictates the kind of children you m
 **Output:**
 ```json
 {
-  "analysis": "The functional concept is `<= $.({record})`, which uses the `$.` operator for Classification/Specification. This operator specifies the primary type of the concept. According to the operator-specific logic, I need to create children for the `{type}` specified in the operator (which is `{record}`) as well as any other components mentioned in the remaining normtext. The text mentions 'a record containing a username and password', so I should create: `<- {record}` (the primary type), `<- {username}`, and `<- {password}` (the constituent components).",
+  "analysis": "The functional concept is `<= $.({record})`, which uses the `$.` operator for Classification/Specification. This operator specifies the primary type of the concept. According to the operator-specific logic, I need to create children for the `{type}` specified in the operator (which is `{record}`) as well as any other components mentioned in the remaining normtext. The text mentions 'a record containing a username and password', so I should create: `<- {record}` (the primary type), `<- {username}`, and `<- {password}` (the constituent components). This adheres to the guiding principles as the functional concept is not an action, and none of the children are new actions or judgements.",
   "answer": {
     "children": [
       "<- {record}",
       "<- {username}",
       "<- {password}"
+    ]
+  }
+}
+```
+
+**Example 2: Complex Methodology (`@by`)**
+
+**Input:**
+```json
+{
+    "concept to decomposed": ":<:(::(Authenticate the user))",
+    "remaining normtext": "Authenticate the user by checking their password.",
+    "question": "How do you authenticate the user?",
+    "question type": "Methodology Declaration",
+    "functional concept": "<= @by(:_:)"
+}
+```
+
+**Output:**
+```json
+{
+  "analysis": "The functional concept is `<= @by(:_:)`, which uses the `@by` operator for Methodology Declaration. This operator signifies that the action is performed by a specific method. The `remaining_normtext` is 'Authenticate the user by checking their password'. I need to parse this to define the method. The method is 'checking their password', which can be represented as a bounded imperative `:_:{check password}({user})`. According to the operator logic, I must create children for the bounded imperative itself, as well as its components. Therefore, the children are `<- :_:{check password}({user})`, `<- {check password}`, and `<- {user}`. This follows the guiding principles, as `@by` is an explicit exception that is designed to introduce the single, primary method for an action.",
+  "answer": {
+    "children": [
+      "<- :_:{check password}({user})",
+      "<- {check password}",
+      "<- {user}"
+    ]
+  }
+}
+```
+
+**Example 3: Simple Conditional (`@if`)**
+
+**Input:**
+```json
+{
+    "concept to decomposed": ":<:(::(Show the admin dashboard))",
+    "remaining normtext": "Show the admin dashboard if the user is an admin.",
+    "question": "When do you show the admin dashboard?",
+    "question type": "Conditional Dependency",
+    "functional concept": "<= @if(<user is an admin>)"
+}
+```
+
+**Output:**
+```json
+{
+  "analysis": "The functional concept is `<= @if(<user is an admin>)`. This uses the `@if` operator, which introduces a conditional dependency. The operator-specific logic states that for `@if(<condition>)`, the child is the `<condition>` itself. In this case, the condition `<user is an admin>` is provided directly in the functional concept. Therefore, my only task is to extract this concept and format it as a child. No parsing of the `remaining_normtext` is needed for this operator. This adheres to the guiding principles by creating a single judgement child (`<user is an admin>`) which serves as a parameter for the conditional operator.",
+  "answer": {
+    "children": [
+      "<- <user is an admin>"
     ]
   }
 }

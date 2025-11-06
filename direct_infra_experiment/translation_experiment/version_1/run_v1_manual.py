@@ -60,6 +60,13 @@ def create_repositories():
             axis_name="value",
             is_final_concept=True,
         ),
+        ConceptEntry(
+            id=str(uuid.uuid4()),
+            concept_name="{normcode draft}<$={5}>",
+            type="{}",
+            description="The normcode draft output from the loop.",
+            axis_name="value",
+        ),
 
         # Inferred Concepts
         ConceptEntry(
@@ -415,9 +422,9 @@ def create_repositories():
             inference_sequence='assigning',
             concept_to_infer=concept_repo.get_concept('{normcode draft}'),
             function_concept=concept_repo.get_concept('$.({normcode draft})'),
-            value_concepts=[concept_repo.get_concept('[all {normcode draft}]')],
+            value_concepts=[concept_repo.get_concept('{normcode draft}<$={5}>')],
             flow_info={'flow_index': '1'},
-            working_interpretation={"syntax": {"marker": ".", "assign_source": "[all {normcode draft}]", "assign_destination": "{normcode draft}"}}
+            working_interpretation={"syntax": {"marker": ".", "assign_source": "{normcode draft}<$={5}>", "assign_destination": "{normcode draft}"}}
         ),
         # Initial Imperative for normtext
         InferenceEntry(
@@ -472,7 +479,7 @@ def create_repositories():
         InferenceEntry(
             id=str(uuid.uuid4()),
             inference_sequence='quantifying',
-            concept_to_infer=concept_repo.get_concept('[all {normcode draft}]'),
+            concept_to_infer=concept_repo.get_concept('{normcode draft}<$={5}>'),
             function_concept=concept_repo.get_concept('*every([all {normcode draft}])'),
             value_concepts=[concept_repo.get_concept('[all {normcode draft}]')],
             context_concepts=[concept_repo.get_concept('[all {normcode draft}]*1')],
@@ -485,7 +492,7 @@ def create_repositories():
                     "CurrentLoopBaseConcept": "[all {normcode draft}]*1",
                     "group_base": "normcode draft",
                     "InLoopConcept": {},
-                    "ConceptToInfer": ["[all {normcode draft}]"]
+                    "ConceptToInfer": ["{normcode draft}<$={5}>"]
                 }
             },
             start_without_value_only_once=True,
@@ -846,7 +853,7 @@ if __name__ == "__main__":
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        max_cycles=30,
+        max_cycles=300,
         body=Body("qwen-plus"),
     )
 
