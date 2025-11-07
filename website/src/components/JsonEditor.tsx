@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import JSONEditor from 'jsoneditor';
 import 'jsoneditor/dist/jsoneditor.css';
-import { RepositorySetData } from '../types';
+import type { RepositorySetData } from '../types';
 
 interface JsonEditorProps {
   data: RepositorySetData | null;

@@ -3,7 +3,6 @@ import Layout from './components/layout/Layout';
 import HomePage from './components/pages/HomePage';
 import AboutPage from './components/pages/AboutPage';
 import NormCodePage from './components/pages/NormCodePage';
-import DocsPage from './components/pages/DocsPage';
 import DemoPage from './components/pages/DemoPage';
 import BlogPage from './components/pages/BlogPage';
 import ContactPage from './components/pages/ContactPage';

@@ -1,13 +1,12 @@
 import axios from 'axios';
-import { API_URL } from '../../config';
-import { 
+import { API_URL } from '../config';
+import type { 
   RepositorySetMetadata,
   RepositorySetData,
   ConceptEntry,
   InferenceEntry,
   RunResponse, 
   LogContentResponse,
-  ApiError,
   FlowData
 } from '../types';
 
@@ -19,18 +18,6 @@ const apiClient = axios.create({
 });
 
 class ApiService {
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      const error: ApiError = {
-        message: errorData.detail || `HTTP error! status: ${response.status}`,
-        status: response.status
-      };
-      throw error;
-    }
-    return response.json();
-  }
-
   // Repository Management
   async fetchRepositorySets(): Promise<RepositorySetMetadata[]> {
     const response = await apiClient.get<RepositorySetMetadata[]>('/repositories');

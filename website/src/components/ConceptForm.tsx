@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConceptEntry, ConceptType } from '../types';
+import type { ConceptEntry, ConceptType } from '../types';
 
 interface ConceptFormProps {
   form: Partial<ConceptEntry>;
