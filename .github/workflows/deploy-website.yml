@@ -29,6 +29,9 @@ jobs:
           cd website
           npm run build
 
+      - name: List files in workspace
+        run: ls -R
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
