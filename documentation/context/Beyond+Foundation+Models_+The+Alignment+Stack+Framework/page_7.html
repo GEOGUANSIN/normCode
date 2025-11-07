@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="zh"><head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   对齐层：规范码
+  </title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://d3js.org/d3.v7.min.js">
+  </script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <style>
+   body {width: 1280px; height: 720px; overflow: hidden; margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            height: 720px;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #F0F0F0 0%, #e6f2f0 100%);
+        }
+        .property-card {
+            transition: all 0.3s ease;
+        }
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .connector-line {
+            height: 3px;
+            background: linear-gradient(90deg, #6A4C93, #F7B267);
+        }
+    
+html {
+    overflow: hidden;
+}
+  </style>
+ <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.mb-4{margin-bottom:1rem}.mb-8{margin-bottom:2rem}.mr-3{margin-right:0.75rem}.mr-4{margin-right:1rem}.mt-8{margin-top:2rem}.flex{display:flex}.grid{display:grid}.h-10{height:2.5rem}.h-12{height:3rem}.w-10{width:2.5rem}.w-12{width:3rem}.flex-1{flex:1 1 0%}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.gap-6{gap:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border-t-4{border-top-width:4px}.border-orange-500{--tw-border-opacity:1;border-color:rgb(249 115 22 / var(--tw-border-opacity, 1))}.border-purple-600{--tw-border-opacity:1;border-color:rgb(147 51 234 / var(--tw-border-opacity, 1))}.border-teal-500{--tw-border-opacity:1;border-color:rgb(20 184 166 / var(--tw-border-opacity, 1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213 / var(--tw-bg-opacity, 1))}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}.bg-teal-100{--tw-bg-opacity:1;background-color:rgb(204 251 241 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-16{padding-left:4rem;padding-right:4rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-12{padding-bottom:3rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-orange-600{--tw-text-opacity:1;color:rgb(234 88 12 / var(--tw-text-opacity, 1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234 / var(--tw-text-opacity, 1))}.text-teal-600{--tw-text-opacity:1;color:rgb(13 148 136 / var(--tw-text-opacity, 1))}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style></head>
+ <body class="">
+  <div class="slide gradient-bg flex flex-col" style=" overflow: hidden;">
+   <!-- Header -->
+   <div class="px-16 py-6">
+    <h1 class="text-4xl font-bold text-gray-800">
+     对齐层：规范码
+    </h1>
+   </div>
+   <!-- Main Content -->
+   <div class="flex flex-1 flex-col px-16 pb-8">
+    <!-- Definition Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+     <div class="flex items-center mb-4">
+      <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mr-4">
+       <i class="fas fa-file-contract text-2xl text-orange-600">
+       </i>
+      </div>
+      <h2 class="text-2xl font-semibold text-gray-700">
+       什么是规范码？
+      </h2>
+     </div>
+     <p class="text-lg text-gray-700 leading-relaxed">
+      一种
+      <span class="font-semibold text-orange-600">
+       半形式的、可解释的合约
+      </span>
+      ，它在人类和AI系统之间建立了相互理解和交互的共同基础。它为复杂的共享工作区带来积极性和清晰度，确保AI操作透明且与人类意图一致。
+     </p>
+    </div>
+    <!-- Normcode Properties -->
+    <div class="flex-1 grid grid-cols-3 gap-6">
+     <!-- Readable Property -->
+     <div class="property-card bg-white rounded-lg shadow-lg p-6 border-t-4 border-teal-500">
+      <div class="flex items-center mb-4">
+       <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3">
+        <i class="fas fa-eye text-xl text-teal-600">
+        </i>
+       </div>
+       <h3 class="text-xl font-semibold text-gray-700">
+        可读性
+       </h3>
+      </div>
+      <p class="text-gray-600">
+       人类可以理解和审计规范和决策
+      </p>
+     </div>
+     <!-- Executable Property -->
+     <div class="property-card bg-white rounded-lg shadow-lg p-6 border-t-4 border-purple-600">
+      <div class="flex items-center mb-4">
+       <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+        <i class="fas fa-cogs text-xl text-purple-600">
+        </i>
+       </div>
+       <h3 class="text-xl font-semibold text-gray-700">
+        可执行性
+       </h3>
+      </div>
+      <p class="text-gray-600">
+       AI可以一致可靠地根据规范行事
+      </p>
+     </div>
+     <!-- Accountable Property -->
+     <div class="property-card bg-white rounded-lg shadow-lg p-6 border-t-4 border-orange-500">
+      <div class="flex items-center mb-4">
+       <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+        <i class="fas fa-history text-xl text-orange-600">
+        </i>
+       </div>
+       <h3 class="text-xl font-semibold text-gray-700">
+        可问责性
+       </h3>
+      </div>
+      <p class="text-gray-600">
+       每一个行动和决策都是可追踪和可审计的
+      </p>
+     </div>
+    </div>
+    <!-- Bottom Section: AI Traceability -->
+    <div class="mt-8 bg-gray-100 rounded-lg p-4 shadow-inner">
+     <div class="flex items-center">
+      <i class="fas fa-link text-2xl text-gray-600 mr-4">
+      </i>
+      <p class="text-gray-700">
+       <span class="font-semibold">
+        为什么重要：
+       </span>
+       规范码实现了AI可追溯性——跟踪和记录AI生命周期中的数据和决策，提高问责性并在AI系统中建立信任。
+      </p>
+     </div>
+    </div>
+   </div>
+  </div>
+ 
+
+</body></html>

@@ -1,0 +1,24 @@
+# The Comprehensive NormCode Translation Guide
+
+This document provides a unified, comprehensive guide to the NormCode translation algorithm. It synthesizes the formal process, core concepts, and operator examples into a single reference for translating natural language `normtext` into a structured NormCode plan.
+
+## 1. Fundamental NormCode Concepts
+
+Before detailing the algorithm, it's important to understand the basic building blocks of NormCode.
+
+*   **Inference:** The core unit of NormCode. An inference is a single logical step in a plan. It consists of a **function/operation (`<=`)** which defines the operation to be performed, and the **Values (`<-`)** which are the inputs or ingredients for that action.
+*   **Concepts:** These are the "words" of NormCode, representing the ideas, data, and actions in the plan. The main types are:
+    *   `{}` **Object**: A thing, a variable, or a piece of data (e.g., `{user name}`).
+    *   `<>` **Statement**: A statement that can be true or false (e.g., `<the user is an admin>`).
+    *   `::()` **Imperative**: A command or an action to be done (e.g., `::(calculate the total)`).
+    *   `[]` **Relation**: A group or collection of things (e.g., `[all user emails]`).
+
+## 2. The Role of Annotations
+
+These annotations are fundamental to managing the state of the decomposition process.
+
+*   `...:` **Source Text Annotation**: Holds the piece of the original `normtext` currently being analyzed. A concept is considered "un-decomposed" as long as it has a `...:` annotation that has not yet been fully parsed.
+*   `?:` **Question Annotation**: The question being asked about the concept, derived from the `...:` text.
+*   `/:` **Description Annotation**: A human-readable description of the *result* of the decomposition for that concept.
+
+The recursion for a branch is **complete** when the `...:` annotation has been fully consumed and a definitive `/:` annotation has been generated.

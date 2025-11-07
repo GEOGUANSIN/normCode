@@ -1,0 +1,183 @@
+import os
+import logging
+import json
+from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
+
+
+class FileSystemTool:
+    def __init__(self, base_dir: str | None = None):
+        """
+        Initializes the FileSystemTool.
+
+        Args:
+            base_dir (str | None): An optional designated directory path to use as the
+                                   base for all file operations. If None, paths will
+                                   be relative to the `infra` module directory.
+        """
+        self.base_dir = base_dir
+
+    def _get_base_dir(self) -> Path:
+        """Determines the base directory for file operations."""
+        if self.base_dir:
+            return Path(self.base_dir)
+        else:
+            from infra._constants import CURRENT_DIR
+            # CURRENT_DIR is '.../infra', so we go up and then into 'infra/_agent/_models'
+            return Path(CURRENT_DIR) / '_agent' / '_models'
+
+    def _get_memorized_file_path(self) -> Path:
+        """Gets the full path to the default memorized.json file."""
+        return self._get_base_dir() / 'memorized.json'
+
+    def save(self, content: str, location: str) -> dict:
+        """
+        Saves content to a specified file location.
+
+        Args:
+            content (str): The content to be saved.
+            location (str): The file path where the content will be saved.
+
+        Returns:
+            dict: A dictionary with the status of the operation.
+        """
+        try:
+            # Ensure the directory exists
+            dir_path = os.path.dirname(location)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+                logger.info(f"Created directory: {dir_path}")
+
+            # Write the content to the file
+            with open(location, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            logger.info(f"Successfully saved content to {location}")
+            return {"status": "success", "location": location}
+        except Exception as e:
+            logger.error(f"Failed to save file at {location}: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def read(self, location: str) -> dict:
+        """
+        Reads content from a specified file location.
+
+        Args:
+            location (str): The file path to read from.
+
+        Returns:
+            dict: A dictionary with the status and content of the file.
+        """
+        try:
+            if not os.path.exists(location):
+                logger.warning(f"File not found at {location}")
+                return {"status": "error", "message": "File not found."}
+            
+            with open(location, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            logger.info(f"Successfully read content from {location}")
+            return {"status": "success", "content": content}
+        except Exception as e:
+            logger.error(f"Failed to read file at {location}: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def read_memorized_value(self, content: str) -> dict:
+        """
+        Reads a value from a JSON-based memory file.
+
+        The `content` can be a simple key, or a JSON string specifying both
+        a `key` and an alternate `location` for the memory file.
+
+        Args:
+            content (str): The key or JSON string to resolve.
+
+        Returns:
+            dict: A dictionary with the status and the retrieved value.
+        """
+        file_path = self._get_memorized_file_path()
+        lookup_key = content
+        try:
+            params = json.loads(content)
+            if isinstance(params, dict) and "key" in params:
+                lookup_key = params["key"]
+                if "location" in params:
+                    location = params["location"]
+                    # If location is relative, it's relative to the base dir
+                    file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+        except (json.JSONDecodeError, TypeError):
+            pass  # Not JSON, treat content as key
+        except Exception as e:
+            logger.error(f"Error processing memorized parameter content '{content}': {e}")
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            value = data.get(lookup_key)
+            if value is not None:
+                return {"status": "success", "content": value}
+            else:
+                return {"status": "error", "message": f"Key '{lookup_key}' not found in {file_path}"}
+
+        except FileNotFoundError:
+            return {"status": "error", "message": f"Memorized parameters file not found at {file_path}"}
+        except json.JSONDecodeError:
+            return {"status": "error", "message": f"Failed to decode JSON from {file_path}"}
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to read memorized parameter: {e}"}
+
+    def save_memorized_value(self, content: str) -> dict:
+        """
+        Saves a key-value pair to a JSON-based memory file.
+
+        The `content` is a JSON string that must contain a `key` and `value`,
+        and can optionally include a `location` for the memory file.
+
+        Args:
+            content (str): The JSON string with the data to save.
+
+        Returns:
+            dict: A dictionary with the status of the operation.
+        """
+        file_path = self._get_memorized_file_path()
+        try:
+            params = json.loads(content)
+            if not isinstance(params, dict) or "key" not in params or "value" not in params:
+                return {"status": "error", "message": "Content must be a JSON object with 'key' and 'value'."}
+            
+            key = params["key"]
+            value = params["value"]
+            if "location" in params:
+                location = params["location"]
+                file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+
+        except (json.JSONDecodeError, TypeError):
+            return {"status": "error", "message": "Invalid JSON content provided."}
+        
+        try:
+            data = {}
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        # File is corrupted or not JSON, will be overwritten
+                        logger.warning(f"Could not decode JSON from {file_path}. The file will be overwritten.")
+                        pass
+            
+            data[key] = value
+
+            dir_path = os.path.dirname(file_path)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+            
+            return {"status": "success", "message": f"Successfully saved key '{key}' to {file_path}"}
+        
+        except Exception as e:
+            return {"status": "error", "message": f"Failed to save memorized value: {e}"}

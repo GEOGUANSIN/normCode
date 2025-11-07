@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="ja"><head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   核心課題：平均知能 vs. 状況知能
+  </title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://d3js.org/d3.v7.min.js">
+  </script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <style>
+   body {width: 1280px; height: 720px; overflow: hidden; margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            height: 720px;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #F0F0F0 0%, #e6f2f0 100%);
+        }
+        .accent-border {
+            border-left: 5px solid #5FB5A6;
+        }
+        .vs-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #6A4C93;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    
+html {
+    overflow: hidden;
+}
+  </style>
+ <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.mb-4{margin-bottom:1rem}.mr-3{margin-right:0.75rem}.mr-4{margin-right:1rem}.mt-1{margin-top:0.25rem}.mt-6{margin-top:1.5rem}.flex{display:flex}.h-12{height:3rem}.h-full{height:100%}.w-1\/2{width:50%}.w-12{width:3rem}.flex-1{flex:1 1 0%}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235 / var(--tw-bg-opacity, 1))}.bg-teal-100{--tw-bg-opacity:1;background-color:rgb(204 251 241 / var(--tw-bg-opacity, 1))}.bg-teal-50{--tw-bg-opacity:1;background-color:rgb(240 253 250 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-16{padding-left:4rem;padding-right:4rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-12{padding-bottom:3rem}.pl-8{padding-left:2rem}.pr-8{padding-right:2rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.italic{font-style:italic}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-teal-500{--tw-text-opacity:1;color:rgb(20 184 166 / var(--tw-text-opacity, 1))}.text-teal-600{--tw-text-opacity:1;color:rgb(13 148 136 / var(--tw-text-opacity, 1))}.text-yellow-500{--tw-text-opacity:1;color:rgb(234 179 8 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style></head>
+ <body class="">
+  <div class="slide gradient-bg flex flex-col" style=" overflow: hidden;">
+   <!-- Header -->
+   <div class="px-16 py-6">
+    <h1 class="text-4xl font-bold text-gray-800">
+     核心課題：平均知能 vs. 状況知能
+    </h1>
+   </div>
+   <!-- Main Content -->
+   <div class="flex flex-1 px-16 pb-8">
+    <!-- Left Side: Average Intelligence -->
+    <div class="w-1/2 pr-8 flex flex-col">
+     <div class="bg-white rounded-lg shadow-lg p-6 h-full accent-border">
+      <div class="flex items-center mb-4">
+       <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+        <i class="fas fa-robot text-2xl text-gray-600">
+        </i>
+       </div>
+       <h2 class="text-2xl font-semibold text-gray-700">
+        平均知能
+       </h2>
+      </div>
+      <ul class="space-y-4 text-lg">
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-gray-500 mt-1 mr-3">
+        </i>
+        <span>
+         訓練データに基づく
+         <span class="font-semibold">
+          統計的によくある
+         </span>
+         回答を提供
+        </span>
+       </li>
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-gray-500 mt-1 mr-3">
+        </i>
+        <span>
+         <span class="font-semibold">
+          典型的な応答
+         </span>
+         を生成するが状況認識なし
+        </span>
+       </li>
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-gray-500 mt-1 mr-3">
+        </i>
+        <span>
+         現実世界の応用に必要な
+         <span class="font-semibold">
+          特定の文脈
+         </span>
+         が不足
+        </span>
+       </li>
+      </ul>
+      <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+       <div class="flex items-center">
+        <i class="fas fa-lightbulb text-yellow-500 text-xl mr-3">
+        </i>
+        <p class="text-gray-700 italic">
+         「基盤モデルは強力な汎用ツールですが、本質的には平均的な答えを提供し、特定の状況に適した答えではありません。」
+        </p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- VS Circle -->
+    <div class="flex items-center justify-center">
+     <div class="vs-circle">
+      对比
+     </div>
+    </div>
+    <!-- Right Side: Situational Intelligence -->
+    <div class="w-1/2 pl-8 flex flex-col">
+     <div class="bg-white rounded-lg shadow-lg p-6 h-full accent-border">
+      <div class="flex items-center mb-4">
+       <div class="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center mr-4">
+        <i class="fas fa-puzzle-piece text-2xl text-teal-600">
+        </i>
+       </div>
+       <h2 class="text-2xl font-semibold text-gray-700">
+        状況知能
+       </h2>
+      </div>
+      <ul class="space-y-4 text-lg">
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-teal-500 mt-1 mr-3">
+        </i>
+        <span>
+         <span class="font-semibold">
+          文脈を理解した
+         </span>
+         応答を提供し、特定のシナリオに合わせて調整
+        </span>
+       </li>
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-teal-500 mt-1 mr-3">
+        </i>
+        <span>
+         <span class="font-semibold">
+          現実世界のデータ
+         </span>
+         と制約条件を推論に統合
+        </span>
+       </li>
+       <li class="flex items-start">
+        <i class="fas fa-check-circle text-teal-500 mt-1 mr-3">
+        </i>
+        <span>
+         <span class="font-semibold">
+          特定の目標
+         </span>
+         と運用要件に一致
+        </span>
+       </li>
+      </ul>
+      <div class="mt-6 p-4 bg-teal-50 rounded-lg">
+       <div class="flex items-center">
+        <i class="fas fa-exclamation-circle text-teal-600 text-xl mr-3">
+        </i>
+        <p class="text-gray-700">
+         現実世界の仕事の特徴は
+         <span class="font-semibold">
+          独特な目標、特定の制約、専門化されたツール
+         </span>
+         —これは汎用AI応答との根本的な不適合を生み出します。
+        </p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ 
+
+</body></html>

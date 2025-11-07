@@ -1,0 +1,12 @@
+:<:({sum}) | 1. imperative (python)
+    <= ::{%(python)}<{script}<$({addition})%>: {1}<$({number 1})%>, {2}<$({number 2})%> | 1.1. timing
+    <- {addition}<:{script}>
+        |%{script_location}: 1_addition_script
+        |%{prompt_location}: 1_addition_prompt
+    <- {number 1}<:{1}>
+        |%{memorized_parameter}: number_1
+    <- {number 2}<:{2}>
+        |%{memorized_parameter}: number_2
+
+
+

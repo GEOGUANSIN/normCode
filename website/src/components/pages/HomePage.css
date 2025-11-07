@@ -1,0 +1,50 @@
+.home-page .hero {
+  text-align: center;
+  padding: 4rem 1rem;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.home-page .hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.home-page .hero p {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 2rem;
+}
+
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-primary {
+  background-color: #007aff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-secondary {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+  background-color: #e0e0e0;
+}

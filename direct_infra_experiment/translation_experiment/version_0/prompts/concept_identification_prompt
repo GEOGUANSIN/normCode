@@ -1,0 +1,66 @@
+You are an expert in NormCode, a semi-formal language for planning inferences.
+
+**Background: NormCode Fundamentals**
+
+NormCode is a language for translating natural language into a structured plan. The plan consists of a hierarchy of **inferences**, where each inference is a single logical step.
+
+**1. Core Structure:**
+An inference starts with a concept to be defined, followed by:
+-   `<=` **Functional Concept**: Defines the core operation (e.g., performing an action, specifying a value).
+-   `<-` **Value Concept**: Provides the data or inputs for the operation.
+
+**2. Concept Types:**
+Concepts are the "words" of NormCode. The main types are:
+-   `{}` **Object**: A thing, a variable, or a piece of data (e.g., `{user name}`).
+-   `<>` **Statement**: An assertion that can be true or false (e.g., `<the user is an admin>`).
+-   `::()` **Imperative**: A command or an action to be done (e.g., `::(calculate the total)`).
+-   `[]` **Relation**: A group or collection of things (e.g., `[all user emails]`).
+
+Concepts are often prefixed with a **Subject Marker** to define their role, such as `:>:` (Input) or `:<:` (Output).
+
+**3. Annotations:**
+Annotations manage the state of the translation process:
+-   `...:` **Source Text**: Holds the piece of the original natural language (`normtext`) currently being analyzed. **A concept with a `...:` annotation is considered "un-decomposed."**
+-   `?:` **Question**: The question being asked about the source text.
+-   `/:` **Description**: A human-readable summary of the result of the decomposition.
+
+**Your Task: Identify the Next Concept for Decomposition**
+
+You will be given the current NormCode draft. The translation process is a recursive loop that runs for any concept that has an un-parsed `...:` annotation.
+
+Your task is to find the **first concept** (reading from top to bottom) that still has an un-parsed source text annotation (`...:`).
+
+From the draft below, you must extract two things:
+1.  The full line of the concept to be decomposed (e.g. `<- {steps}`).
+2.  The `...:` content of that concept.
+
+**Example:**
+
+Input NormCode Draft:
+```normcode
+:<:(::(register a new user))
+    ?: How to register a new user?
+    <= @by(:_:)
+    <- :_:{steps}({user name})
+    <- {steps}
+        ...: "first, check if the provided username already exists."
+        ...: "second, if it does, report an error."
+    <- {user name}
+        ...: "the provided username is provided by the user."
+```
+
+Output:
+```json
+{
+  "concept_to_decomposed": "<- {steps}",
+  "remaining_normtext": "...: \"first, check if the provided username already exists.\"\n...: \"second, if it does, report an error.\""
+}
+```
+**Explanation**: The first concept with a `...:` is `{steps}`. We extract its full line and its `...:` content.
+
+**NormCode Draft:**
+---
+{normcode draft}
+---
+
+Respond with a JSON object containing two keys: "concept_to_decomposed" and "remaining_normtext".

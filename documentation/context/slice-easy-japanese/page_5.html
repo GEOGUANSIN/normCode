@@ -1,0 +1,175 @@
+<!DOCTYPE html><html lang="ja"><head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   共有ワークスペースの仕組み
+  </title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://d3js.org/d3.v7.min.js">
+  </script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <style>
+   body {width: 1280px; height: 720px; overflow: hidden; margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            height: 720px;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #F0F0F0 0%, #e6f2f0 100%);
+        }
+        .mechanism-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .mechanism-card:hover {
+            transform: translateY(-5px);
+        }
+        .mechanism-1 {
+            border-color: #6A4C93;
+        }
+        .mechanism-2 {
+            border-color: #5FB5A6;
+        }
+        .mechanism-3 {
+            border-color: #F7B267;
+        }
+        .mechanism-4 {
+            border-color: #6A4C93;
+        }
+        .icon-bg-1 {
+            background-color: rgba(106, 76, 147, 0.1);
+        }
+        .icon-bg-2 {
+            background-color: rgba(95, 181, 166, 0.1);
+        }
+        .icon-bg-3 {
+            background-color: rgba(247, 178, 103, 0.1);
+        }
+        .icon-bg-4 {
+            background-color: rgba(106, 76, 147, 0.1);
+        }
+        .connector-line {
+            position: absolute;
+            background: linear-gradient(90deg, #6A4C93, #5FB5A6, #F7B267);
+            height: 3px;
+            z-index: 0;
+        }
+    
+html {
+    overflow: hidden;
+}
+  </style>
+ <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.absolute{position:absolute}.relative{position:relative}.left-1\/2{left:50%}.top-1\/2{top:50%}.z-10{z-index:10}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mr-2{margin-right:0.5rem}.mr-5{margin-right:1.25rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.flex{display:flex}.grid{display:grid}.h-16{height:4rem}.h-32{height:8rem}.h-full{height:100%}.w-16{width:4rem}.w-32{width:8rem}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.gap-8{gap:2rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-6{padding:1.5rem}.px-16{padding-left:4rem;padding-right:4rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-12{padding-bottom:3rem}.text-center{text-align:center}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-orange-500{--tw-text-opacity:1;color:rgb(249 115 22 / var(--tw-text-opacity, 1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234 / var(--tw-text-opacity, 1))}.text-purple-700{--tw-text-opacity:1;color:rgb(126 34 206 / var(--tw-text-opacity, 1))}.text-teal-600{--tw-text-opacity:1;color:rgb(13 148 136 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style></head>
+ <body class="">
+  <div class="slide gradient-bg flex flex-col" style=" overflow: hidden;">
+   <!-- Header -->
+   <div class="px-16 py-5">
+    <h1 class="text-3xl font-bold text-gray-800">
+     共有ワークスペースの仕組み
+    </h1>
+    <p class="text-lg text-gray-600 mt-1">
+     4つの重要なメカニズムにより、AIを「知的推測器」から信頼できるチームメンバーに転換
+    </p>
+   </div>
+   <!-- Main Content -->
+   <div class="flex-1 px-16 pb-6 relative">
+    <!-- Center Element -->
+    <!-- Connector Lines -->
+    <!-- Mechanisms -->
+    <div class="grid grid-cols-2 gap-6 h-full">
+     <!-- Mechanism 1 -->
+     <div class="mechanism-card mechanism-1 bg-white rounded-lg shadow-lg p-4 flex items-start">
+      <div class="icon-bg-1 w-14 h-14 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+       <i class="fas fa-database text-xl text-purple-700">
+       </i>
+      </div>
+      <div>
+       <h2 class="text-xl font-semibold text-gray-700 mb-2">
+        AIとデータ・システムの接続
+       </h2>
+       <p class="text-sm text-gray-600">
+        AIモデルと組織の専有情報庫の間に堅固な接続を確立し、データベース、文書管理システム、その他の関連データソースを含みます。
+       </p>
+       <div class="mt-2 flex items-center">
+        <i class="fas fa-check-circle text-purple-600 mr-2 text-sm">
+        </i>
+        <span class="text-xs text-gray-500">
+         AIが特定の、リアルタイムの情報にアクセスできることを保証
+        </span>
+       </div>
+      </div>
+     </div>
+     <!-- Mechanism 2 -->
+     <div class="mechanism-card mechanism-2 bg-white rounded-lg shadow-lg p-4 flex items-start">
+      <div class="icon-bg-2 w-14 h-14 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+       <i class="fas fa-tools text-xl text-teal-600">
+       </i>
+      </div>
+      <div>
+       <h2 class="text-xl font-semibold text-gray-700 mb-2">
+        ツールの装備
+       </h2>
+       <p class="text-sm text-gray-600">
+        AIシステムに機能ツール一式を装備し、純粋なテキスト生成を超える能力を与え、計算機、データベース、コード実行器を含みます。
+       </p>
+       <div class="mt-2 flex items-center">
+        <i class="fas fa-check-circle text-teal-600 mr-2 text-sm">
+        </i>
+        <span class="text-xs text-gray-500">
+         AIが操作を実行し、情報を検証することを許可
+        </span>
+       </div>
+      </div>
+     </div>
+     <!-- Mechanism 3 -->
+     <div class="mechanism-card mechanism-3 bg-white rounded-lg shadow-lg p-4 flex items-start">
+      <div class="icon-bg-3 w-14 h-14 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+       <i class="fas fa-bullseye text-xl text-orange-500">
+       </i>
+      </div>
+      <div>
+       <h2 class="text-xl font-semibold text-gray-700 mb-2">
+        明確な目標と制約の定義
+       </h2>
+       <p class="text-sm text-gray-600">
+        人間ユーザーが共有ワークスペースで目標、制限、成功基準を明確に定義し、AI操作に明確なフレームワークを提供します。
+       </p>
+       <div class="mt-2 flex items-center">
+        <i class="fas fa-check-circle text-orange-500 mr-2 text-sm">
+        </i>
+        <span class="text-xs text-gray-500">
+         AI行動の目的性と測定可能性を確保
+        </span>
+       </div>
+      </div>
+     </div>
+     <!-- Mechanism 4 -->
+     <div class="mechanism-card mechanism-4 bg-white rounded-lg shadow-lg p-4 flex items-start">
+      <div class="icon-bg-4 w-14 h-14 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+       <i class="fas fa-sync-alt text-xl text-purple-700">
+       </i>
+      </div>
+      <div>
+       <h2 class="text-xl font-semibold text-gray-700 mb-2">
+         フィードバックループの組み込み
+       </h2>
+       <p class="text-sm text-gray-600">
+        継続的なフィードバックメカニズムがAI行動を微調整し、人間の意図との継続的な一致を確保し、偏差を修正するために人間の監督を組み込みます。
+       </p>
+       <div class="mt-2 flex items-center">
+        <i class="fas fa-check-circle text-purple-700 mr-2 text-sm">
+        </i>
+        <span class="text-xs text-gray-500">
+         信頼を育み、協力の成果を向上
+        </span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ 
+
+</body></html>
