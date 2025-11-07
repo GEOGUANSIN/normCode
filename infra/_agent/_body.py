@@ -1,5 +1,5 @@
 from typing import Any, Dict, Callable
-from infra._agent._models import PromptTool
+from infra._agent._models import PromptTool, FileSystemTool, PythonInterpreterTool
 
 class Body:
 	def __init__(self, llm_name="qwen-turbo-latest") -> None:
@@ -62,3 +62,5 @@ class Body:
 				return input_fn
 		
 		self.user_input = _UserInputTool()
+		self.file_system = FileSystemTool()
+		self.python_interpreter = PythonInterpreterTool()

@@ -1,10 +1,18 @@
+from __future__ import annotations
 import yaml
 import os
 import logging
 from openai import OpenAI
 from string import Template
+import sys
+from typing import TYPE_CHECKING, Any
+
+from infra._agent._models._file_system import FileSystemTool
+from infra._agent._models._python_interpreter import PythonInterpreterTool
+
+
 try:
-	from infra._constants import CURRENT_DIR, PROJECT_ROOT 
+	from infra._constants import CURRENT_DIR, PROJECT_ROOT
 except Exception:
 	import sys, pathlib
 	here = pathlib.Path(__file__).parent
@@ -254,6 +262,145 @@ class LanguageModel:
                 return fallback_result
 
         return _generate_with_template_in_vars_with_thinking
+
+    def create_python_generate_and_run_function(
+        self,
+        template_key: str = "prompt_template",
+        script_key: str = "script_location",
+        generated_script_key: str = "generated_script_path",
+        with_thinking: bool = False,
+        file_tool: FileSystemTool | None = None,
+        python_interpreter: PythonInterpreterTool | None = None,
+    ):
+        """Create a callable that executes or (re)generates Python scripts on demand.
+
+        The returned function expects a ``dict`` of variables (``vars``) with the
+        following semantics:
+
+        ``script_location`` (``script_key``)
+            When present, its value is treated as raw Python code and executed
+            immediately. This path bypasses any file access or LLM generation.
+
+        ``generated_script_path`` (``generated_script_key``)
+            A filename (relative to ``infra/_agent/_models/scripts``) or absolute
+            path where a generated script should live. If the file exists it is
+            read and executed. If it does not exist, a prompt **must** be supplied
+            via ``template_key`` so the script can be generated and saved before
+            execution.
+
+        ``prompt_template`` (``template_key``)
+            A string processed with :class:`string.Template`. Any other entries in
+            ``vars`` are available both for template substitution and as runtime
+            inputs injected into the executed script. With ``with_thinking=True``
+            the template should instruct the model to reply with a JSON object that
+            includes a ``code`` field containing the final Python source.
+
+        All remaining keys in ``vars`` are forwarded to the executed script as its
+        global variables. The executed script is expected to populate a variable
+        named ``result``; whatever value is stored there is returned to the caller.
+
+        Returns
+        -------
+        Callable[[dict | None], Any]
+            A function that performs the behaviour described above.
+        """
+
+        import json
+        from string import Template
+        from typing import Any
+        import re
+
+        SCRIPTS_DIR = os.path.join(PROJECT_ROOT, "infra", "_agent", "_models", "scripts")
+
+        def _resolve_script_path(raw_path: str) -> str:
+            return raw_path if os.path.isabs(raw_path) else os.path.join(SCRIPTS_DIR, raw_path)
+
+        def _clean_code(raw_code: str) -> str:
+            if not isinstance(raw_code, str):
+                return ""
+            code_blocks = re.findall(r"```(?:python|py)?\n(.*?)\n```", raw_code, re.DOTALL)
+            return code_blocks[0].strip() if code_blocks else raw_code
+
+        def _generate_code(prompt: str) -> str:
+            if with_thinking:
+                logger.debug("Generating code with thinking (JSON output expected).")
+                json_prompt = prompt + '\n\nRespond with a JSON object containing "thinking" and "code" keys.'
+                raw_response = self.generate(json_prompt, response_format={"type": "json_object"})
+                try:
+                    parsed_response = json.loads(raw_response)
+                    generated_code = _clean_code(parsed_response.get("code", ""))
+                    thinking_process = parsed_response.get("thinking", "")
+                    logger.debug(f"Thinking process: {thinking_process}")
+                    if not generated_code:
+                        logger.error("LLM returned no code in JSON response")
+                        return ""
+                    return generated_code
+                except json.JSONDecodeError:
+                    logger.error("Failed to parse JSON response from LLM", exc_info=True)
+                    return _clean_code(raw_response)
+            raw_generated_code = self.generate(prompt)
+            return _clean_code(raw_generated_code)
+
+        def _generate_and_run(vars: dict | None = None) -> Any:
+            vars = vars or {}
+            logger.debug(f"Executing python_generate_and_run with vars: {vars}")
+
+            script_inputs = {
+                k: v for k, v in vars.items() if k not in [script_key, template_key, generated_script_key]
+            }
+
+            code_to_run = None
+            if script_key in vars and vars[script_key]:
+                logger.info("Executing provided script from 'script_location'.")
+                code_to_run = vars[script_key]
+
+            elif generated_script_key in vars:
+                if not isinstance(file_tool, FileSystemTool):
+                    return {"status": "error", "message": "A valid FileSystemTool was not provided."}
+
+                script_path = _resolve_script_path(vars[generated_script_key])
+                read_result = file_tool.read(script_path)
+
+                if read_result.get("status") == "success":
+                    logger.info(f"Reusing existing generated script: {script_path}")
+                    code_to_run = read_result.get("content")
+                else:
+                    if template_key not in vars:
+                        error_msg = (
+                            f"Script not found at '{script_path}' and no '{template_key}' "
+                            "was provided to generate it."
+                        )
+                        logger.error(error_msg)
+                        return {"status": "error", "message": error_msg}
+
+                    logger.info(f"Script not found at {script_path}. Generating a new one.")
+                    formatted_prompt = Template(str(vars[template_key])).safe_substitute(script_inputs)
+                    generated_code = _generate_code(formatted_prompt)
+
+                    if not generated_code:
+                        return {"status": "error", "message": "Code generation failed, no code in response."}
+
+                    save_result = file_tool.save(generated_code, script_path)
+                    if save_result.get("status") == "error":
+                        logger.error(f"Failed to save generated script: {save_result.get('message')}")
+                        return save_result
+
+                    logger.info(f"Generated script saved to {script_path} for future reuse.")
+                    code_to_run = generated_code
+
+            if code_to_run is not None:
+                if not isinstance(python_interpreter, PythonInterpreterTool):
+                    return {"status": "error", "message": "A valid PythonInterpreterTool was not provided."}
+                return python_interpreter.execute(code_to_run, script_inputs)
+
+            error_msg = (
+                f"No valid key provided. Use '{script_key}' for direct execution or "
+                f"'{generated_script_key}' for file-based operations."
+            )
+            logger.error(error_msg)
+            return {"status": "error", "message": error_msg}
+
+        return _generate_and_run
 
     def create_generation_function_thinking_json(self, prompt_template: str):
         """Return a generation function that formats the template with vars and extracts JSON thinking/output."""

@@ -10,6 +10,8 @@ building intelligent agent systems with language model capabilities.
 from ._language_models import LanguageModel
 from ._model_runner import ModelEnv, ModelSequenceRunner
 from ._prompt import PromptTool
+from ._file_system import FileSystemTool
+from ._python_interpreter import PythonInterpreterTool
 
 # Model state dataclasses (from _states for convenience)
 from infra._states._model_state import (
@@ -34,6 +36,8 @@ __all__ = [
     "ModelEnv",
     "ModelSequenceRunner",
     "PromptTool",
+    "FileSystemTool",
+    "PythonInterpreterTool",
     
     # Model state dataclasses
     "AffordanceSpecLite",

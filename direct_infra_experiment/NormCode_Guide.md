@@ -418,6 +418,9 @@ This `imperative` inference issues a command to an external tool or model. The `
 - `with_thinking`: `true` indicates that this operation may require complex reasoning (e.g., by an LLM).
 - `value_order`: Maps the value concepts to the positional placeholders (`{1}`, `{2}`, `{3}`) in the imperative command string, ensuring the correct data is used for each parameter.
 
+**Implementation Note:**
+A common implementation for the `imperative` sequence is to execute Python code. This can be done by providing a pre-existing script or by dynamically generating a script from a prompt using a language model. This provides great flexibility for handling complex, code-based logic within a NormCode plan. For more details, see the `imperative_python` sequence documentation.
+
 ---
 
 #### 5.3.6. Judgement Agent's Sequence

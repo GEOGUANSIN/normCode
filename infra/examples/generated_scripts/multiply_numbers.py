@@ -1,0 +1,1 @@
+result = input_a * input_b

@@ -1,0 +1,45 @@
+.normcode-page {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+.normcode-page h1,
+.normcode-page h2,
+.normcode-page h3,
+.normcode-page h4 {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+}
+
+.normcode-page code {
+  background-color: #f0f0f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.normcode-page pre {
+  background-color: #f0f0f0;
+  padding: 1rem;
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
+
+.normcode-page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.normcode-page th,
+.normcode-page td {
+  border: 1px solid #ddd;
+  padding: 0.8rem;
+  text-align: left;
+}
+
+.normcode-page th {
+  background-color: #f8f8f8;
+}

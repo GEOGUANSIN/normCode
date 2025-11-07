@@ -1,0 +1,41 @@
+.docs-layout {
+  display: flex;
+}
+
+.docs-sidebar {
+  width: 240px;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+}
+
+.docs-sidebar nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.docs-sidebar nav a {
+  display: block;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  color: #333;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.docs-sidebar nav a:hover {
+  background-color: #f0f0f0;
+}
+
+.docs-sidebar nav a.active {
+  background-color: #007aff;
+  color: #fff;
+}
+
+.docs-content {
+  flex-grow: 1;
+  padding: 2rem;
+  background-color: #fff;
+}
