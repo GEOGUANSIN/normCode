@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConceptEntry } from '../types';
+import type { ConceptEntry } from '../types';
 
 interface AddConceptFromGlobalFormProps {
   globalConcepts: ConceptEntry[];

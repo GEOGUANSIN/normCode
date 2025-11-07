@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/jsoneditor": "^9.9.6",
+    "axios": "^1.13.2",
+    "jsoneditor": "^10.4.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",

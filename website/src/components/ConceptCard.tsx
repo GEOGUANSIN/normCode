@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConceptEntry } from '../types';
+import type { ConceptEntry } from '../types';
 
 interface ConceptCardProps {
   concept: ConceptEntry;

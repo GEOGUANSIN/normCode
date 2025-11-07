@@ -1,5 +1,5 @@
 import React from 'react';
-import { SidebarMode } from '../state';
+import type { SidebarMode } from '../state';
 import './Sidebar.css';
 
 interface SidebarProps {

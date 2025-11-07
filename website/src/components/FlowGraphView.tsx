@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ConceptEntry, InferenceEntry } from '../types';
+import type { ConceptEntry, InferenceEntry } from '../types';
 import './FlowGraphView.css';
 
 interface FlowGraphViewProps {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { InferenceEntry } from '../types';
+import type { InferenceEntry } from '../types';
 
 interface AddInferenceFromGlobalFormProps {
   globalInferences: InferenceEntry[];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { InferenceEntry } from '../types';
+import type { InferenceEntry } from '../types';
 
 interface InferenceCardProps {
   inference: InferenceEntry;

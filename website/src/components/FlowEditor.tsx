@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ConceptEntry, InferenceEntry, FlowData } from '../types';
+import type { ConceptEntry, InferenceEntry, FlowData } from '../types';
 import './FlowEditor.css';
 
 interface FlowEditorProps {
