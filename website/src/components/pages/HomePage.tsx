@@ -1,29 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './HomePage.css';
 
 const HomePage: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="home-page">
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title">Advancing AI Reasoning with Transparency</h1>
+          <h1 className="hero-title">{t('hero.title')}</h1>
           <p className="hero-subtitle">
-            Building the future of explainable AI through NormCode—a revolutionary framework 
-            that makes AI reasoning transparent, controllable, and aligned with human values.
+            {t('hero.subtitle')}
           </p>
           <div className="cta-buttons">
-            <Link to="/normcode" className="btn btn-primary">Explore NormCode</Link>
-            <Link to="/demo" className="btn btn-secondary">Try Live Demo</Link>
+            <Link to="/normcode" className="btn btn-primary">{t('hero.cta.primary')}</Link>
+            <Link to="/demo" className="btn btn-secondary">{t('hero.cta.secondary')}</Link>
           </div>
         </div>
         <div className="hero-visual">
           <div className="floating-card">
             <div className="code-snippet">
-              <div className="code-line">norm <span className="keyword">transparency</span>:</div>
-              <div className="code-line">  reasoning = <span className="string">"explainable"</span></div>
-              <div className="code-line">  control = <span className="string">"human-aligned"</span></div>
+              <div className="code-line">{t('code.norm')} <span className="keyword">{t('code.transparency')}</span>:</div>
+              <div className="code-line">  {t('code.reasoning')} = <span className="string">"{t('code.explainable')}"</span></div>
+              <div className="code-line">  {t('code.control')} = <span className="string">"{t('code.human_aligned')}"</span></div>
             </div>
           </div>
         </div>
@@ -31,43 +33,39 @@ const HomePage: React.FC = () => {
 
       {/* Features Section */}
       <section className="features">
-        <h2 className="section-title">Why NormCode?</h2>
-        <p className="section-subtitle">A new paradigm for building trustworthy AI systems</p>
+        <h2 className="section-title">{t('features.title')}</h2>
+        <p className="section-subtitle">{t('features.subtitle')}</p>
         
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">🔍</div>
-            <h3>Transparent Reasoning</h3>
+            <h3>{t('features.transparent.title')}</h3>
             <p>
-              Every decision is traceable and explainable. Understand exactly how your AI 
-              arrives at conclusions with full reasoning transparency.
+              {t('features.transparent.desc')}
             </p>
           </div>
           
           <div className="feature-card">
             <div className="feature-icon">⚙️</div>
-            <h3>Fine-Grained Control</h3>
+            <h3>{t('features.control.title')}</h3>
             <p>
-              Define precise constraints and norms for your AI. Maintain control over 
-              reasoning processes and ensure alignment with your values.
+              {t('features.control.desc')}
             </p>
           </div>
           
           <div className="feature-card">
             <div className="feature-icon">🎯</div>
-            <h3>Normative Alignment</h3>
+            <h3>{t('features.alignment.title')}</h3>
             <p>
-              Built on formal frameworks that ensure AI behavior aligns with specified 
-              norms, values, and ethical guidelines.
+              {t('features.alignment.desc')}
             </p>
           </div>
           
           <div className="feature-card">
             <div className="feature-icon">🚀</div>
-            <h3>Production Ready</h3>
+            <h3>{t('features.production.title')}</h3>
             <p>
-              Seamlessly integrate with existing systems. Scale from prototypes to 
-              production with enterprise-grade reliability.
+              {t('features.production.desc')}
             </p>
           </div>
         </div>
@@ -77,48 +75,45 @@ const HomePage: React.FC = () => {
       <section className="stats">
         <div className="stat-item">
           <div className="stat-number">100%</div>
-          <div className="stat-label">Traceable Reasoning</div>
+          <div className="stat-label">{t('stats.traceable')}</div>
         </div>
         <div className="stat-item">
           <div className="stat-number">10x</div>
-          <div className="stat-label">Faster Debugging</div>
+          <div className="stat-label">{t('stats.faster')}</div>
         </div>
         <div className="stat-item">
           <div className="stat-number">Zero</div>
-          <div className="stat-label">Black Box Operations</div>
+          <div className="stat-label">{t('stats.blackbox')}</div>
         </div>
       </section>
 
       {/* How It Works Section */}
       <section className="how-it-works">
-        <h2 className="section-title">How NormCode Works</h2>
-        <p className="section-subtitle">Three simple steps to transparent AI</p>
+        <h2 className="section-title">{t('howitworks.title')}</h2>
+        <p className="section-subtitle">{t('howitworks.subtitle')}</p>
         
         <div className="steps">
           <div className="step">
             <div className="step-number">1</div>
-            <h3>Define Your Norms</h3>
+            <h3>{t('howitworks.step1.title')}</h3>
             <p>
-              Specify the rules, values, and constraints that should govern your AI's 
-              behavior using NormCode's intuitive syntax.
+              {t('howitworks.step1.desc')}
             </p>
           </div>
           
           <div className="step">
             <div className="step-number">2</div>
-            <h3>Build Reasoning Chains</h3>
+            <h3>{t('howitworks.step2.title')}</h3>
             <p>
-              Create explicit inference pathways that show how conclusions are derived 
-              from premises, making every step auditable.
+              {t('howitworks.step2.desc')}
             </p>
           </div>
           
           <div className="step">
             <div className="step-number">3</div>
-            <h3>Deploy with Confidence</h3>
+            <h3>{t('howitworks.step3.title')}</h3>
             <p>
-              Run your AI systems knowing every decision can be explained, debugged, 
-              and verified against your specified norms.
+              {t('howitworks.step3.desc')}
             </p>
           </div>
         </div>
@@ -126,36 +121,36 @@ const HomePage: React.FC = () => {
 
       {/* Use Cases Section */}
       <section className="use-cases">
-        <h2 className="section-title">Trusted by Leading Organizations</h2>
-        <p className="section-subtitle">Making AI transparent across industries</p>
+        <h2 className="section-title">{t('usecases.title')}</h2>
+        <p className="section-subtitle">{t('usecases.subtitle')}</p>
         
         <div className="use-cases-grid">
           <div className="use-case-card">
-            <h4>Healthcare</h4>
-            <p>Explainable diagnostic systems that physicians can trust and verify</p>
+            <h4>{t('usecases.healthcare.title')}</h4>
+            <p>{t('usecases.healthcare.desc')}</p>
           </div>
           <div className="use-case-card">
-            <h4>Finance</h4>
-            <p>Auditable decision-making for regulatory compliance and risk management</p>
+            <h4>{t('usecases.finance.title')}</h4>
+            <p>{t('usecases.finance.desc')}</p>
           </div>
           <div className="use-case-card">
-            <h4>Legal Tech</h4>
-            <p>Transparent reasoning for case analysis and legal research</p>
+            <h4>{t('usecases.legal.title')}</h4>
+            <p>{t('usecases.legal.desc')}</p>
           </div>
           <div className="use-case-card">
-            <h4>Research</h4>
-            <p>Reproducible AI experiments with fully documented reasoning paths</p>
+            <h4>{t('usecases.research.title')}</h4>
+            <p>{t('usecases.research.desc')}</p>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="cta-section">
-        <h2>Ready to Build Transparent AI?</h2>
-        <p>Join the future of explainable and controllable artificial intelligence</p>
+        <h2>{t('cta.title')}</h2>
+        <p>{t('cta.subtitle')}</p>
         <div className="cta-buttons-large">
-          <Link to="/docs" className="btn btn-primary-large">Get Started</Link>
-          <Link to="/contact" className="btn btn-secondary-large">Talk to Us</Link>
+          <Link to="/docs" className="btn btn-primary-large">{t('cta.primary')}</Link>
+          <Link to="/contact" className="btn btn-secondary-large">{t('cta.secondary')}</Link>
         </div>
       </section>
     </div>

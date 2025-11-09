@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSwitcher from '../LanguageSwitcher';
 import './Layout.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { t } = useLanguage();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -16,7 +19,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="header-content">
           <Link to="/" className="logo">
             <span className="logo-icon">⚛️</span>
-            <span className="logo-text">PsylensAI</span>
+            <span className="logo-text">{t('company.name')}</span>
           </Link>
           
           <button 
@@ -37,7 +40,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={isActive('/') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Home
+                  {t('nav.home')}
                 </Link>
               </li>
               <li>
@@ -46,7 +49,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={isActive('/normcode') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  NormCode
+                  {t('nav.normcode')}
                 </Link>
               </li>
               <li>
@@ -55,7 +58,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={location.pathname.startsWith('/docs') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Documentation
+                  {t('nav.documentation')}
                 </Link>
               </li>
               <li>
@@ -64,7 +67,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={isActive('/demo') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Demo
+                  {t('nav.demo')}
                 </Link>
               </li>
               <li>
@@ -73,7 +76,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={isActive('/about') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  About
+                  {t('nav.about')}
                 </Link>
               </li>
               <li>
@@ -82,7 +85,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={isActive('/blog') ? 'active' : ''}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Blog
+                  {t('nav.blog')}
                 </Link>
               </li>
               <li>
@@ -91,10 +94,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className={`contact-link ${isActive('/contact') ? 'active' : ''}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Contact
+                  {t('nav.contact')}
                 </Link>
               </li>
             </ul>
+            <LanguageSwitcher />
           </nav>
         </div>
       </header>
@@ -104,34 +108,34 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>PsylensAI</h3>
-            <p>Building transparent and controllable AI through NormCode</p>
+            <h3>{t('company.name')}</h3>
+            <p>{t('footer.tagline')}</p>
           </div>
           <div className="footer-section">
-            <h4>Product</h4>
+            <h4>{t('footer.product')}</h4>
             <ul>
-              <li><Link to="/normcode">NormCode</Link></li>
-              <li><Link to="/docs">Documentation</Link></li>
-              <li><Link to="/demo">Demo</Link></li>
+              <li><Link to="/normcode">{t('nav.normcode')}</Link></li>
+              <li><Link to="/docs">{t('nav.documentation')}</Link></li>
+              <li><Link to="/demo">{t('nav.demo')}</Link></li>
             </ul>
           </div>
           <div className="footer-section">
-            <h4>Company</h4>
+            <h4>{t('footer.company')}</h4>
             <ul>
-              <li><Link to="/about">About</Link></li>
-              <li><Link to="/blog">Blog</Link></li>
-              <li><Link to="/contact">Contact</Link></li>
+              <li><Link to="/about">{t('nav.about')}</Link></li>
+              <li><Link to="/blog">{t('nav.blog')}</Link></li>
+              <li><Link to="/contact">{t('nav.contact')}</Link></li>
             </ul>
           </div>
           <div className="footer-section">
-            <h4>Connect</h4>
+            <h4>{t('footer.connect')}</h4>
             <p className="footer-social">
-              Building the future of explainable AI
+              {t('footer.connect.desc')}
             </p>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2025 PsylensAI. All rights reserved.</p>
+          <p>{t('footer.copyright')}</p>
         </div>
       </footer>
     </div>

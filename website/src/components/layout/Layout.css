@@ -71,6 +71,12 @@
 }
 
 /* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .nav ul {
   list-style-type: none;
   margin: 0;
@@ -224,6 +230,8 @@
     opacity: 0;
     transition: all 0.3s ease;
     pointer-events: none;
+    flex-direction: column;
+    padding: 1rem;
   }
 
   .nav.nav-open {
@@ -234,7 +242,7 @@
 
   .nav ul {
     flex-direction: column;
-    padding: 1rem;
+    width: 100%;
     gap: 0.25rem;
   }
 
