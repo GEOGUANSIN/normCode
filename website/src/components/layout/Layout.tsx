@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageSwitcher from '../LanguageSwitcher';
+import logo from '../../assets/logo.png';
 import './Layout.css';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -18,7 +19,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="header">
         <div className="header-content">
           <Link to="/" className="logo">
-            <span className="logo-icon">⚛️</span>
+            <img src={logo} alt="PsylensAI Logo" className="logo-image" />
             <span className="logo-text">{t('company.name')}</span>
           </Link>
           
