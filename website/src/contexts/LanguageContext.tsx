@@ -10,7 +10,11 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const translations = {
+type TranslationKeys = {
+  [key: string]: string;
+}
+
+const translations: Record<Language, TranslationKeys> = {
   zh: {
     // Company
     'company.name': '心镜智',
