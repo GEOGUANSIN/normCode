@@ -38,24 +38,26 @@ class FileSystemTool:
 
         Args:
             content (str): The content to be saved.
-            location (str): The file path where the content will be saved.
+            location (str): The file path where the content will be saved. Can be
+                            absolute, or relative to the base_dir.
 
         Returns:
             dict: A dictionary with the status of the operation.
         """
         try:
+            file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
             # Ensure the directory exists
-            dir_path = os.path.dirname(location)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
+            dir_path = file_path.parent
+            if not dir_path.exists():
+                dir_path.mkdir(parents=True, exist_ok=True)
                 logger.info(f"Created directory: {dir_path}")
 
             # Write the content to the file
-            with open(location, 'w', encoding='utf-8') as f:
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
             
-            logger.info(f"Successfully saved content to {location}")
-            return {"status": "success", "location": location}
+            logger.info(f"Successfully saved content to {file_path}")
+            return {"status": "success", "location": str(file_path)}
         except Exception as e:
             logger.error(f"Failed to save file at {location}: {e}")
             return {"status": "error", "message": str(e)}
@@ -65,20 +67,22 @@ class FileSystemTool:
         Reads content from a specified file location.
 
         Args:
-            location (str): The file path to read from.
+            location (str): The file path to read from. Can be absolute, or relative
+                            to the base_dir.
 
         Returns:
             dict: A dictionary with the status and content of the file.
         """
         try:
-            if not os.path.exists(location):
-                logger.warning(f"File not found at {location}")
+            file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+            if not file_path.exists():
+                logger.warning(f"File not found at {file_path}")
                 return {"status": "error", "message": "File not found."}
             
-            with open(location, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            logger.info(f"Successfully read content from {location}")
+            logger.info(f"Successfully read content from {file_path}")
             return {"status": "success", "content": content}
         except Exception as e:
             logger.error(f"Failed to read file at {location}: {e}")

@@ -70,6 +70,10 @@ class LanguageModel:
         else:
             self.client = None
 
+        # Initialize tools
+        self.file_tool = FileSystemTool()
+        self.python_interpreter = PythonInterpreterTool()
+
     def load_prompt_template(self, template_name):
         """
         Load a prompt template using the Template module
@@ -267,7 +271,6 @@ class LanguageModel:
         self,
         template_key: str = "prompt_template",
         script_key: str = "script_location",
-        generated_script_key: str = "generated_script_path",
         with_thinking: bool = False,
         file_tool: FileSystemTool | None = None,
         python_interpreter: PythonInterpreterTool | None = None,
@@ -278,12 +281,8 @@ class LanguageModel:
         following semantics:
 
         ``script_location`` (``script_key``)
-            When present, its value is treated as raw Python code and executed
-            immediately. This path bypasses any file access or LLM generation.
-
-        ``generated_script_path`` (``generated_script_key``)
             A filename (relative to ``infra/_agent/_models/scripts``) or absolute
-            path where a generated script should live. If the file exists it is
+            path where a script should live. If the file exists it is
             read and executed. If it does not exist, a prompt **must** be supplied
             via ``template_key`` so the script can be generated and saved before
             execution.
@@ -310,10 +309,11 @@ class LanguageModel:
         from typing import Any
         import re
 
-        SCRIPTS_DIR = os.path.join(PROJECT_ROOT, "infra", "_agent", "_models", "scripts")
-
-        def _resolve_script_path(raw_path: str) -> str:
-            return raw_path if os.path.isabs(raw_path) else os.path.join(SCRIPTS_DIR, raw_path)
+        # --- Tool Initialization ---
+        # If tools are not provided, fall back to the instance's tools. This
+        # ensures that the function uses a consistent, configured set of tools.
+        file_tool = file_tool or self.file_tool
+        python_interpreter = python_interpreter or self.python_interpreter
 
         def _clean_code(raw_code: str) -> str:
             if not isinstance(raw_code, str):
@@ -346,23 +346,16 @@ class LanguageModel:
             logger.debug(f"Executing python_generate_and_run with vars: {vars}")
 
             script_inputs = {
-                k: v for k, v in vars.items() if k not in [script_key, template_key, generated_script_key]
+                k: v for k, v in vars.items() if k not in [script_key, template_key]
             }
 
             code_to_run = None
             if script_key in vars and vars[script_key]:
-                logger.info("Executing provided script from 'script_location'.")
-                code_to_run = vars[script_key]
-
-            elif generated_script_key in vars:
-                if not isinstance(file_tool, FileSystemTool):
-                    return {"status": "error", "message": "A valid FileSystemTool was not provided."}
-
-                script_path = _resolve_script_path(vars[generated_script_key])
+                script_path = vars[script_key]
                 read_result = file_tool.read(script_path)
 
                 if read_result.get("status") == "success":
-                    logger.info(f"Reusing existing generated script: {script_path}")
+                    logger.info(f"Reusing existing script: {script_path}")
                     code_to_run = read_result.get("content")
                 else:
                     if template_key not in vars:
@@ -385,7 +378,8 @@ class LanguageModel:
                         logger.error(f"Failed to save generated script: {save_result.get('message')}")
                         return save_result
 
-                    logger.info(f"Generated script saved to {script_path} for future reuse.")
+                    saved_path = save_result.get("location", script_path)
+                    logger.info(f"Generated script saved to {saved_path} for future reuse.")
                     code_to_run = generated_code
 
             if code_to_run is not None:
@@ -394,8 +388,7 @@ class LanguageModel:
                 return python_interpreter.execute(code_to_run, script_inputs)
 
             error_msg = (
-                f"No valid key provided. Use '{script_key}' for direct execution or "
-                f"'{generated_script_key}' for file-based operations."
+                f"No valid key provided. Use '{script_key}' for file-based operations."
             )
             logger.error(error_msg)
             return {"status": "error", "message": error_msg}

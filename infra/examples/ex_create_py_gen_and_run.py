@@ -15,21 +15,34 @@ def run_example():
     """
     print("Initializing example for reusable script generation...")
 
-    body = Body(llm_name="qwen-turbo-latest") 
-    language_model = body.llm
-
-
     # Define paths for our reusable scripts (store them under this examples directory)
     example_script_dir = os.path.join(os.path.dirname(__file__), "generated_scripts")
     os.makedirs(example_script_dir, exist_ok=True)
+
+    body = Body(llm_name="qwen-turbo-latest", base_dir=example_script_dir) 
+    language_model = body.llm
+
+
     uppercase_script_path = os.path.join(example_script_dir, "uppercase_string.py")
     multiply_script_path = os.path.join(example_script_dir, "multiply_numbers.py")
+    file_io_script_path = os.path.join(example_script_dir, "file_io_uppercase.py") # New script path
+    
+    # Define paths for file I/O test
+    input_file_path = os.path.join(example_script_dir, "input.txt")
+    output_file_path = os.path.join(example_script_dir, "output.txt")
+
 
     # Clean up any leftover scripts from previous runs
     if os.path.exists(uppercase_script_path):
         os.remove(uppercase_script_path)
     if os.path.exists(multiply_script_path):
         os.remove(multiply_script_path)
+    if os.path.exists(file_io_script_path):
+        os.remove(file_io_script_path)
+    if os.path.exists(input_file_path):
+        os.remove(input_file_path)
+    if os.path.exists(output_file_path):
+        os.remove(output_file_path)
 
     if language_model.mock_mode:
         print("\n" + "="*80)
@@ -46,7 +59,7 @@ def run_example():
     
     vars_for_generation = {
         "prompt_template": "Create a python script that uppercases a string provided in the 'data_input' variable. Do NOT redeclare 'data_input'. The final output must be in a variable named 'result'. IMPORTANT: Respond with only the raw Python code.",
-        "generated_script_path": uppercase_script_path,
+        "script_location": uppercase_script_path,
         "data_input": "first run"
     }
     result1 = generate_and_run(vars_for_generation)
@@ -61,7 +74,7 @@ def run_example():
     # Note: We do not provide the 'prompt_template' this time.
     # The function should find and execute the script from Test Case 1.
     vars_for_reuse = {
-        "generated_script_path": uppercase_script_path,
+        "script_location": uppercase_script_path,
         "data_input": "second run"
     }
     result2 = generate_and_run(vars_for_reuse)
@@ -76,7 +89,7 @@ def run_example():
     )
     vars_for_thinking = {
         "prompt_template": "Instruction: create a python script that multiplies 'input_a' and 'input_b'. Do NOT redeclare these variables. The final output must be in a variable named 'result'. IMPORTANT: Respond with a JSON object containing 'thinking' and 'code' keys.",
-        "generated_script_path": multiply_script_path,
+        "script_location": multiply_script_path,
         "input_a": 11,
         "input_b": 12
     }
@@ -86,10 +99,50 @@ def run_example():
     assert os.path.exists(multiply_script_path)
     print("--> 'Thinking' script generated and executed successfully.")
 
+    # --- Test Case 4: Generate a script that performs file I/O ---
+    print("\n--- TEST CASE 4: Generate and Execute 'file_io_uppercase.py' ---")
+    
+    # 1. Create a source file for the script to read
+    input_content = "hello file system"
+    body.file_system.save(location=input_file_path, content=input_content)
+    print(f"Created input file: '{input_file_path}' with content: '{input_content}'")
+
+    # 2. Define prompt and variables for the generation
+    vars_for_file_io = {
+        "prompt_template": (
+            "Create a python script that reads content from the file specified in 'input_path', "
+            "converts it to uppercase, and writes the result to the file specified in 'output_path'. "
+            "Do NOT redeclare 'input_path' or 'output_path'. The script should not produce any return value."
+            "IMPORTANT: Respond with only the raw Python code."
+        ),
+        "script_location": file_io_script_path,
+        "input_path": input_file_path,
+        "output_path": output_file_path
+    }
+    
+    # 3. Generate and run the script
+    # This function call won't return a direct result, as the script's output is file-based
+    generate_and_run(vars_for_file_io)
+
+    # 4. Verify the result
+    assert os.path.exists(file_io_script_path)
+    print(f"--> File I/O script generated successfully at: {file_io_script_path}")
+    
+    read_result = body.file_system.read(location=output_file_path)
+    output_content = read_result.get("content")
+    print(f"Read from output file: '{output_file_path}' with content: '{output_content}'")
+    
+    assert output_content == input_content.upper()
+    print("--> File I/O script executed and verified successfully.")
+
+
     # # --- Cleanup ---
     # print("\n--- Cleaning up generated script files ---")
     # os.remove(uppercase_script_path)
     # os.remove(multiply_script_path)
+    # os.remove(file_io_script_path)
+    # os.remove(input_file_path)
+    # os.remove(output_file_path)
     # print("--> Cleanup complete.")
 
 if __name__ == "__main__":

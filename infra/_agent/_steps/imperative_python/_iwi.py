@@ -32,9 +32,7 @@ def _build_specs_for_python_execution(config: Dict[str, Any]) -> tuple[ModelEnvS
         "result = tool.create_python_generate_and_run_function("
         "template_key=params['template_key'], "
         "script_key=params['script_key'], "
-        "with_thinking=params['with_thinking'], "
-        "file_tool=body.file_system, "
-        "python_interpreter=body.python_interpreter"
+        "with_thinking=params['with_thinking']"
         ")"
     )
 

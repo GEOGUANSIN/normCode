@@ -54,8 +54,6 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
         return selected
 
     def nested_selector_action(element):
-        if isinstance(element, list):
-            return [selector_action(item) for item in element]
         return selector_action(element)
 
     return element_action(nested_selector_action, [ref])
@@ -99,17 +97,14 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
             return result.get("content") if result.get("status") == "success" else result.get("message")
 
     # --- Handle wrappers that do NOT require the FileSystemTool ---
-    elif wrapper_type == "{script_location}":
-        return f"{{%{{generated_script_path}}: {content}}}"
-
-    elif wrapper_type == "{generated_script_path}":
-        return f"{{%{{generated_script_path}}: {content}}}"
+    elif wrapper_type in ["{script_location}", "{generated_script_path}"]:
+        return f"{{%{{script_location}}: {content}}}"
         
     # --- Fallback for other wrappers or plain strings ---
     else:
         return content
 
-def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool" | None) -> str:
+def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool" | None) -> Any:
     """
     The main processing function for each element in a Reference. It flattens
     nested structures, resolves special wrappers, and formats the result as a
@@ -127,6 +122,9 @@ def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool"
     flatten(element)
 
     resolved_list = [_resolve_wrapper_string(item, file_system_tool) for item in flat_list]
+
+    if any(isinstance(s, str) and s.startswith('{%{') for s in resolved_list):
+        return resolved_list
 
     if not resolved_list:
         return ""
@@ -147,10 +145,17 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
     
     special_keys = {
         "prompt_template": "{%{prompt_template}: ",
-        "generated_script_path": "{%{generated_script_path}: ",
+        "script_location": "{%{script_location}: ",
     }
 
+    flat_values = []
     for val in values_list:
+        if isinstance(val, list):
+            flat_values.extend(val)
+        else:
+            flat_values.append(val)
+
+    for val in flat_values:
         is_special = False
         if isinstance(val, str):
             for key, marker in special_keys.items():
