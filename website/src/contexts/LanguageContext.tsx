@@ -35,13 +35,11 @@ const translations: Record<Language, TranslationKeys> = {
     'hero.cta.primary': '探索 NormCode',
     'hero.cta.secondary': '试用演示',
     
-    // Code Snippet
-    'code.norm': 'norm',
-    'code.transparency': 'transparency',
-    'code.reasoning': 'reasoning',
-    'code.explainable': 'explainable',
-    'code.control': 'control',
-    'code.human_aligned': 'human-aligned',
+    // Hero Flow Diagram
+    'hero.flow.input': '输入',
+    'hero.flow.reasoning': '透明推理',
+    'hero.flow.output': '验证输出',
+    'hero.flow.note': '每一步都可追溯、可审计，且在您的掌控之中',
     
     // Features Section
     'features.title': '为什么选择 NormCode？',
@@ -83,15 +81,27 @@ const translations: Record<Language, TranslationKeys> = {
     
     'usecases.healthcare.title': '医疗保健',
     'usecases.healthcare.desc': '医生可以信任和验证的可解释诊断系统',
+    'usecases.healthcare.badge': '关键系统',
+    'usecases.healthcare.tag1': '✓ 可审计',
+    'usecases.healthcare.tag2': '✓ 合规',
     
     'usecases.finance.title': '金融',
     'usecases.finance.desc': '可审计的决策制定，满足监管合规和风险管理',
+    'usecases.finance.badge': '企业就绪',
+    'usecases.finance.tag1': '✓ 监管',
+    'usecases.finance.tag2': '✓ 安全',
     
     'usecases.legal.title': '法律科技',
     'usecases.legal.desc': '案例分析和法律研究的透明推理',
+    'usecases.legal.badge': '高风险',
+    'usecases.legal.tag1': '✓ 透明',
+    'usecases.legal.tag2': '✓ 可追溯',
     
     'usecases.research.title': '研究',
     'usecases.research.desc': '具有完整记录推理路径的可重现AI实验',
+    'usecases.research.badge': '创新',
+    'usecases.research.tag1': '✓ 可重现',
+    'usecases.research.tag2': '✓ 有记录',
     
     // CTA Section
     'cta.title': '准备好构建透明AI了吗？',
@@ -127,13 +137,11 @@ const translations: Record<Language, TranslationKeys> = {
     'hero.cta.primary': 'Explore NormCode',
     'hero.cta.secondary': 'Try Live Demo',
     
-    // Code Snippet
-    'code.norm': 'norm',
-    'code.transparency': 'transparency',
-    'code.reasoning': 'reasoning',
-    'code.explainable': 'explainable',
-    'code.control': 'control',
-    'code.human_aligned': 'human-aligned',
+    // Hero Flow Diagram
+    'hero.flow.input': 'Input',
+    'hero.flow.reasoning': 'Transparent Reasoning',
+    'hero.flow.output': 'Verified Output',
+    'hero.flow.note': 'Every step is traceable, auditable, and under your control',
     
     // Features Section
     'features.title': 'Why NormCode?',
@@ -175,15 +183,27 @@ const translations: Record<Language, TranslationKeys> = {
     
     'usecases.healthcare.title': 'Healthcare',
     'usecases.healthcare.desc': 'Explainable diagnostic systems that physicians can trust and verify',
+    'usecases.healthcare.badge': 'Critical Systems',
+    'usecases.healthcare.tag1': '✓ Auditable',
+    'usecases.healthcare.tag2': '✓ Compliant',
     
     'usecases.finance.title': 'Finance',
     'usecases.finance.desc': 'Auditable decision-making for regulatory compliance and risk management',
+    'usecases.finance.badge': 'Enterprise Ready',
+    'usecases.finance.tag1': '✓ Regulated',
+    'usecases.finance.tag2': '✓ Secure',
     
     'usecases.legal.title': 'Legal Tech',
     'usecases.legal.desc': 'Transparent reasoning for case analysis and legal research',
+    'usecases.legal.badge': 'High Stakes',
+    'usecases.legal.tag1': '✓ Transparent',
+    'usecases.legal.tag2': '✓ Traceable',
     
     'usecases.research.title': 'Research',
     'usecases.research.desc': 'Reproducible AI experiments with fully documented reasoning paths',
+    'usecases.research.badge': 'Innovation',
+    'usecases.research.tag1': '✓ Reproducible',
+    'usecases.research.tag2': '✓ Documented',
     
     // CTA Section
     'cta.title': 'Ready to Build Transparent AI?',

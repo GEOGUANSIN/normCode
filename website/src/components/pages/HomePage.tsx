@@ -21,11 +21,25 @@ const HomePage: React.FC = () => {
           </div>
         </div>
         <div className="hero-visual">
-          <div className="floating-card">
-            <div className="code-snippet">
-              <div className="code-line">{t('code.norm')} <span className="keyword">{t('code.transparency')}</span>:</div>
-              <div className="code-line">  {t('code.reasoning')} = <span className="string">"{t('code.explainable')}"</span></div>
-              <div className="code-line">  {t('code.control')} = <span className="string">"{t('code.human_aligned')}"</span></div>
+          <div className="transparency-showcase">
+            <div className="flow-container">
+              <div className="flow-step" data-step="1">
+                <div className="step-icon">📝</div>
+                <div className="step-label">{t('hero.flow.input')}</div>
+              </div>
+              <div className="flow-arrow">→</div>
+              <div className="flow-step" data-step="2">
+                <div className="step-icon">🔍</div>
+                <div className="step-label">{t('hero.flow.reasoning')}</div>
+              </div>
+              <div className="flow-arrow">→</div>
+              <div className="flow-step" data-step="3">
+                <div className="step-icon">✓</div>
+                <div className="step-label">{t('hero.flow.output')}</div>
+              </div>
+            </div>
+            <div className="transparency-note">
+              {t('hero.flow.note')}
             </div>
           </div>
         </div>
@@ -125,21 +139,48 @@ const HomePage: React.FC = () => {
         <p className="section-subtitle">{t('usecases.subtitle')}</p>
         
         <div className="use-cases-grid">
-          <div className="use-case-card">
+          <div className="use-case-card healthcare">
+            <div className="use-case-icon">🏥</div>
+            <div className="use-case-badge">{t('usecases.healthcare.badge')}</div>
             <h4>{t('usecases.healthcare.title')}</h4>
             <p>{t('usecases.healthcare.desc')}</p>
+            <div className="use-case-features">
+              <span className="feature-tag">{t('usecases.healthcare.tag1')}</span>
+              <span className="feature-tag">{t('usecases.healthcare.tag2')}</span>
+            </div>
           </div>
-          <div className="use-case-card">
+          
+          <div className="use-case-card finance">
+            <div className="use-case-icon">💰</div>
+            <div className="use-case-badge">{t('usecases.finance.badge')}</div>
             <h4>{t('usecases.finance.title')}</h4>
             <p>{t('usecases.finance.desc')}</p>
+            <div className="use-case-features">
+              <span className="feature-tag">{t('usecases.finance.tag1')}</span>
+              <span className="feature-tag">{t('usecases.finance.tag2')}</span>
+            </div>
           </div>
-          <div className="use-case-card">
+          
+          <div className="use-case-card legal">
+            <div className="use-case-icon">⚖️</div>
+            <div className="use-case-badge">{t('usecases.legal.badge')}</div>
             <h4>{t('usecases.legal.title')}</h4>
             <p>{t('usecases.legal.desc')}</p>
+            <div className="use-case-features">
+              <span className="feature-tag">{t('usecases.legal.tag1')}</span>
+              <span className="feature-tag">{t('usecases.legal.tag2')}</span>
+            </div>
           </div>
-          <div className="use-case-card">
+          
+          <div className="use-case-card research">
+            <div className="use-case-icon">🔬</div>
+            <div className="use-case-badge">{t('usecases.research.badge')}</div>
             <h4>{t('usecases.research.title')}</h4>
             <p>{t('usecases.research.desc')}</p>
+            <div className="use-case-features">
+              <span className="feature-tag">{t('usecases.research.tag1')}</span>
+              <span className="feature-tag">{t('usecases.research.tag2')}</span>
+            </div>
           </div>
         </div>
       </section>
