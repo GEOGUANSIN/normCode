@@ -17,34 +17,71 @@ The `MVP` step detects special wrappers in the input concepts to gather the nece
 -   **`%{script_location}(path/to/your_script.py)`**: **(Execute or Generate-and-Execute)** Specifies the path for a Python script. The sequence checks if this file exists.
     -   If the file exists, its content is read and executed directly.
     -   If the file does not exist, the sequence uses a `%{prompt_template}` to generate the script, saves it to this path for future use, and then executes it.
-    The location can be an absolute path or relative to `infra/_agent/_models/scripts/`.
+    The location can be an absolute path or relative to the `base_dir` configured in the `Body`.
 
--   **`%{prompt_template}(path/to/prompt.txt)`**: Provides the template for generating a Python script. This is **required** when using `%{script_location}` and the target file does not yet exist. The location can be an absolute path or relative to `infra/_agent/_models/prompts/`.
+-   **`%{prompt_template}(path/to/prompt.txt)`**: Provides the template for generating a Python script. This is **required** when using `%{script_location}` and the target file does not yet exist. The location can be an absolute path or relative to the `base_dir` configured in the `Body`.
 
 -   **`%{memorized_parameter}(...)`**: Retrieves a value from a JSON file to be used as an input. It can take a simple key (for the default `memorized.json`) or a JSON object specifying a custom file and key (e.g., `{"location": "params.json", "key": "name_key"}`).
+
+### Advanced Input Handling: `value_selectors`
+
+For handling complex input concepts (e.g., lists or dictionaries), the `working_interpretation` can include a `value_selectors` dictionary. This allows you to extract specific parts of your input data before they are passed to the Python script.
+
+Each key in the `value_selectors` object corresponds to a concept name defined in `value_order`. The value contains instructions for how to process that concept.
+
+-   `source_concept`: The name of the concept to read from.
+-   `index` (optional): The list index to select.
+-   `key` (optional): The dictionary key to select.
+
+**Example `working_interpretation`:**
+```json
+"working_interpretation": {
+    "value_order": {
+        "input_1": 0,
+        "input_2": 1
+    },
+    "value_selectors": {
+        "input_1": {
+            "source_concept": "list_of_numbers",
+            "index": 0
+        },
+        "input_2": {
+            "source_concept": "list_of_dicts",
+            "index": 0,
+            "key": "value"
+        }
+    }
+}
+```
+In this example, before execution:
+1.  The value for `input_1` will be the element at index `0` from the `list_of_numbers` concept.
+2.  The value for `input_2` will be the value associated with the `value` key from the dictionary at index `0` of the `list_of_dicts` concept.
 
 ### Workflow
 
 1.  **`IWI` (The Architect - `_iwi.py`)**
-    -   Acts as a planner. It reads the agent's configuration from the `working_interpretation` (e.g., `with_thinking`, custom keys).
+    -   Acts as a planner. It reads the agent's configuration from the `working_interpretation` (e.g., `with_thinking`, `value_selectors`).
     -   It builds a "plan" (`env_spec` and `sequence_spec`) to create the single, dynamic `generate_and_run` function.
     -   It saves this plan to the agent's state.
 
-2.  **`MFP` (The Executor - `_mfp.py`)**
+2.  **`MFP` (The Function Factory - `_mfp.py`)**
     -   Executes the plan from `IWI`.
     -   It runs a `ModelSequenceRunner` which calls the `create_python_generate_and_run_function` method, creating the dynamic function that encapsulates all execution logic.
     -   This dynamic function is saved to the agent's state.
 
 3.  **`MVP` (The Data Gatherer - `_mvp.py`)**
-    -   Gathers all data required for execution.
-    -   It resolves any `%{script_location}`, `%{prompt_template}`, and `%{memorized_parameter}` wrappers. For wrappers pointing to files, it reads their content.
-    -   It assembles a single dictionary containing all the necessary inputs (e.g., `script_location`, `prompt_template`, and other input values) for the dynamic function.
+    -   Gathers and prepares all data required for execution.
+    -   It resolves any `%{script_location}`, `%{prompt_template}`, and `%{memorized_parameter}` wrappers.
+    -   It applies any `value_selectors` to extract specific data from complex inputs.
+    -   It assembles a single dictionary containing all the necessary inputs (e.g., `script_location`, `prompt_template`, `input_1`, `input_2`) for the dynamic function.
 
-4.  **`TIP` (The Action - `_tip.py`)**
+4.  **`TVA` (The Actuator - `_tva.py`)**
     -   Performs the final execution.
-    -   It takes the dynamic function created by `MFP`.
-    -   It takes the complete data dictionary prepared by `MVP`.
-    -   It calls the function with the data. The function then internally decides whether to execute the provided script or generate a new one.
+    -   It takes the dynamic function created by `MFP` and the complete data dictionary prepared by `MVP`.
+    -   It calls the function with the data. The function then internally decides whether to execute the provided script or generate and execute a new one.
+
+5.  **`TIP` (The Perceiver - `_tip.py`)**
+    -   Perceives the outcome of the action. It takes the result returned by `TVA` and formalizes it as the output of the inference.
 
 ## Execution Logic
 

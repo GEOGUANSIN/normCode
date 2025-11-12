@@ -83,13 +83,18 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
             return f"{{%{{prompt_template}}: {error_msg}}}" if wrapper_type == "{prompt_template}" else error_msg
 
         if wrapper_type == "{prompt_template}":
-            file_path = content if os.path.isabs(content) else os.path.join(PROMPTS_DIR, content)
+            # Pass the relative path directly to the file system tool,
+            # which correctly resolves it using its configured base_dir.
+            file_path = content
             read_result = file_system_tool.read(file_path)
             
             if read_result.get("status") == "success":
                 prompt_content = read_result.get("content", "")
             else:
-                prompt_content = f"ERROR: Failed to read Prompt file at '{file_path}'. Reason: {read_result.get('message')}"
+                # Reconstruct the full path for a more informative error message.
+                from pathlib import Path
+                full_path = Path(file_path) if Path(file_path).is_absolute() else Path(file_system_tool._get_base_dir()) / file_path
+                prompt_content = f"ERROR: Failed to read Prompt file at '{full_path}'. Reason: {read_result.get('message')}"
             return f"{{%{{prompt_template}}: {prompt_content}}}"
 
         elif wrapper_type == "{memorized_parameter}":
