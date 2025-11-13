@@ -42,7 +42,7 @@ A modern React + TypeScript + Vite frontend for the Normcode Repository Editor.
    npm run dev
    ```
 
-The frontend will be available at `http://localhost:3000` and will automatically proxy API requests to the backend at `http://127.0.0.1:8001`.
+The frontend will be available at `http://localhost:5173` and will automatically proxy API requests to the backend at `http://127.0.0.1:8001`.
 
 ### Building for Production
 
