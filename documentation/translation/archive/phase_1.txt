@@ -1,0 +1,115 @@
+This initial step is a detailed analysis of the raw `normtext` and any provided `context`. Its goal is to establish the foundation of the NormCode translation by identifying three key components:
+
+1.  **The Inference Target**: This is the primary subject of a given `normtext`. The process involves asserting the inference target and classifying the core topic into one of two main categories:
+    *   **Action-like**: Represents something that is performed or evaluated. This category includes:
+        *   **Imperatives (`::()`):** A process, command, or action to be executed (e.g., `::(bake)`).
+        *   **Judgements (`::< >`):** An inquiry that evaluates the truth of a statement (e.g., asking if a condition is true).
+    *   **Object-like**: Represents a static entity, concept, or the relationship between them. This category includes:
+        *   **Subject Declarations (`:<subject>:`):** Defines the primary subject of a block (e.g., :LLM:).
+        *   **Statements (`<>`):** An assertion of fact (e.g., `<Kelly is beautiful>`).
+        *   **Objects (`{}`):** A single entity or concept (e.g., `{user account}`).
+        *   **Relations (`[]`):** Represents the relationship between concepts (e.g., [{position} and {number}]).
+
+2.  **Determining the Question**: This step classifies the user's intent by analyzing the core inquiry. This moves beyond simple keywords to identify the fundamental structure of the question being investigated. The types of problems can be broken down as follows:
+    For the **Object-like** category:
+    *   **Classification/Specification**: Defining a concept by relating it to another (e.g., "What is a user account?"). Maps to `$.`.
+    *   **Identification**: Asserting that a concept is identical to a specific marked instance (e.g., "what is the same number sequence"). Maps to `$=`.
+    *   **Nominalization**: Defining a concept as the nominal form of a process (e.g., "What is user authentication?"). Maps to `$::`.
+    *   **Instantiation**: Defining a concept by enumerating its members (e.g., "What are all numbers?"). Maps to `$%`.
+    *   **Continuation/Extension**: How a concept is formed by adding to an existing one (e.g., "What is the updated sequence?"). Maps to `$+`.
+    *   **Ordered Composition**: How a concept is formed by combining others in sequence (e.g., "What is the combination of two number sequences?"). Maps to `&across`.
+    *   **Annotated Composition**: How a concept is formed by grouping related data points (e.g., "What is the value with position indexed?"). Maps to `&in`.
+    *   **Process Request**: Requesting the execution of a process to find or compute something (e.g., "How do you find the user?"). Maps to `::({})` or `:_:{}({})`.
+    *   **Judgement Request**: Requesting an evaluation of a condition or state (e.g., "is a user an admin?"). Maps to `::<{}>` or `::{}({}):`.
+    *   **I/O Request**: Requesting external input or describing external output (e.g., "The user name is a primitive input?", "The user name is a final output?"). Maps to `:>:()` or `:<:()`.
+    *   **Element-wise Breakdown**: Breaking down a concept into its individual members (e.g., "how to square a sequence by each of its member?"). Maps to `*every`.
+
+    For the **Action-like** category:
+    *   **Methodology Declaration**: Describing the means by which an action is performed (e.g., "How do you authenticate?"). Maps to `@by`.
+    *   **Conditional Dependency**: Actions depending on a state being true or false (e.g., "When do you show the dashboard?"). Maps to `@if`, `@if!`.
+    *   **Sequential Dependency**: Actions that depend on a prior event (e.g., showing a dashboard after authentication). Maps to `@after`.
+
+3.  **The Operator Selection**: This is the crucial decision point. Based on the determined **Inference Target** and **Problem Type**, the algorithm selects the appropriate initial NormCode function/operator (`<=`) that will structure the top-level inference. 
+    - See the [normcode_operator_guidance.txt](normcode_operator_guidance.txt) for more details.
+
+### Examples of Normtext Analysis
+
+Here are examples demonstrating the analysis of `normtext` instructions to determine the initial operator.
+
+**Example 1: Action-Oriented Instruction (Process Definition)**
+
+**Normtext:**
+```
+To register a new user, first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account with the username and a hashed password, and then confirm success.
+```
+
+**Analysis:**
+1.  **Inference Target**: `::(register a new user)` (Action-like). The instruction defines a process.
+2.  **Question**: "How to register a new user?" which is a **Methodology Declaration**.
+3.  **Operator**: `@by`, used to define the method for an action.
+4.  **NormCode Draft**: `::(register a new user) <= @by`
+
+**Example 2: Object-Oriented Instruction (Concept Definition)**
+
+**Normtext:**
+```
+A user profile is a data structure that must contain a username, an email address, and a creation date. The username must be a unique string, and the email must be in a valid format.
+```
+
+**Analysis:**
+1.  **Inference Target**: `{user profile}` (Object-like). The instruction defines a object.
+2.  **Question**: "What is a user profile?" which is a **Classification/Specification**.
+3.  **Operator**: `$.`, used for classification and definition.
+4.  **NormCode Draft**: `{user profile} <= $.`
+
+**Example 3: Data Transformation Instruction**
+
+**Normtext:**
+```
+Take a list of product objects and generate a summary report. For each product, the report should include its name and price. The final report should be a single string with each product on a new line.
+```
+
+**Analysis:**
+1.  **Inference Target**: `::(generate a summary report)` (Action-like). The instruction describes a transformation process.
+2.  **Question**: "How to generate a summary report?" which is a **Methodology Declaration**.
+3.  **Operator**: `@by`, used to define the method for the transformation.
+4.  **NormCode Draft**: `::(generate a summary report) <= @by`
+
+**Example 4: Sequential Dependency**
+
+**Normtext:**
+```
+After a user's payment is successfully processed, send them a confirmation email. The email should contain their order summary.
+```
+
+**Analysis:**
+1.  **Inference Target**: `::(send confirmation email)` (Action-like). The primary action to be defined.
+2.  **Question**: "When should the confirmation email be sent?" which is a **Sequential Dependency**.
+3.  **Operator**: `@after`, used to specify an action that must occur after a preceding event.
+4.  **NormCode Draft**: `::(send confirmation email) <= @after ::(payment successfully processed)`
+
+**Example 5: Annotated Composition**
+
+**Normtext:**
+```
+Create a user record that maps a unique user ID to a corresponding username. For instance, the ID '123' should map to 'Alice', and '456' to 'Bob'.
+```
+
+**Analysis:**
+1.  **Inference Target**: `[user record of {user ID} and {username}]` (Object-like). The instruction defines a data structure.
+2.  **Question**: "How is the user record structured?" which is an **Annotated Composition**, as it involves grouping related data points (key-value pairs).
+3.  **Operator**: `&in`, used for creating annotated or mapped structures.
+4.  **NormCode Draft**: `[user record of {user ID} and {username}] <= &in`
+
+**Example 6: Judgement Request**
+
+**Normtext:**
+```
+Determine if a shopping cart qualifies for free shipping. Free shipping is granted if the total order value exceeds $50.
+```
+
+**Analysis:**
+1.  **Inference Target**: `<shopping cart qualifies for free shipping>` (Object-like). The core task is to evaluate the truth of this statement.
+2.  **Question**: "Does the cart qualify for free shipping?" which is a **Judgement Request**.
+3.  **Operator**: `::< >`, used for wrapping a condition to be evaluated.
+4.  **NormCode Draft**: `::<{shopping cart qualifies for free shipping}>`

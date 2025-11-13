@@ -24,17 +24,15 @@ def _build_specs_for_python_execution(config: Dict[str, Any]) -> tuple[ModelEnvS
     """
     Builds the specs to create the dynamic python execution function.
     """
-    template_key = config.get("template_key", "prompt_template")
+    prompt_key = config.get("prompt_key", "prompt_location")
     script_key = config.get("script_key", "script_location")
     with_thinking = config.get("with_thinking", False)
 
     call_code = (
         "result = tool.create_python_generate_and_run_function("
-        "template_key=params['template_key'], "
+        "prompt_key=params['prompt_key'], "
         "script_key=params['script_key'], "
-        "with_thinking=params['with_thinking'], "
-        "file_tool=body.file_system, "
-        "python_interpreter=body.python_interpreter"
+        "with_thinking=params['with_thinking']"
         ")"
     )
 
@@ -57,7 +55,7 @@ def _build_specs_for_python_execution(config: Dict[str, Any]) -> tuple[ModelEnvS
                 step_index=1,
                 affordance="llm.create_python_generate_and_run_function",
                 params={
-                    "template_key": template_key,
+                    "prompt_key": prompt_key,
                     "script_key": script_key,
                     "with_thinking": with_thinking,
                 },

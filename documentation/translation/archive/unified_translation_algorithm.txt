@@ -1,0 +1,237 @@
+# The Unified NormCode Translation Algorithm
+
+This document outlines a unified, recursive algorithm for translating natural language `normtext` into a structured NormCode plan. The process consists of a one-time setup followed by a core recursive loop that progressively decomposes the `normtext`.
+
+### 1. Initialization (Setup)
+
+The process is initialized with two steps that occur only once:
+
+*   A single, top-level concept is created, and the entire, unprocessed `normtext` is placed in its source text annotation (`...:`).
+*   This top-level concept is analyzed to determine its initial **Inference Target** (e.g., `::(register a new user)`). This concept represents the overall goal and is now the first item ready for the decomposition loop.
+    *   **The Inference Target**: This is the primary subject of a given `normtext`. The process involves asserting the inference target and classifying the core topic into one of two main categories:
+    *   **Action-like**: Represents something that is performed or evaluated. This category includes:
+        *   **Imperatives (`::()`):** A process, command, or action to be executed (e.g., `::(bake)`).
+        *   **Judgements (`::< >`):** An inquiry that evaluates the truth of a statement (e.g., asking if a condition is true).
+    *   **Object-like**: Represents a static entity, concept, or the relationship between them. This category includes:
+        *   **Subject Declarations (`:S:`):** Defines the primary subject of a block (e.g., :LLM:).
+        *   **Statements (`<>`):** An assertion of fact (e.g., `<Kelly is beautiful>`).
+        *   **Objects (`{}`):** A single entity or concept (e.g., `{user account}`).
+        *   **Relations (`[]`):** Represents the relationship between concepts (e.g., [{position} and {number}]).
+
+
+### 2. The Core Recursive Decomposition Loop
+
+The loop runs for any concept that has an un-parsed `...:` annotation. For each such concept, it performs the following steps to decompose it:
+
+*   **A. Formulate the Question**: Based on the concept's already-determined Inference Target and its `...:` text, formulate the specific question being answered (e.g., "How is this done?"). This question is classified into a type, such as **Methodology Declaration** or **Classification**.
+*   **B. Select the Operator**: Based on the question type, select the appropriate `NormCode` operator (`<=`) that will structure the answer (e.g., `@by`, `$.`).
+*   **C. Decompose and Prepare Children**: The operator is applied to the current concept, creating new child concepts (`<-`). The parent's `...:` text is then partitioned and distributed to these children. Finally, for each new child, its own **Inference Target** is determined from its new `...:` snippet, preparing it for a subsequent run of the loop.
+
+The loop continues naturally, as the children prepared in Step C now have the necessary components to be processed. The translation is complete when no concepts with un-parsed `...:` annotations remain.
+
+---
+
+### Detailed Breakdown of Question Types and Operators
+
+This section details the options available during the "Formulate the Question" and "Select the Operator" steps of the loop.
+
+**Determining the Question**: This step classifies the user's intent by analyzing the core inquiry. This moves beyond simple keywords to identify the fundamental structure of the question being investigated. The types of problems can be broken down as follows:
+    For the **Object-like** category:
+    *   **Classification/Specification**: Defining a concept by relating it to another (e.g., "What is a user account?"). Maps to `$.`.
+    *   **Identification**: Asserting that a concept is identical to a specific marked instance (e.g., "what is the same number sequence"). Maps to `$=`.
+    *   **Nominalization**: Defining a concept as the nominal form of a process (e.g., "What is user authentication?"). Maps to `$::`.
+    *   **Instantiation**: Defining a concept by enumerating its members (e.g., "What are all numbers?"). Maps to `$%`.
+    *   **Continuation/Extension**: How a concept is formed by adding to an existing one (e.g., "What is the updated sequence?"). Maps to `$+`.
+    *   **Ordered Composition**: How a concept is formed by combining others in sequence (e.g., "What is the combination of two number sequences?"). Maps to `&across`.
+    *   **Annotated Composition**: How a concept is formed by grouping related data points (e.g., "What is the value with position indexed?"). Maps to `&in`.
+    *   **Process Request**: Requesting the execution of a process to find or compute something (e.g., "How do you find the user?"). Maps to `::({})` or `:_:{}({})`.
+    *   **Judgement Request**: Requesting an evaluation of a condition or state (e.g., "is a user an admin?"). Maps to `::<{}>` or `::{}({}):`.
+    *   **I/O Request**: Requesting external input or describing external output (e.g., "The user name is a primitive input?", "The user name is a final output?"). Maps to `:>:()` or `:<:()`.
+    *   **Element-wise Breakdown**: Breaking down a concept into its individual members (e.g., "how to square a sequence by each of its member?"). Maps to `*every`.
+
+    For the **Action-like** category:
+    *   **Methodology Declaration**: Describing the means by which an action is performed (e.g., "How do you authenticate?"). Maps to `@by`.
+    *   **Conditional Dependency**: Actions depending on a state being true or false (e.g., "When do you show the dashboard?"). Maps to `@if`, `@if!`.
+    *   **Sequential Dependency**: Actions that depend on a prior event (e.g., showing a dashboard after authentication). Maps to `@after`.
+
+---
+
+### Example: The "User Registration" Decomposition
+
+**1. Initialization**
+*   The entire `normtext` is placed in the `...:` of a top-level concept.
+*   The **Inference Target** is determined to be `::(register a new user)`.
+
+```normcode
+...: "To register a new user, first check if the provided username already exists in the database. If it does, report an error. Otherwise..."
+:<:(::(register a new user))
+```
+
+
+**2. Core Loop (Iteration 1)**
+The loop runs on the top-level concept.
+*   **A. Question**: "How to register a new user?" (**Methodology Declaration**).
+*   **B. Operator**: `@by`.
+*   **C. Decompose**: The `@by` operator is applied. Its implementation is the logic within the `...:` text, so the text is passed to a new concept representing the method. This new concept's **Inference Target** is determined to be the conditional check.
+
+
+```normcode
+...: "first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account."
+:<:(::(register a new user)) 
+    ?: How to register a new user?
+    <= @by(:_:)
+        /: "The registration is requesting another process to be executed."
+    <- :_:{steps}({user name})
+        /: "The process is normatively bounded in steps with a given user name."
+    <- {steps}
+        ...: "first, check if the provided username already exists."
+        ...: "second, if it does, report an error."
+        ...: "third, otherwise, create a new user account."
+    <- {user name}
+        ...: "the provided username is provided by the user."
+```
+
+### Iteration 2: Decomposing `{steps}`
+
+We'll now process the `{steps}` concept.
+
+*   **A. Question**: The `...:` text describes a sequence of actions. The question is, "How is `{steps}` composed?". This falls under **Ordered Composition**.
+*   **B. Operator**: The corresponding operator is `&across`.
+*   **C. Decompose**: We apply `&across`, which breaks `{steps}` into three ordered child *objects*. The parent's `...:` text is partitioned and distributed to these new children.
+
+The structure is now:
+```normcode
+:<:(::(register a new user))
+    <= @by(:_:)
+    <- :_:{steps}({user name})
+    <- {steps}
+        ?: How are the steps composed?
+        <= &across
+            /: "The steps are an ordered sequence of actions."
+        <- {step 1}
+            ...: "first, check if the provided username already exists."
+        <- {step 2}
+            ...: "second, if it does, report an error."
+        <- {step 3}
+            ...: "third, otherwise, create a new user account."
+    <- {user name}
+        <= :>:{user name}?()
+        /: "the provided username is provided by the user."
+```
+
+### Iteration 3: Nominalization of Steps
+
+Now we process the new step objects. For each one, the question is "What is this step?". The text defines it as an action, which calls for **Nominalization**.
+
+*   **For `{step 1}`**: It is defined as the action of checking if the username exists. The operator is `$::`.
+*   **For `{step 2}`**: It is defined as the action of reporting an error. The operator is `$::`.
+*   **For `{step 3}`**: It is defined as creating a new user account. The operator is `$::`.
+
+This adds another layer of detail:
+```normcode
+...
+    <- {steps}
+        <= &across
+        <- {step 1}
+            ?: What is step 1?
+            <= $::.<username exists>
+                /: "Step 1 is nominalized as the action of checking if a username exists."
+            <- ::<username exists>
+                /: "The action is to check if the provided username already exists."
+            <- {user name}
+                /: "the provided username is provided by the user."
+        <- {step 2}
+            ?: What is step 2?
+            <= $::.{error}
+                /: "Step 2 is nominalized as the action of reporting an error."
+            <- ::(report error)
+                ...: "The action is to report an error, if the username already exists."
+        <- {step 3}
+            ?: What is step 3?
+            <= $::.{new user account}
+                /: "Step 3 is nominalized as the action of creating a new user account."
+            <- ::(create new user account)
+                ...: "The action is to create a new user account, if the username does not exist."
+```
+
+### Iteration 4: Defining Conditional Dependencies
+
+We now process the two remaining action concepts that contain conditional logic in their `...:` text.
+
+*   **For `::(report error)`**:
+    *   **A. Question**: The text `"The action is to report an error, if the username already exists"` describes *when* this action occurs. The question is, "Under what condition is an error reported?". This is a **Conditional Dependency**.
+    *   **B. Operator**: The corresponding operator is `@if`, which links this action to the result of a judgement.
+    *   **C. Decompose**: The `@if` operator is applied with `::<username exists?>` as its argument, consuming the `...:` text.
+
+*   **For `::(create new user account)`**:
+    *   **A. Question**: Similarly, the text `"The action is to create a new user account, if the username does not exist"` describes the condition for this action. This is also a **Conditional Dependency**.
+    *   **B. Operator**: The operator for a negative condition is `@if!`.
+    *   **C. Decompose**: The `@if!` operator is applied with `::<username exists?>` as its argument.
+
+This completes the decomposition for this branch of the logic. The final structure for these concepts is:
+```normcode
+...
+    <- ::(report error)
+        ?: When should an error be reported?
+        <= @if(::<username exists?>)
+            /: "An error is reported if the username already exists."
+    <- ::(create new user account)
+        ?: When should a new user account be created?
+        <= @if!(::<username exists?>)
+            /: "A new account is created if the username does not exist."
+...
+```
+
+### Complete NormCode Draft
+
+Here is the complete `normcode` draft, combining all the decomposition steps into a single, final output based on our iterations.
+
+```normcode
+...: "first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account."
+:<:(::(register a new user))
+    ?: How to register a new user?
+    <= @by(:_:)
+        /: "The registration is requesting another process to be executed."
+    <- :_:{steps}({user name})
+        /: "The process is normatively bounded in steps with a given user name."
+    <- {steps}
+        ...: "first, check if the provided username already exists."
+        ...: "second, if it does, report an error."
+        ...: "third, otherwise, create a new user account."
+        ?: How are the steps composed?
+        <= &across
+            /: "The steps are an ordered sequence of actions."
+        <- {step 1}
+            ...: "first, check if the provided username already exists."
+            ?: What is step 1?
+            <= $::.<username exists>
+                /: "Step 1 is nominalized as the action of checking if a username exists."
+            <- ::<username exists>
+                /: "The action is to check if the provided username already exists."
+            <- {user name}
+                /: "the provided username is provided by the user."
+        <- {step 2}
+            ...: "second, if it does, report an error."
+            ?: What is step 2?
+            <= $::.{error}
+                /: "Step 2 is nominalized as the action of reporting an error."
+            <- ::(report error)
+                ...: "The action is to report an error, if the username already exists."
+                ?: When should an error be reported?
+                <= @if(::<username exists>)
+                    /: "An error is reported if the username already exists."
+        <- {step 3}
+            ...: "third, otherwise, create a new user account."
+            ?: What is step 3?
+            <= $::.{new user account}
+                /: "Step 3 is nominalized as the action of creating a new user account."
+            <- ::(create new user account)
+                ...: "The action is to create a new user account, if the username does not exist."
+                ?: When should a new user account be created?
+                <= @if!(::<username exists>)
+                    /: "A new account is created if the username does not exist."
+    <- {user name}
+        ...: "the provided username is provided by the user."
+        <= :>:{user name}?()
+        /: "the provided username is provided by the user."
+```

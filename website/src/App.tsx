@@ -12,10 +12,8 @@ import CoreConceptsPage from './components/pages/docs/CoreConceptsPage';
 import OperatorsPage from './components/pages/docs/OperatorsPage';
 
 function App() {
-  const basename = import.meta.env.PROD ? '/normCode' : '/';
-  
   return (
-    <Router basename={basename}>
+    <Router>
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />

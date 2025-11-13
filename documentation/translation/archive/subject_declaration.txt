@@ -1,0 +1,68 @@
+==============================
+SUBJECT DECLARATION NORMCODE:
+==============================
+
+The following normcode shows an example of how subject :NT: with a normtext in {} is reduced to 
+a normcode subject :=: with normcode inside {}. Such that any imperative or judgement 
+with subject of :NT:{_normtext_}(_x_) where normtext is the aforementioned normtext,
+in execution, the reduced :=:{_normcode_}(_x_) is executed where x will be input by
+:>:(_x_) within the normcode, and the inference is substracted by 
+:<:(_y_) in the normcode.
+
+:/:{environment}(_normcode_) is the active executor.
+when it is written, it means that the respective _normcode_ is hosted and executed 
+by the environment's definition of primitives and provision of instances. 
+
+
+
+'''
+:NT:{
+    Conduct normtext decomposition as defined for temporary normcode
+}
+    <= $=<
+            :NT: <= @/ <- :=:;
+            {_}<?(:NT:)> <= :_:{NT_translator}({_}<?(:NT:)>);
+        >
+    <- :=:{
+        :<:({temporary normcode})
+            <= :_:{normtext decomposition}(:{temporary normcode})
+            <- {normtext decomposition}
+                <= :>:({normtext decomposition})
+    }
+        <= $=<
+            {_}<?(:=:)> 
+                <= :NC_orchestrator:
+                    {
+                        {_}<?(:=:)> 
+                            <= ::(
+                                @/ :_:{normtext decomposition}(:{temporary normcode});
+                                @/ :>:({normtext decomposition});
+                            )
+                            <- {_}<?(:=:)> 
+                    }
+                    (
+                        {normtext decomposition}<$%({NT_translator})_>
+                    )
+                <- {_}<?(:=:)
+        >
+        <- :=:{
+            :<:({temporary normcode})
+                <= $.({temporary normcode})
+                <- {normtext answering the main question}
+                    <= ::(identify the part of the normtext that answer the main question)
+                <- {functional normtext sentence}
+                    <= ::(generate the functional normtext sentence that answer the main question)
+                <- {values}
+                    <= ::(set up the values for the inference of the functional normtext sentence)
+                <- [{targets} and {decomposed normtext}]
+                    <= ::(sort the remaining normtext into parts that answer relevant qustions about)
+                    <- {targets}
+                        <= &across 
+                        <- {the functional normtext sentence}
+                        <- {each of the values in the functional normtext sentence}
+                <- {temporary normcode}
+                    <= ::(combine the parts into the temporary normcode)
+        }
+'''
+
+==============================

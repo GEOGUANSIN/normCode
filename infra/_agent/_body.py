@@ -2,7 +2,7 @@ from typing import Any, Dict, Callable
 from infra._agent._models import PromptTool, FileSystemTool, PythonInterpreterTool
 
 class Body:
-	def __init__(self, llm_name="qwen-turbo-latest") -> None:
+	def __init__(self, llm_name="qwen-turbo-latest", base_dir: str | None = None) -> None:
 		self.prompt = PromptTool()
 		try:
 			from infra._agent._models import LanguageModel as _LM
@@ -62,5 +62,11 @@ class Body:
 				return input_fn
 		
 		self.user_input = _UserInputTool()
-		self.file_system = FileSystemTool()
+		self.file_system = FileSystemTool(base_dir=base_dir)
 		self.python_interpreter = PythonInterpreterTool()
+		
+		# Pass the body's tool instances to the llm to ensure they share the same context (e.g., base_dir)
+		if hasattr(self.llm, "file_tool"):
+			self.llm.file_tool = self.file_system
+		if hasattr(self.llm, "python_interpreter"):
+			self.llm.python_interpreter = self.python_interpreter

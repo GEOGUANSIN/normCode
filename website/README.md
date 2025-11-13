@@ -1,6 +1,35 @@
-# React + TypeScript + Vite
+# NormCode Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The official website for NormCode - a revolutionary framework for transparent and controllable AI reasoning.
+
+Built with React + TypeScript + Vite.
+
+## 🚀 Quick Start (One-Click Launchers)
+
+We've created multiple launcher scripts for easy development:
+
+- **`launch_dev_gui_silent.vbs`** - Silent GUI launcher, no console (Cleanest! 🌟)
+- **`launch_dev_gui.pyw`** - GUI launcher with start/stop controls
+- **`launch_dev.bat`** - Double-click to start (Windows, simplest!)
+- **`launch_dev.ps1`** - PowerShell launcher with colored output
+- **`launch_dev.py`** - Python launcher (cross-platform)
+
+👉 **See [LAUNCHER_README.md](./LAUNCHER_README.md) for detailed instructions**
+
+### Traditional Method
+
+If you prefer the command line:
+
+```bash
+npm install  # First time only
+npm run dev  # Start development server
+```
+
+Then open http://localhost:5173 in your browser.
+
+---
+
+## 🛠️ Technical Details
 
 Currently, two official plugins are available:
 

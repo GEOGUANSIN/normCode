@@ -1,0 +1,122 @@
+This document outlines the iterative decomposition process for the normcode concept `<means acceptance and wanting happiness>`, as defined in the context of the definition of Love.
+
+**Starting Concept:**
+
+```normcode
+<- <means acceptance and wanting happiness>
+    ...: "This deep feeling means accepting someone and wanting them to be happy, even when it's hard."
+```
+
+---
+
+### **Iteration 1: Manifesting the Meaning as a Judgement**
+
+*   **Question (`?:`)**: "How does this deep feeling manifest its meaning?"
+*   **Analysis**: The text describes a condition or a state of affairs ("means accepting..."). This is a "Judgement Request" because it's asking for an evaluation of this meaning.
+*   **Operator (`<=`)**: We use `::<{}>` to frame this as a judgement.
+*   **Decomposition**: The original concept is decomposed into a judgement that this `{deep feeling}` means some `{meaning}`. The `...:` text is passed down to the new `{meaning}` concept.
+
+```normcode
+<- <means acceptance and wanting happiness>
+    ?: How does this deep feeling manifest its meaning? (Judgement Request)
+    <= ::<{deep feeling} means {meaning}>
+        /: "Its meaning is manifested as a judgement that is then broken down."
+    <- {meaning}
+        ...: "accepting someone and wanting them to be happy, even when it's hard."
+```
+
+---
+
+### **Iteration 2: Defining the Method of Judgement**
+
+*   **Question (`?:`)**: "How is this meaning judged?"
+*   **Analysis**: Now we need to define *how* we evaluate the `{meaning}`. This calls for a specific procedure or method. This is a "Methodology Declaration".
+*   **Operator (`<=`)**: We use `@by(:_:)` to specify that the judgement is performed by a bounded, normative process.
+*   **Decomposition**: The `{meaning}` concept is decomposed to show it's judged `@by` a `{judgement breakdown}`.
+
+```normcode
+<- {meaning}
+    ?: How is this meaning judged?
+    <= @by(:_:)
+        /: "The judgement is determined by a specific method."
+    <- :_:{judgement breakdown}()
+        /: "The method is a bounded process named 'judgement breakdown'."
+    <- {judgement breakdown}
+        ...: "The breakdown consists of a true scenario, a false scenario, and the condition that distinguishes them."
+```
+
+---
+
+### **Iteration 3: Composing the Judgement Breakdown**
+
+*   **Question (`?:`)**: "What is the composition of the judgement broken down?"
+*   **Analysis**: The `...:` text for `{judgement breakdown}` implies an ordered set of components (a true case, a false case, and a condition). This is an "Ordered Composition".
+*   **Operator (`<=`)**: We use `&across` to structure these components in sequence.
+*   **Decomposition**: `{judgement breakdown}` is expanded into its three constituent parts.
+
+```normcode
+<- {judgement breakdown}
+    ?: What is the composition of the judgement broken down?
+    <= &across
+        /: "It is an ordered composition of the scenarios and the underlying condition."
+    <- {true scenario action}
+        ...: "the true scenario is accepting someone and wanting them to be happy, even when it's hard"
+    <- {false scenario action}
+        ...: "the false scenario is not accepting someone and wanting them to be happy, even when it's hard"
+    <- <accepting someone and wanting them to be happy, even if it is hard>
+        ...: "The condition is about accepting someone and wanting them to be happy, even when it's hard."
+```
+
+---
+
+### **Iteration 4.1-4.2: Defining the Scenario Actions (Nominalization & Condition)**
+
+*   **Question (`?:`)**: "What is the action in the true/false scenario?" and "When is this action performed?"
+*   **Analysis**: Each scenario action is a process that is transformed into an object (a "Nominalization"). This process is conditional.
+*   **Operator (`<=`)**: We first use `$::` to nominalize the action. This creates a new undecomposed concept. The question for this new concept is "When?", which is answered with `@if` or `@if!`.
+*   **Decomposition**: The `{true scenario action}` and `{false scenario action}` are decomposed into conditional outputs. The `@if`/`@if!` operators take the `<...>` condition as a child (`<-`).
+
+```normcode
+<- {true scenario action}
+    ?: What is the action in the true scenario? (Nominalization)
+    <= $::
+        ...: "It is a nominalized action to output TRUE, conditional on the acceptance and wanting happiness."
+        ?: When is this nominalized action performed?
+        <= @if(<accepting someone and wanting them to be happy, even if it is hard>)
+            /: "This action executes only if the condition is met."
+        <- <accepting someone and wanting them to be happy, even if it is hard>
+            ...: "The condition that must be true."
+    <- :<:(<%(TRUE)>)
+        /: The action is to output True in the true scenario
+
+<- {false scenario action}
+    ?: What is the action in the false scenario? (Nominalization)
+    <= $::
+        ...: "It is a nominalized action to output FALSE, conditional on the lack of acceptance and wanting happiness."
+        ?: When is this nominalized action performed?
+        <= @if!(<accepting someone and wanting them to be happy, even if it is hard>)
+            /: "This action executes only if the condition is not met."
+        <- <accepting someone and wanting them to be happy, even if it is hard>
+            ...: "The condition that must be false."
+    <- :<:(%(FALSE))
+        /: The action is to output False in the false scenario
+```
+
+---
+
+### **Iteration 4.3: Decomposing the Final Condition**
+
+*   **Question (`?:`)**: "How is this condition evaluated?"
+*   **Analysis**: The final piece is the condition itself. Evaluating whether it's true or false is a "Judgement Request".
+*   **Operator (`<=`)**: We use `::<{}>` to represent this evaluation.
+*   **Decomposition**: The statement is broken down to identify its core components, in this case, the target of the acceptance and happiness, `{someone or something}`.
+
+```normcode
+<- <accepting someone and wanting them to be happy, even if it is hard>
+    ?: How is this condition evaluated? (Judgement Request)
+    <= ::<accepting {someone} and wanting {them} to be happy, even if it is hard>
+        /: "It's a judgement that evaluates the act of accepting someone and wanting them to be happy."
+    <- {someone or something}
+```
+
+This completes the decomposition, resulting in a fully defined, logical structure that can be computationally interpreted.

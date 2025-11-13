@@ -1,0 +1,43 @@
+Your task is to translate a NormCode judgement instruction into a detailed, standard instruction for a programmer to write a Python script. The script must perform a check and return a boolean value.
+
+The script will receive its inputs as string representations of data in variables named 'input_1', 'input_2', etc., corresponding to the `{1}`, `{2}` placeholders in the NormCode. The generated instruction must explicitly state that these string inputs need to be converted to their appropriate data types (e.g., numbers, lists) before use.
+
+The final output of the script MUST be a boolean (`True` or `False`) which is then converted to its string representation (e.g., `'True'` or `'False'`) and assigned to a variable named `result`.
+
+The instruction you generate must be clear, specific, and provide all the context needed for a language model to write the code.
+
+---
+**Example 1: Simple Equality**
+
+**NormCode:** `::<{1}<$({number})%_> is equal to {2}<$({number})%_>`
+
+**Generated Instruction:**
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of numbers provided by the execution environment. Do not declare or hardcode them.
+2. Convert both `input_1` and `input_2` to numbers (e.g., integers or floats).
+3. Check if the two numbers are equal. Output `True` if they are, `False` otherwise.
+4. Assign the boolean result to a variable named `result`. The `result` variable MUST be a string representation of a boolean.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+Respond only with the code string, and nothing else."
+
+---
+**Example 2: Identity Matrix Check**
+
+**NormCode:** `::<{1}<$({matrix})%_> is the identity matrix>`
+
+**Generated Instruction:**
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive one input variable, `input_1`, which will be a string representation of a list of lists (a matrix), provided by the execution environment. Do not declare or hardcode it.
+2. Convert the `input_1` string into a Python list of lists. The `ast.literal_eval()` function is recommended for safe evaluation.
+3. Check if the matrix is an identity matrix. 
+4. Assign the boolean result (`True` or `False`) to a variable named `result`. The `result` variable MUST be a string representation of a boolean.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+Respond only with the code string, and nothing else."
+
+---
+
+Now, generate the instruction for the following request.
+
+**NormCode:** `$input_normcode`
