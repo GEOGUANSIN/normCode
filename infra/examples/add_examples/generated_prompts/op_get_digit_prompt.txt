@@ -1,12 +1,10 @@
 You are a Python coding assistant. Your task is to write a Python script that will:
 
-1. Receive two input variables, `input_1` and `input_2`, which will be string representations of data provided by the execution environment:
+1. Receive an input variable, `input_1`, which will be a string representation of data provided by the execution environment:
    - `input_1` is a string representing a number (e.g., "1234").
-   - `input_2` is a string representing a unit place value (e.g., "tens", "hundreds", or a numeric string like "2" for the 2nd digit from right).
-2. Convert `input_1` to an integer (or float if needed, but typically whole numbers in this context).
-3. Convert `input_2` to an integer to determine the position from the right (e.g., 1 for ones, 2 for tens, etc.). If `input_2` is a string like "tens", it must be mapped to 2; if "hundreds", to 3, etc. However, since the NormCode specifies `{2}<$({unit place value})%_>`, we assume the input is a numeric string (like "2") indicating the place index (1-based from right). So convert it directly to int.
-4. Extract the digit at the specified place (from the right, 1-indexed) — for example, if `input_1` is "1234" and `input_2` is "2", the result should be 3 (the tens digit).
-5. Assign the string representation of that extracted digit to a variable named `result`. The `result` variable MUST be a string.
+2. Convert `input_1` to an integer.
+3. Extract the last digit (the ones place) from the number. For example, if `input_1` is "1234", the extracted digit is 4.
+4. Assign the string representation of that extracted digit to a variable named `result`. The `result` variable MUST be a string.
 
 Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 

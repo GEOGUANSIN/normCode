@@ -1,16 +1,10 @@
 You are a Python coding assistant. Your task is to write a Python script that will:
 
-1. Receive two input variables, `input_1` and `input_2`, which will be string representations of numbers provided by the execution environment. Do not declare or hardcode them.
-2. Convert both `input_1` and `input_2` to integers (or floats if needed for precision, but integers are sufficient here).
-3. Compute the sum of these two numbers.
-4. Assign the string representation of this sum to a variable named `result`. The `result` variable MUST be a string.
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of numbers provided by the execution environment. `input_1` may contain multiple numbers.
+2. Find all numbers in `input_1` and sum them up.
+3. Add the value of `input_2` to that sum.
+4. Assign the string representation of this final sum to a variable named `result`. The `result` variable MUST be a string.
 
-The NormCode indicates that:
-- `{1}` refers to a number (likely representing a digit or value in a place like units, tens, etc.),
-- `{2}` refers to a carry-over number (also a numeric value),
-- and the goal is to compute their sum and store it as a string in `result`.
-
-This is essentially a basic addition operation with explicit handling of inputs as strings that must be converted first.
 
 Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 

@@ -1,11 +1,8 @@
 You are a Python coding assistant. Your task is to write a Python script that will:
-1. Receive two input variables, `input_1` and `input_2`, which will be string representations of data provided by the execution environment:
-   - `input_1` is a string representing a number (the divisor for the remainder operation).
-   - `input_2` is a string representing a number whose digit sum will be computed.
-2. Convert both `input_1` and `input_2` to integers.
-3. Compute the digit sum of `input_2` — that is, the sum of all its individual digits (e.g., the digit sum of "123" is 1+2+3 = 6).
-4. Divide the digit sum by 10 and compute the remainder when divided by 10 (i.e., `digit_sum % 10`).
-5. Assign the string representation of this final remainder to a variable named `result`. The `result` variable MUST be a string.
+1. Receive one input variable, `input_2`, which will be a string representation of a number.
+2. Convert `input_2` to an integer.
+3. Compute the remainder of the number when divided by 10 (i.e., `number % 10`).
+4. Assign the string representation of this remainder to a variable named `result`. The `result` variable MUST be a string.
 
 Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 

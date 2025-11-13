@@ -1,10 +1,8 @@
 "You are a Python coding assistant. Your task is to write a Python script that will:
-1. Receive two input variables, `input_1` and `input_2`, which will be string representations of data provided by the execution environment. Specifically:
-   - `input_1` is a string representing a number (the quotient to be found).
-   - `input_2` is a string representing a digit sum (i.e., a non-negative integer).
-2. Convert both `input_1` and `input_2` from strings to appropriate numeric types (integers or floats as needed).
-3. Divide the value of `input_2` (the digit sum) by 10.
-4. Assign the string representation of the result of this division to a variable named `result`. The `result` variable MUST be a string.
+1. Receive one input variable, `input_2`, which will be a string representation of a number.
+2. Convert `input_2` to an integer.
+3. Compute the integer quotient of the number when divided by 10 (i.e., `number // 10`).
+4. Assign the string representation of this quotient to a variable named `result`. The `result` variable MUST be a string.
 
 Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 
