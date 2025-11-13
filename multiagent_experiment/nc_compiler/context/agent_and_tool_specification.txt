@@ -1,0 +1,7 @@
+This concept represents a structured specification for the worker agents and their capabilities, derived during `{Phase 2: Compilation}`.
+
+**Purpose:** To serve as a clear definition of *what* computational work needs to be done in the target system.
+
+**Process:** The `CompilationAgent` generates this specification by scanning the `{normcode plan}` for all functional concepts (e.g., `::(sum A and B)`) and explicit agent annotations. From this, it creates a list of required agent roles (e.g., `ImperativeAgent`) and the exact signatures for their tools (e.g., a function `sum(a, b)`).
+
+**Role:** This specification is used directly by the code generation logic to create the boilerplate Python files for each worker agent and their tool methods.

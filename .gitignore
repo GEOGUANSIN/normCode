@@ -130,7 +130,7 @@ app/.env
 *.sock
 
 # Ignore all log files in this directory
-*.txt
+orchestrator_log_*.txt
 *.log
 
 # Keep the directory structure

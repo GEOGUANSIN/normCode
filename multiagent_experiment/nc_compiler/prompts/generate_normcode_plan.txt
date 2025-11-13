@@ -1,0 +1,87 @@
+You are an expert in NormCode, a semi-formal language for creating plans of inferences. Your task is to act as the "Blueprinting" agent.
+
+You will be given a natural language text (`normtext`) that describes a methodology. Your goal is to translate this `normtext` into a complete, syntactically correct NormCode plan (`.nc` file).
+
+Follow the principles of the Unified Translation Algorithm:
+1.  **Initialization:** Identify the top-level Inference Target of the entire text.
+2.  **Recursive Decomposition:** For each concept, formulate the question it answers, select the appropriate NormCode operator (e.g., `@by`, `&across`, `$::`), and decompose the text into child concepts.
+
+Pay close attention to the flow and hierarchy. Use the numerical flow index (e.g., `1.1`, `1.1.2.1`) to represent the structure of the plan. Ensure that every piece of the source `normtext` is accounted for in the final plan.
+
+The final output should be ONLY the raw NormCode plan, without any additional explanation or formatting.
+
+---
+**EXAMPLE**
+---
+**INPUT NORMTEXT:**
+```
+# The NormCode Methodology: A Practical Summary
+
+## The High-Level Idea
+At its core, NormCode is a methodology for turning a complex plan, described in natural language, into a verifiable, purpose-built multi-agent system.
+
+## The Practical Workflow: From Idea to Verifiable Trace
+The entire process can be broken down into three concrete, practical phases:
+
+### Phase 1: The Blueprinting (Design Time)
+This is where you act as the architect. You follow the recursive translation process to decompose the English text into a formal NormCode plan.
+
+### Phase 2: The "Compilation" (Development Time)
+This is where you act as the builder. You manually translate the blueprint's structure into a concrete multi-agent system. This involves defining agents, tools, and state, and translating the plan's logic into the controller's code.
+
+### Phase 3: The Execution & Verification (Runtime)
+This is the final inspection. You run the compiled system with input data and produce a final, verifiable trace using an `ExecutionState` logbook.
+```
+
+**CORRESPONDING NORMCODE PLAN OUTPUT:**
+```normcode
+:<:(::(Create a verifiable multi-agent system from normtext)) | 1. methodology
+    <= @by(:_:)
+    <- :_:{NormCode Methodology}({input normtext})
+    <- {NormCode Methodology} | 1.1. grouping
+        <= &across
+        <- {Phase 1: Blueprinting} | 1.1.1. nominalization
+            <= $::
+            <- ::(Translate normtext to NormCode plan) | 1.1.1.1. imperative
+                <= ::(Decompose concepts until no un-parsed text remains)
+                <- {normtext}
+                <- {normcode plan}?
+        <- {Phase 2: Compilation} | 1.1.2. nominalization
+            <= $::
+            <- ::(Generate source code from NormCode plan) | 1.1.2.1. grouping
+                <= &across
+                <- {agent and tool specification} | 1.1.2.1.1. imperative
+                    <= ::(Scan plan for functional concepts to define agent roles and tools)
+                    <- {normcode plan}
+                    <- {agent and tool specification}?
+                <- {state specification} | 1.1.2.1.2. imperative
+                    <= ::(Scan plan for object concepts to define state variables)
+                    <- {normcode plan}
+                    <- {state specification}?
+                <- {system source code} | 1.1.2.1.3. imperative
+                    <= ::(Generate agent scaffolds and controller logic)
+                    <- {agent and tool specification}
+                    <- {state specification}
+                    <- {normcode plan}
+                    <- {system source code}?
+        <- {Phase 3: Execution & Verification} | 1.1.3. nominalization
+            <= $::
+            <- ::(Execute system and capture trace) | 1.1.3.1. imperative
+                <= ::(Run the generated system with input data and capture the ExecutionState output)
+                <- {system source code}
+                <- {input data}
+                <- {execution trace}?
+    <- {input normtext} | 1.2. io
+        <= :>:{input normtext}?()
+```
+
+---
+**TASK**
+---
+**INPUT NORMTEXT TO TRANSLATE:**
+```
+$normtext
+```
+
+---
+**NORMCODE PLAN:**

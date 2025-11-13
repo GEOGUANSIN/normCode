@@ -1,0 +1,14 @@
+This concept represents the primary imperative action performed during Phase 2 by the `CompilationAgent`.
+
+**Purpose:** To perform the core code generation logic that translates the abstract `{normcode plan}` into executable `{system source code}`.
+
+**Process:** This is an ordered sub-process composed of three main steps:
+1.  **Derive Agent/Tool Spec:** Scan the plan for functional concepts to determine what agents and tools are needed.
+2.  **Derive State Spec:** Scan the plan for object concepts to determine what state variables the controller must manage.
+3.  **Generate Code:** Use the derived specifications to write the Python source files for all agents and the central controller, translating the plan's logic (`*every`, `@if`, etc.) into code constructs (`while`, `if/else`).
+
+**Inputs:**
+- `{normcode plan}`: The formal blueprint.
+
+**Outputs:**
+- `{system source code}`: The complete, generated application.

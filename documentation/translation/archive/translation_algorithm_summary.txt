@@ -1,0 +1,63 @@
+Summary of the NormCode Translation Algorithm:
+
+Based on the iterative process, the translation of a natural language algorithm into NormCode follows a precise, hierarchical decomposition method.
+
+1.  **Top-Level Goal Definition:**
+    *   The entire process starts by defining the main goal as an imperative, e.g., `:<:(::(conduct decomposition...))`.
+    *   A "how to" question about this goal is answered using the `@by(:_:)` structure. This separates the high-level goal from the specific method used to achieve it.
+    *   Example:
+        ```normcode
+        ?: how to conduct decomposition...?
+        <= @by(:_:)
+        <- :_:{8 steps procedure}({normtext}; {context})
+        ```
+
+2.  **Grounding of Primitive Inputs:**
+    *   Before decomposing the main procedure, all of its primitive inputs (e.g., `{normtext}`, `{context}`) must be "grounded."
+    *   This is done by defining how they are obtained, typically using the input operator `:>:` to show they are provided externally.
+    *   Example:
+        ```normcode
+        <- {normtext}
+            ?: how is the normtext given?
+            <= :>:{normtext}?({normtext})
+        ```
+
+3.  **Procedural Decomposition with `&across`:**
+    *   A procedure or a list of sequential steps is decomposed using the `&across` operator. This signifies iterating through a known set of items (the steps).
+    *   Each step is listed as a value concept (`<- {step...}`).
+
+4.  **Nominalization of Action Steps (`$::`):**
+    *   Each procedural step, which describes an action (e.g., "initiate a main question..."), must first be nominalized using the `$::` operator.
+    *   This reframes the textual description of the step as a formal imperative concept (`::(...)`). This is a crucial intermediate step before the imperative itself is decomposed.
+    *   Example:
+        ```normcode
+        <- {step 1: initiate}
+            ?: what is the action implied by the step 1 algorithm?
+            <= $::
+            <- ::(initiate a main question...)
+        ```
+
+5.  **Decomposition of Imperatives (`@by(:_:)`):**
+    *   After a step has been nominalized into an imperative (`::(...)`), that imperative is then decomposed to explain *how* it is executed.
+    *   If the original text specifies that this action is performed by a sub-algorithm (e.g., "...by step 1 algorithm"), the `@by(:_:)` pattern is used again to link the action to its method.
+    *   Example:
+        ```normcode
+        <- ::(initiate a main question...)
+            <= @by(:_:)
+            <- :_:{step 1 algorithm}({context}; {normtext})
+        ```
+
+6.  **Handling Output (`$::`):**
+    *   The final output of a procedure is explicitly defined as its own step (e.g., `{output}`).
+    *   This step is nominalized using the output operator `$::` and the output imperative `:>:`, which designates the concept that is to be produced.
+    *   Example:
+        ```normcode
+        <- {output}
+            ?: what is the output?
+            <= $::
+            <- :<:({normcode draft})
+        ```
+
+7.  **Iterative File Structure:**
+    *   The entire translation is an iterative process where each new file builds upon the last, adding one level of decomposition at a time.
+    *   The file naming convention `iteration_<depth>.<element_index>.txt` is used to precisely track the progress of this hierarchical decomposition.

@@ -1,0 +1,6 @@
+Instruction: $input
+
+Execute the instruction. Return the output specified only and nothing else.
+
+Output format: Only when there are multiple outputs, return them in a Python list format. 
+

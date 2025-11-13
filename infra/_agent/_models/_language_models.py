@@ -395,6 +395,111 @@ class LanguageModel:
 
         return _generate_and_run
 
+    def create_python_generate_and_run_function_from_prompt(
+        self,
+        prompt_template: str,
+        script_key: str = "script_location",
+        with_thinking: bool = False,
+        file_tool: FileSystemTool | None = None,
+        python_interpreter: PythonInterpreterTool | None = None,
+    ):
+        """Create a callable that uses a provided prompt to execute or generate scripts.
+
+        This is a variation of ``create_python_generate_and_run_function``
+        where the prompt template is provided upfront during function creation,
+        rather than being looked up from variables at execution time.
+
+        Args:
+            prompt_template (str): The prompt template string to be used for code generation.
+            script_key (str): The key in the ``vars`` dict that holds the script path.
+            with_thinking (bool): Flag to expect a JSON response with "thinking" and "code".
+            file_tool (FileSystemTool): Optional file system tool instance.
+            python_interpreter (PythonInterpreterTool): Optional interpreter instance.
+
+        Returns:
+            Callable[[dict | None], Any]: A function that performs the generation and execution.
+        """
+        import json
+        from string import Template
+        from typing import Any
+        import re
+
+        # --- Tool Initialization ---
+        file_tool = file_tool or self.file_tool
+        python_interpreter = python_interpreter or self.python_interpreter
+
+        def _clean_code(raw_code: str) -> str:
+            if not isinstance(raw_code, str):
+                return ""
+            code_blocks = re.findall(r"```(?:python|py)?\n(.*?)\n```", raw_code, re.DOTALL)
+            return code_blocks[0].strip() if code_blocks else raw_code
+
+        def _generate_code(prompt: str) -> str:
+            if with_thinking:
+                logger.debug("Generating code with thinking (JSON output expected).")
+                json_prompt = prompt + '\n\nRespond with a JSON object containing "thinking" and "code" keys.'
+                raw_response = self.generate(json_prompt, response_format={"type": "json_object"})
+                try:
+                    parsed_response = json.loads(raw_response)
+                    generated_code = _clean_code(parsed_response.get("code", ""))
+                    thinking_process = parsed_response.get("thinking", "")
+                    logger.debug(f"Thinking process: {thinking_process}")
+                    if not generated_code:
+                        logger.error("LLM returned no code in JSON response")
+                        return ""
+                    return generated_code
+                except json.JSONDecodeError:
+                    logger.error("Failed to parse JSON response from LLM", exc_info=True)
+                    return _clean_code(raw_response)
+            raw_generated_code = self.generate(prompt)
+            return _clean_code(raw_generated_code)
+
+        def _generate_and_run(vars: dict | None = None) -> Any:
+            vars = vars or {}
+            logger.debug(f"Executing python_generate_and_run_from_prompt with vars: {vars}")
+
+            script_inputs = {
+                k: v for k, v in vars.items() if k not in [script_key]
+            }
+
+            code_to_run = None
+            if script_key in vars and vars[script_key]:
+                script_path = vars[script_key]
+                read_result = file_tool.read(script_path)
+
+                if read_result.get("status") == "success":
+                    logger.info(f"Reusing existing script: {script_path}")
+                    code_to_run = read_result.get("content")
+                else:
+                    logger.info(f"Script not found at {script_path}. Generating a new one.")
+                    formatted_prompt = Template(prompt_template).safe_substitute(script_inputs)
+                    generated_code = _generate_code(formatted_prompt)
+
+                    if not generated_code:
+                        return {"status": "error", "message": "Code generation failed, no code in response."}
+
+                    save_result = file_tool.save(generated_code, script_path)
+                    if save_result.get("status") == "error":
+                        logger.error(f"Failed to save generated script: {save_result.get('message')}")
+                        return save_result
+
+                    saved_path = save_result.get("location", script_path)
+                    logger.info(f"Generated script saved to {saved_path} for future reuse.")
+                    code_to_run = generated_code
+
+            if code_to_run is not None:
+                if not isinstance(python_interpreter, PythonInterpreterTool):
+                    return {"status": "error", "message": "A valid PythonInterpreterTool was not provided."}
+                return python_interpreter.execute(code_to_run, script_inputs)
+
+            error_msg = (
+                f"No valid key provided. Use '{script_key}' for file-based operations."
+            )
+            logger.error(error_msg)
+            return {"status": "error", "message": error_msg}
+
+        return _generate_and_run
+
     def create_generation_function_thinking_json(self, prompt_template: str):
         """Return a generation function that formats the template with vars and extracts JSON thinking/output."""
         import json

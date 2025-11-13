@@ -1,0 +1,75 @@
+:<:(::(conduct decomposition of a given normtext in context))
+    ...: to conduct decomposition of a given normtext in context,
+    ?: how to conduct decomposition of a given normtext in context?
+    <= @by(:_:)
+        /: It is done by some method.
+    <- :_:{8 steps procedure}({normtext}; {context})
+        /: The method follows the 8 steps procedure on normtext and context.
+    <- {normtext}
+        ...: a given normtext
+        ?: how is the normtext given?
+        <= :>:{normtext}?({normtext})
+            /: The normtext is given as a input.
+    <- {context}
+        ...: in context
+        ?: how is the context given?
+        <= :>:{context}?({context})
+            /: The context is given as a input.
+    <- {8 steps procedure}
+        ...: 1. initiate ... 8. repeat the process...
+        ?: what is the 8 steps procedure?
+        <= &across
+            /: The procedure consists of 8 distinct steps.
+        <- {step 1: initiate}
+            ...: 1. initiate a main question, target and functional operator by the context and the normtext. - by step 1 algorithm.
+            ?: what is the action implied by the step 1 algorithm?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(initiate a main question, target and functional operator by the context and the normtext)
+                ...: The action is to initiate a main question, target and functional operator by the context and the normtext.
+        <- {step 2: identify stem}
+            ...: 2. identify the stem of the normtext that answer the main question under the functional operator.
+            ?: what is the action implied by step 2?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(identify the stem of the normtext that answer the main question under the functional operator)
+                ...: The action is to identify the stem of the normtext that answer the main question under the functional operator.
+        <- {step 3: generate functional sentence}
+            ...: 3. generate the functional normtext sentence according to the stem.
+            ?: what is the action implied by step 3?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(generate the functional normtext sentence according to the stem)
+                ...: The action is to generate the functional normtext sentence according to the stem.
+        <- {step 4: set up values}
+            ...: 4. set up the values for the inference of the functional normtext sentence.
+            ?: what is the action implied by step 4?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(set up the values for the inference of the functional normtext sentence)
+                ...: The action is to set up the values for the inference of the functional normtext sentence.
+        <- {step 5: sort normtext}
+            ...: 5. sort the normtext into parts that answer relevant qustions about: the functional normtext sentence and each of the values for the functional normtext sentence
+            ?: what is the action implied by step 5?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(sort the normtext into parts that answer relevant qustions about: the functional normtext sentence and each of the values for the functional normtext sentence)
+                ...: The action is to sort the normtext into parts that answer relevant qustions about: the functional normtext sentence and each of the values for the functional normtext sentence.
+        <- {step 6: staging}
+            ...: 6. staging the parts into the temporary normcode draft with sorted normtext part annotated.
+            ?: what is the action implied by step 6?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(staging the parts into the temporary normcode draft with sorted normtext part annotated)
+                ...: The action is to stage the parts into the temporary normcode draft with sorted normtext part annotated.
+        <- {step 7: add to draft}
+            ...: 7. add the temporary normcode into the normcode draft, which is initially empty.
+            ?: what is the action implied by step 7?
+            <= $::
+                /: The action is an imperative in the following.
+            <- ::(add the temporary normcode into the normcode draft, which is initially empty)
+                ...: The action is to add the temporary normcode into the normcode draft, which is initially empty.
+        <- {step 8: repeat process}
+            ...: 8. repeat the process (from 1 to 7) for each of the normtext part as the normtext, until the normtext is fully decomposed into the normcode draft.
+        <- {output}
+            ...: the normcode draft should be outputted at the end of the procedure.

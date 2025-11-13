@@ -17,6 +17,7 @@ from infra._agent._sequences.imperative_direct import set_up_imperative_direct_d
 from infra._agent._sequences.imperative_input import set_up_imperative_input_demo, configure_imperative_input_demo
 from infra._agent._sequences.judgement_direct import set_up_judgement_direct_demo, configure_judgement_direct_demo
 from infra._agent._sequences.imperative_python import set_up_imperative_python_demo, configure_imperative_python_demo
+from infra._agent._sequences.imperative_python_indirect import set_up_imperative_python_indirect_demo, configure_imperative_python_indirect_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
@@ -33,6 +34,7 @@ from infra._agent._steps.imperative_direct import imperative_direct_methods
 from infra._agent._steps.imperative_input import imperative_input_methods
 from infra._agent._steps.judgement_direct import judgement_direct_methods
 from infra._agent._steps.imperative_python import imperative_python_methods
+from infra._agent._steps.imperative_python_indirect import imperative_python_indirect_methods
 
 
 # Configure logging
@@ -131,6 +133,7 @@ class AgentFrame():
             set_up_imperative_input_demo(self)
             set_up_judgement_direct_demo(self)
             set_up_imperative_python_demo(self)
+            set_up_imperative_python_indirect_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -170,6 +173,9 @@ class AgentFrame():
             elif inference_sequence == "imperative_python":
                 logger.info("Configuring imperative_python demo sequence")
                 configure_imperative_python_demo(self, inference_instance, imperative_python_methods)
+            elif inference_sequence == "imperative_python_indirect":
+                logger.info("Configuring imperative_python_indirect demo sequence")
+                configure_imperative_python_indirect_demo(self, inference_instance, imperative_python_indirect_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:

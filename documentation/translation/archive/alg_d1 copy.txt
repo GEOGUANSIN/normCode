@@ -1,0 +1,80 @@
+to conduct decomposition of a given normtext in context,
+
+1. initiate a main question, target and functional operator by the context and the normtext.
+    - by step 1 algorithm.
+2. identify the stem of the normtext that answer the main question under the functional operator.
+3. generate the functional normtext sentence according to the stem.
+4. set up the values for the inference of the functional normtext sentence.
+5. sort the normtext into parts that answer relevant qustions about: 
+    - the functional normtext sentence 
+    - each of the values for the functional normtext sentence
+6. staging the parts into the temporary normcode draft with sorted normtext part annotated.
+7. add the temporary normcode into the normcode draft, which is initially empty.
+8. repeat the process (from 1 to 7) for each of the normtext part as the normtext, 
+    until the normtext is fully decomposed into the normcode draft.
+
+
+===== example from itself: =====
+
+===== expected normcode draft: ===== 
+
+::(decomposition of a given normtext in context)
+    <= @by(:_:)^().()
+    <- :_:{8 steps procedure}({normtext}<$={1}>; {context}<$={1}>)
+    <- {8 steps procedure}
+        <= &across([{step_#_}<$={1}>]<+_#_:1-7>; {output})
+        <- {normtext}
+            <= :>:{normtext}?({normtext}<$={1}>)
+            <- {normtext}?
+        <- {context} 
+            <= :>:{context}?({context}<$={1}>)
+        <- {step 1}
+            <= $::.([{main question}, {target}, and {functional operator}])
+            <- ::(initiate a main question, target and functional operator by the context and the normtext)
+                <= @by({step 1 algorithm})^({context}; {normtext})
+                <- :_:{step 1 algorithm}
+                <- {step 1 algorithm}
+            <- {context}<:{1}>
+            <- {normtext}<:{2}>
+        <- {step 2}
+            <= $::
+            <- ::(identify the stem of the normtext that answer the main question under the functional operator)
+        <- {step 3}
+            <= $::
+            <- ::(generate the functional normtext sentence according to the stem)
+        <- {step 4}
+            <= $::
+            <- ::(set up the values for the inference of the functional normtext sentence)
+        <- {step 5}
+            <= $::({the functional normtext sentence}, {each of the values})^(1).([{targets} and {decomposed normtext}])
+            <- ::(sort the remaining normtext into parts that answer relevant qustions about:)
+            <- {targets}
+                <= &across
+                <- {the functional normtext sentence}^1
+                <- {each of the values}^1
+        <- {step 6}
+            <= $::
+            <- ::(stage the parts into the temporary normcode draft with sorted normtext part annotated)
+        <- {step 7}
+            <= $::
+            <- ::(add the temporary normcode into the normcode draft, which is initially empty)
+
+        
+        <- {step 8}
+            <= $::
+            <- ::(repeat the process (from 1 to 7) for each of the normtext part as the normtext, until the normtext is fully decomposed into the normcode draft)
+                <= @by(*every^(1))^+[<{#}:{#}>]
+                <- *every({normtext part})^(1)
+                    <= @by([{step_#_}<+_#_:1-7>])^(2).({normcode draft})
+                    <- [{step_#_}<+_#_:1-7>]
+                        <= &across([{step_#_}<$={1}>]<+_#_:1-7>; {output})
+                        <- {normtext part}*1^1
+                        <-+<_#_:1-7> {step_#_}
+                        <- {output}<$={1}>
+                    <- {normtext part}*1<:{1}>
+            <- {normtext part}
+
+        <- {output}<$={1}>
+            <= $::()
+            <- :<:({normcode draft})
+            <- {normcode draft}

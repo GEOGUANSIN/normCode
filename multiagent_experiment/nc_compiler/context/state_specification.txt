@@ -1,0 +1,7 @@
+This concept represents a structured specification for the data that needs to be managed in the target system, derived during `{Phase 2: Compilation}`.
+
+**Purpose:** To define the memory or state that the target system's `ControllerAgent` must maintain and orchestrate.
+
+**Process:** The `CompilationAgent` generates this specification by scanning the `{normcode plan}` for all object concepts (`{...}`) and tracing their lifecycle. Any concept that is created in one inference and used as an input in a later inference becomes a required state variable.
+
+**Role:** This specification is used by the code generation logic to define the instance variables of the `ControllerAgent`'s state (e.g., `self.state['carry_over']`). It ensures that the controller is equipped to manage the flow of data between all worker agents as defined in the blueprint.

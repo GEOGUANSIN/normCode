@@ -1,0 +1,7 @@
+This concept represents the initial, unstructured input that fuels the entire "NormCode Compiler" process.
+
+**Definition:** A plain-text or markdown document containing a high-level, natural language description of the task that the final, target multi-agent system is intended to perform.
+
+**Role:** It is the primary input to `{Phase 1: Blueprinting}`. The `BlueprintAgent` reads this document to understand the requirements and begin the decomposition process. It is the ultimate source of truth for the system's design, from which all subsequent artifacts are derived.
+
+*Note: This is distinct from `{input data}`, which is the data used at runtime by the *final, compiled* system.*

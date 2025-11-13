@@ -1,0 +1,78 @@
+to conduct decomposition of a given normtext,
+
+1. identify the part of the normtext that answer the main question.
+2. generate the functional normtext sentence that answer the main question.
+3. set up the values for the inference of the functional normtext sentence.
+4. sort the remaining normtext into parts that answer relevant qustions about: 
+    - the functional normtext sentence 
+    - each of the values in the functional normtext sentence
+5. combine the parts into the temporary normcode.
+
+
+
+{normtext decomposition} | fl.1.
+    ?: What are the components of the procedural for normtext decomposition?
+    <= &in 
+        /: There are five steps to do in this procedural given a normtext to be decomposed.
+    <- {normtext} |fl.1.2.
+        ...:  given a normtext to be decomposed.
+    <- {step 1} 
+        ...: identify the part of the normtext that answer the main question
+    <- {step 2} 
+        ...: generate the functional normtext sentence that answer the main question
+    <- {step 3} 
+        ...: set up the values for the inference of the functional normtext sentence
+    <- {step 4} 
+        ...: sort the remaining normtext into parts that answer relevant qustions about: the functional normtext sentence and each of the values in the functional normtext sentence
+    <- {step 5} 
+        ...: combine the parts into the temporary normcode
+
+
+
+{normtext} | fl.2.
+    ...:  given a normtext to be decomposed.
+    ?: How is the normtext obtained?
+    <= :>:({normtext}) 
+        /: the normtext is obtained by the user's input.
+
+
+{step 1} | fl.3.
+    ...: identify the part of the normtext that answer the main question
+    ?: How is the part of the normtext that answer the main question obtained?
+    <= :>:(identify {the part of the normtext} that answer {the main question})
+
+
+
+
+
+{normtext decomposition}
+    ?: What are the components of the procedural for normtext decomposition?
+    <= &in | There are five steps to do in this procedural given a normtext.
+    <- {step 1}
+        ?: What is step 1 doing?
+        <= $::
+        <- ::(identify the part of the normtext that answer the main question)
+    <- {step 2}
+        ?: What is step 2 doing?
+        <= $::
+        <- ::(generate the functional normtext sentence that answer the main question)
+    <- {step 3}
+        ?: What is step 3 doing?
+        <= $::
+        <- ::(set up the values for the inference of the functional normtext sentence)
+        <- {values}
+    <- {step 4}
+        ?: What is step 4 doing?
+        <= $::({the functional normtext sentence}, {the functional normtext sentence}:[{targets} and {decomposed normtext}])^(1)
+        <- ::(sort the remaining normtext into parts that answer relevant qustions about:)
+        <- {targets}
+            ?: what are the set of targets?
+            <= &across | there are two sets of targets
+            <- {the functional normtext sentence}^1
+            <- {each of the values in the functional normtext sentence}^1
+    <- {step 5}
+        ?: What is step 5 doing?
+        <= $::
+        <- ::(combine the parts into the normtext decomposition)
+
+

@@ -1,0 +1,8 @@
+This concept represents the core, sequential process that the "NormCode Compiler" system executes. It is the central algorithm that achieves the system's top-level goal.
+
+It is composed of three distinct, ordered phases:
+1.  **{Phase 1: Blueprinting}**: Translates `normtext` into a `.nc` plan.
+2.  **{Phase 2: Compilation}**: Generates source code from the `.nc` plan.
+3.  **{Phase 3: Execution & Verification}**: Runs the generated code and produces a verifiable trace.
+
+The `MasterControllerAgent`'s primary logic is to execute these three phases in sequence, passing the output of one phase as the input to the next.

@@ -1,0 +1,258 @@
+
+
+:<:([{step 1 result}]) | grouping. 1.
+  <= &in[{question type}; {condition operator}; {target entity}]
+
+  <- {norm_text} | imperative(input). 1.2.
+        <= :>:(input descriptive text)
+
+  <- {prompt_context} | imperative(input). 1.3.
+        <= :>:(input context for interpretation)
+
+  <- {question type} | imperative. 1.4.
+        <= ::(infer type among {what} / {how} / {when})
+            <= @by()
+        <- {norm_text}
+        <- {prompt_context}
+
+  <- {target entity} | imperative. 1.5.
+        <= ::(extract main object or subject of description)
+            <= @by()
+        <- {norm_text}
+
+  <- {condition operator} | imperative. 1.7.
+        <= ::(select appropriate logical operator)
+          <= @by()
+        <- {norm_text}
+        <- {prompt_context}
+```
+
+
+```
+    <- {target entity} 
+        <= :_:
+        <- ::({imperative}?)
+            <= @if(<the central topic of the main question and text is an action>) 
+        <- ::({judgement}?)
+            <= @if(<the central topic of the main question and text is a to figure out the truth condition>)
+        <- ::({object}?)
+            <= @if(<the central topic of the main question and text is an object>)
+        <- ::({relation}?)
+            <= @if(<the central topic of the main question and text is a relation among concepts>)
+        <- ::({statement}?)
+            <= @if(<the central topic of the main question and text is a statement with truth values>)
+
+        <- <the central topic of the main question and text is an action>
+        <- <the central topic of the main question and text is a judgement>
+        <- <the central topic of the main question and text is an object>
+        <- <the central topic of the main question and text is a relation among concepts>
+        <- <the central topic of the main question and text is a statement with truth values>
+
+        <- <the central o topic of the main question and text is an action-like>
+          <= :&some%(True):<{}>
+          <- [{statements}]<$!=>
+            <= &across()
+            <- <the central topic of the main question and text is an action>
+            <- <the central topic of the main question and text is a judgement>
+        
+        <- <the central topic of the main question and text is an object-like>
+          <= :&some%(True):<{}>
+          <- [{statements}]<$!=>
+            <= &across()
+            <- <the central topic of the main question and text is an object>
+            <- <the central topic of the main question and text is a relation among concepts>
+            <- <the central topic of the main question and text is a statement with truth values>
+
+
+    <- {question type}
+          <= $%
+          <- {what}
+              <= @if(< main question is definitions, descriptions, identity questions, or assignment operations>)
+          <- {how}
+              <= @if(< main question is process, method, procedure questions, or imperative sequences>)
+          <- {when}
+              <= @if(< main question is conditional, temporal, loop questions, or judgement sequences>)
+
+          <- < main question is conditional, temporal, loop questions, or judgement sequences>
+          <- < main question is definitions, descriptions, identity questions, or assignment operations>
+          <- < main question is process, method, procedure questions, or imperative sequences>
+
+
+    <- {condition operator}
+        <= :_:{action}()
+        <- {action}
+            <= $::
+            <- ::(select appropriate logical operator from: $. (specification), $:: (nominalization), $% (abstraction), $+ (continuation), &in (grouping), &across (grouping))
+              <= @by()
+                <= @if(< main question is definitions, descriptions, identity questions, or assignment operations>)
+            <- ::(select appropriate logical operator from: ::({}) (imperative), ::<{}> (judgement))
+              <= @if(< main question is process, method, procedure questions, or imperative sequences>)
+            <- ::(select appropriate logical operator from: @If (conditional), @If! (reverse conditional), @after (after step), *every (quantification))
+              <= @if(< main question is conditional, temporal, loop questions, or judgement sequences>)
+
+    <- {syntactic operators}
+
+        <= $%
+
+        <- {$%}
+          <= @if(<object-like definition (abstraction) case>)
+        <- {$.}
+          <= @if(<object-like definition (specification) case>)
+        <- {$+}
+          <= @if(<object-like definition (continuation) case>)
+        <- {&in}
+          <= @if(<object-like definition (grouping) case>)
+        <- {&across}
+          <= @if(<object-like definition (grouping) case>)
+        <- {*every}
+          <= @if(<object-like definition (quantification) case>)
+        
+        <- {::({})}
+          <= @if(<object-like (non-judgement) method case>)
+        <- {::<{}>}
+          <= @if(<object-like (judgement) method case>)
+
+        <- {@if}
+          <= @if(<object-like conditional (positive) case>)
+        <- {@if!}
+          <= @if(<object-like conditional (negative) case>)
+        <- {@after}
+          <= @if(<object-like conditional (order) case>)
+
+        <- {$::}
+          <= @if(<action-like definition (nominalization) case>)
+        <- {$.}
+          <= @if(<action-like definition (specification) case>)
+        <- {&in}
+          <= @if(<action-like definition (grouping) case>)
+
+        <- {@by}
+          <= @if(<action-like method case>)
+
+        <- {@if}
+          <= @if(<action-like conditional (positive) case>)
+        <- {@if!}
+          <= @if(<action-like conditional (negative) case>)
+        <- {@after}
+          <= @if(<action-like conditional (order) case>)
+```
+
+        
+```normcode (operator condition)
+    <object-like definition (abstraction) case |...the central topic of the main question and text is an object AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies an abstraction | i.e. what is the exact instances of the abstract object?>
+
+    <object-like definition (specification) case |...the central topic of the main question and text is an object AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies a specification | i.e. what are the objects that are defined?>
+
+    <object-like definition (grouping) case |...the central topic of the main question and text is an object AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies a grouping | i.e. what are the components of the object?>
+
+
+    <object-like method case |...the central topic of the main question and text is an object AND the main question is about process, method, procedure questions, or imperative sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about process, method, procedure questions, or imperative sequences>
+
+
+    <object-like conditional (positive) case |...the central topic of the main question and text is an object AND the main question is about conditional, temporal, loop questions, or judgement sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about conditional, temporal, loop questions, or judgement sequences>
+        <- <the text clarifies a positive conditional relationship>
+
+    <object-like conditional (negative) case |...the central topic of the main question and text is an object AND the main question is about conditional, temporal, loop questions, or judgement sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about conditional, temporal, loop questions, or judgement sequences>
+        <- <the text clarifies a negative conditional relationship>
+
+    <object-like conditional (order) case |...the central topic of the main question and text is an object AND the main question is about conditional, temporal, loop questions, or judgement sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is object-like>
+        <- <the main question is about conditional, temporal, loop questions, or judgement sequences>
+        <- <the text clarifies an order pre-condition |... i.e. when is kelly beautiful?>
+
+
+
+
+    <action-like definition (nominalization) case |...the central topic of the main question and text is an action AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies a nominalization>
+    
+    <action-like definition (specification) case |...the central topic of the main question and text is an action AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies a specification>
+
+    <action-like definition (grouping) case |...the central topic of the main question and text is an action AND the main question is about definitions>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about definitions>
+        <- <the text clarifies a grouping>
+
+    <action-like method case |...the central topic of the main question and text is an action AND the main question is about process, method, procedure questions, or imperative sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about process, method, procedure questions, or imperative sequences>
+
+    <action-like conditional (positive) case |...the central topic of the main question and text is an action AND the main question is about conditional, temporal, loop questions, or judgement sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about conditional, temporal, loop questions, or judgement sequences>
+        <- <the text clarifies a positive condition>
+
+    <action-like conditional (order) case |...the central topic of the main question and text is an action AND the main question is about conditional, temporal, loop questions, or judgement sequences>
+      <= :&all%(True):<{1} is true>
+      <- [{statements}]<$!=><:{1}>
+        <= &across()
+        <- <the central topic of the main question and text is action-like>
+        <- <the main question is about conditional, temporal, loop questions, or judgement sequences>
+        <- <the text clarifies an order pre-condition>
+
+
+```
+
+
+TARGET EXTRACTION GUIDELINES:
+- Extract the main entity, process, condition, or concept that the text is asking about
+- The target can be any type: imperative (::(action)), judgement (<condition>), object ({{entity}}), etc.
+- Examples: "What is baking?" → target: "::(bake)" (imperative), "When is Kelly beautiful?" → target: "<kelly is beautiful>" (judgement), "What is a user account?" → target: "{{user_account}}" (object)
+- Use descriptive but concise names that capture the essence of what's being asked
+- Avoid generic terms like "it" or "this" - be specific about what the text is actually describing

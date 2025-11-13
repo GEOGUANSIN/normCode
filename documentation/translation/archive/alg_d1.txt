@@ -1,0 +1,276 @@
+to conduct decomposition of a given normtext in context,
+
+1. initiate a main question, target and functional operator by the context and the normtext.
+    - see the step 1.
+2. identify the stem of the normtext that answer the main question under the functional operator.
+3. generate the functional normtext sentence according to the stem.
+4. set up the values for the inference of the functional normtext sentence.
+5. sort the normtext into parts that answer relevant qustions about: 
+    - the functional normtext sentence 
+    - each of the values for the functional normtext sentence
+6. formalize the parts into the temporary normcode with sorted normtext part annotated.
+7. add the temporary normcode into the normcode draft, which is initially empty.
+8. repeat the process (from 1 to 7) for each of the normtext part as the normtext, 
+    until the normtext is fully decomposed into the normcode draft.
+
+
+===== example: =====
+Love is a deep feeling of care and attachment toward someone or something.
+It shows through kind acts, sacrifice, and caring about another person's happiness.
+Love can be between partners, family, friends, or even spiritual connections.
+Love means accepting someone and wanting them to be happy, even when it's hard.
+Love is both an emotion and a decision to put someone else's wellbeing first.
+
+==== iteration 1: ====
+:<:({love})
+    ?: what ($.) is love?
+    <= $.({deep feeling})
+        /: love is a deep feeling...
+    <- {deep feeling}
+        ...: a deep feeling of care and attachment toward someone or something...
+
+==== iteration 2: ====
+:<:({love})
+    ?: what ($.) is love?
+    <= $.({deep feeling})
+        /: love is a deep feeling...
+    <- {deep feeling}
+        ...: a deep feeling of care and attachment toward someone or something...
+        ?: when (@if) is this deep feeling love?
+        <= @if(<condition>)
+            /: if this satisfies some condition, such as:....
+        <- <condition>
+            ...: these conditions include....
+
+==== iteration 3: ====
+:<:({love})
+    ?: what ($.) is love?
+    <= $.({deep feeling})
+        /: love is a deep feeling...
+    <- {deep feeling}
+        ...: a deep feeling of care and attachment toward someone or something...
+        ?: when (@if) is this deep feeling love?
+        <= @if(<condition>)
+            /: if this satisfies some condition, such as:....
+        <- <condition>
+            ...: these conditions include....
+            ?: what (&across) are the sets of condition?
+            <= &across
+                /: there are five conditions.
+            <- <the deep feeling is of care and attachment toward someone or something>
+                ...: it is of care and attachment toward someone or something...
+            <- <the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness>
+                ...: the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness...
+            <- <the deep feeling can be between partners, family, friends, or even spiritual connections>
+                ...: the deep feeling can be between partners, family, friends, or even spiritual connections...
+            <- <the deep feeling means accepting someone and wanting them to be happy, even when it's hard>
+                ...: the deep feeling means accepting someone and wanting them to be happy, even when it's hard...
+            <- <the deep feeling is both an emotion and a decision to put someone else's wellbeing first>
+                ...: the deep feeling is both an emotion and a decision to put someone else's wellbeing first...
+
+
+==== iteration 4+: ====
+:<:({love})
+    ?: what ($.) is love?
+    <= $.({deep feeling})
+        /: love is a deep feeling...
+    <- {deep feeling}
+        ...: a deep feeling of care and attachment toward someone or something...
+        ?: when (@if) is this deep feeling love?
+        <= @if(<condition>)
+            /: if this satisfies some condition, such as:....
+        <- <condition>
+            ...: these conditions include....
+            ?: what (&across) are the sets of condition?
+            <= &across
+                /: there are five conditions.
+            <- <the deep feeling is of care and attachment toward someone or something>
+                ...: it is of care and attachment toward someone or something...
+                ?: how to know this condition is true?
+                <= ::<{1} is of care and attachment toward {2}>
+                    /: check if it is true that deep feeling is of care and attachment toward someone or something.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+            <- <the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness>
+                ...: the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness...
+                ?: how to know this condition is true?
+                <= ::<{1} shows through {2}, {3}, and {4}>
+                    /: check if it is true that deep feeling shows through kind acts, sacrifice, and caring about another person's happiness.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                <- {kind acts}<:{2}>
+                    ...: kind acts related to the deep feeling.
+                <- {sacrifice}<:{3}>
+                    ...: sacrifice related to the deep feeling.
+                <- {caring about another person's happiness}<:{3}>
+                    ...: caring about another person's happiness related to the deep feeling.
+            <- <the deep feeling can be between partners, family, friends, or even spiritual connections>
+                ...: the deep feeling can be between partners, family, friends, or even spiritual connections...
+                ?: how to know this condition is true?
+                <= ::<{1} can be between {2}>
+                    /: check if it is true that deep feeling can be between partners, family, friends, or even spiritual connections.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                <- [{partners}, {family}, {friends}, or {spiritual connections}]<:{2}>
+                    ...: partners, family, friends, or spiritual connections related to the deep feeling.
+            <- <the deep feeling means accepting someone and wanting them to be happy, even when it's hard>
+                ...: the deep feeling means accepting someone and wanting them to be happy, even when it's hard...
+                ?: how to know this condition is true?
+                <= ::<{1} means accepting {2} and wanting {2} to be happy, even when it's hard>
+                    /: check if it is true that deep feeling means accepting someone and wanting them to be happy, even when it's hard.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+            <- <the deep feeling is both an emotion and a decision to put someone else's wellbeing first>
+                ...: the deep feeling is both an emotion and a decision to put someone else's wellbeing first...
+                ?: how to know this condition is true?
+                <= ::<{1} is both an emotion and a decision to put {2} else's wellbeing first>
+                    /: check if it is true that deep feeling is both an emotion and a decision to put someone else's wellbeing first.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+
+==== iteration 5+: ====
+:<:({love})
+    ?: what ($.) is love?
+    <= $.({deep feeling})
+        /: love is a deep feeling...
+    <- {deep feeling}
+        ...: a deep feeling of care and attachment toward someone or something...
+        ?: when (@if) is this deep feeling love?
+        <= @if(<condition>)
+            /: if this satisfies some condition, such as:....
+        <- <condition>
+            ...: these conditions include....
+            ?: what (&across) are the sets of condition?
+            <= &across
+                /: there are five conditions.
+            <- <the deep feeling is of care and attachment toward someone or something>
+                ...: it is of care and attachment toward someone or something...
+                ?: how to know this condition is true?
+                <= ::<{1} is of care and attachment toward {2}>
+                    /: check if it is true that deep feeling is of care and attachment toward someone or something.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                    ?: how (:>:) is a primitive obect like deep feeling initated?
+                    <= :>:({deep feeling})
+                        /: initated by input from the user.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+                    ?: how (::({})) is someone and something obtained from the someone or something data?
+                    <= ::(find someone or something in related to the {2})
+                        /: someone and something are about the deep feeling is found in the context.
+                    <- {deep feeling}<:{2}>
+                        /: initated by input from the user before.
+            <- <the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness>
+                ...: the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness...
+                ?: how to know this condition is true?
+                <= ::<{1} shows through {2}, {3}, and {4}>
+                    /: check if it is true that deep feeling shows through kind acts, sacrifice, and caring about another person's happiness.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                    /: initated by input from the user before.
+                <- {kind acts}<:{2}>
+                    ...: kind acts related to the deep feeling.
+                    <= ::(find kind acts in related to the {2})
+                        /: kind acts are about the deep feeling is found in the context.
+                    <- {deep feeling}<:{2}>
+                        /: initated by input from the user before.
+                <- {sacrifice}<:{3}>
+                    ...: sacrifice related to the deep feeling.
+                    <= ::(find sacrifice in related to the {2})
+                        /: sacrifice are about the deep feeling is found in the context.
+                    <- {deep feeling}<:{2}>
+                        /: initated by input from the user before.
+                <- {caring about another person's happiness}<:{3}>
+                    ...: caring about another person's happiness related to the deep feeling.
+                    <= ::(find caring about another person's happiness in related to the {2})
+                        /: caring about another person's happiness are about the deep feeling is found in the context.
+                    <- {deep feeling}<:{2}>
+                        /: initated by input from the user before.
+            <- <the deep feeling can be between partners, family, friends, or even spiritual connections>
+                ...: the deep feeling can be between partners, family, friends, or even spiritual connections...
+                ?: how to know this condition is true?
+                <= ::<{1} can be between {2}>
+                    /: check if it is true that deep feeling can be between partners, family, friends, or even spiritual connections.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                    /: initated by input from the user before.
+                <- [{partners}, {family}, {friends}, or {spiritual connections}]<:{2}>
+                    ...: partners, family, friends, or spiritual connections related to the deep feeling.
+                    <= ::(find partners, family, friends, or spiritual connections in related to the {2})
+                        /: partners, family, friends, or spiritual connections are about the deep feeling is found in the context.
+                    <- {deep feeling}<:{2}>
+                        /: initated by input from the user before.
+            <- <the deep feeling means accepting someone and wanting them to be happy, even when it's hard>
+                ...: the deep feeling means accepting someone and wanting them to be happy, even when it's hard...
+                ?: how to know this condition is true?
+                <= ::<{1} means accepting {2} and wanting {2} to be happy, even when it's hard>
+                    /: check if it is true that deep feeling means accepting someone and wanting them to be happy, even when it's hard.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                    /: initated by input from the user before.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+                    /: obtained before by finding someone or something in related to the {2} in the context.
+            <- <the deep feeling is both an emotion and a decision to put someone else's wellbeing first>
+                ...: the deep feeling is both an emotion and a decision to put someone else's wellbeing first...
+                ?: how to know this condition is true?
+                <= ::<{1} is both an emotion and a decision to put {2} else's wellbeing first>
+                    /: check if it is true that deep feeling is both an emotion and a decision to put someone else's wellbeing first.
+                <- {deep feeling}<:{1}>
+                    ...: deep feeling is a primitve object.
+                    /: initated by input from the user before.
+                <- [{someone} or {something}]<:{2}>
+                    ...: someone or something related to the deep feeling.
+                    /: obtained before by finding someone or something in related to the {2} in the context.
+
+===== cleanup: =====
+:<:({love})
+    <= $.({deep feeling})
+    <- {deep feeling}
+        <= @if(<condition>)
+        <- <condition>
+            <= &across
+            <- <the deep feeling is of care and attachment toward someone or something>
+                <= ::<{1} is of care and attachment toward {2}>
+                <- {deep feeling}<:{1}>
+                    <= :>:({deep feeling})
+                <- [{someone} or {something}]<:{2}>
+                    <= ::(find someone or something in related to the {2})
+                    <- {deep feeling}<:{2}>
+            <- <the deep feeling shows through kind acts, sacrifice, and caring about another person's happiness>
+                <= ::<{1} shows through {2}, {3}, and {4}>
+                <- {deep feeling}<:{1}>
+                <- {kind acts}<:{2}>
+                    <= ::(find kind acts in related to the {2})
+                    <- {deep feeling}<:{2}>
+                <- {sacrifice}<:{3}>
+                    <= ::(find sacrifice in related to the {2})
+                    <- {deep feeling}<:{2}>
+                <- {caring about another person's happiness}<:{3}>
+                    <= ::(find caring about another person's happiness in related to the {2})
+                    <- {deep feeling}<:{2}>
+            <- <the deep feeling can be between partners, family, friends, or even spiritual connections>
+                <= ::<{1} can be between {2}>
+                <- {deep feeling}<:{1}>
+                <- [{partners}, {family}, {friends}, or {spiritual connections}]<:{2}>
+                    <= ::(find partners, family, friends, or spiritual connections in related to the {2})
+                    <- {deep feeling}<:{2}>
+            <- <the deep feeling means accepting someone and wanting them to be happy, even when it's hard>
+                <= ::<{1} means accepting {2} and wanting {2} to be happy, even when it's hard>
+                <- {deep feeling}<:{1}>
+                <- [{someone} or {something}]<:{2}>
+            <- <the deep feeling is both an emotion and a decision to put someone else's wellbeing first>
+                <= ::<{1} is both an emotion and a decision to put {2} else's wellbeing first>
+                <- {deep feeling}<:{1}>
+                <- [{someone} or {something}]<:{2}>
+
+
+
+
+===== example from itself: =====

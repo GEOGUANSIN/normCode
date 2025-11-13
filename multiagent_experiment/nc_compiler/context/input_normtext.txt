@@ -1,0 +1,8 @@
+This concept represents the I/O operation for providing the initial `normtext` to the system.
+
+**Purpose:** To define the entry point for the entire "NormCode Compiler" workflow.
+
+**Process:** This is an input request that signals the `MasterControllerAgent` to acquire the natural language specification from an external source (e.g., reading a file from disk, accepting user input). The data acquired through this operation becomes the `{normtext}` that is then passed to the `BlueprintAgent` in Phase 1.
+
+**Outputs:**
+- `{normtext}`: The raw English description of the task.

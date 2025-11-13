@@ -1,0 +1,11 @@
+This concept represents the primary imperative action performed during Phase 1 by the `BlueprintAgent`.
+
+**Purpose:** To perform the core translation logic that converts the unstructured `{normtext}` into the structured `{normcode plan}`.
+
+**Process:** The underlying mechanism is a recursive loop that continues until all of the source `normtext` has been analyzed and assigned to a concept in the plan. For each piece of text, the agent formulates a question, selects a NormCode operator to answer it, and then partitions the text to new child concepts, repeating the process until the decomposition is complete.
+
+**Inputs:**
+- `{normtext}`: The natural language specification.
+
+**Outputs:**
+- `{normcode plan}`: The resulting `.nc` file.

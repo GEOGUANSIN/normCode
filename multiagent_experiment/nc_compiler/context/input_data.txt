@@ -1,0 +1,7 @@
+This concept represents the specific, runtime data required by the *target* multi-agent system to perform its task.
+
+**Definition:** A set of initial values or parameters that the newly generated system needs to begin its execution. For example, in the `addition_system`, the `{input data}` would be the two numbers to be added (e.g., `{"numbers": [123, 98]}`). For the `love_system`, it would be the answers to the various input queries.
+
+**Role:** This data is provided to the `VerificationAgent` during `{Phase 3: Execution & Verification}`. The agent passes this data to the compiled system when it runs it. It is essential for producing a concrete execution trace.
+
+*Note: This is distinct from `{normtext}`, which is the design-time specification for the *compiler*.*
