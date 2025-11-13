@@ -1,18 +1,18 @@
 import json
 
-# Convert input strings to numbers
+# Convert input strings to floats for generality
 num1 = float(input_1)
 num2 = float(input_2)
 
-# Calculate sum and difference
-sum_result = num1 + num2
-difference_result = num1 - num2
+# Calculate mean and product
+mean = (num1 + num2) / 2
+product = num1 * num2
 
 # Create JSON object
 result_dict = {
-    "sum": sum_result,
-    "difference": difference_result
+    "mean": mean,
+    "product": product
 }
 
-# Convert to JSON string and assign to result
+# Convert to JSON string
 result = json.dumps(result_dict)

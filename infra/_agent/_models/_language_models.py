@@ -269,7 +269,7 @@ class LanguageModel:
 
     def create_python_generate_and_run_function(
         self,
-        template_key: str = "prompt_template",
+        prompt_key: str = "prompt_location",
         script_key: str = "script_location",
         with_thinking: bool = False,
         file_tool: FileSystemTool | None = None,
@@ -284,15 +284,16 @@ class LanguageModel:
             A filename (relative to ``infra/_agent/_models/scripts``) or absolute
             path where a script should live. If the file exists it is
             read and executed. If it does not exist, a prompt **must** be supplied
-            via ``template_key`` so the script can be generated and saved before
+            via ``prompt_key`` so the script can be generated and saved before
             execution.
 
-        ``prompt_template`` (``template_key``)
-            A string processed with :class:`string.Template`. Any other entries in
-            ``vars`` are available both for template substitution and as runtime
-            inputs injected into the executed script. With ``with_thinking=True``
-            the template should instruct the model to reply with a JSON object that
-            includes a ``code`` field containing the final Python source.
+        ``prompt_location`` (``prompt_key``)
+            The path to a file containing a prompt template, processed with
+            :class:`string.Template`. Any other entries in ``vars`` are available
+            both for template substitution and as runtime inputs injected into
+            the executed script. With ``with_thinking=True`` the template should
+            instruct the model to reply with a JSON object that includes a ``code``
+            field containing the final Python source.
 
         All remaining keys in ``vars`` are forwarded to the executed script as its
         global variables. The executed script is expected to populate a variable
@@ -346,7 +347,7 @@ class LanguageModel:
             logger.debug(f"Executing python_generate_and_run with vars: {vars}")
 
             script_inputs = {
-                k: v for k, v in vars.items() if k not in [script_key, template_key]
+                k: v for k, v in vars.items() if k not in [script_key, prompt_key]
             }
 
             code_to_run = None
@@ -358,16 +359,26 @@ class LanguageModel:
                     logger.info(f"Reusing existing script: {script_path}")
                     code_to_run = read_result.get("content")
                 else:
-                    if template_key not in vars:
+                    if prompt_key not in vars:
                         error_msg = (
-                            f"Script not found at '{script_path}' and no '{template_key}' "
+                            f"Script not found at '{script_path}' and no '{prompt_key}' "
                             "was provided to generate it."
                         )
                         logger.error(error_msg)
                         return {"status": "error", "message": error_msg}
 
                     logger.info(f"Script not found at {script_path}. Generating a new one.")
-                    formatted_prompt = Template(str(vars[template_key])).safe_substitute(script_inputs)
+                    
+                    # --- Deferred Prompt Loading ---
+                    prompt_path = vars[prompt_key]
+                    prompt_read_result = file_tool.read(prompt_path)
+                    if prompt_read_result.get("status") != "success":
+                        error_msg = f"Failed to read prompt file at '{prompt_path}'. Reason: {prompt_read_result.get('message')}"
+                        logger.error(error_msg)
+                        return {"status": "error", "message": error_msg}
+                    
+                    prompt_template = prompt_read_result.get("content")
+                    formatted_prompt = Template(str(prompt_template)).safe_substitute(script_inputs)
                     generated_code = _generate_code(formatted_prompt)
 
                     if not generated_code:
@@ -399,6 +410,7 @@ class LanguageModel:
         self,
         prompt_template: str,
         script_key: str = "script_location",
+        prompt_key: str = "prompt_location",
         with_thinking: bool = False,
         file_tool: FileSystemTool | None = None,
         python_interpreter: PythonInterpreterTool | None = None,
@@ -412,6 +424,7 @@ class LanguageModel:
         Args:
             prompt_template (str): The prompt template string to be used for code generation.
             script_key (str): The key in the ``vars`` dict that holds the script path.
+            prompt_key (str): The key in the ``vars`` dict that holds the prompt path.
             with_thinking (bool): Flag to expect a JSON response with "thinking" and "code".
             file_tool (FileSystemTool): Optional file system tool instance.
             python_interpreter (PythonInterpreterTool): Optional interpreter instance.
@@ -458,8 +471,25 @@ class LanguageModel:
             vars = vars or {}
             logger.debug(f"Executing python_generate_and_run_from_prompt with vars: {vars}")
 
+            # Determine the prompt template to use for this run
+            current_prompt_template = prompt_template
+            if prompt_key in vars and vars[prompt_key]:
+                prompt_path = vars[prompt_key]
+                logger.debug(f"Prompt location provided: '{prompt_path}'. Checking for existing prompt.")
+                read_result = file_tool.read(prompt_path)
+
+                if read_result.get("status") == "success" and read_result.get("content"):
+                    logger.info(f"Using prompt template from existing file: {prompt_path}")
+                    current_prompt_template = read_result["content"]
+                else:
+                    logger.info(f"Prompt template not found at {prompt_path}. Saving the base template for future use.")
+                    file_tool.save(prompt_template, prompt_path)
+                    # Use the original template for this run
+                    current_prompt_template = prompt_template
+
+
             script_inputs = {
-                k: v for k, v in vars.items() if k not in [script_key]
+                k: v for k, v in vars.items() if k not in [script_key, prompt_key]
             }
 
             code_to_run = None
@@ -472,7 +502,7 @@ class LanguageModel:
                     code_to_run = read_result.get("content")
                 else:
                     logger.info(f"Script not found at {script_path}. Generating a new one.")
-                    formatted_prompt = Template(prompt_template).safe_substitute(script_inputs)
+                    formatted_prompt = Template(current_prompt_template).safe_substitute(script_inputs)
                     generated_code = _generate_code(formatted_prompt)
 
                     if not generated_code:

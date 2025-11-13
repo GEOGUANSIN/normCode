@@ -33,22 +33,24 @@ The sequence dynamically selects one of four translation prompts based on the co
     -   It builds a multi-step "plan" (`env_spec` and `sequence_spec`) that first translates the simple instruction and then creates the dynamic `generate_and_run` function.
     -   It saves this plan to the agent's state.
 
-2.  **`MFP` (The Function Factory - `_mfp.py`)**
-    -   Executes the multi-step plan from `IWI`.
-    -   It first calls the language model to translate the simple instruction into a detailed prompt.
-    -   It then uses this detailed prompt to create the dynamic `generate_and_run` function that encapsulates all execution logic.
-    -   This dynamic function is saved to the agent's state.
+2.  **`MFP` (The Vectorized Function Factory - `_mfp.py`)**
+    -   Receives a `Reference` (a multi-dimensional tensor) containing one or more high-level instructions from the `IR` step.
+    -   It iterates through every instruction in the tensor. For each one, it executes the multi-step plan created by `IWI`. This involves:
+        -   Calling the language model to translate the simple instruction into a detailed prompt.
+        -   Using this detailed prompt to create a dynamic `generate_and_run` function.
+    -   It collects all the generated functions and stores them in a new `Reference`, preserving the original tensor structure. The result is a tensor of callable functions, which is saved to the agent's state.
 
 3.  **`MVP` (The Data Gatherer - `_mvp.py`)**
     -   Gathers and prepares all data required for execution.
-    -   It resolves any `%{script_location}` or `%{memorized_parameter}` wrappers.
+    -   It resolves special wrappers like `%{script_location}` and `%{prompt_location}`, passing their file paths along.
     -   It applies any `value_selectors` to extract specific data from complex inputs.
-    -   It assembles a single dictionary containing all the necessary inputs (e.g., `script_location`, `input_1`, `input_2`) for the dynamic function.
+    -   It assembles a single dictionary containing all the necessary inputs (e.g., `script_location`, `prompt_location`, `input_1`, `input_2`) for the dynamic function.
 
-4.  **`TVA` (The Actuator - `_tva.py`)**
-    -   Performs the final execution.
-    -   It takes the dynamic function created by `MFP` and the complete data dictionary prepared by `MVP`.
-    -   It calls the function with the data. The function then internally decides whether to execute a pre-existing script or generate and execute a new one based on the translated prompt.
+4.  **`TVA` (The Vectorized Actuator - `_tva.py`)**
+    -   Performs the final, vectorized execution.
+    -   It takes the *tensor of dynamic functions* created by `MFP` and the *tensor of complete data dictionaries* prepared by `MVP`.
+    -   It uses a `cross_action` operation to intelligently pair each function with its corresponding data. This supports broadcasting, where a single set of input data can be applied to multiple different functions.
+    -   For each pair, it calls the function with the data, producing a final tensor of results.
 
 5.  **`TIP` (The Perceiver - `_tip.py`)**
     -   Perceives the outcome of the action. It takes the result returned by `TVA` and formalizes it as the output of the inference.
@@ -59,6 +61,18 @@ The execution logic for the generated script is identical to the `imperative_pyt
 
 -   **Input Injection**: All inputs from the `MVP` step are injected into the script's global scope.
 -   **Output Requirement**: The script **must** assign its final output to a variable named `result`.
+
+### Flexible Prompt Management
+
+This sequence supports a dynamic prompt-handling mechanism that allows for greater flexibility and reusability. The behavior is controlled by the optional `prompt_location` input:
+
+1.  **If `prompt_location` is provided**:
+    -   The system first checks if a file exists at the specified path.
+    -   If the file **exists** and is not empty, its content is loaded and used as the detailed prompt for code generation, overriding the default behavior.
+    -   If the file **does not exist**, the system falls back to the standard two-stage process: it translates the high-level instruction into a detailed prompt, generates the code, and then **saves** the detailed prompt it used to the specified `prompt_location`. This caches the generated prompt for future inspection, editing, and reuse.
+
+2.  **If `prompt_location` is NOT provided**:
+    -   The system operates in its default mode, generating the detailed prompt from the high-level instruction internally without reading from or saving to the file system.
 
 ### Output Structure for `with_thinking` Mode
 
