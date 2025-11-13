@@ -42,10 +42,10 @@ The backend is organized into the following directories:
 To run the backend server, use the following command from the `editor_app/backend` directory:
 
 ```sh
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8001
 ```
 
-The API will be available at `http://127.0.0.1:8000`, and the interactive documentation (Swagger UI) can be accessed at `http://127.0.0.1:8000/docs`.
+The API will be available at `http://127.0.0.1:8001`, and the interactive documentation (Swagger UI) can be accessed at `http://127.0.0.1:8001/docs`.
 
 ## API Endpoints
 
