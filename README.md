@@ -15,16 +15,16 @@ The following diagram illustrates the end-to-end workflow of the NormCode ecosys
 
 ```mermaid
 graph TD
-    A["Input <br> (Natural Language Task)"] --> B[translate_agent];
-    B -- Translates --> C[NormCode Plan];
-    C <--> D[editor_app <br> (View / Edit / Debug)];
-    C --> E[infra Engine];
-    E -- Orchestrates --> F[Execution];
+    A["Input <br> (Natural Language Task)"] --> B["translate_agent"];
+    B -- Translates --> C["NormCode Plan"];
+    C <--> D["editor_app <br> (View / Edit / Debug)"];
+    C --> E["infra Engine"];
+    E -- Orchestrates --> F["Execution"];
     subgraph Execution Context
-        F --> G[🧠 Foundation Models];
-        F --> H[⚙️ Tools & Data];
+        F --> G["🧠 Foundation Models"];
+        F --> H["⚙️ Tools & Data"];
     end
-    F --> I[Output <br> (Final Result)];
+    F --> I["Output <br> (Final Result)"];
 ```
 
 ## The NormCode Ecosystem
@@ -35,9 +35,9 @@ The project is built on three main pillars that work together to provide a compl
 graph TD
     subgraph The Alignment Stack
         direction TB
-        N[**NormCode** <br> The Alignment Layer]
-        W[**Shared Workspace** <br> The Contextualization Layer]
-        F[**Foundation Models** <br> The Intelligence Layer]
+        N["NormCode <br> The Alignment Layer"]
+        W["Shared Workspace <br> The Contextualization Layer"]
+        F["Foundation Models <br> The Intelligence Layer"]
     end
 
     style N fill:#f97316,stroke:#333,stroke-width:2px,color:#fff
