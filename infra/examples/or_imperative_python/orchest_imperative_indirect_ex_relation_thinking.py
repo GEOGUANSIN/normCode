@@ -33,7 +33,7 @@ def create_imperative_indirect_orchestrator_repos():
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_1', type='{}', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_2', type='{}', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='nominalized_action', type='{}', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='::(get the {_}?<${sum}%> and {_}?<${difference}%> of {1}<$({number})%> and {2}<$({number})%>)', type='::({})', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='nl_instruction', type='::({})', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='output_result', type='{}', is_final_concept=True),
     ]
     concept_repo = ConceptRepo(concept_entries)
@@ -43,11 +43,11 @@ def create_imperative_indirect_orchestrator_repos():
     concept_repo.add_reference('input_1', ['%(20)'], axis_names=['number_1'])
     concept_repo.add_reference('input_2', ['%(22)'], axis_names=['number_2'])
     concept_repo.add_reference('nominalized_action', [f"%{{script_location}}({script_path})"], axis_names=['script_location'])
-    concept_repo.add_reference('::(get the {_}?<${sum}%> and {_}?<${difference}%> of {1}<$({number})%> and {2}<$({number})%>)', ['::(get the {_}?<${sum}%> and {_}?<${difference}%> of {1}<$({number})%> and {2}<$({number})%>)'], axis_names=['nl_instruction'])
+    concept_repo.add_reference('nl_instruction', ['::(get the {_}?<${sum}%> and {_}?<${difference}%> of {1}<$({number})%> and {2}<$({number})%>)'], axis_names=['nl_instruction'])
 
     # 3. --- Define the Inference ---
     inf_to_infer = concept_repo.get_concept('output_result')
-    inf_function = concept_repo.get_concept('::(get the {_}?<${sum}%> and {_}?<${difference}%> of {1}<$({number})%> and {2}<$({number})%>)')
+    inf_function = concept_repo.get_concept('nl_instruction')
     inf_values = [
         concept_repo.get_concept('input_1'),
         concept_repo.get_concept('input_2'),

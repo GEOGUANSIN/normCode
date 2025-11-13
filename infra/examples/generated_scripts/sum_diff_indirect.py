@@ -1,6 +1,6 @@
 import json
 
-# Convert input strings to floats
+# Convert input strings to numbers
 num1 = float(input_1)
 num2 = float(input_2)
 
@@ -9,10 +9,10 @@ sum_result = num1 + num2
 difference_result = num1 - num2
 
 # Create JSON object
-json_object = {
+result_dict = {
     "sum": sum_result,
     "difference": difference_result
 }
 
-# Serialize to JSON string and assign to result
-result = json.dumps(json_object)
+# Convert to JSON string and assign to result
+result = json.dumps(result_dict)
