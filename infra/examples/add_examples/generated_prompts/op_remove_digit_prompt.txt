@@ -1,0 +1,27 @@
+You are a Python coding assistant. Your task is to write a Python script that will:
+
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of data provided by the execution environment:
+   - `input_1` is a string representing a number (e.g., "15").
+   - `input_2` is a string representing a single digit (unit place digit), e.g., "3".
+2. Convert `input_1` to an integer so it can be compared numerically.
+3. If the number in `input_1` is less than 10, assign the string `"0"` to the variable `result`.
+4. Otherwise (i.e., if the number is 10 or greater):
+   - Convert `input_2` to an integer (it should be a digit from 0–9).
+   - Remove all instances of that digit from the number represented by `input_1`.
+     - This means treating the number as a string, filtering out any character equal to the digit, and then converting back to an integer (if the resulting string is empty, treat it as 0).
+   - Convert the final result (integer) to a string and assign it to `result`.
+5. The `result` variable MUST be a string.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+
+Respond with a single JSON object containing two keys: "thinking" and "code".
+- "thinking": Explain your plan for generating the script step-by-step.
+- "code": The full Python script as a string.
+
+Example of the required JSON output format:
+```json
+{
+  "thinking": "A step-by-step explanation of the plan to generate the code goes here.",
+  "code": "The complete Python script to be executed goes here as a string."
+}
+```

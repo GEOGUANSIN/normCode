@@ -19,7 +19,7 @@ The instruction you generate must be clear, specific, and provide all the contex
 4. Create a JSON object containing the sum and difference. The JSON object must have keys named "sum", and "difference", each with the corresponding number returned into string format.
 5. Assign this JSON string to a variable named `result`.
 
-Do not define a function; the script should be directly executable. 
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 Respond only with the code string, and nothing else."
 
 ---
@@ -35,7 +35,7 @@ Respond only with the code string, and nothing else."
 4. Create a JSON object with keys "determinant" and "transpose" containing the results.
 5. Assign the string representation of this JSON object to a variable named `result`. The `result` variable MUST be a string containing a valid JSON object.
 
-Do not define a function; the script should be directly executable. 
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 Respond only with the code string, and nothing else."
 
 ---

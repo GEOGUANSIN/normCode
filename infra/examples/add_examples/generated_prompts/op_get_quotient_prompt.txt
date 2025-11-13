@@ -1,0 +1,21 @@
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of data provided by the execution environment. Specifically:
+   - `input_1` is a string representing a number (the quotient to be found).
+   - `input_2` is a string representing a digit sum (i.e., a non-negative integer).
+2. Convert both `input_1` and `input_2` from strings to appropriate numeric types (integers or floats as needed).
+3. Divide the value of `input_2` (the digit sum) by 10.
+4. Assign the string representation of the result of this division to a variable named `result`. The `result` variable MUST be a string.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+
+Respond with a single JSON object containing two keys: "thinking" and "code".
+- "thinking": Explain your plan for generating the script step-by-step.
+- "code": The full Python script as a string.
+
+Example of the required JSON output format:
+```json
+{
+  "thinking": "A step-by-step explanation of the plan to generate the code goes here.",
+  "code": "The complete Python script to be executed goes here as a string."
+}
+```"

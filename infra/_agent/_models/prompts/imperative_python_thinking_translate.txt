@@ -18,7 +18,7 @@ The instruction you generate must be clear, specific, and provide all the contex
 3. Sum the two numbers.
 4. Assign the string representation of the final sum to a variable named `result`. The `result` variable MUST be a string.
 
-Do not define a function; the script should be directly executable. 
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 
 Respond with a single JSON object containing two keys: "thinking" and "code".
 - "thinking": Explain your plan for generating the script step-by-step.
@@ -44,7 +44,7 @@ Example of the required JSON output format:
 3. Transpose the matrix.
 4. Assign the string representation of the transposed matrix to a variable named `result`. The `result` variable MUST be a string.
 
-Do not define a function; the script should be directly executable. 
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 
 Respond with a single JSON object containing two keys: "thinking" and "code".
 - "thinking": Explain your plan for generating the script step-by-step.
@@ -70,7 +70,7 @@ Example of the required JSON output format:
 3. Calculate the dot product of the two vectors.
 4. Assign the string representation of the final scalar result to a variable named `result`. The `result` variable MUST be a string.
 
-Do not define a function; the script should be directly executable. 
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
 
 Respond with a single JSON object containing two keys: "thinking" and "code".
 - "thinking": Explain your plan for generating the script step-by-step.
