@@ -1,5 +1,0 @@
-This concept represents the structured output of `{Phase 1: Blueprinting}` and the primary input for `{Phase 2: Compilation}`.
-
-**Definition:** A file with an `.nc` extension that contains the formal, architectural blueprint of the target multi-agent system. It describes the system's required agents, their tools, the necessary state variables, and the precise control flow and logic in a hierarchical, machine-readable format.
-
-**Role:** This is the pivotal artifact that connects the design phase to the development phase. The `CompilationAgent` will parse this plan to generate the actual source code of the target system. It is the unambiguous "blueprint" that the "builder" agent follows.

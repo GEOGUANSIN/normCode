@@ -1,5 +1,0 @@
-This concept represents the top-level goal of the entire "NormCode Compiler" system.
-
-Its objective is to fully automate the three-phase NormCode methodology, starting from a high-level natural language description of a task and producing a complete, executable, and verifiable multi-agent application.
-
-It serves as the main entry point for the `MasterControllerAgent`, which will orchestrate the subordinate agents (Blueprint, Compilation, and Verification) to achieve this goal.
