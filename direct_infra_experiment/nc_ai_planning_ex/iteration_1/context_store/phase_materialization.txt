@@ -1,0 +1,77 @@
+## **Phase 3: Materialization into Executable Repositories (Step 6)**
+
+This final phase translates the enriched NormCode components into the concrete data structures (`ConceptRepo` and `InferenceRepo`) required for execution by the `Orchestrator`. This is where the abstract plan becomes a tangible, runnable program.
+
+### **Step 6: Generate Repositories and Interpretations**
+
+The system iterates through the context-enriched NormCode graph to generate the final `ConceptEntry` and `InferenceEntry` objects. This involves creating prompt files for LLM-driven steps and defining the `working_interpretation` for each inference.
+
+For each NormCode component, the system combines the component's semantic meaning with its attached Local Context to generate a final, self-contained prompt.
+
+**Example 1: The Username Existence Check Judgement**
+
+This is the most powerful example, as it combines user and system context to generate a precise, executable tool call instead of a generic prompt.
+
+1.  **Synthesize Action:** The system analyzes the enriched node for `::<username exists?>`.
+    -   **Goal:** Perform a true/false check.
+    -   **User Context:** Must be case-insensitive.
+    -   **System Context:** Use the `database_query` tool on a PostgreSQL database.
+    -   **Conclusion:** The correct action is to generate a case-insensitive SQL query for PostgreSQL.
+
+2.  **Generate `working_interpretation` for the `InferenceEntry`:** Instead of creating a prompt file for an LLM, the system now generates a precise `working_interpretation` that configures a direct tool call.
+
+    ```python
+    # In the InferenceEntry for the username check:
+    "working_interpretation": {
+        "tool_name": "database_query",
+        "parameters": {
+            "sql_query": "SELECT EXISTS(SELECT 1 FROM users WHERE username ILIKE '{1}')"
+        },
+        "value_order": {
+            "{user name}": 1
+        }
+    }
+    ```
+    *Note: The system correctly chose `ILIKE` for a case-insensitive search in PostgreSQL based on the combined context.*
+
+**Example 2: The Secure Password Generation Imperative**
+
+1.  **Synthesize Action:** The system analyzes the `::(securely generate a password)` node.
+    -   **Goal:** Generate a secure password.
+    -   **System Context:** Use the `generate_secure_password` tool.
+
+2.  **Generate `working_interpretation`:**
+
+    ```python
+    # In the InferenceEntry for password generation:
+    "working_interpretation": {
+        "tool_name": "generate_secure_password",
+        "parameters": {}
+    }
+    ```
+
+**Example 3: The Error Reporting Imperative**
+
+1.  **Synthesize Action:** The system analyzes the `::(report error)` node.
+    -   **Goal:** Report an error to the user.
+    -   **User Context:** The error message should be friendly and informative.
+    -   **System Context:** The error message should be in a format suitable for the LLM to understand.
+
+2.  **Generate `working_interpretation`:**
+
+    ```python
+    # In the InferenceEntry for error reporting:
+    "working_interpretation": {
+        "tool_name": "LLM",
+        "parameters": {
+            "prompt": "I apologize, but the username '{user name}' is already in use. Please choose a different one."
+        },
+        "value_order": {
+            "{user name}": 1
+        }
+    }
+    ```
+
+### **Final Result**
+
+The final output of this phase is a complete, machine-readable, and executable plan. The `ConceptRepo` and `InferenceRepo` are now populated with entries that can directly execute tool calls with precise, context-aware parameters. The `Orchestrator` can run this plan, interacting with the defined system tools to accomplish the user's goal with no ambiguity.

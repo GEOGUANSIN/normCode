@@ -1,0 +1,112 @@
+[
+  {
+    "id": "e8a1a4a1-e8a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "imperative",
+    "concept_to_infer": "::(Execute NormCode AI Planning)",
+    "function_concept": ":_:{pipeline phases}()",
+    "value_concepts": [
+      "{pipeline phases}"
+    ],
+    "flow_info": {
+      "flow_index": "1.2"
+    },
+    "working_interpretation": {
+      "with_thinking": true
+    }
+  },
+  {
+    "id": "a4a1e8a1-a4a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{pipeline phases}",
+    "function_concept": "&across[{1},{2},{3},{4}]",
+    "value_concepts": [
+      "{Phase 1: Confirmation of Instruction}",
+      "{Phase 2: Deconstruction and Plan Formalization}",
+      "{Phase 3: Contextualization}",
+      "{Phase 4: Materialization into an Executable Script}"
+    ],
+    "flow_info": {
+      "flow_index": "1.3.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across"
+      }
+    }
+  },
+  {
+    "id": "b4a1e8a1-b4a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{Phase 1: Confirmation of Instruction}",
+    "function_concept": "&across[{1}, {2}, {3}]",
+    "value_concepts": [
+      "{step 1.1: Automated Instruction Distillation}",
+      "{step 1.2: Automated Context Registration}",
+      "{step 1.3: Manual Review of Confirmation}"
+    ],
+    "flow_info": {
+      "flow_index": "1.3.2.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across"
+      }
+    }
+  },
+  {
+    "id": "c4a1e8a1-c4a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{Phase 2: Deconstruction and Plan Formalization}",
+    "function_concept": "&across[{1}, {2}, {3}, {4}]",
+    "value_concepts": [
+      "{step 2.1: Automated NormCode Deconstruction}",
+      "{step 2.2: Generate Natural Language Translation}",
+      "{step 2.3: Plan Formalization}",
+      "{step 2.4: Manual Review of Deconstruction}"
+    ],
+    "flow_info": {
+      "flow_index": "1.3.3.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across"
+      }
+    }
+  },
+  {
+    "id": "d4a1e8a1-d4a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{Phase 3: Contextualization}",
+    "function_concept": "&across[{1}, {2}]",
+    "value_concepts": [
+      "{step 3.1: Automated Context Distribution}",
+      "{step 3.2: Manual Review of Contextualization}"
+    ],
+    "flow_info": {
+      "flow_index": "1.3.4.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across"
+      }
+    }
+  },
+  {
+    "id": "e4a1e8a1-e4a1-4a1e-8a1e-5a08a1a4a1e8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{Phase 4: Materialization into an Executable Script}",
+    "function_concept": "&across[{1}, {2}]",
+    "value_concepts": [
+      "{step 4.1: Automated Script Generation}",
+      "{step 4.2: Manual Review of Materialization}"
+    ],
+    "flow_info": {
+      "flow_index": "1.3.5.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across"
+      }
+    }
+  }
+]

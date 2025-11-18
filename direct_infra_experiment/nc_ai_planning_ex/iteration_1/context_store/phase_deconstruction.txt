@@ -1,0 +1,69 @@
+## **Phase 1: Instruction Confirmation and Deconstruction (Steps 1-3)**
+
+This phase is about parsing the initial prompt, confirming the core task, and creating the first-pass structural representation in NormCode.
+
+### **Step 1: Confirm the Core Instruction from the Raw Prompt**
+
+The first, and most critical, step is to process the raw, conversational prompt and distill it into a clear, structured, and unambiguous instruction. This involves identifying the core intent and removing conversational filler.
+
+-   **Analysis of Raw Prompt:**
+    -   "Hey, can you set up the user registration flow for me?" -> Conversational opener, ignored.
+    -   "Basically, when a new user signs up..." -> Sets the context.
+    -   "...we need to make sure their username isn't already taken." -> Core logic: Check for existing username.
+    -   "If it is, just tell them it's unavailable." -> Core logic: Conditional error reporting.
+    -   "If it's free, go ahead and create their account." -> Core logic: Conditional account creation.
+    -   "Oh, and for the username check, it shouldn't matter if it's 'John' or 'john', you know? Just treat them the same." -> A specific constraint on the checking logic.
+    -   "For the password, just make something up that's secure." -> Vague instruction that needs to be clarified into a specific action: "securely generate a password".
+
+-   **Synthesized, Confirmed Instruction:**
+    ```
+    "To register a new user, first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account with the provided username and a securely generated password. The username should be considered case-insensitive during the check."
+    ```
+This confirmed instruction is now the clean input for the rest of the translation pipeline.
+
+### **Step 2: Isolate the Core Logic and All Contexts**
+
+The system now takes the *confirmed instruction* and the *system context* to separate the procedural logic from all non-procedural constraints.
+
+-   **Instruction Block:** "To register a new user, first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account with the provided username and a securely generated password." (Derived from user prompt)
+-   **User Context Block:** "The username should be considered case-insensitive during the check." (Derived from user prompt)
+-   **System Context Block:** Information about the PostgreSQL database and the `database_query` and `generate_secure_password` tools.
+
+This is a crucial first step. The **Instruction Block** contains the procedural logic—the "what to do"—while the **Context Block** contains non-procedural constraints and details—the "how to do it."
+
+### **Step 3: Translate the Instruction into a NormCode Draft**
+
+The `NormCode AI Planning` process applies the formal algorithm from the `comprehensive_normcode_translation_guide.md` to the **Instruction Block**. This is a recursive process of questioning and decomposition.
+
+1.  **Top-Level Goal:** The overall goal is identified as an action: `::(register a new user)`.
+2.  **Decomposition:** The agent asks, "How is this done?" The answer involves a sequence of steps, which are broken down using operators like `@by`, `&across`, `@if`, and `$::`.
+
+This results in the following **NormCode Draft**. This is the skeletal structure of the procedure, derived purely from the Instruction Block.
+
+```normcode
+:<:(::(register a new user))
+    <= @by(:_:)
+    <- :_:{steps}({user name})
+    <- {steps}
+        <= &across
+        <- {step 1: check existence}
+            <= $::.<username exists>
+            <- ::<username exists?>
+                <- {user name}
+        <- {step 2: report error}
+            <= $::.{error}
+            <- ::(report error)
+                <= @if(::<username exists?>)
+        <- {step 3: create account}
+            <= $::.{new user account}
+            <- ::(create new user account)
+                <= @if!(::<username exists?>)
+                <- {user name}
+                <- {password}
+    <- {user name}
+        <= :>:{user name}?()
+    <- {password}
+        <= ::(securely generate a password)
+```
+
+At this point, we have a logical plan, but it's missing the critical detail from the context.

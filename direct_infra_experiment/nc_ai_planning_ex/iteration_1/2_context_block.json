@@ -1,0 +1,9 @@
+{
+  "pipeline_goal": "./context_store/pipeline_goal.txt",
+  "example_scenario": "./context_store/example_scenario.txt",
+  "phases": {
+    "deconstruction": "./context_store/phase_deconstruction.txt",
+    "contextualization": "./context_store/phase_contextualization.txt",
+    "materialization": "./context_store/phase_materialization.txt"
+  }
+}

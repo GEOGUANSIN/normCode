@@ -1,0 +1,31 @@
+**Initial Input:**
+
+This consists of two parts: the raw, conversational prompt from the user, and the relevant technical context from the system.
+
+1.  **User's Raw Prompt:**
+    ```
+    "Hey, can you set up the user registration flow for me? Basically, when a new user signs up, we need to make sure their username isn't already taken. If it is, just tell them it's unavailable. If it's free, go ahead and create their account. Oh, and for the username check, it shouldn't matter if it's 'John' or 'john', you know? Just treat them the same. For the password, just make something up that's secure."
+    ```
+
+2.  **System Context:**
+    ```json
+    {
+      "database": {
+        "type": "PostgreSQL",
+        "user_table": "users",
+        "username_column": "username"
+      },
+      "mcp_tools_available": [
+        {
+          "tool_name": "database_query",
+          "description": "Executes a SQL query against the PostgreSQL database.",
+          "parameters": ["sql_query"]
+        },
+        {
+          "tool_name": "generate_secure_password",
+          "description": "Generates a cryptographically secure password.",
+          "parameters": []
+        }
+      ]
+    }
+    ```

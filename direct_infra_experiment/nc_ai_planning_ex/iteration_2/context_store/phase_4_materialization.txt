@@ -1,0 +1,96 @@
+## **Phase 4: Materialization into an Executable Script**
+
+This final phase translates the formalized `.nc` plan and its distributed context into a complete, tangible, and runnable Python script. This is where the abstract plan is materialized into executable code that the `Orchestrator` can run.
+
+### **Step 4.1: Automated Script Generation**
+
+The core of this phase is an automated "NormCode-to-Python" compilation process, driven by an LLM guided by a specialized meta-prompt.
+
+-   **Input:**
+    1.  The formalized **NormCode (`.nc`)** file from Phase 3.
+    2.  The **`context_store` directory** and **`context_manifest.json`** from Phase 3.
+
+-   **LLM Process:** The LLM iterates through the `.nc` plan and its associated context to generate a Python script. For each concept and inference, it generates the corresponding `ConceptEntry` and `InferenceEntry` Python object.
+
+    The most critical task in this step is synthesizing the `working_interpretation` for each `InferenceEntry`. The LLM combines the semantic meaning of the inference (from the `.nc` file) with its specific local context (from the `context_store`) to generate a precise set of instructions for the `Orchestrator`. This could be a direct tool call, a prompt for another LLM, or other structured commands.
+
+-   **Output:**
+    - **Repository JSON files (`concept_repo.json`, `inference_repo.json`):** These files contain the structured definitions for all `ConceptEntry` and `InferenceEntry` objects in the plan.
+    - **An Executable Python Script (`.py`):** This script is now a lightweight runner. It contains the necessary boilerplate to load the repository JSON files, initialize the `Orchestrator`, and execute the plan.
+
+### **Example of Generated Files**
+
+Below are snippets of the files that would be generated for our user registration example.
+
+**1. `concept_repo.json` (Snippet)**
+
+This file defines all the concepts used in the plan.
+
+```json
+[
+  {
+    "id": "...",
+    "concept_name": "{user name}",
+    "type": "{}",
+    "description": "The username provided for registration."
+  },
+  {
+    "id": "...",
+    "concept_name": "::<username exists?>",
+    "type": "<{}>",
+    "description": "A judgement to check if the username is already in the database."
+  }
+]
+```
+
+**2. `inference_repo.json` (Snippet)**
+
+This file defines all the inferences, including their `working_interpretation` which was synthesized from the local context.
+
+```json
+[
+  {
+    "id": "...",
+    "inference_sequence": "judgement_direct",
+    "concept_to_infer": "::<username exists?>",
+    "function_concept": "::<username exists?>",
+    "value_concepts": ["{user name}"],
+    "flow_info": {"flow_index": "1.1.2.1"},
+    "working_interpretation": {
+        "tool_name": "database_query",
+        "parameters": {
+            "sql_query": "SELECT EXISTS(SELECT 1 FROM users WHERE username ILIKE '{1}')"
+        },
+        "value_order": {
+            "{user name}": 1
+        }
+    }
+  }
+]
+```
+
+**3. Executable Python Script (`run_plan.py`)**
+
+This script loads the repositories and runs the plan.
+
+```python
+from infra import Orchestrator, ConceptRepo, InferenceRepo
+
+# Load the repositories from the generated JSON files
+concept_repo = ConceptRepo.from_json("concept_repo.json")
+inference_repo = InferenceRepo.from_json("inference_repo.json")
+
+# Initialize and run the orchestrator
+orchestrator = Orchestrator(
+    concept_repo=concept_repo,
+    inference_repo=inference_repo,
+    # ... other configurations ...
+)
+final_concepts = orchestrator.run()
+
+print("Plan execution complete.")
+```
+
+### **Step 4.2: Manual Review and Refinement (Optional)**
+
+The final generated files (`.py`, `.json`) are available for human review. This allows a developer to inspect the repository definitions and the runner script—particularly the synthesized `working_interpretation` for each inference in the `inference_repo.json`—to ensure correctness and safety before execution.

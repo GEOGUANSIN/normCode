@@ -1,0 +1,30 @@
+## **Phase 2: Contextualization and NormCode Interpretation (Steps 4-5)**
+
+This phase enriches the structural plan with the nuanced, non-procedural information required for correct execution.
+
+### **Step 4: Identify Leftover Contexts**
+
+The system identifies all context that hasn't been encoded in the NormCode's structure.
+
+-   **User Context:** `{"check_constraint": "username check must be case-insensitive"}`
+-   **System Context:** `{"db_type": "PostgreSQL", "user_table": "users", "username_column": "username", "tool": "database_query"}`
+
+### **Step 5: Distribute All Context to Relevant Nodes**
+
+The system now analyzes all context blocks and attaches them to the specific NormCode components where they apply.
+
+-   **Node `::<username exists?>`:** Receives both user and system context, as it needs to know *how* to check (case-insensitive) and *what* to check against (the PostgreSQL database).
+    -   **Local Context:**
+        ```json
+        {
+          "user_constraint": "case-insensitive",
+          "system_details": {
+            "db_type": "PostgreSQL",
+            "user_table": "users",
+            "username_column": "username",
+            "tool_to_use": "database_query"
+          }
+        }
+        ```
+-   **Node `::(securely generate a password)`:** This node only needs the relevant system context.
+    -   **Local Context:** `{"system_details": {"tool_to_use": "generate_secure_password"}}`
