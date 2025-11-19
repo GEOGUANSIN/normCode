@@ -20,6 +20,17 @@
       "title": "File Format Specifications",
       "description": "The specifications for the various file formats used throughout the pipeline (.txt, .json, .ncd, .ncn, .nc) are detailed in raw_context_file_formats_guide.txt.",
       "file_reference": "./context_store/raw--file_formats_guide.txt"
+    },
+    {
+      "title": "Assembling Prompt Part",
+      "description": "The assembling prompt part is a markdown file that describes the process of assembling the prompt for each step in the plan. It is generated during the contextualization phase and is used to generate the full set of prompt files.",
+      "file_reference": "./context_store/raw--assembling_prompt_part.md"
+    },
+    {
+      "title": " NormCode to Orchestrator Repository Mapping",
+      "description": "The normcode to orchestrator repository mapping is a markdown file that describes the process of mapping the normcode to the orchestrator repository. It is generated during the contextualization phase and is used to generate the full set of prompt files.",
+      "file_reference": "./context_store/raw--normcode_to_orchestrator_repo_mapping.md"
     }
+
   ]
 }
