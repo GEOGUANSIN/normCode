@@ -1,0 +1,33 @@
+[
+    {
+        "concept_name": "{1.1_instruction_block.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)"
+        ]
+    },
+    {
+        "concept_name": "{instruction distillation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "1.1_instruction_distillation.md"
+        ]
+    },
+    {
+        "concept_name": "{input files}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "prompts/0_original_prompt.md"
+        ]
+    }
+]

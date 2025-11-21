@@ -117,6 +117,26 @@ class ConceptRepo:
     def get_all_concepts(self) -> List[ConceptEntry]:
         return list(self._concept_map.values())
 
+    @classmethod
+    def from_json_list(cls, json_list: List[Dict[str, Any]]) -> 'ConceptRepo':
+        """Creates a ConceptRepo from a list of JSON objects."""
+        concept_entries = []
+        for item in json_list:
+            # Create ConceptEntry from dictionary, ensuring all fields are handled
+            entry = ConceptEntry(
+                id=str(uuid.uuid4()),
+                concept_name=item.get('concept_name'),
+                type=item.get('type'),
+                description=item.get('description'),
+                is_ground_concept=item.get('is_ground_concept', False),
+                is_final_concept=item.get('is_final_concept', False),
+                is_invariant=item.get('is_invariant', False),
+                reference_data=item.get('reference_data'),
+                reference_axis_names=item.get('reference_axis_names')
+            )
+            concept_entries.append(entry)
+        return cls(concept_entries)
+
 class InferenceRepo:
     def __init__(self, inferences: List[InferenceEntry]):
         self.inferences = inferences
@@ -144,5 +164,53 @@ class InferenceRepo:
     
     def get_inference_by_flow_index(self, idx: str) -> Optional[InferenceEntry]:
         return self._map_by_flow.get(idx)
+
+    @classmethod
+    def from_json_list(cls, json_list: List[Dict[str, Any]], concept_repo: ConceptRepo) -> 'InferenceRepo':
+        """Creates an InferenceRepo from a list of JSON objects, linking to an existing ConceptRepo."""
+        inference_entries = []
+        for item in json_list:
+            # Resolve concept names to ConceptEntry objects
+            concept_to_infer = concept_repo.get_concept(item['concept_to_infer'])
+            if not concept_to_infer:
+                raise ValueError(f"Concept '{item['concept_to_infer']}' not found in ConceptRepo.")
+
+            function_concept = concept_repo.get_concept(item['function_concept']) if item.get('function_concept') else None
+            if item.get('function_concept') and not function_concept:
+                raise ValueError(f"Function concept '{item['function_concept']}' not found in ConceptRepo.")
+
+            value_concepts = []
+            for name in item.get('value_concepts', []):
+                concept = concept_repo.get_concept(name)
+                if not concept:
+                    raise ValueError(f"Value concept '{name}' not found in ConceptRepo.")
+                value_concepts.append(concept)
+            
+            context_concepts = []
+            for name in item.get('context_concepts', []):
+                concept = concept_repo.get_concept(name)
+                if not concept:
+                    raise ValueError(f"Context concept '{name}' not found in ConceptRepo.")
+                context_concepts.append(concept)
+
+            # Create the InferenceEntry
+            entry = InferenceEntry(
+                id=str(uuid.uuid4()),
+                inference_sequence=item['inference_sequence'],
+                concept_to_infer=concept_to_infer,
+                flow_info=item.get('flow_info', {}),
+                function_concept=function_concept,
+                value_concepts=value_concepts,
+                context_concepts=context_concepts,
+                start_without_value=item.get('start_without_value', False),
+                start_without_value_only_once=item.get('start_without_value_only_once', False),
+                start_without_function=item.get('start_without_function', False),
+                start_without_function_only_once=item.get('start_without_function_only_once', False),
+                start_with_support_reference_only=item.get('start_with_support_reference_only', False),
+                start_without_support_reference_only_once=item.get('start_without_support_reference_only_once', False),
+                working_interpretation=item.get('working_interpretation')
+            )
+            inference_entries.append(entry)
+        return cls(inference_entries)
 
 
