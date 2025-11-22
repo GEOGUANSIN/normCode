@@ -18,45 +18,7 @@ from infra._states._model_state import (
 )
 from infra._states._common_states import ReferenceRecordLite
 from infra._core import Reference, Concept
-
-
-def _build_specs_for_generic_function(config: Dict[str, Any], with_thinking: bool = False) -> tuple[ModelEnvSpecLite, ModelSequenceSpecLite]:
-    """
-    Builds the specs to create a generic generation function that expects the template in its vars.
-    """
-    template_key = config.get("template_key", "prompt_template")
-
-    if with_thinking:
-        affordance_name = "create_generic_generation_function_with_thinking"
-        call_code = "result = tool.create_generation_function_with_template_in_vars_with_thinking(template_key=params['template_key'])"
-    else:
-        affordance_name = "create_generic_generation_function"
-        call_code = "result = tool.create_generation_function_with_template_in_vars(template_key=params['template_key'])"
-
-    env_spec = ModelEnvSpecLite(
-        model=ToolSpecLite(
-            tool_name="llm",
-            affordances=[
-                AffordanceSpecLite(
-                    affordance_name=affordance_name,
-                    call_code=call_code,
-                ),
-            ]
-        )
-    )
-
-    sequence_spec = ModelSequenceSpecLite(
-        env=env_spec,
-        steps=[
-            ModelStepSpecLite(
-                step_index=1,
-                affordance=f"llm.{affordance_name}",
-                params={"template_key": template_key},
-                result_key="instruction_fn"
-            )
-        ]
-    )
-    return env_spec, sequence_spec
+from infra._agent._models._paradigms import Paradigm
 
 
 def input_working_interpretation(
@@ -78,10 +40,18 @@ def input_working_interpretation(
 
     with_thinking = config.get("with_thinking", False)
 
+    # Load the appropriate paradigm based on whether 'thinking' is required.
+    if with_thinking:
+        paradigm_name = "thinking_save_and_wrap"
+    else:
+        paradigm_name = "simple_generation"
+    
+    paradigm = Paradigm.load(paradigm_name)
+    logger.info(f"Loaded composition paradigm: '{paradigm_name}'")
+
     # Build and save the specs for MFP to execute
-    env_spec, sequence_spec = _build_specs_for_generic_function(config, with_thinking=with_thinking)
-    states.mfp_env_spec = env_spec
-    states.mfp_sequence_spec = sequence_spec
+    states.mfp_env_spec = paradigm.env_spec
+    states.mfp_sequence_spec = paradigm.sequence_spec
     
     # Set value_order and initial values for MVP
     states.value_order = config.get("value_order")
@@ -96,11 +66,11 @@ def input_working_interpretation(
         states.values.append(record)
 
     # Seed lists with empty records for each step's output
-    for step in ["MFP"]:
+    for step in ["IR", "MFP"]:
         states.function.append(ReferenceRecordLite(step_name=step))
     for step in ["MVP"]:
         states.values.append(ReferenceRecordLite(step_name=step))
-    for step in ["TIP", "MIA"]:
+    for step in ["TVA"]:
         states.inference.append(ReferenceRecordLite(step_name=step))
 
     logger.info("Built and stored specs for creating a generic direct instruction function.")

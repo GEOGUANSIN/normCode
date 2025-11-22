@@ -1,5 +1,11 @@
 from typing import Any, Dict, Callable
-from infra._agent._models import PromptTool, FileSystemTool, PythonInterpreterTool
+from infra._agent._models import (
+    PromptTool,
+    FileSystemTool,
+    PythonInterpreterTool,
+    FormatterTool,
+    CompositionTool,
+)
 
 class Body:
 	def __init__(self, llm_name="qwen-turbo-latest", base_dir: str | None = None) -> None:
@@ -64,6 +70,8 @@ class Body:
 		self.user_input = _UserInputTool()
 		self.file_system = FileSystemTool(base_dir=base_dir)
 		self.python_interpreter = PythonInterpreterTool()
+		self.formatter_tool = FormatterTool()
+		self.composition_tool = CompositionTool()
 		
 		# Pass the body's tool instances to the llm to ensure they share the same context (e.g., base_dir)
 		if hasattr(self.llm, "file_tool"):

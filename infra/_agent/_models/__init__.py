@@ -12,6 +12,8 @@ from ._model_runner import ModelEnv, ModelSequenceRunner
 from ._prompt import PromptTool
 from ._file_system import FileSystemTool
 from ._python_interpreter import PythonInterpreterTool
+from ._composition_tool import CompositionTool
+from ._formatter_tool import FormatterTool
 
 # Model state dataclasses (from _states for convenience)
 from infra._states._model_state import (
@@ -38,6 +40,8 @@ __all__ = [
     "PromptTool",
     "FileSystemTool",
     "PythonInterpreterTool",
+    "CompositionTool",
+    "FormatterTool",
     
     # Model state dataclasses
     "AffordanceSpecLite",

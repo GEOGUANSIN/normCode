@@ -20,6 +20,7 @@ from infra._agent._sequences.imperative_python import set_up_imperative_python_d
 from infra._agent._sequences.judgement_python import set_up_judgement_python_demo, configure_judgement_python_demo
 from infra._agent._sequences.imperative_python_indirect import set_up_imperative_python_indirect_demo, configure_imperative_python_indirect_demo
 from infra._agent._sequences.judgement_python_indirect import set_up_judgement_python_indirect_demo, configure_judgement_python_indirect_demo
+from infra._agent._sequences.imperative_in_composition import set_up_imperative_in_composition_demo, configure_imperative_in_composition_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
@@ -39,6 +40,7 @@ from infra._agent._steps.imperative_python import imperative_python_methods
 from infra._agent._steps.judgement_python import judgement_python_methods
 from infra._agent._steps.imperative_python_indirect import imperative_python_indirect_methods
 from infra._agent._steps.judgement_python_indirect import judgement_python_indirect_methods
+from infra._agent._steps.imperative_in_composition import imperative_in_composition_methods
 
 
 # Configure logging
@@ -140,6 +142,7 @@ class AgentFrame():
             set_up_judgement_python_demo(self)
             set_up_imperative_python_indirect_demo(self)
             set_up_judgement_python_indirect_demo(self)
+            set_up_imperative_in_composition_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -188,6 +191,9 @@ class AgentFrame():
             elif inference_sequence == "judgement_python_indirect":
                 logger.info("Configuring judgement_python_indirect demo sequence")
                 configure_judgement_python_indirect_demo(self, inference_instance, judgement_python_indirect_methods)
+            elif inference_sequence == "imperative_in_composition":
+                logger.info("Configuring imperative_in_composition demo sequence")
+                configure_imperative_in_composition_demo(self, inference_instance, imperative_in_composition_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
         else:

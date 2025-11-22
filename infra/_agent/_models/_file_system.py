@@ -88,6 +88,24 @@ class FileSystemTool:
             logger.error(f"Failed to read file at {location}: {e}")
             return {"status": "error", "message": str(e)}
 
+    def exists(self, location: str) -> bool:
+        """
+        Checks if a file exists at the specified location.
+
+        Args:
+            location (str): The file path to check. Can be absolute, or relative
+                            to the base_dir.
+
+        Returns:
+            bool: True if the file exists, False otherwise.
+        """
+        try:
+            file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+            return file_path.exists()
+        except Exception as e:
+            logger.error(f"Error checking for file existence at {location}: {e}")
+            return False
+
     def read_memorized_value(self, content: str) -> dict:
         """
         Reads a value from a JSON-based memory file.

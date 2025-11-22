@@ -40,3 +40,39 @@ class PythonInterpreterTool:
             logger.error(f"Error executing Python script: {e}")
             logger.error(f"Script that failed:\n{script_code}")
             return {"status": "error", "message": str(e)}
+
+    def function_execute(self, script_code: str, function_name: str, function_params: Dict[str, Any]) -> Any:
+        """
+        Executes a specific function from a Python script string with given parameters.
+
+        Args:
+            script_code (str): The Python code containing the function definition.
+            function_name (str): The name of the function to execute.
+            function_params (Dict[str, Any]): A dictionary of keyword arguments to pass to the function.
+
+        Returns:
+            Any: The return value of the function, or an error dictionary.
+        """
+        try:
+            execution_scope = {}
+            exec(script_code, execution_scope)
+
+            if function_name not in execution_scope:
+                raise NameError(f"Function '{function_name}' not found in the provided script.")
+            
+            function_to_call = execution_scope[function_name]
+
+            if not callable(function_to_call):
+                raise TypeError(f"'{function_name}' is not a callable function.")
+
+            logger.info(f"Executing function '{function_name}' with params: {list(function_params.keys())}")
+            
+            result = function_to_call(**function_params)
+
+            logger.info(f"Function '{function_name}' executed successfully. Result: {result}")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error executing function '{function_name}' from script: {e}")
+            logger.error(f"Script that failed:\n{script_code}")
+            return {"status": "error", "message": str(e)}

@@ -7,9 +7,20 @@ from typing import Any, Dict, Callable
 from string import Template
 import json
 import uuid
+import re
 
 class FormatterTool:
     """A tool with methods for various data formatting and extraction tasks."""
+    def create_template_function(self, template: str) -> Callable[[Dict[str, Any]], str]:
+        """
+        Factory method that takes a template string and returns a substitution function
+        with that template 'baked in'.
+        """
+        def substitute_fn(vars: Dict[str, Any]) -> str:
+            """Substitutes variables into the baked-in template string."""
+            return Template(template).safe_substitute(vars)
+        return substitute_fn
+        
     def create_substitute_function(self, template_key: str) -> Callable[[Dict[str, Any]], str]:
         """
         Factory method that returns a substitute function bound to a specific template key.
@@ -53,3 +64,11 @@ class FormatterTool:
             wrapped_data = f"%{unique_code}({data})"
         print(f">>> MIA step: Wrapped data -> {wrapped_data}")
         return wrapped_data
+
+    def clean_code(self, raw_code: str) -> str:
+        """Extracts Python code from a markdown block."""
+        if not isinstance(raw_code, str):
+            return ""
+        # Use re.DOTALL to make '.' match newlines
+        code_blocks = re.findall(r"```(?:python|py)?\n(.*?)\n```", raw_code, re.DOTALL)
+        return code_blocks[0].strip() if code_blocks else raw_code.strip()
