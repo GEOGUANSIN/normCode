@@ -1,138 +1,104 @@
-# Imperative Direct Sequence
+# Imperative in Composition Sequence
 
 ## Purpose
 
-The `imperative_direct` sequence provides a highly flexible and efficient method for executing "direct instructions" where operational details (like a prompt template or file path) are supplied as part of the input data, rather than being generated through a multi-step translation process.
+The `imperative_in_composition` sequence provides a highly flexible method for executing complex, multi-step instructions that are defined declaratively in **paradigm** files. Instead of hard-coding operational logic, this sequence loads a JSON-defined workflow and executes it.
 
-This approach is ideal for scenarios where the instruction is already known and the goal is to simply format it with dynamic values and execute it through a language model or another tool.
+This approach is ideal for creating reusable and complex operational patterns (e.g., prompt-LLM-parse-save) that can be selected and run at runtime with dynamic data.
 
 ## Methodology
 
-This sequence operates on a principle of separating planning, execution, and data gathering across its key steps. Its central feature is the ability to interpret and process special **wrappers** within the input concepts. These wrappers can dynamically load content from files, retrieve values from memory, or format instructions for later steps.
+This sequence operates by separating the definition of a complex workflow (the **paradigm**) from the execution engine (the agent sequence). The `working_interpretation` provided to the inference tells the sequence which paradigm to load and how to order the input data.
 
-### Key Feature: The Wrapper Syntax
+### Key Feature: Declarative Paradigms
 
-The sequence is triggered by special wrappers in the string values of the input concepts. The syntax is designed to be flexible and descriptive.
+The core of this sequence is the **Paradigm**. A paradigm is a JSON file that declaratively defines a multi-step function. It specifies:
+1.  **`env_spec`**: The set of tools required for the operation (e.g., `llm`, `file_system`, `formatter_tool`).
+2.  **`sequence_spec`**: The "vertical" setup steps needed to gather the tool functions.
+3.  **`plan`**: The "horizontal" execution plan that defines the runtime data flow—how the output of one tool becomes the input for the next.
 
--   **General Syntax:** `%{wrapper_type}optional_id(content)`
-    -   `wrapper_type`: The core type of the instruction (e.g., `prompt`, `file_location`).
-    -   `optional_id`: An optional unique identifier for the wrapper instance. This is parsed but not currently used in the logic, serving as a placeholder for future functionality.
-    -   `content`: The parameter for the wrapper, typically a file path or a memory key.
-
-### Supported Wrappers
-
-| Wrapper Syntax | Description |
-| :--- | :--- |
-| `%{prompt}id(path)` | **Reads the file** at the given `path` and designates its content as the `prompt_template` for an LLM call. |
-| `%{file_location}id(path)` | **Reads the file** at the given `path` and treats its content as a **regular input value**. |
-| `%{prompt_location}id(path)` | **Passes the `path` itself** as a `prompt_location` instruction for a later step to handle. |
-| `%{script_location}id(path)` | **Passes the `path` itself** as a `script_location` instruction for a later step to handle. |
-| `%{memorized_parameter}id(key)`| Retrieves a value from the agent's memory using the specified `key`. Requires the `FileSystemTool`. |
+The sequence is configured by passing the paradigm's name in the `working_interpretation`, making the agent a generic paradigm executor.
 
 ### Workflow
 
-1.  **`IWI` (The Architect - `_iwi.py`)**
-    -   Acts as a planner. It reads the agent's configuration.
-    -   It builds a "plan" (the `env_spec` and `sequence_spec`) that defines how to create a generic, reusable generation function.
-    -   It saves this plan to the agent's state without executing it.
+1.  **`IWI` (The Planner - `_iwi.py`)**
+    -   Reads the `working_interpretation` to get the specified `paradigm` name (e.g., `"thinking_save_and_wrap"`).
+    -   It loads the corresponding paradigm's `env_spec` and `sequence_spec` from its JSON file.
+    -   It saves this specification to the agent's state for the next step.
 
-2.  **`MFP` (The Executor - `_mfp.py`)**
-    -   Executes the plan created by `IWI`.
-    -   It runs a `ModelSequenceRunner` which calls the `create_generation_function_with_template_in_vars` method, creating a generic function that expects its prompt template to be supplied at runtime.
-    -   This generic function is saved to the agent's state.
+2.  **`IR` (Input References - `_ir.py`)**
+    -   A standard step that gathers the initial data references from the input concepts.
 
-3.  **`MVP` (The Data Gatherer & Pre-processor - `_mvp.py`)**
-    -   This step is a versatile pre-processor that gathers and transforms all data required for the next agent step.
-    -   It inspects all input concepts and identifies special instructions by looking for the `%{...}` wrapper syntax.
-    -   Depending on the wrapper type, it may:
-        - Read content directly from a file (`%{prompt}`, `%{file_location}`).
-        - Fetch values from memory (`%{memorized_parameter}`).
-        - Reformat file paths as instructions for later steps (`%{prompt_location}`, `%{script_location}`).
-    -   It handles complex input ordering and selection using `value_selectors`.
-    -   It assembles a final dictionary containing all the prepared data (e.g., a prompt template, regular inputs, or other instructions) ready for the next step.
+3.  **`MFP` (The Composer - `_mfp.py`)**
+    -   Executes the `sequence_spec` that `IWI` loaded from the paradigm.
+    -   It runs a `ModelSequenceRunner` to resolve all the required tool affordances (e.g., `"llm.generate"`) into a single, callable, composed function. This function encapsulates the entire data-flow logic defined in the paradigm's `plan`.
+    -   This newly composed function is saved to the agent's state.
 
-4.  **`TIP` (The Action - `_tip.py`)**
+4.  **`MVP` (The Data Pre-processor - `_mvp.py`)**
+    -   Gathers and transforms all the data needed to execute the composed function.
+    -   It uses the `value_order` from the `working_interpretation` to correctly structure the inputs.
+    -   It processes special **wrappers** in the input strings to perform tasks like loading file content.
+    -   It assembles a final dictionary containing all the prepared data, ready to be passed to the composed function.
+
+5.  **`TVA` (The Executor - `_tva.py`)**
     -   This step performs the final execution.
-    -   It takes the generic function created by `MFP`.
+    -   It takes the composed function created by `MFP`.
     -   It takes the complete data dictionary prepared by `MVP`.
-    -   It calls the function with the data, which triggers the final, formatted call to the language model to get the result.
+    -   It calls the function with the data, which triggers the paradigm's entire multi-step plan (e.g., formatting a prompt, calling an LLM, cleaning and parsing the response, saving the result, etc.).
 
-## Prompt Format and Requirements
+6.  **`OR` & `OWI` (Output Steps)**
+    -   Standard steps to format and return the final result of the sequence.
 
-To be compatible with the agent's execution logic, prompt templates must follow specific formatting rules for both input variables and output structure.
+## Configuration (`working_interpretation`)
+
+The sequence is primarily configured through the `working_interpretation` dictionary.
+
+**Example:**
+```json
+{
+  "paradigm": "thinking_save_and_wrap",
+  "value_order": {
+    "prompt_info": 0,
+    "input_1": 1,
+    "input_2": 2,
+    "save_path": 3
+  }
+}
+```
+
+-   **`paradigm`** (required): The filename (without `.json`) of the paradigm to load from the `infra/_agent/_models/_paradigms/` directory.
+-   **`value_order`** (required): A dictionary that maps the names of the input concepts to a numerical order. This ensures the `MVP` step processes the data in the correct sequence before passing it to the paradigm.
+
+## Wrapper Syntax in MVP
+
+The `MVP` step can process special wrappers in the input concept data to perform pre-processing tasks.
+
+-   **General Syntax:** `%{wrapper_type}optional_id(content)`
+
+| Wrapper Syntax | Description |
+| :--- | :--- |
+| `%{prompt}id(path)` | **Reads the file** at `path` and designates its content as the `prompt_template` for the paradigm. |
+| `%{save_path}id(path)` | Designates the `path` string as the `save_path` for the paradigm. |
+| `%{file_location}id(path)` | **Reads the file** at `path` and treats its content as a **regular input value**. |
+| `%{script_location}id(path)`| Designates the `path` as a `script_location` for paradigms that execute code. |
+
+## Prompt and Paradigm Requirements
+
+Because this sequence is a generic paradigm runner, the specific requirements for prompts and output formats are defined by the tools and logic **within the paradigm itself**.
 
 ### 1. Input Placeholder Syntax
 
-The prompt template **must** use the `$` prefix for variable substitution, as required by Python's `string.Template` class.
+The `FormatterTool` used in many paradigms relies on Python's `string.Template`, which requires a `$` prefix for variable substitution. When creating prompts for such paradigms, this syntax must be used.
 
--   **Single Input:** If only one value is passed to the prompt, it will be available under the key `input`.
-    -   *Example:* `Analyze the following text: $input`
--   **Multiple Inputs:** If multiple values are passed, they will be numbered sequentially as `input_1`, `input_2`, etc.
-    -   *Example:* `Summarize the difference between $input_1 and $input_2`
+-   **Example:** `Create a friendly greeting for $input_1 from $input_2.`
 
-> **Note:** Using other syntax like `{input}` or `%input_1%` will result in an error.
+> **Note:** The names of the variables (e.g., `input_1`) are determined by the `MVP` step based on the `value_order` configuration.
 
-### 2. Output Structure for `with_thinking` Mode
+### 2. Output Structure (Paradigm-Dependent)
 
-When the `with_thinking: true` flag is set in the agent's configuration, the prompt **must** instruct the language model to return a single JSON object containing both its reasoning and the final answer.
+The required output structure from an LLM is also defined by the paradigm's plan. For example, the `thinking_save_and_wrap` paradigm expects the LLM to return a single JSON object with two specific keys:
 
-#### General JSON Structure
+-   `thinking` (string): The model's reasoning.
+-   `answer` (any): The final answer.
 
-The root JSON object **must** contain two keys:
-
--   `analysis` (string): The model's step-by-step reasoning on how it arrived at the answer.
--   `answer` (any): The final, structured answer, which varies depending on the task.
-
-**Example of the general JSON output:**
-```json
-{
-  "analysis": "Step-by-step reasoning about how to approach and solve the problem...",
-  "answer": "The actual output as specified in the instruction"
-}
-```
-
-#### Specific Structure for Relation Extraction
-
-For tasks involving the extraction of relationships, the `answer` key has a more specific, required structure: a **list of dictionaries**.
-
--   Each dictionary in the list represents one complete relationship instance.
--   The keys of the dictionary must correspond to the output variable names specified in the instruction.
-
-**Full JSON Example for Relation Extraction:**
-
-Imagine the task is: "From the text 'TechCorp is based in San Francisco, and Innovate Inc. is in New York.', extract all companies and their headquarters."
-
-The expected JSON output would be:
-
-```json
-{
-  "analysis": "The user wants to extract company names and their locations. The sentence mentions two companies: TechCorp in San Francisco, and Innovate Inc. in New York. This requires creating two separate dictionaries, one for each company, and putting them in the 'answer' list.",
-  "answer": [
-    {"company": "TechCorp", "location": "San Francisco"},
-    {"company": "Innovate Inc.", "location": "New York"}
-  ]
-}
-```
-
-### 3. Example Prompt Template
-
-Here is an example of a prompt file (`prompt_with_thinking.txt`) that incorporates these requirements:
-
-```
-Instruction: $input
-
-Execute the instruction. Your final output must be a single JSON object.
-
-First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object.
-Then, provide the final answer in the "answer" key.
-
-Example of the final JSON output:
-\`\`\`json
-{
-  "analysis": "Step-by-step reasoning about how to approach and solve the problem...",
-  "answer": "The actual output as specified in the instruction"
-}
-\`\`\`
-
-Execute the instruction and return only the JSON object.
-```
+This is a requirement of that specific paradigm, not a general rule for the `imperative_in_composition` sequence. Always refer to the paradigm's logic to determine the expected input and output formats.

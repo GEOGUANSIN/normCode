@@ -32,7 +32,7 @@ class FileSystemTool:
         """Gets the full path to the default memorized.json file."""
         return self._get_base_dir() / 'memorized.json'
 
-    def save(self, content: str, location: str) -> dict:
+    def save(self, content: str | None, location: str) -> dict:
         """
         Saves content to a specified file location.
 
@@ -44,6 +44,11 @@ class FileSystemTool:
         Returns:
             dict: A dictionary with the status of the operation.
         """
+        if content is None:
+            err_msg = f"Content cannot be None. Failed to save to {location}."
+            logger.error(err_msg)
+            return {"status": "error", "message": err_msg}
+
         try:
             file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
             # Ensure the directory exists

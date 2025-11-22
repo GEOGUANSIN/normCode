@@ -38,13 +38,9 @@ def input_working_interpretation(
     
     config = working_interpretation or {}
 
-    with_thinking = config.get("with_thinking", False)
-
-    # Load the appropriate paradigm based on whether 'thinking' is required.
-    if with_thinking:
-        paradigm_name = "thinking_save_and_wrap"
-    else:
-        paradigm_name = "simple_generation"
+    paradigm_name = config.get("paradigm")
+    if not paradigm_name:
+        raise ValueError("IWI for imperative_in_composition requires a 'paradigm' key in the working_interpretation.")
     
     paradigm = Paradigm.load(paradigm_name)
     logger.info(f"Loaded composition paradigm: '{paradigm_name}'")

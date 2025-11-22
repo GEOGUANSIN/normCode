@@ -43,17 +43,21 @@ class FormatterTool:
         """
         if not isinstance(raw_response, str) or not raw_response.strip():
             return {"error": "Invalid input: received empty or non-string response for JSON parsing."}
+        
+        # Attempt to fix common LLM errors like escaping single quotes
+        cleaned_response = raw_response.replace(r"\'", "'")
+        
         try:
-            return json.loads(raw_response)
+            return json.loads(cleaned_response)
         except json.JSONDecodeError:
             return {
-                "raw_response": raw_response,
+                "raw_response": raw_response, # Log the original for debugging
                 "error": "Failed to parse JSON response"
             }
 
-    def get(self, dictionary: Dict, key: str) -> Any:
+    def get(self, dictionary: Dict, key: str, default: Any = None) -> Any:
         """Gets a value from a dictionary by key."""
-        return dictionary.get(key)
+        return dictionary.get(key, default)
 
     def wrap(self, data: Any, type: str | None = None) -> str:
         """Wraps the data in the normcode format %xxx() or %{type}xxx()."""
@@ -66,9 +70,14 @@ class FormatterTool:
         return wrapped_data
 
     def clean_code(self, raw_code: str) -> str:
-        """Extracts Python code from a markdown block."""
+        """Extracts code from a markdown block for python or json."""
         if not isinstance(raw_code, str):
             return ""
         # Use re.DOTALL to make '.' match newlines
-        code_blocks = re.findall(r"```(?:python|py)?\n(.*?)\n```", raw_code, re.DOTALL)
-        return code_blocks[0].strip() if code_blocks else raw_code.strip()
+        # Look for python, py, or json blocks
+        code_blocks = re.findall(r"```(?:python|py|json)?\n(.*?)\n```", raw_code, re.DOTALL)
+        if code_blocks:
+            return code_blocks[0].strip()
+        
+        # If no markdown block is found, assume the whole thing is the code
+        return raw_code.strip()

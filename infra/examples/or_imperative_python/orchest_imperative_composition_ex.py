@@ -34,7 +34,7 @@ def create_imperative_composition_repos():
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_1', type='{}', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='input_2', type='{}', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='prompt_info', type='{}', is_ground_concept=True),
-        ConceptEntry(id=str(uuid.uuid4()), concept_name='save_location', type='{}', is_ground_concept=True),
+        ConceptEntry(id=str(uuid.uuid4()), concept_name='save_path', type='{}', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='greeting_function', type='::({})', is_ground_concept=True),
         ConceptEntry(id=str(uuid.uuid4()), concept_name='final_greeting', type='{}', is_final_concept=True),
     ]
@@ -45,16 +45,17 @@ def create_imperative_composition_repos():
     prompt_template_str = (
         "You are a friendly assistant. Your response must be a JSON object "
         "with two keys: 'thinking' (your reasoning) and 'answer' (the final greeting string). "
-        "Create a friendly greeting for {input_1} from {input_2}."
+        "Create a friendly greeting for $input_1 from $input_2."
     )
     
     # The MVP step expects a special string format to identify the prompt template.
     prompt_info_value = f"{{%{{prompt_template}}: {prompt_template_str}}}"
+    save_path_value = f"%{{save_path}}id({save_path})"
 
-    concept_repo.add_reference('input_1', ['%(Alice)'])
-    concept_repo.add_reference('input_2', ['%(Wonderland)'])
+    concept_repo.add_reference('input_1', [f'%9e3(Alice)'])
+    concept_repo.add_reference('input_2', [f'%93t(Wonderland)'])
     concept_repo.add_reference('prompt_info', [prompt_info_value])
-    concept_repo.add_reference('save_location', [save_path])
+    concept_repo.add_reference('save_path', [save_path_value])
     concept_repo.add_reference('greeting_function', ['dummy']) # Functional concept needs a placeholder
 
     # 3. --- Define the Inference ---
@@ -64,7 +65,7 @@ def create_imperative_composition_repos():
         concept_repo.get_concept('input_1'),
         concept_repo.get_concept('input_2'),
         concept_repo.get_concept('prompt_info'),
-        concept_repo.get_concept('save_location')
+        concept_repo.get_concept('save_path')
     ]
 
     inference_entries = [
@@ -76,12 +77,12 @@ def create_imperative_composition_repos():
             value_concepts=inf_values,
             flow_info={'flow_index': '1'},
             working_interpretation={
-                "with_thinking": True,  # This will select the 'thinking_save_and_wrap' paradigm
+                "paradigm": "thinking_save_and_wrap",
                 "value_order": {
                     "prompt_info": 0,
                     "input_1": 1,
                     "input_2": 2,
-                    "save_location": 3
+                    "save_path": 3
                 }
             },
         ),

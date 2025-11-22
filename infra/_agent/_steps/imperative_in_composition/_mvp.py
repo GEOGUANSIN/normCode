@@ -122,6 +122,9 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
     
     elif wrapper_type == "prompt_location":
         return f"{{%{{prompt_location}}: {content}}}"
+
+    elif wrapper_type == "save_path":
+        return f"{{%{{save_path}}: {content}}}"
         
     # --- Fallback for other wrappers: return the content inside the parentheses ---
     else:
@@ -170,6 +173,7 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
         "prompt_template": "{%{prompt_template}: ",
         "prompt_location": "{%{prompt_location}: ",
         "script_location": "{%{script_location}: ",
+        "save_path": "{%{save_path}: ",
     }
 
     flat_values = []
