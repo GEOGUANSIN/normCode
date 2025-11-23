@@ -67,6 +67,46 @@ class FileSystemTool:
             logger.error(f"Failed to save file at {location}: {e}")
             return {"status": "error", "message": str(e)}
 
+    def save_from_dict(self, content_dict: dict, directory: str) -> dict:
+        """
+        Saves the contents of a dictionary to multiple files in a specified directory.
+
+        Each key in the dictionary is used as a filename, and the corresponding value
+        is saved as the content of that file.
+
+        Args:
+            content_dict (dict): The dictionary containing filename-content pairs.
+            directory (str): The directory where the files will be saved. Can be
+                             absolute, or relative to the base_dir.
+
+        Returns:
+            dict: A dictionary with the status and a list of saved file locations.
+        """
+        if not isinstance(content_dict, dict):
+            return {"status": "error", "message": "content_dict must be a dictionary."}
+
+        saved_locations = []
+        try:
+            base_save_path = Path(directory) if Path(directory).is_absolute() else self._get_base_dir() / directory
+            
+            for filename, content in content_dict.items():
+                if not isinstance(content, str):
+                    logger.warning(f"Skipping non-string content for filename '{filename}'.")
+                    continue
+                
+                # Use the save method to handle directory creation and writing
+                result = self.save(content, str(base_save_path / filename))
+                if result["status"] == "success":
+                    saved_locations.append(result["location"])
+                else:
+                    # If any file fails to save, return an error immediately
+                    return {"status": "error", "message": f"Failed to save {filename}: {result['message']}", "saved_locations": saved_locations}
+
+            return {"status": "success", "saved_locations": saved_locations, "saved_location": saved_locations[0] if saved_locations else None}
+        except Exception as e:
+            logger.error(f"An error occurred in save_from_dict: {e}")
+            return {"status": "error", "message": str(e)}
+
     def read(self, location: str) -> dict:
         """
         Reads content from a specified file location.

@@ -16,6 +16,7 @@ except Exception:
 
 if TYPE_CHECKING:
     from infra._agent._models import FileSystemTool
+    from infra._agent._models._prompt import PromptTool
 
 # --- Constants for directory paths ---
 PROMPTS_DIR = os.path.join(PROJECT_ROOT, 'infra', '_agent', '_models', 'prompts')
@@ -82,7 +83,7 @@ def _read_file_content(location: str) -> str:
         logger.error(error_msg)
         return error_msg
 
-def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None) -> Any:
+def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None, prompt_tool: "PromptTool" | None) -> Any:
     """
     Processes a single string that might contain a special wrapper like '%{...}id(...)'
     and returns the resolved content.
@@ -131,16 +132,26 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
         return f"{{%{{script_location}}: {content}}}"
     
     elif wrapper_type == "prompt_location":
-        return f"{{%{{prompt_location}}: {content}}}"
+        if not prompt_tool:
+            return f"ERROR: PromptTool is required to handle '{wrapper_type}'"
+        try:
+            prompt_template = prompt_tool.read(content)
+            return f"{{%{{prompt_template}}: {prompt_template.template}}}"
+        except FileNotFoundError as e:
+            logger.error(f"Error reading prompt for '{content}': {e}")
+            return f"ERROR: Prompt not found: {content}"
 
     elif wrapper_type == "save_path":
         return f"{{%{{save_path}}: {content}}}"
+
+    elif wrapper_type == "save_dir":
+        return f"{{%{{save_dir}}: {content}}}"
         
     # --- Fallback for other wrappers: return the content inside the parentheses ---
     else:
         return content
 
-def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool" | None) -> Any:
+def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool" | None, prompt_tool: "PromptTool" | None) -> Any:
     """
     The main processing function for each element in a Reference. It flattens
     nested structures, resolves special wrappers, and formats the result.
@@ -156,7 +167,7 @@ def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool"
     
     flatten(element)
 
-    resolved_list = [_resolve_wrapper_string(item, file_system_tool) for item in flat_list]
+    resolved_list = [_resolve_wrapper_string(item, file_system_tool, prompt_tool) for item in flat_list]
 
     # If any item was resolved into a special instruction, return the list as-is
     if any(isinstance(s, str) and s.startswith('{%{') for s in resolved_list):
@@ -184,6 +195,7 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
         "prompt_location": "{%{prompt_location}: ",
         "script_location": "{%{script_location}: ",
         "save_path": "{%{save_path}: ",
+        "save_dir": "{%{save_dir}: ",
     }
 
     flat_values = []
@@ -205,11 +217,8 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
             inputs.append(val)
 
     # Add the regular inputs with generic keys
-    if len(inputs) == 1:
-        output_dict["input"] = inputs[0]
-    else:
-        for i, input_val in enumerate(inputs):
-            output_dict[f"input_{i+1}"] = input_val
+    for i, input_val in enumerate(inputs):
+        output_dict[f"input_{i+1}"] = input_val
             
     return output_dict
 
@@ -271,6 +280,7 @@ def memory_value_perception(states: States) -> States:
     logging.debug("--- Starting MVP ---")
 
     file_system_tool = getattr(states.body, "file_system", None)
+    prompt_tool = getattr(states.body, "prompt_tool", None)
 
     # 1. Order and select input values from the initial state
     ordered_refs = _get_ordered_input_references(states)
@@ -281,7 +291,7 @@ def memory_value_perception(states: States) -> States:
         return states
 
     # 2. Resolve special wrappers in each reference
-    processed_refs = [element_action(lambda e: _process_and_format_element(e, file_system_tool), [ref]) for ref in ordered_refs]
+    processed_refs = [element_action(lambda e: _process_and_format_element(e, file_system_tool, prompt_tool), [ref]) for ref in ordered_refs]
 
     # 3. Create all combinations of the processed inputs
     crossed_ref = cross_product(processed_refs)

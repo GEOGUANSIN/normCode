@@ -9,7 +9,8 @@ from infra._agent._models import (
 
 class Body:
 	def __init__(self, llm_name="qwen-turbo-latest", base_dir: str | None = None) -> None:
-		self.prompt = PromptTool()
+		self.prompt_tool = PromptTool(base_dir=base_dir)
+		self.prompt = PromptTool(base_dir=base_dir)
 		try:
 			from infra._agent._models import LanguageModel as _LM
 			self.llm = _LM(llm_name)

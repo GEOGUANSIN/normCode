@@ -1,0 +1,74 @@
+[
+    {
+        "concept_name": "{instruction distillation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/[1.2.2.2.]1.1_instruction_distillation.md)"
+        ]
+    },
+    {
+        "concept_name": "{output file location of instruction distillation}<:{output}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{save_path}id(next_iteration/1.1_instruction_block.md)"
+        ]
+    },
+    {
+        "concept_name": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>; {output}<$({output file location of instruction distillation})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "{1.1_instruction_block.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    },
+    {
+        "concept_name": "{input files}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false
+    },
+    {
+        "concept_name": "{original prompt}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{file_location}(direct_infra_experiment/nc_ai_planning_ex/iteration_6/prompts/0_original_prompt.md)"
+        ]
+    },
+    {
+        "concept_name": "{other input files}",
+        "type": "{}",
+        "is_ground_concept": false
+    },
+    {
+        "concept_name": "{location of related files prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/[1.2.2.3.3.2.]location_of_related_files_prompt.md)"
+        ]
+    },
+    {
+        "concept_name": ":>:{%(file_location)}({prompt}<$({location of related files prompt})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "::{%(&in)}()",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    }
+]

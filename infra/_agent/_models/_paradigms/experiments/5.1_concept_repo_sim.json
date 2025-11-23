@@ -1,22 +1,22 @@
 [
     {
-        "concept_name": "{instruction distillation prompt}<:{prompt}>",
+        "concept_name": "{prompt}<:{prompt}>",
         "type": "{}",
         "is_ground_concept": true,
         "reference_data": [
-            "%{prompt_location}(prompts/[1.2.2.2.]1.1_instruction_distillation.md)"
+            "%{prompt_location}(prompts/prompt.md)"
         ]
     },
     {
-        "concept_name": "{output directory of instruction distillation}<:{output}>",
+        "concept_name": "{output_dir}<:{output}>",
         "type": "{}",
         "is_ground_concept": true,
         "reference_data": [
-            "%{save_dir}id(next_iteration/)"
+            "%{save_dir}id(outputs/)"
         ]
     },
     {
-        "concept_name": "{input files}<:{1}>",
+        "concept_name": "{one_input}<:{1}>",
         "type": "{}",
         "is_ground_concept": true,
         "reference_data": [
@@ -24,7 +24,7 @@
         ]
     },
     {
-        "concept_name": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>; {output}<$({output directory of instruction distillation})%>)",
+        "concept_name": "::{%(composition)}({prompt}<$({prompt})%>: {one_input}<$({one_input})%>; {output}<$({output_dir})%>)",
         "type": "::({})",
         "is_ground_concept": true,
         "reference_data": [
@@ -32,7 +32,7 @@
         ]
     },
     {
-        "concept_name": "{1.1_instruction_block.md}",
+        "concept_name": "{output.md}",
         "type": "{}",
         "is_ground_concept": false,
         "is_final_concept": true

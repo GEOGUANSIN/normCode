@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[5]))
 
 from infra._orchest._repo import ConceptRepo, InferenceRepo
 from infra._orchest._orchestrator import Orchestrator
@@ -26,7 +26,7 @@ def create_repositories_from_files():
 
 if __name__ == "__main__":
     # 1. Prepare file system
-    (SCRIPT_DIR / "next_iteration").mkdir(exist_ok=True)
+    (SCRIPT_DIR / "outputs").mkdir(exist_ok=True)
 
     # 2. Setup logging
     log_filename = setup_orchestrator_logging(__file__)
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # 4. Construct a Body for imperatives/judgements
     # Assuming 'qwen-plus' is a valid LLM name in the user's environment.
-    body = Body(llm_name="qwen-plus", base_dir=SCRIPT_DIR)
+    body = Body(llm_name="qwen-turbo-latest", base_dir=SCRIPT_DIR)
 
     # 5. Construct and run the orchestrator
     orchestrator = Orchestrator(
