@@ -1,0 +1,31 @@
+:<: The plan is to execute the five-phase NormCode AI Planning Pipeline.
+    <= This is accomplished by a defined method.
+    <- The method is driven by pipeline phases.
+    <- The pipeline phases is composed of a series of pipeline phases.
+        <= The steps are a sequence of five distinct phases.
+        <- The first phase is Confirmation of Instruction.
+            <= This phase is specified as a series of steps.
+            <- Step 1.1 is to perform Automated Instruction Distillation.
+            <- Step 1.2 is to perform Automated Context Registration.
+            <- Step 1.3 is to allow for Manual Review of the Confirmation.
+        <- The second phase is Deconstruction into NormCode Plan.
+            <= This phase is specified as a series of steps.
+            <- Step 2.1 is to perform Automated NormCode Deconstruction.
+            <- Step 2.2 is to generate a Natural Language Translation.
+            <- Step 2.3 is to allow for Manual Review of the Deconstruction.
+        <- The third phase is Plan Formalization and Redirection.
+            <= This phase is specified as a series of steps.
+            <- Step 3.1 is to apply Serialization patterns.
+            <- Step 3.2 is to apply Redirection patterns.
+            <- Step 3.3 is to formalize the plan into a NormCode (.nc) file.
+            <- Step 3.4 is to generate an updated Natural Language Translation.
+            <- Step 3.5 is to allow for Manual Review of the Formalization.
+        <- The fourth phase is Contextualization and Prompt Assembly.
+            <= This phase is specified as a series of steps.
+            <- Step 4.1 is to perform Automated Context Distribution.
+            <- Step 4.2 is to generate the prompt files.
+            <- Step 4.3 is to allow for Manual Review of the Contextualization.
+        <- The fifth phase is Materialization into an Executable Script.
+            <= This phase is specified as a series of steps.
+            <- Step 5.1 is to perform Automated Script Generation.
+            <- Step 5.2 is to allow for Manual Review of the Materialization.

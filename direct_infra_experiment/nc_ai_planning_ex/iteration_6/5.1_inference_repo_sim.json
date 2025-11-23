@@ -1,0 +1,20 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1.2.2.1"
+        },
+        "inference_sequence": "imperative_direct",
+        "concept_to_infer": "{1.1_instruction_block.md}",
+        "function_concept": "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "value_concepts": [
+            "{instruction distillation prompt}<:{prompt}>",
+            "{input files}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "1.1_instruction_distillation.md",
+            "value_order": {
+                "{input files}<:{1}>": 1
+            }
+        }
+    }
+]

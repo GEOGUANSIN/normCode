@@ -1,0 +1,530 @@
+[
+    {
+        "concept_name": ":<:({result files})",
+        "type": ":<:",
+        "is_ground_concept": true,
+        "is_final_concept": false,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "&across",
+        "type": "&across",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "{Phase 1: Confirmation of Instruction}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "$.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])",
+        "type": "$.",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "{1.1_instruction_block.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)"
+        ]
+    },
+    {
+        "concept_name": "{instruction distillation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "1.1_instruction_distillation.md"
+        ]
+    },
+    {
+        "concept_name": "{input files}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "&in",
+        "type": "&in",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "{original prompt}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "prompts/0_original_prompt.md"
+        ]
+    },
+    {
+        "concept_name": "{other input files}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": ":>:{%(file_location)}({prompt}<$({location of related files prompt})%>)",
+        "type": ":>:",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":>:{%(file_location)}({prompt}<$({location of related files prompt})%>)"
+        ]
+    },
+    {
+        "concept_name": "{location of related files}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "location_of_related_files_prompt.md"
+        ]
+    },
+    {
+        "concept_name": "[{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>)"
+        ]
+    },
+    {
+        "concept_name": "{context registration prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "1.2_context_registration.md"
+        ]
+    },
+    {
+        "concept_name": ":>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+        "type": ":>:",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})"
+        ]
+    },
+    {
+        "concept_name": "{manual review prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "1.3_manual_review.md"
+        ]
+    },
+    {
+        "concept_name": "[{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{Phase 2: Deconstruction into NormCode Plan}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "$.([{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}])",
+        "type": "$.",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "{2.1_deconstruction_draft.ncd}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({deconstruction prompt})%>: {1}<$({1.1_instruction_block.md})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({deconstruction prompt})%>: {1}<$({1.1_instruction_block.md})%>)"
+        ]
+    },
+    {
+        "concept_name": "{deconstruction prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "2.1_deconstruction.md"
+        ]
+    },
+    {
+        "concept_name": "{1.1_instruction_block.md}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{2.2_deconstruction_draft.ncn}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)"
+        ]
+    },
+    {
+        "concept_name": "{natural language translation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "2.2_natural_language_translation.md"
+        ]
+    },
+    {
+        "concept_name": "{2.1_deconstruction_draft.ncd}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{Phase 3: Plan Formalization and Redirection}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "$.([{3.1_serialized.ncd}, {3.2_redirected.ncd}, {3.3_formalized.nc}, {3.4_natural_translation.ncn}])",
+        "type": "$.",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "{3.1_serialized.ncd}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({serialization prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({serialization prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)"
+        ]
+    },
+    {
+        "concept_name": "{serialization prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "3.1_serialization.md"
+        ]
+    },
+    {
+        "concept_name": "{3.2_redirected.ncd}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({redirection prompt})%>: {1}<$({3.1_serialized.ncd})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({redirection prompt})%>: {1}<$({3.1_serialized.ncd})%>)"
+        ]
+    },
+    {
+        "concept_name": "{redirection prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "3.2_redirection.md"
+        ]
+    },
+    {
+        "concept_name": "{3.1_serialized.ncd}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{3.3_formalized.nc}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({formalization prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({formalization prompt})%>: {1}<$({3.2_redirected.ncd})%>)"
+        ]
+    },
+    {
+        "concept_name": "{formalization prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "3.3_formalization.md"
+        ]
+    },
+    {
+        "concept_name": "{3.2_redirected.ncd}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{3.4_natural_translation.ncn}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({3.2_redirected.ncd})%>)"
+        ]
+    },
+    {
+        "concept_name": "[{3.3_formalized.nc}, {3.2_redirected.ncd}, {3.1_serialized.ncd}, {3.4_natural_translation.ncn}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{Phase 4: Contextualization and Prompt Assembly}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "$.([{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}])",
+        "type": "$.",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "[{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({context distribution prompt})%>: {1})",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({context distribution prompt})%>: {1})"
+        ]
+    },
+    {
+        "concept_name": "{context distribution prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "4.1_context_distribution.md"
+        ]
+    },
+    {
+        "concept_name": "[{3.3_formalized.nc}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{prompts/[__flow_index__]*.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({prompt generation prompt})%>: {1}<$({4.1_context_manifest.json})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({prompt generation prompt})%>: {1}<$({4.1_context_manifest.json})%>)"
+        ]
+    },
+    {
+        "concept_name": "{prompt generation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "4.2_prompt_generation.md"
+        ]
+    },
+    {
+        "concept_name": "{4.1_context_manifest.json}<:{1}>",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{Phase 5: Materialization into an Executable Script}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "$.([{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}])",
+        "type": "$.",
+        "is_ground_concept": true,
+        "is_invariant": true
+    },
+    {
+        "concept_name": "[{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "::{%(direct)}({prompt}<$({script generation prompt})%>: {1})",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "::{%(direct)}({prompt}<$({script generation prompt})%>: {1})"
+        ]
+    },
+    {
+        "concept_name": "{script generation prompt}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "5.1_script_generation.md"
+        ]
+    },
+    {
+        "concept_name": "[{3.3_formalized.nc}, {4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]<:{1}>",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{result files}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    },
+    {
+        "concept_name": "{1.2_initial_context_registerd.json}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{context_store/raw--*.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{3.1_serialized.ncd}, {3.2_redirected.ncd}, {3.3_formalized.nc}, {3.4_natural_translation.ncn}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{3.3_formalized.nc}, {3.2_redirected.ncd}, {3.1_serialized.ncd}, {3.4_natural_translation.ncn}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{4.1_context_manifest.json}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{context_store/__flow_index__--*.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{context_store/shared--*.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "[{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{concept_repo.json}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{inference_repo.json}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{5.1_executable_script.py}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": false
+    }
+]
