@@ -23,8 +23,8 @@
         "tool_name": "formatter_tool",
         "affordances": [
           {
-            "affordance_name": "create_substitute_function",
-            "call_code": "result = tool.create_substitute_function(template_key=params['template_key'])"
+            "affordance_name": "create_template_function",
+            "call_code": "result = tool.create_template_function(template=params['template'])"
           },
           {
             "affordance_name": "clean_code",
@@ -37,6 +37,14 @@
           {
             "affordance_name": "identity",
             "call_code": "result = lambda x: x"
+          },
+          {
+            "affordance_name": "collect_script_inputs",
+            "call_code": "result = tool.collect_script_inputs(all_inputs=params['all_inputs'])"
+          },
+          {
+            "affordance_name": "wrap",
+            "call_code": "result = tool.wrap"
           }
         ]
       },
@@ -72,9 +80,12 @@
     "steps": [
       {
         "step_index": 1,
-        "affordance": "formatter_tool.create_substitute_function",
+        "affordance": "formatter_tool.create_template_function",
         "params": {
-          "template_key": "prompt_template"
+          "template": {
+            "__type__": "MetaValue",
+            "key": "states.inference.concept"
+          }
         },
         "result_key": "template_fn"
       },
@@ -128,22 +139,21 @@
       },
       {
         "step_index": 10,
+        "affordance": "formatter_tool.collect_script_inputs",
+        "params": {},
+        "result_key": "collect_inputs_fn"
+      },
+      {
+        "step_index": 11,
+        "affordance": "formatter_tool.wrap",
+        "params": {},
+        "result_key": "wrap_fn"
+      },
+      {
+        "step_index": 12,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
-            {
-              "output_key": "script_inputs",
-              "function": {
-                "__type__": "MetaValue",
-                "key": "dict_get_fn"
-              },
-              "params": {
-                "dictionary": "__initial_input__"
-              },
-              "literal_params": {
-                "key": "script_inputs"
-              }
-            },
             {
               "output_key": "script_location",
               "function": {
@@ -155,6 +165,16 @@
               },
               "literal_params": {
                 "key": "script_location"
+              }
+            },
+            {
+              "output_key": "script_inputs",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "collect_inputs_fn"
+              },
+              "params": {
+                "all_inputs": "__initial_input__"
               }
             },
             {
@@ -199,25 +219,25 @@
               }
             },
             {
+              "output_key": "prompt_string",
               "condition": {
                 "key": "script_exists",
                 "operator": "is_false"
               },
-              "output_key": "prompt_string",
               "function": {
                 "__type__": "MetaValue",
                 "key": "template_fn"
               },
               "params": {
-                "__positional__": "__initial_input__"
+                "__positional__": "script_inputs"
               }
             },
             {
+              "output_key": "raw_llm_response",
               "condition": {
                 "key": "script_exists",
                 "operator": "is_false"
               },
-              "output_key": "raw_llm_response",
               "function": {
                 "__type__": "MetaValue",
                 "key": "generate_fn"
@@ -227,11 +247,11 @@
               }
             },
             {
+              "output_key": "clean_code",
               "condition": {
                 "key": "script_exists",
                 "operator": "is_false"
               },
-              "output_key": "clean_code",
               "function": {
                 "__type__": "MetaValue",
                 "key": "clean_code_fn"
@@ -241,11 +261,11 @@
               }
             },
             {
+              "output_key": "save_confirmation",
               "condition": {
                 "key": "script_exists",
                 "operator": "is_false"
               },
-              "output_key": "save_confirmation",
               "function": {
                 "__type__": "MetaValue",
                 "key": "save_fn"
@@ -282,9 +302,19 @@
               "literal_params": {
                 "function_name": "main"
               }
+            },
+            {
+              "output_key": "final_wrapped_result",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "wrap_fn"
+              },
+              "params": {
+                "__positional__": "execution_result"
+              }
             }
           ],
-          "return_key": "execution_result"
+          "return_key": "final_wrapped_result"
         },
         "result_key": "instruction_fn"
       }

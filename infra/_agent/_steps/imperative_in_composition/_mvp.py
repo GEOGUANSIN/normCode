@@ -87,7 +87,17 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
     Processes a single string that might contain a special wrapper like '%{...}id(...)'
     and returns the resolved content.
     """
-    if not isinstance(item, str) or not item.startswith("%{"):
+    if not isinstance(item, str) or not item.startswith("%"):
+        return item
+
+    # --- Handle simple wrappers like %id(value) first ---
+    simple_pattern = re.compile(r"^%[a-zA-Z0-9]+\((.*)\)$")
+    simple_match = simple_pattern.match(item)
+    if simple_match:
+        return simple_match.group(1)
+
+    # --- Handle complex wrappers like %{type}id(value) ---
+    if not item.startswith("%{"):
         return item
 
     pattern = re.compile(r"^%\{(.+?)\}(.*?)\((.+)\)$")

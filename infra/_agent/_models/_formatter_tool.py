@@ -69,6 +69,20 @@ class FormatterTool:
         print(f">>> MIA step: Wrapped data -> {wrapped_data}")
         return wrapped_data
 
+    def collect_script_inputs(self, all_inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Collects all key-value pairs from a dictionary where the key starts
+        with the prefix 'input_'.
+        """
+        if not isinstance(all_inputs, dict):
+            return {}
+        
+        script_inputs = {}
+        for key, value in all_inputs.items():
+            if key.startswith("input_"):
+                script_inputs[key] = value
+        return script_inputs
+
     def clean_code(self, raw_code: str) -> str:
         """Extracts code from a markdown block for python or json."""
         if not isinstance(raw_code, str):

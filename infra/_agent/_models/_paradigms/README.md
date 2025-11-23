@@ -1,54 +1,42 @@
 # Composition Paradigms
 
-This directory contains pre-defined, reusable composition paradigms stored in a declarative JSON format. These paradigms can be loaded by the `Paradigm` class (`infra/_agent/_models/_paradigms/_paradigm.py`) to quickly construct complex, multi-step functions without redefining the specifications each time.
+This directory contains pre-defined, reusable composition paradigms stored in a declarative JSON format. These paradigms can be loaded by an agent sequence to execute complex, multi-step functions.
 
-## Available Paradigms
+## Naming Convention
 
-### 1. `json_output.json`
+To ensure that a paradigm's function is completely clear from its name, all paradigms must follow a structured naming convention. The name is broken into three parts, separated by hyphens, describing the inputs, the composition logic, and the outputs.
 
--   **Purpose**: A simple paradigm for a common LLM task: take a prompt, generate a response, and ensure the output is a valid, parsed JSON object.
--   **Key Features**:
-    -   Uses a standard template substitution for the prompt.
-    -   Calls the `llm.generate` method with `response_format: {"type": "json_object"}` to instruct the model to return JSON.
-    -   Runs the raw response through a `parse` function.
--   **Returns**: The final, parsed dictionary.
-    ```json
-    "return_key": "parsed_dict"
-    ```
+**Structure:** `[inputs]-[composition]-[outputs].json`
 
-### 2. `thinking_save_and_wrap.json`
+**1. Inputs (`h_...` or `v_...`):**
+-   Describes the primary inputs for the paradigm, prefixed with `h_` for **Horizontal** (runtime) inputs or `v_` for **Vertical** (composition-time) inputs.
+-   Multiple inputs are separated by underscores.
+-   **Example:** `h_PromptTemplate_SavePath`
 
--   **Purpose**: Replicates the original `composition_experiment.py`. It models a complex workflow where the LLM "thinks", produces an answer, the answer is saved to a file, and the file path is then wrapped in a typed string for further processing.
--   **Key Features**:
-    -   Extracts a specific key (`answer`) from the LLM's JSON output.
-    -   Extracts a `save_path` from the initial runtime input.
-    -   Saves the extracted answer to the specified path.
-    -   Wraps the resulting file path in a typed string (e.g., `%{file_location}xxx(...)`).
--   **Returns**: The final, wrapped file path string.
-    ```json
-    "return_key": "mia_result"
-    ```
+**2. Composition (`c_...`):**
+-   Describes the sequence of actions inside the paradigm's execution plan, prefixed with `c_`.
+-   Actions are hyphenated.
+-   **Example:** `c_GenerateThinkJson-Extract-Save`
 
-### 3. `py_exec_horizontal_prompt.json`
+**3. Outputs (`o_...`):**
+-   Describes the final output of the paradigm, prefixed with `o_`.
+-   **Example:** `o_FileLocation`
 
--   **Purpose**: A general-purpose paradigm for generating and executing Python code. It includes conditional logic to reuse previously generated code. The prompt is provided at runtime.
--   **Key Features**:
-    -   **Horizontal Input**: Expects the `prompt_template` to be provided in the `vars` dictionary at runtime.
-    -   **Conditional Logic**: Checks if the target script file exists. If `True`, it reads the file; if `False`, it generates, cleans, and saves the code.
-    -   **Function Execution**: Uses the `python_interpreter.function_execute` method to call a specific function (named `main` by convention) within the script.
--   **Returns**: The direct result of the executed Python function.
-    ```json
-    "return_key": "execution_result"
-    ```
+**Full Example:**
+`h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation.json`
 
-### 4. `py_exec_vertical_prompt.json`
+This name provides a complete, self-documenting summary of the paradigm's entire workflow.
 
--   **Purpose**: A specialized paradigm for generating and executing Python code where the code-generation prompt is pre-configured by pulling a value from the `states` object at composition time.
--   **Key Features**:
-    -   **Vertical Input**: The `prompt_template` is specified as a `MetaValue` that resolves to an attribute on the `states` object at runtime (e.g., `states.inference.concept`). This makes the paradigm reusable for different state-provided prompts.
-    -   **Conditional Logic**: Same as the horizontal version, it checks for the existence of the script to avoid re-generating it.
-    -   **Function Execution**: Also uses `python_interpreter.function_execute`.
--   **Returns**: The direct result of the executed Python function.
-    ```json
-    "return_key": "execution_result"
-    ```
+## Paradigm Library
+
+#### `h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation.json`
+-   **Purpose**: An end-to-end workflow that takes a prompt template and a save path, generates a JSON response from an LLM, extracts the "answer" from it, and saves that answer to the specified path. The final output is the location of the saved file.
+-   **Replaces**: This is the successor to the monolithic `thinking_save_and_wrap.json`.
+
+#### `h_PromptTemplate_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_Execute-o_Normal.json`
+-   **Purpose**: A flexible paradigm that executes Python code. It takes a prompt and a script location. If the script already exists, it executes it. If not, it uses the LLM to generate the code, saves it, and then executes it. The final output is the raw result from the Python function, wrapped in the standard typeless format.
+-   **Replaces**: `py_exec_horizontal_prompt.json`.
+
+#### `v_PromptTemplate-h_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_Execute-o_Normal.json`
+-   **Purpose**: A vertical variant of the paradigm above. It performs the same complex conditional logic for generating and executing Python code, but its primary prompt template is provided vertically at composition time from the agent's state.
+-   **Replaces**: `py_exec_vertical_prompt.json`.
