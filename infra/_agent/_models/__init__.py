@@ -14,6 +14,7 @@ from ._file_system import FileSystemTool
 from ._python_interpreter import PythonInterpreterTool
 from ._composition_tool import CompositionTool
 from ._formatter_tool import FormatterTool
+from ._user_input_tool import UserInputTool
 
 # Model state dataclasses (from _states for convenience)
 from infra._states._model_state import (
@@ -42,6 +43,7 @@ __all__ = [
     "PythonInterpreterTool",
     "CompositionTool",
     "FormatterTool",
+    "UserInputTool",
     
     # Model state dataclasses
     "AffordanceSpecLite",

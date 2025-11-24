@@ -48,5 +48,5 @@ def tool_value_actuation(states: States) -> States:
             states.set_reference("inference", "TVA", final_ref)
 
     states.set_current_step("TVA")
-    logging.debug(f"TVA completed. Inference state after actuation: {states.inference}")
+    logging.debug(f"TVA completed. Full inference state before exit: {[r.step_name for r in states.inference]}")
     return states 

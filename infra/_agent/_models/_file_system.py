@@ -122,7 +122,7 @@ class FileSystemTool:
             file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
             if not file_path.exists():
                 logger.warning(f"File not found at {file_path}")
-                return {"status": "error", "message": "File not found."}
+                return {"status": "error", "message": f"File not found at {file_path}"}
             
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()

@@ -40,3 +40,6 @@ This name provides a complete, self-documenting summary of the paradigm's entire
 #### `v_PromptTemplate-h_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_Execute-o_Normal.json`
 -   **Purpose**: A vertical variant of the paradigm above. It performs the same complex conditional logic: if a script exists, it executes it; otherwise, it uses an LLM to generate Python code from a JSON response, saves it, and then executes it. Its primary prompt template is provided vertically at composition time from the agent's state.
 -   **Replaces**: `py_exec_vertical_prompt.json`.
+
+#### `h_UserPrompt-c_Ask-o_Normal.json`
+-   **Purpose**: A simple and direct paradigm that takes a prompt, displays it to the user in an interactive session, and returns the user's typed response as its output, wrapped in the standard `Normal` format. It is the primary mechanism for interactively asking a user for input.

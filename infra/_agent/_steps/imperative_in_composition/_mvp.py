@@ -59,27 +59,20 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
 
     return element_action(nested_selector_action, [ref])
 
-def _read_file_content(location: str) -> str:
+def _read_file_content(location: str, file_system_tool: "FileSystemTool" | None) -> str:
     """
-    Handles reading a file from a given location.
-    Location can be absolute or relative to the infra/_agent/_models/prompts/ directory.
+    Handles reading a file from a given location using the file system tool.
+    The tool correctly resolves paths relative to its configured base_dir.
     """
-    if os.path.isabs(location):
-        file_path = location
-    else:
-        # For relative paths, we'll check both PROMPTS_DIR and a potential SCRIPTS_DIR or other common places.
-        # For now, let's assume prompts is the primary location for such content files.
-        file_path = os.path.join(PROMPTS_DIR, location)
+    if not file_system_tool:
+        return f"ERROR: FileSystemTool is required to read '{location}' but was not provided."
 
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        error_msg = f"ERROR: Content file not found at location: {file_path}"
-        logger.error(error_msg)
-        return error_msg
-    except Exception as e:
-        error_msg = f"ERROR: Failed to read content file at {file_path}: {e}"
+    result = file_system_tool.read(location)
+    if result.get("status") == "success":
+        return result.get("content", "")
+    else:
+        # The file_system_tool.read method should now return a helpful message.
+        error_msg = result.get("message", f"ERROR: An unknown error occurred while reading {location}")
         logger.error(error_msg)
         return error_msg
 
@@ -120,12 +113,12 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
 
     # --- Handle direct prompt reading ---
     elif wrapper_type == "prompt":
-        prompt_content = _read_file_content(content)
+        prompt_content = _read_file_content(content, file_system_tool)
         return f"{{%{{prompt_template}}: {prompt_content}}}"
 
     # --- Handle file content reading and treat as a normal input ---
     elif wrapper_type == "file_location":
-        return _read_file_content(content)
+        return _read_file_content(content, file_system_tool)
 
     # --- Handle wrappers that do not resolve but are reformatted for later steps ---
     elif wrapper_type in ["script_location", "generated_script_path"]:

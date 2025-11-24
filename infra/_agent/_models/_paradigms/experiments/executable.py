@@ -5,20 +5,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[5]))
 from infra._orchest._repo import ConceptRepo, InferenceRepo
 from infra._orchest._orchestrator import Orchestrator
 from infra._agent._body import Body
+from infra._agent._models import UserInputTool
 from infra._loggers.utils import setup_orchestrator_logging
 import logging
 import os
 import json
 from pathlib import Path
 
+
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 def create_repositories_from_files():
-    with open(SCRIPT_DIR / '5.1_concept_repo_sim.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos' / '5.3_concept_repo.json', 'r') as f:
         concept_data = json.load(f)
     concept_repo = ConceptRepo.from_json_list(concept_data)
 
-    with open(SCRIPT_DIR / '5.1_inference_repo_sim.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos' / '5.3_inference_repo.json', 'r') as f:
         inference_data = json.load(f)
     inference_repo = InferenceRepo.from_json_list(inference_data, concept_repo)
     
@@ -38,6 +40,7 @@ if __name__ == "__main__":
     # 4. Construct a Body for imperatives/judgements
     # Assuming 'qwen-plus' is a valid LLM name in the user's environment.
     body = Body(llm_name="qwen-turbo-latest", base_dir=SCRIPT_DIR)
+    body.user_input = UserInputTool()
 
     # 5. Construct and run the orchestrator
     orchestrator = Orchestrator(
