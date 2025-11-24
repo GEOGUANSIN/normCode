@@ -16,11 +16,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 def create_repositories_from_files():
-    with open(SCRIPT_DIR / 'repos' / '5.3_concept_repo.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos' / '5.4_concept_repo.json', 'r') as f:
         concept_data = json.load(f)
     concept_repo = ConceptRepo.from_json_list(concept_data)
 
-    with open(SCRIPT_DIR / 'repos' / '5.3_inference_repo.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos' / '5.4_inference_repo.json', 'r') as f:
         inference_data = json.load(f)
     inference_repo = InferenceRepo.from_json_list(inference_data, concept_repo)
     

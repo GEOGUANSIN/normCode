@@ -69,6 +69,13 @@ class FormatterTool:
         print(f">>> MIA step: Wrapped data -> {wrapped_data}")
         return wrapped_data
 
+    def wrap_list(self, data_list: list | tuple, type: str | None = None) -> list[str]:
+        """Wraps each item in a list or tuple using the wrap method."""
+        if not isinstance(data_list, (list, tuple)):
+            # Return as is or raise an error if the input is not a list or tuple
+            return data_list
+        return [self.wrap(item, type) for item in data_list]
+
     def collect_script_inputs(self, all_inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Collects all key-value pairs from a dictionary where the key starts
