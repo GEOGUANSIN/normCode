@@ -24,12 +24,19 @@ SCRIPTS_DIR = os.path.join(PROJECT_ROOT,'infra', '_agent', '_models', 'scripts')
 logger = logging.getLogger(__name__)
 
 
+class UnpackedList(list):
+    """Wrapper to signal that a list should be exploded into multiple inputs."""
+    pass
+
+
 # --- Top-Level Helper Functions ---
 
 def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
     """Applies a selector to a reference to extract a specific value."""
     index = selector.get("index")
     key = selector.get("key")
+    unpack = selector.get("unpack", False)
+    unpack_before = selector.get("unpack_before_selection", False)
 
     def selector_action(element):
         import ast
@@ -44,13 +51,27 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
                     processed_element = ast.literal_eval(content)
                 except (ValueError, SyntaxError):
                     processed_element = content
+        
+        # Branch 1: Unpack Before Selection
+        if unpack_before and isinstance(processed_element, list):
+            results = []
+            for item in processed_element:
+                selected_item = item
+                if key is not None and isinstance(selected_item, dict):
+                    selected_item = selected_item.get(key)
+                results.append(selected_item)
+            return UnpackedList(results)
 
+        # Branch 2: Standard Selection (Unpack After)
         selected = processed_element
         if index is not None and isinstance(selected, list) and len(selected) > index:
             selected = selected[index]
 
         if key is not None and isinstance(selected, dict):
             selected = selected.get(key)
+
+        if unpack and isinstance(selected, list):
+            return UnpackedList(selected)
 
         return selected
 
@@ -151,7 +172,15 @@ def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool"
     """
     flat_list: List[Any] = []
     def flatten(el: Any):
-        if isinstance(el, list):
+        if isinstance(el, UnpackedList):
+             # Preserve UnpackedList structure so we can distinguish it later,
+             # but we still need to process its children.
+             # Actually, to process children, we might need to flatten it temporarily
+             # or handle it specifically.
+             # Let's treat UnpackedList as a list that we MUST flatten into the main flow
+             # but we need to resolve wrappers inside it first.
+             for item in el: flatten(item)
+        elif isinstance(el, list):
             for item in el: flatten(item)
         elif isinstance(el, dict):
             for value in el.values(): flatten(value)
@@ -169,11 +198,15 @@ def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool"
     # Otherwise, format into a human-readable string
     if not resolved_list:
         return ""
+    
+    # If we have multiple items, return the list so _format_inputs_as_dict can explode it
+    if len(resolved_list) > 1:
+        return resolved_list
+        
     if len(resolved_list) == 1:
         return str(resolved_list[0])
-    if len(resolved_list) == 2:
-        return f"{resolved_list[0]}, and {resolved_list[1]}"
-    return ", ".join(map(str, resolved_list[:-1])) + f", and {resolved_list[-1]}"
+        
+    return str(resolved_list)
 
 def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
     """
@@ -193,7 +226,9 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
 
     flat_values = []
     for val in values_list:
-        if isinstance(val, list):
+        # Always explode lists, whether they are UnpackedList or regular list,
+        # because _process_and_format_element flattens everything anyway.
+        if isinstance(val, list) or isinstance(val, UnpackedList):
             flat_values.extend(val)
         else:
             flat_values.append(val)
@@ -235,10 +270,11 @@ def _get_ordered_input_references(states: States) -> List[Reference]:
         if selector and "source_concept" in selector:
             source_name = selector["source_concept"]
             for i, v_record in enumerate(ir_values):
-                if not used_ir_values[i] and v_record.concept.name == source_name:
+                if v_record.concept.name == source_name:
                     selected_ref = _apply_selector(v_record.reference.copy(), selector)
                     ordered_refs.append(selected_ref)
-                    used_ir_values[i] = True
+                    # Do NOT mark as used here, so other selectors can use it too
+                    # used_ir_values[i] = True 
                     ref_found = True
                     break
         else:
@@ -296,4 +332,4 @@ def memory_value_perception(states: States) -> States:
 
     states.set_current_step("MVP")
     logging.debug(f"MVP completed. Final values set: {states.get_reference('values', 'MVP')}")
-    return states 
+    return states

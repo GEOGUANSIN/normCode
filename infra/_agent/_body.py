@@ -5,10 +5,12 @@ from infra._agent._models import (
     PythonInterpreterTool,
     FormatterTool,
     CompositionTool,
+	UserInputTool,
 )
 
 class Body:
-	def __init__(self, llm_name="qwen-turbo-latest", base_dir: str | None = None) -> None:
+	def __init__(self, llm_name="qwen-turbo-latest", base_dir: str | None = None, new_user_input_tool: bool = False) -> None:
+		self.base_dir = base_dir
 		self.prompt_tool = PromptTool(base_dir=base_dir)
 		self.prompt = PromptTool(base_dir=base_dir)
 		try:
@@ -68,7 +70,7 @@ class Body:
 					return input(full_prompt)
 				return input_fn
 		
-		self.user_input = _UserInputTool()
+		self.user_input = UserInputTool() if new_user_input_tool else _UserInputTool()
 		self.file_system = FileSystemTool(base_dir=base_dir)
 		self.python_interpreter = PythonInterpreterTool()
 		self.formatter_tool = FormatterTool()

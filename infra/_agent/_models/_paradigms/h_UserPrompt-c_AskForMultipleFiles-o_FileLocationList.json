@@ -47,7 +47,11 @@
           "step_index": 2,
           "affordance": "user_input.create_interaction",
           "params": {
-            "interaction_type": "multi_file_input"
+            "interaction_type": "multi_file_input",
+            "initial_directory": {
+              "__type__": "MetaValue",
+              "key": "states.body.base_dir"
+            }
           },
           "result_key": "user_files_fn"
         },
@@ -72,7 +76,7 @@
                   "dictionary": "__initial_input__"
                 },
                 "literal_params": {
-                  "key": "input_1"
+                  "key": "prompt_template"
                 }
               },
               {

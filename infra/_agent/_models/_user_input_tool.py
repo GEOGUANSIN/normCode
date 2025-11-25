@@ -73,14 +73,17 @@ class UserInputTool:
             prompt_text = kwargs.get(prompt_key, "Enter input: ")
             interaction_type = config.get("interaction_type", "simple_text")
             
+            # Build the config to pass to handlers
+            config_with_runtime = config.copy()
+            
             # For text_editor type, get the initial text
             if interaction_type == "text_editor":
                 initial_text_key = config.get("initial_text_key", "initial_text")
                 initial_text = kwargs.get(initial_text_key, "")
-                # Add initial_text to config for handlers
-                config_with_text = {**config, "initial_text": initial_text}
-            else:
-                config_with_text = config
+                config_with_runtime["initial_text"] = initial_text
+            
+            # For multi_file_input type, initial_directory is already in config from create_interaction params
+            # No additional processing needed as it's passed at creation time
 
             is_interactive = sys.stdin.isatty() or UserInputTool._can_use_gui
             if not is_interactive:
@@ -88,9 +91,9 @@ class UserInputTool:
                 return config.get("non_interactive_default", "Default response")
 
             if UserInputTool._can_use_gui:
-                return self._handle_gui_interaction(prompt_text, interaction_type, config_with_text)
+                return self._handle_gui_interaction(prompt_text, interaction_type, config_with_runtime)
             else:
-                return self._handle_cli_interaction(prompt_text, interaction_type, config_with_text)
+                return self._handle_cli_interaction(prompt_text, interaction_type, config_with_runtime)
 
         return interaction_fn
 
@@ -99,7 +102,8 @@ class UserInputTool:
         title = config.get("title", "User Input Required")
 
         if interaction_type == "multi_file_input" and sys.platform == "win32":
-            return self._handle_powershell_multi_file_input(prompt)
+            initial_directory = config.get("initial_directory")
+            return self._handle_powershell_multi_file_input(prompt, initial_directory)
         
         if interaction_type == "text_editor":
             initial_text = config.get("initial_text", "")
@@ -116,16 +120,20 @@ class UserInputTool:
             if 'root' in locals() and root.winfo_exists():
                 root.destroy()
 
-    def _handle_powershell_multi_file_input(self, prompt: str) -> list[str]:
+    def _handle_powershell_multi_file_input(self, prompt: str, initial_directory: str = None) -> list[str]:
         """
         Uses a PowerShell script to launch a native Windows multi-file selection dialog
         with a persistent GUI window showing accumulated files.
+        
+        Args:
+            prompt: The prompt text to display to the user
+            initial_directory: Optional initial directory for the file dialog
         """
-        logger.debug("Using PowerShell for multi-file selection with GUI buffer.")
+        logger.debug(f"Using PowerShell for multi-file selection with GUI buffer. Initial dir: {initial_directory}")
         
         try:
             import tkinter as tk
-            from tkinter import Listbox, Scrollbar, Button, Label, VERTICAL, END, MULTIPLE
+            from tkinter import Listbox, Scrollbar, Button, Label, VERTICAL, END, MULTIPLE, Toplevel, Text
         except ImportError:
             logger.warning("Tkinter not available, falling back to CLI.")
             return self._handle_cli_multi_file_input(prompt, {})
@@ -135,14 +143,30 @@ class UserInputTool:
         
         def add_files():
             """Open PowerShell file dialog and add selected files to the list."""
-            script = f"""
+            # Build the PowerShell script with optional initial directory
+            # Convert to string if it's a Path object
+            dir_str = str(initial_directory) if initial_directory else ""
+            
+            script = """
             Add-Type -AssemblyName System.Windows.Forms
             $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
             $openFileDialog.Title = "Select files to add"
             $openFileDialog.Multiselect = $true
-            if ($openFileDialog.ShowDialog() -eq 'OK') {{
+            $openFileDialog.RestoreDirectory = $false
+            """
+            
+            # Only add InitialDirectory if we have a valid path
+            if dir_str and os.path.exists(dir_str):
+                # Use absolute path and ensure it's properly formatted
+                abs_path = os.path.abspath(dir_str)
+                script += f"""
+            $openFileDialog.InitialDirectory = "{abs_path}"
+            """
+            
+            script += """
+            if ($openFileDialog.ShowDialog() -eq 'OK') {
                 $openFileDialog.FileNames
-            }}
+            }
             """
             try:
                 process = subprocess.run(
@@ -180,6 +204,46 @@ class UserInputTool:
             count_label.config(text=f"Files selected: {len(selected_files)}")
             logger.debug(f"Removed {len(selection)} files. Remaining: {len(selected_files)}")
         
+        def show_info():
+            """Display detailed instructions in a popup window."""
+            info_window = Toplevel(root)
+            info_window.title("Instructions")
+            info_window.geometry("600x400")
+            
+            # Create text widget with scrollbar
+            info_frame = tk.Frame(info_window)
+            info_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            info_scrollbar = Scrollbar(info_frame)
+            info_scrollbar.pack(side="right", fill="y")
+            
+            info_text = Text(
+                info_frame,
+                wrap="word",
+                font=("Arial", 10),
+                yscrollcommand=info_scrollbar.set,
+                padx=10,
+                pady=10
+            )
+            info_text.pack(side="left", fill="both", expand=True)
+            info_scrollbar.config(command=info_text.yview)
+            
+            # Insert the full prompt
+            info_text.insert("1.0", prompt)
+            info_text.config(state="disabled")  # Make read-only
+            
+            # Close button
+            close_btn = Button(
+                info_window,
+                text="Close",
+                command=info_window.destroy,
+                width=10,
+                bg="#2196F3",
+                fg="white",
+                font=("Arial", 10, "bold")
+            )
+            close_btn.pack(pady=10)
+        
         def confirm_selection():
             """Close the window and return the selected files."""
             root.quit()
@@ -190,9 +254,33 @@ class UserInputTool:
         root.title("File Selection")
         root.geometry("700x500")
         
-        # Prompt label
-        prompt_label = Label(root, text=prompt, font=("Arial", 10), wraplength=680, justify="left")
-        prompt_label.pack(pady=10)
+        # Header frame with title and info button
+        header_frame = tk.Frame(root)
+        header_frame.pack(pady=10, padx=20, fill="x")
+        
+        # Short prompt (truncated if too long)
+        short_prompt = prompt[:100] + "..." if len(prompt) > 100 else prompt
+        prompt_label = Label(
+            header_frame, 
+            text=short_prompt, 
+            font=("Arial", 10), 
+            wraplength=580, 
+            justify="left"
+        )
+        prompt_label.pack(side="left", fill="x", expand=True)
+        
+        # Info button (only show if prompt is long)
+        if len(prompt) > 100:
+            info_button = Button(
+                header_frame,
+                text="ℹ Info",
+                command=show_info,
+                width=8,
+                bg="#2196F3",
+                fg="white",
+                font=("Arial", 9, "bold")
+            )
+            info_button.pack(side="right", padx=5)
         
         # Count label
         count_label = Label(root, text="Files selected: 0", font=("Arial", 9, "bold"))

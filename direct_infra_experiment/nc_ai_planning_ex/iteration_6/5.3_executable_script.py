@@ -14,11 +14,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
 def create_repositories_from_files():
-    with open(SCRIPT_DIR / 'repos/5.1_concept_repo_sim.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos/5.3_concept_repo_sim.json', 'r') as f:
         concept_data = json.load(f)
     concept_repo = ConceptRepo.from_json_list(concept_data)
 
-    with open(SCRIPT_DIR / 'repos/5.1_inference_repo_sim.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos/5.3_inference_repo_sim.json', 'r') as f:
         inference_data = json.load(f)
     inference_repo = InferenceRepo.from_json_list(inference_data, concept_repo)
     
@@ -30,13 +30,13 @@ if __name__ == "__main__":
 
     # 2. Setup logging
     log_filename = setup_orchestrator_logging(__file__)
-    logging.info("=== Starting Simplified Pipeline Execution ===")
+    logging.info("=== Starting Simplified Pipeline Execution 5.3 ===")
 
     # 3. Build repositories from the generated JSON files
     concept_repo, inference_repo = create_repositories_from_files()
 
     # 4. Construct a Body for imperatives/judgements
-    # Assuming 'qwen-plus' is a valid LLM name in the user's environment.
+    # Using new_user_input_tool=True to enable the interaction paradigms
     body = Body(llm_name="qwen-plus", base_dir=SCRIPT_DIR, new_user_input_tool=True)
 
     # 5. Construct and run the orchestrator

@@ -36,6 +36,51 @@ class FormatterTool:
             return Template(str(prompt_template)).safe_substitute(substitution_vars)
         return substitute_fn
 
+    def create_smart_substitute_function(self, template_key: str, combine_to_key: str) -> Callable[[Dict[str, Any]], str]:
+        """
+        Factory method for a "smart" substitution that automatically bundles unused inputs.
+        
+        Args:
+            template_key: Key for the template string.
+            combine_to_key: The key (e.g. 'input_other') where all unused 'input_n' variables
+                            will be combined.
+        """
+        def substitute_fn(vars: Dict[str, Any]) -> str:
+            if template_key not in vars:
+                raise ValueError(f"'{template_key}' not found in vars")
+            
+            prompt_template = str(vars[template_key])
+            substitution_vars = {k: v for k, v in vars.items() if k != template_key}
+
+            # 1. Detect used input variables in the template
+            # We look for $input_n or ${input_n}
+            used_vars = set(re.findall(r'\$\{?(input_\d+)\}?', prompt_template))
+            
+            # 2. Identify unused input variables available in the data
+            # unused_inputs = []  <-- Remove this list, we'll build the combined string directly
+            combined_parts = []
+            
+            sorted_keys = sorted([k for k in substitution_vars.keys() if k.startswith("input_")])
+            
+            file_counter = 1
+            for k in sorted_keys:
+                if k not in used_vars:
+                    content = str(substitution_vars[k])
+                    # Wrap in XML tags
+                    combined_parts.append(f"<file_{file_counter}>\n{content}\n</file_{file_counter}>")
+                    file_counter += 1
+            
+            # 3. Combine them into the special key
+            if combined_parts:
+                substitution_vars[combine_to_key] = "\n\n".join(combined_parts)
+            else:
+                # If key doesn't exist yet, initialize it as empty string
+                if combine_to_key not in substitution_vars:
+                    substitution_vars[combine_to_key] = ""
+
+            return Template(prompt_template).safe_substitute(substitution_vars)
+        return substitute_fn
+
     def parse(self, raw_response: str) -> Dict[str, Any]:
         """
         Parses a JSON string into a Python dictionary.

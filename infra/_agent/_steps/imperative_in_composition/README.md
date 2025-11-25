@@ -53,21 +53,70 @@ The sequence is configured by passing the paradigm's name in the `working_interp
 
 The sequence is primarily configured through the `working_interpretation` dictionary.
 
-**Example:**
+### Basic Structure
+
 ```json
 {
-  "paradigm": "thinking_save_and_wrap",
+  "paradigm": "filename_without_extension",
   "value_order": {
-    "prompt_info": 0,
-    "input_1": 1,
-    "input_2": 2,
-    "save_path": 3
+    "concept_name_or_alias": 0,
+    "another_concept": 1
   }
 }
 ```
 
--   **`paradigm`** (required): The filename (without `.json`) of the paradigm to load from the `infra/_agent/_models/_paradigms/` directory.
--   **`value_order`** (required): A dictionary that maps the names of the input concepts to a numerical order. This ensures the `MVP` step processes the data in the correct sequence before passing it to the paradigm.
+-   **`paradigm`** (required): The filename of the paradigm to load.
+-   **`value_order`**: A map defining the order of inputs. The keys become the input variables for the paradigm (mapped to `input_1`, `input_2`, etc. by default).
+
+### Advanced Data Selection (`value_selectors`)
+
+You can precise control over which data is extracted from input concepts using `value_selectors`.
+
+```json
+{
+  "working_interpretation": {
+    "paradigm": "my_paradigm",
+    "value_order": {
+      "my_custom_input": 0
+    },
+    "value_selectors": {
+      "my_custom_input": {
+        "source_concept": "{concept_name}",  // The concept to read from
+        "index": 0,                          // (Optional) Select item at index 0 from a list
+        "key": "some_key"                    // (Optional) Select value of "some_key" from a dict
+      }
+    }
+  }
+}
+```
+
+### Unpacking Lists
+
+If a selected value is a list (e.g., a list of files), you can "explode" it into multiple sequential inputs (e.g., `input_2`, `input_3`, `input_4`) using unpacking flags.
+
+#### 1. Unpack After Selection (`unpack: true`)
+Use this when your selector points to a list, and you want to use the items in that list as inputs.
+
+```json
+"other_files": {
+    "source_concept": "{input files}",
+    "key": "{other input files}",
+    "unpack": true
+}
+```
+*Result:* The list found at `{other input files}` is exploded.
+
+#### 2. Unpack Before Selection (`unpack_before_selection: true`)
+Use this when you have a list of objects, and you want to apply the selector (e.g., `key`) to *each item* in that list individually, then use the resulting list of values.
+
+```json
+"file_contents": {
+    "source_concept": "{grouped files}",
+    "key": "content",
+    "unpack_before_selection": true
+}
+```
+*Result:* Iterates through the list at `{grouped files}`, extracts `content` from each item, and explodes the resulting list of contents.
 
 ## Wrapper Syntax in MVP
 

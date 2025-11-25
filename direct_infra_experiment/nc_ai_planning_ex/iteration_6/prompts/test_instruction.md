@@ -1,4 +1,4 @@
-﻿# Context
+# Context
 
 ## Pipeline Goal and Structure
 
@@ -128,7 +128,7 @@ $input_1
 
 ## Output Format
 
-Execute the Automated Instruction Distillation for the raw prompt in the context of the other input files and return a JSON object with the following structure:
+Execute the instruction and return a JSON object with the following structure:
 
 - **`analysis`**: Your reasoning about the task
 - **`answer`**: A dictionary where:
