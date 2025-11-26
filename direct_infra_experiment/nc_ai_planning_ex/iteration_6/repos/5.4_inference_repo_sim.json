@@ -1,0 +1,24 @@
+[
+
+    {
+        "flow_info": {
+            "flow_index": "5.4.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{context file copying result}",
+        "function_concept": "::{%(composition)}({prompt}<$({context file copying prompt})%>)",
+        "value_concepts": [
+            "{context file copying prompt}",
+            "{context file mapping}",
+            "{context file copying script location}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplate_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_ExecuteWBody-o_Normal",
+            "value_order": {
+                "{context file copying prompt}": 0,
+                "{context file mapping}": 1,
+                "{context file copying script location}": 2
+            }
+        }
+    }
+]

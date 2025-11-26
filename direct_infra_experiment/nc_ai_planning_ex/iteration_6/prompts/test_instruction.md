@@ -1,125 +1,16 @@
-# Context
 
-## Pipeline Goal and Structure
 
-### The NormCode Pipeline
-
-The project goal is to bootstrap from a high-level natural language prompt into a structured and executable plan:
-
-1. **Distilling** the user's intent into a clean instruction and registering all raw context.
-2. **Deconstructing** the instruction into a formal, hierarchical NormCode plan (`.ncd`).
-3. **Formalizing** the plan by applying serialization and redirection patterns and generating a final `.nc` file.
-4. **Contextualizing** the plan by enriching each formal step with precise, granular context and assembling prompts.
-5. **Materializing** the final plan into an executable script, ready for an orchestrator.
-
-This creates a system that can understand, decompose, contextualize, and act upon complex instructions in a transparent and repeatable manner.
-
----
-
-# Task
-
-## Main Instruction
-
-### Step 1.1: Automated Instruction Distillation
-
-The process begins by feeding the raw user prompt to an LLM guided by a specialized meta-prompt. This meta-prompt instructs the model to perform a sophisticated analysis, separating the core procedural instructions from all other contextual information.
-
-The goal is to produce one key artifact:
-
-1. **Instruction Block:** This contains the clean, unambiguous, and procedural logic—the "what to do." It is synthesized from the core request in the user's prompt. This is a markdown file.
-
----
-
-## Examples
-
-### Example 1: Simple & Casual Request
-
-**Input (Raw Prompt):**
-```
-"hey can you just get me the latest sales report and email it to me and Sarah? sarah@example.com"
-```
-
-**Input (Other Input Files):**
-```xml
-[]
-```
-
-**Output (Instruction Block):**
-```json
-{
-    "analysis": "The user wants a sales report and wants to email it to two people. I will distill this into a two-step instruction.",
-    "answer": {
-        "1.1_instruction_block.md": "Generate the latest sales report. Then, send an email with the report attached to analyst@example.com and sarah@example.com."
-    }
-}
-```
-
-### Example 2: Complex & Technical Request
-
-**Input (Raw Prompt):**
-```markdown
-Okay, here's the workflow for deploying the new feature.
-1.  Run the migration script on the staging database.
-2.  If it succeeds, deploy the `feature-branch` to the staging environment.
-3.  Notify the #dev-ops channel on Slack with the results.
-
-Make sure the deployment only happens outside of peak hours (9am-5pm PST).
-```
-
-**Input (Other Input Files):**
-```xml
-[]
-```
-
-**Output (Instruction Block):**
-```json
-{
-    "analysis": "The user provided a multi-step deployment plan with a conditional step. I will combine these into a single, coherent instruction block.",
-    "answer": {
-        "1.1_instruction_block.md": "Run the migration script on the staging database. If the migration is successful, deploy the feature-branch to the staging environment and send a Slack message to the #dev-ops channel with the results."
-    }
-}
-```
-
-### Example 3: Request with Additional Context Files
-
-**Input (Raw Prompt):**
-```
-You will write a test script that will be used to test the new user input tool. the context files will be given like this.
-```
-
-**Input (Other Input Files):**
-```xml
-<file_1>
-This is a test instruction for the test script, where you can infer a lot of things. You can infer a lot of things from this instruction.
-</file_1>
-
-<file_2>
-You will write a test script that will be used to test the new user input tool.
-</file_2>
-```
-
-**Output (Instruction Block):**
-```json
-{
-    "analysis": "The user wants to create a test script for a new user input tool. The context files provide additional information about the test requirements. I will distill this into a clear instruction that incorporates the context.",
-    "answer": {
-        "1.1_instruction_block.md": "Write a test script that will be used to test the new user input tool. The script should incorporate the test instructions and requirements provided in the context files."
-    }
-}
-```
-
+Your task is to combine all the file locations into a json file, with the key being the file name and the value being the file location.
 ---
 
 ## Input
 
-**Other Input Files:**
+**Other Input Locations:**
 ```xml
 $input_other
 ```
-*Note: When provided, other input files will be formatted as XML-style tags with numbered file identifiers (e.g., `<file_1>...</file_1>`, `<file_2>...</file_2>`). If no other files are provided, this will be an empty array `[]`.*
 
-**Raw Prompt:**
+**Raw Location::**
 ```
 $input_1
 ```
@@ -131,9 +22,9 @@ $input_1
 Execute the instruction and return a JSON object with the following structure:
 
 - **`analysis`**: Your reasoning about the task
-- **`answer`**: A dictionary where:
-  - **Key**: The file name (e.g., `'1.1_instruction_block.md'`)
-  - **Value**: The content of the instruction block
+- **`answer`**: A dictionary where the key is the filename to create and the value is its content.
+  - **Key**: `"combined_files.json"` (This file will be created)
+  - **Value**: A JSON string (or object) containing the map of filenames to their locations.
+    - Example content: `{"file1.txt": "path/to/file1.txt", "file2.md": "path/to/file2.md"}`
 
 Return only the JSON object, no additional text or formatting.
-

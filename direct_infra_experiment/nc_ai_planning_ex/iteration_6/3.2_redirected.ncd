@@ -15,14 +15,25 @@
                     <- {location of related files}<:{prompt}>
                         |%{prompt_location}: location_of_related_files_prompt.md
         <- [{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
-            <- {output file location of instruction distillation}<:{output}>
-                |%{location_string}: 1.1_instruction_block.md
-            <= ::{%(composition)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>; {output}<$({output file locations of context registration})%>)
-            <- {context registration prompt}<:{prompt}>
-                |%{prompt_location}: prompts/1.2_context_registration.md
-            <- {input files}<:{1}>
-            <- {output file locations of context registration}<:{output}>
-                |%{location_string}: 1.2_initial_context_registerd.json, context_store/raw--*.md
+
+            <= &in[{1.2_initial_context_registerd.json}:_, {context_store/raw--*.md}:_]
+            
+            <- {1.2_initial_context_registerd.json}<$%={file_location}>
+                <= ::{%(composition)}({prompt}<$({context file copying prompt})%>: {1}<$%={normal/location_string}>; {output}<$({output file location of context file copying})>)
+                <- {context file copying prompt}<:{prompt}>
+                    |%{prompt_location}: prompts/1.2a_context_file_copying.md
+                <- {input files}<:{1}>
+                <- {output directory of context file copying}<:{output_directory}>
+                    |%{location_string}: context_store/
+
+            <- {context_store/raw--*.md}<$%={file_location}>
+                <= ::{%(composition)}({prompt}<$({context file copying prompt})%>, {script}<$({context file copying script})%>: {1}>)
+                <- {context file copying prompt}<:{prompt}>
+                    |%{prompt_location}: prompts/[1.2.3.3.]1.2a_context_file_copying.md
+                <- {context file copying script}<:{script}>
+                    |%{script_location}: scripts/1.2a_context_file_copying.py
+                <- {1.2_initial_context_registerd.json}<:{1}>
+
         <- [{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
             <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
             <- {manual review prompt}<:{prompt}>

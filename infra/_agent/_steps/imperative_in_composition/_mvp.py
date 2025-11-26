@@ -37,33 +37,53 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
     key = selector.get("key")
     unpack = selector.get("unpack", False)
     unpack_before = selector.get("unpack_before_selection", False)
+    strip_wrapper = selector.get("strip_wrapper", False)
+    new_wrapper = selector.get("new_wrapper")
 
     def selector_action(element):
         import ast
 
-        processed_element = element
-        if isinstance(element, str) and element.startswith("%"):
-            open_paren_index = element.find("(")
-            close_paren_index = element.rfind(")")
-            if open_paren_index > 0 and close_paren_index == len(element) - 1:
-                content = element[open_paren_index + 1: close_paren_index]
-                try:
-                    processed_element = ast.literal_eval(content)
-                except (ValueError, SyntaxError):
-                    processed_element = content
+        def strip(val):
+            if isinstance(val, str) and val.startswith("%"):
+                open_paren_index = val.find("(")
+                close_paren_index = val.rfind(")")
+                if open_paren_index > 0 and close_paren_index == len(val) - 1:
+                    content = val[open_paren_index + 1: close_paren_index]
+                    try:
+                        return ast.literal_eval(content)
+                    except (ValueError, SyntaxError):
+                        return content
+            return val
+
+        processed_element = strip(element)
         
+        # Determine starting point. 
+        # If we need to drill down (key/index/unpack_before), we MUST work on the stripped/processed element.
+        # If strip_wrapper is requested, we also start with processed (though it might be a container).
+        use_processed = (strip_wrapper or new_wrapper is not None or unpack_before or key is not None or index is not None)
+        target = processed_element if use_processed else element
+
+        def process_final_item(val):
+            # If explicitly stripping or re-wrapping, ensure we strip any wrapper on the final item
+            if strip_wrapper or new_wrapper:
+                val = strip(val)
+            
+            if new_wrapper and val is not None:
+                return f"%{{{new_wrapper}}}id({val})"
+            return val
+
         # Branch 1: Unpack Before Selection
-        if unpack_before and isinstance(processed_element, list):
+        if unpack_before and isinstance(target, list):
             results = []
-            for item in processed_element:
+            for item in target:
                 selected_item = item
                 if key is not None and isinstance(selected_item, dict):
                     selected_item = selected_item.get(key)
-                results.append(selected_item)
+                results.append(process_final_item(selected_item))
             return UnpackedList(results)
 
         # Branch 2: Standard Selection (Unpack After)
-        selected = processed_element
+        selected = target
         if index is not None and isinstance(selected, list) and len(selected) > index:
             selected = selected[index]
 
@@ -71,9 +91,9 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
             selected = selected.get(key)
 
         if unpack and isinstance(selected, list):
-            return UnpackedList(selected)
+            return UnpackedList([process_final_item(item) for item in selected])
 
-        return selected
+        return process_final_item(selected)
 
     def nested_selector_action(element):
         return selector_action(element)
