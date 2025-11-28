@@ -1,3 +1,10 @@
+"""
+Parser module for NormCode expressions.
+
+⚠️ NOTE: This parser is still under development and is only a temporary version.
+The parsing logic may change in future iterations as the NormCode syntax evolves.
+"""
+
 from infra._logger import logger
 from typing import Dict, Any
 import re

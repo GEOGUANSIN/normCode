@@ -17,6 +17,8 @@ from infra._orchest._parser import (
 from infra._orchest._blackboard import Blackboard
 from infra._orchest._orchestrator import Orchestrator
 from infra._orchest._tracker import ProcessTracker
+from infra._orchest._checkpoint import CheckpointManager
+from infra._orchest._db import OrchestratorDB
 
 # Data classes and repositories
 from infra._orchest._repo import (
@@ -49,6 +51,8 @@ __all__ = [
     "Blackboard",
     "Orchestrator",
     "ProcessTracker",
+    "CheckpointManager",
+    "OrchestratorDB",
     
     # Data classes and repositories
     "ConceptEntry",

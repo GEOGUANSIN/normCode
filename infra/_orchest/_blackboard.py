@@ -96,4 +96,32 @@ class Blackboard:
     def check_progress_condition(self, concept_name: str) -> bool:
         """Checks if a concept's status is 'complete'."""
         logging.info(f"Completed concepts for condition check '{concept_name}': {self.get_completed_concepts()}")
-        return self.get_concept_status(concept_name) == 'complete' 
+        return self.get_concept_status(concept_name) == 'complete'
+
+    # --- Serialization helpers for checkpointing ---
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes the blackboard state to a dictionary."""
+        return {
+            "concept_statuses": self.concept_statuses.copy(),
+            "item_statuses": self.item_statuses.copy(),
+            "item_results": self.item_results.copy(),
+            "item_execution_counts": self.item_execution_counts.copy(),
+            "item_completion_details": self.item_completion_details.copy(),
+            "completed_concept_timestamps": self.completed_concept_timestamps.copy(),
+            # concept_to_flow_index is derivable, but keeping it makes restoration trivial.
+            "concept_to_flow_index": self.concept_to_flow_index.copy(),
+        }
+
+    def load_from_dict(self, data: Dict[str, Any]):
+        """Updates the blackboard state from a dictionary."""
+        if not data:
+            return
+        self.concept_statuses.update(data.get("concept_statuses", {}))
+        self.item_statuses.update(data.get("item_statuses", {}))
+        self.item_results.update(data.get("item_results", {}))
+        self.item_execution_counts.update(data.get("item_execution_counts", {}))
+        self.item_completion_details.update(data.get("item_completion_details", {}))
+        self.completed_concept_timestamps.update(data.get("completed_concept_timestamps", {}))
+        self.concept_to_flow_index.update(data.get("concept_to_flow_index", {}))
+        logging.info("Blackboard state loaded from dictionary.")

@@ -8,6 +8,8 @@ from infra._orchest._blackboard import Blackboard
 from infra._orchest._repo import ConceptEntry, InferenceEntry, ConceptRepo, InferenceRepo
 from infra._orchest._waitlist import WaitlistItem, Waitlist
 from infra._orchest._tracker import ProcessTracker
+from infra._orchest._db import OrchestratorDB
+from infra._orchest._checkpoint import CheckpointManager
 from infra._agent._body import Body
 
 class Orchestrator:
@@ -21,7 +23,8 @@ class Orchestrator:
                  blackboard: Optional[Blackboard] = None,
                  agent_frame_model: str = "demo",
                  body: Optional[Body] = None,
-                 max_cycles: int = 30):
+                 max_cycles: int = 30,
+                 db_path: Optional[str] = None):
         self.inference_repo = inference_repo
         self.concept_repo = concept_repo
         self.agent_frame_model = agent_frame_model
@@ -31,6 +34,19 @@ class Orchestrator:
         self.tracker = ProcessTracker()
         self.max_cycles = max_cycles
         self.workspace = {}
+        
+        # Initialize checkpointing system if db_path is provided
+        self.db: Optional[OrchestratorDB] = None
+        self.checkpoint_manager: Optional[CheckpointManager] = None
+        if db_path:
+            self.db = OrchestratorDB(db_path)
+            self.checkpoint_manager = CheckpointManager(self.db)
+            self.tracker.set_db(self.db)
+            logging.info(f"Checkpointing enabled with database at: {db_path}")
+        
+        # Track execution IDs for status updates
+        self._current_execution_ids: Dict[str, int] = {}  # flow_index -> execution_id
+        
         self._create_waitlist()
         self._initialize_blackboard()
 
@@ -192,6 +208,7 @@ class Orchestrator:
         """
         Executes a real inference using a fresh AgentFrame for each execution.
         Updates the item's result and returns the new status.
+        Captures all logs emitted during execution and stores them in the database.
         """
         flow_index = item.inference_entry.flow_info['flow_index']
         self.blackboard.increment_execution_count(flow_index)
@@ -202,13 +219,58 @@ class Orchestrator:
             self.blackboard.set_item_result(flow_index, "Error: Missing Inference object")
             return "failed"
 
+        # Set up log capture for this execution
+        log_handler = None
+        execution_id = None
+        
+        # Create execution record first to get execution_id (if DB is available)
+        if self.tracker.db:
+            execution_id = self.tracker.add_execution_record(
+                cycle=self.tracker.cycle_count,
+                flow_index=flow_index,
+                inference_type=item.inference_entry.inference_sequence,
+                status='in_progress',
+                concept_inferred=item.inference_entry.concept_to_infer.concept_name
+            )
+            
+            # Store execution_id for later status update
+            if execution_id is not None:
+                self._current_execution_ids[flow_index] = execution_id
+                
+                # Create and attach log handler to capture all logs
+                log_handler = self.tracker.create_log_handler(execution_id=execution_id)
+                root_logger = logging.getLogger()
+                root_logger.addHandler(log_handler)
+
         try:
             states = self._execute_agent_frame(item, inference)
-            return self._process_inference_state(states, item)
+            status = self._process_inference_state(states, item)
+            
+            # Capture and save logs
+            if log_handler and execution_id is not None:
+                log_content = log_handler.get_log_content()
+                if log_content.strip():  # Only save if there's content
+                    self.tracker.capture_inference_log(execution_id, log_content)
+            
+            return status
 
         except Exception as e:
             self._handle_inference_failure(item, e)
+            
+            # Capture logs even on failure
+            if log_handler and execution_id is not None:
+                log_content = log_handler.get_log_content()
+                if log_content.strip():
+                    self.tracker.capture_inference_log(execution_id, log_content)
+            
             return "failed"
+        
+        finally:
+            # Remove log handler
+            if log_handler:
+                root_logger = logging.getLogger()
+                root_logger.removeHandler(log_handler)
+                log_handler.clear()
 
     def _execute_agent_frame(self, item: WaitlistItem, inference: Inference) -> BaseStates:
         """Creates and executes an AgentFrame for a given inference."""
@@ -396,16 +458,19 @@ class Orchestrator:
         return None
 
     def _update_execution_tracking(self, item: WaitlistItem, status: str):
-        """Updates the process tracker after an item execution attempt."""
+        """
+        Updates the process tracker after an item execution attempt.
+        Note: The execution record is created in _inference_execution() before execution
+        to get the execution_id for log capture. This method updates the status and counters.
+        """
         flow_index = item.inference_entry.flow_info['flow_index']
-
-        self.tracker.add_execution_record(
-            cycle=self.tracker.cycle_count,
-            flow_index=flow_index,
-            inference_type=item.inference_entry.inference_sequence,
-            status=status,
-            concept_inferred=item.inference_entry.concept_to_infer.concept_name
-        )
+        
+        # Update the execution record status if we have the execution_id
+        execution_id = self._current_execution_ids.get(flow_index)
+        if execution_id is not None and self.tracker.db:
+            self.tracker.update_execution_status(execution_id, status)
+            # Clean up the stored execution_id
+            del self._current_execution_ids[flow_index]
 
         if status == 'completed':
             detail = self.blackboard.get_item_completion_detail(item.inference_entry.flow_info['flow_index'])
@@ -471,6 +536,59 @@ class Orchestrator:
         stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if self.blackboard.get_item_status(i.inference_entry.flow_info['flow_index']) != 'completed']
         logging.warning(f"Stuck items: {stuck_items}")
 
+    @classmethod
+    def load_checkpoint(cls,
+                       concept_repo: ConceptRepo,
+                       inference_repo: InferenceRepo,
+                       db_path: str,
+                       agent_frame_model: str = "demo",
+                       body: Optional[Body] = None,
+                       max_cycles: int = 30) -> 'Orchestrator':
+        """
+        Initialize the system from an existing DB file (checkpoint).
+        Creates a new Orchestrator instance and reconciles its state with the checkpoint.
+        """
+        # Initialize DB and checkpoint manager
+        db = OrchestratorDB(db_path)
+        checkpoint_manager = CheckpointManager(db)
+        
+        # Create a new orchestrator instance
+        orchestrator = cls(
+            concept_repo=concept_repo,
+            inference_repo=inference_repo,
+            agent_frame_model=agent_frame_model,
+            body=body,
+            max_cycles=max_cycles,
+            db_path=db_path
+        )
+        
+        # Load the latest checkpoint
+        checkpoint_data = checkpoint_manager.load_latest_checkpoint()
+        if checkpoint_data:
+            # Reconcile state with checkpoint
+            checkpoint_manager.reconcile_state(checkpoint_data, orchestrator)
+            logging.info(f"Successfully loaded checkpoint from {db_path}")
+        else:
+            logging.warning(f"No checkpoint found in {db_path}. Starting fresh orchestration.")
+        
+        return orchestrator
+
+    def export_state(self) -> Dict[str, Any]:
+        """
+        Exports the comprehensive state of the orchestration.
+        Includes execution history, logs, and concept states.
+        """
+        if self.checkpoint_manager:
+            return self.checkpoint_manager.export_comprehensive_state(self)
+        
+        logging.warning("Checkpoint manager not initialized. Returning partial in-memory state.")
+        return {
+            "blackboard": self.blackboard.to_dict(),
+            "tracker": self.tracker.to_dict(),
+            "workspace": self.workspace, # Note: Reference objects might not be serialized here without CheckpointManager
+            "warning": "Full export requires checkpoint manager (DB) to be initialized."
+        }
+
     def run(self) -> List[ConceptEntry]:
         """Runs the orchestration loop until completion or deadlock."""
         if not self.waitlist:
@@ -486,6 +604,10 @@ class Orchestrator:
             logging.info(f"--- Cycle {self.tracker.cycle_count} ---")
             
             progress_made, retries = self._run_cycle(retries)
+            
+            # Save checkpoint at the end of each cycle
+            if self.checkpoint_manager:
+                self.checkpoint_manager.save_state(self.tracker.cycle_count, self)
             
             if not progress_made:
                 logging.warning("No progress made in the last cycle. Deadlock detected.")

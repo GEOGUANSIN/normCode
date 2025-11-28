@@ -17,6 +17,8 @@ try:
     from infra._orchest._waitlist import WaitlistItem, Waitlist
     from infra._orchest._tracker import ProcessTracker
     from infra._orchest._orchestrator import Orchestrator
+    from infra._orchest._db import OrchestratorDB
+    from infra._orchest._checkpoint import CheckpointManager
     from infra._loggers.utils import setup_orchestrator_logging
     from infra._agent._body import Body
 except Exception:
@@ -24,6 +26,8 @@ except Exception:
     here = pathlib.Path(__file__).parent
     sys.path.insert(0, str(here.parent.parent.parent))
     from infra import ConceptEntry, InferenceEntry, ConceptRepo, InferenceRepo, Orchestrator, Blackboard, Body
+    from infra._orchest._db import OrchestratorDB
+    from infra._orchest._checkpoint import CheckpointManager
     from infra._loggers.utils import setup_orchestrator_logging
 
 # Import the result validator and random number generator
@@ -1202,9 +1206,23 @@ if __name__ == "__main__":
                        help='First number for fixed input mode (default: "12")')
     parser.add_argument('--number2', type=str, default="92",
                        help='Second number for fixed input mode (default: "92")')
+    parser.add_argument('--resume', action='store_true',
+                       help='Resume from the last checkpoint if available (default: auto-resume if checkpoint exists)')
+    parser.add_argument('--fresh', action='store_true',
+                       help='Force a fresh start, ignoring any existing checkpoint')
+    parser.add_argument('--max-cycles', type=int, default=50,
+                       help='Maximum number of cycles to run (default: 50). When resuming, this is the total limit.')
+    parser.add_argument('--additional-cycles', type=int, default=None,
+                       help='Additional cycles to run beyond the checkpoint (overrides --max-cycles when resuming)')
+    parser.add_argument('--db-path', type=str, default="orchestration_checkpoint.db",
+                       help='Path to the checkpoint database file')
     
     args = parser.parse_args()
     
+    # Ensure DB path is absolute or relative to script dir
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(script_dir, args.db_path)
+
     if args.random:
         # Run with random numbers
         print("Running in RANDOM MODE")
@@ -1226,18 +1244,28 @@ if __name__ == "__main__":
 
         # --- Create generated code directories if they don't exist ---
         examples_dir = os.path.dirname(__file__)
-        script_dir = os.path.join(examples_dir, "generated_scripts")
-        prompt_dir = os.path.join(examples_dir, "generated_prompts")
-        os.makedirs(script_dir, exist_ok=True)
-        os.makedirs(prompt_dir, exist_ok=True)
+        script_dir_gen = os.path.join(examples_dir, "generated_scripts")
+        prompt_dir_gen = os.path.join(examples_dir, "generated_prompts")
+        os.makedirs(script_dir_gen, exist_ok=True)
+        os.makedirs(prompt_dir_gen, exist_ok=True)
 
         # 1. Create repositories
-        length_max = 20
+        length_max = 10
+        # If resuming, we might want to use the same numbers as before, but for now 
+        # we assume the user provides the same inputs or we just use the defaults/generated ones.
+        # Ideally, inputs should be part of the restored state if they are ground concepts.
+        # Since ground concepts are part of the repo, and repo is passed to load_checkpoint,
+        # we need to make sure we reconstruct the repo correctly.
+        
+        # For this example, we regenerate/use the numbers. 
+        # Note: If resuming, the Orchestrator will reconcile state. 
+        # If ground concepts were already complete in the DB, they will remain complete.
+        
         number_1, number_2 = quick_generate(min_length=length_max/2, max_length=length_max, seed=25)
-        # number_1 = "12"
-        # number_2 = "82"
-        # number_1 = args.number1
-        # number_2 = args.number2
+        # Override with args if provided (logic could be improved here to respect args always if not generating)
+        # logic in original script was generating large numbers. 
+        # Let's stick to the generation logic for consistency with "complete_code" example.
+        
         logging.info(f"Generated numbers: {number_1} + {number_2}")
 
         concept_repo, inference_repo = create_appending_repositories_new(
@@ -1251,16 +1279,76 @@ if __name__ == "__main__":
         body = Body(llm_name="qwen-plus", base_dir=examples_dir)
 
         # 2. Initialize and run the orchestrator
-        orchestrator = Orchestrator(
-            concept_repo=concept_repo,
-            inference_repo=inference_repo,
-            body=body,
-            # max_cycles=20*length_max,
-            max_cycles=50,
-        )
+        # Determine if we should resume (default: auto-resume if checkpoint exists, unless --fresh is set)
+        should_resume = False
+        checkpoint_cycle = 0
+        
+        if not args.fresh and os.path.exists(db_path):
+            # Check if checkpoint exists and get current cycle
+            try:
+                db = OrchestratorDB(db_path)
+                checkpoint_manager = CheckpointManager(db)
+                checkpoint_data = checkpoint_manager.load_latest_checkpoint()
+                if checkpoint_data:
+                    # Get cycle count from checkpoint
+                    checkpoint_cycle = checkpoint_data.get("tracker", {}).get("cycle_count", 0)
+                    should_resume = True
+                    print(f"--- Found checkpoint at cycle {checkpoint_cycle} ---")
+            except Exception as e:
+                logging.warning(f"Could not read checkpoint: {e}. Starting fresh.")
+                should_resume = False
+        
+        if should_resume:
+            # Calculate max_cycles: use additional_cycles if specified, otherwise add max_cycles to checkpoint
+            if args.additional_cycles is not None:
+                max_cycles = checkpoint_cycle + args.additional_cycles
+                print(f"--- Resuming from cycle {checkpoint_cycle}, will run for {args.additional_cycles} additional cycles (total: {max_cycles}) ---")
+            else:
+                # Default: add max_cycles to the checkpoint cycle (e.g., if at cycle 50 and max_cycles=50, run until 100)
+                max_cycles = checkpoint_cycle + args.max_cycles
+                print(f"--- Resuming from cycle {checkpoint_cycle}, will run for {args.max_cycles} additional cycles (total: {max_cycles}) ---")
+            
+            logging.info(f"Resuming orchestration from {db_path} (cycle {checkpoint_cycle}, max_cycles={max_cycles})")
+            orchestrator = Orchestrator.load_checkpoint(
+                concept_repo=concept_repo,
+                inference_repo=inference_repo,
+                db_path=db_path,
+                body=body,
+                max_cycles=max_cycles
+            )
+        else:
+            if args.fresh:
+                print("Starting fresh execution (--fresh flag set).")
+            elif args.resume:
+                print(f"Checkpoint not found at {db_path}. Starting fresh.")
+            else:
+                print("Starting fresh execution (no checkpoint found).")
+            
+            # Clean up old DB if starting fresh
+            if args.fresh and os.path.exists(db_path):
+                try:
+                    os.remove(db_path)
+                    print(f"Removed old checkpoint DB: {db_path}")
+                except Exception as e:
+                    print(f"Warning: Could not remove old DB: {e}")
+
+            orchestrator = Orchestrator(
+                concept_repo=concept_repo,
+                inference_repo=inference_repo,
+                body=body,
+                # max_cycles=20*length_max,
+                max_cycles=args.max_cycles,
+                db_path=db_path
+            )
 
         # 3. Run the orchestrator
-        final_concepts = orchestrator.run()
+        try:
+            final_concepts = orchestrator.run()
+        except KeyboardInterrupt:
+            print("\n\n!!! Execution interrupted by user !!!")
+            print("State has been saved to checkpoint.")
+            print(f"Run with --resume to continue from the last completed cycle.")
+            sys.exit(0)
 
         # 4. Log the final result
         logging.info("--- Final Concepts Returned ---")
@@ -1287,7 +1375,17 @@ if __name__ == "__main__":
             print("\n⚠️  Validation could not be completed")
 
         logging.info(f"=== Orchestrator Demo Complete - Log saved to {log_filename} ===")
+        
+        # Optional: Export full state for debugging
+        try:
+            full_state = orchestrator.export_state()
+            import json
+            # Filter out non-serializable parts for a quick dump if needed, or rely on export_state doing it right
+            # For now just print confirmation
+            print(f"\nFinal State Export contains {len(full_state.get('execution_history', []))} execution records.")
+        except Exception as e:
+            logging.error(f"Failed to export final state: {e}")
     
     print(f"\n{'='*80}")
     print("PROGRAM COMPLETED")
-    print(f"{'='*80}") 
+    print(f"{'='*80}")

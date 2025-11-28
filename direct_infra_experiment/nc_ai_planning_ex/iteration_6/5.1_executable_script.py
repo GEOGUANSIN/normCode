@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import argparse
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from infra._orchest._repo import ConceptRepo, InferenceRepo
@@ -25,6 +26,11 @@ def create_repositories_from_files():
     return concept_repo, inference_repo
 
 if __name__ == "__main__":
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Run NormCode orchestration with checkpointing support.")
+    parser.add_argument("--resume", action="store_true", help="Resume execution from the last checkpoint.")
+    args = parser.parse_args()
+
     # 1. Prepare file system
     (SCRIPT_DIR / "next_iteration").mkdir(exist_ok=True)
 
@@ -39,13 +45,41 @@ if __name__ == "__main__":
     # Assuming 'qwen-plus' is a valid LLM name in the user's environment.
     body = Body(llm_name="qwen-plus", base_dir=SCRIPT_DIR, new_user_input_tool=True)
 
+    # Define database path for checkpointing
+    db_path = SCRIPT_DIR / "orchestration.db"
+    logging.info(f"Database path: {db_path}")
+
     # 5. Construct and run the orchestrator
-    orchestrator = Orchestrator(
-        concept_repo=concept_repo,
-        inference_repo=inference_repo,
-        body=body,
-        max_cycles=300,
-    )
+    if args.resume and db_path.exists():
+        logging.info(f"--- Resuming from checkpoint: {db_path} ---")
+        orchestrator = Orchestrator.load_checkpoint(
+            concept_repo=concept_repo,
+            inference_repo=inference_repo,
+            db_path=str(db_path),
+            body=body,
+            max_cycles=300
+        )
+    else:
+        if args.resume:
+            logging.warning("Resume requested but DB not found. Starting fresh.")
+        
+        # If starting fresh, remove existing DB to ensure a clean state
+        if db_path.exists():
+            try:
+                os.remove(db_path)
+                logging.info("Removed existing database for fresh start.")
+            except OSError as e:
+                logging.warning(f"Could not remove existing DB: {e}")
+
+        logging.info("--- Starting Fresh Execution ---")
+        orchestrator = Orchestrator(
+            concept_repo=concept_repo,
+            inference_repo=inference_repo,
+            body=body,
+            max_cycles=300,
+            db_path=str(db_path)  # Enable checkpointing
+        )
+
     final_concepts = orchestrator.run()
 
     # 6. Inspect and log final concepts

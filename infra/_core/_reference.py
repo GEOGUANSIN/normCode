@@ -691,18 +691,52 @@ def join(references: List['Reference'], new_axis_name: str) -> 'Reference':
     for i, ref in enumerate(references[1:], 1):
         if not isinstance(ref, Reference):
             raise TypeError("All elements must be Reference instances")
+        
+        # Handle axis permutation
         if ref.axes != common_axes:
-            raise ValueError(
-                f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
-            )
+            if set(ref.axes) == set(common_axes):
+                # Realign axes to match common_axes
+                ref = ref.slice(*common_axes)
+            else:
+                raise ValueError(
+                    f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
+                )
+        
         if ref.shape != common_shape:
             raise ValueError(
                 f"Shape mismatch at index {i}. Expected {common_shape}, got {ref.shape}"
             )
-
+            
     new_axes = [new_axis_name] + common_axes
     new_shape = (len(references),) + common_shape
-    new_data = [ref.tensor for ref in references]
+    new_data = [ref.tensor for ref in references]  # Use original ref list? No, use aligned refs!
+
+    # We need to update the list of references to use the aligned ones
+    # But the loop iterates over references[1:]. first_ref is references[0].
+    # Let's restructure slightly to collect aligned references.
+    
+    aligned_references = [first_ref]
+    for i, ref in enumerate(references[1:], 1):
+        if not isinstance(ref, Reference):
+            raise TypeError("All elements must be Reference instances")
+        
+        if ref.axes != common_axes:
+            if set(ref.axes) == set(common_axes):
+                ref = ref.slice(*common_axes)
+            else:
+                raise ValueError(
+                    f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
+                )
+        
+        if ref.shape != common_shape:
+            raise ValueError(
+                f"Shape mismatch at index {i}. Expected {common_shape}, got {ref.shape}"
+            )
+        aligned_references.append(ref)
+
+    new_axes = [new_axis_name] + common_axes
+    new_shape = (len(aligned_references),) + common_shape
+    new_data = [ref.tensor for ref in aligned_references]
 
     # Create and return new Reference
     result = Reference(

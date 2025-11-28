@@ -1,4 +1,5 @@
 import logging
+import io
 from typing import List, Union, Optional
 from datetime import datetime
 import pathlib
@@ -149,3 +150,41 @@ def log_workspace_details(workspace: dict, logger_instance: Optional[logging.Log
                 else:
                     logger_instance.info(f"        Value: {reference}")
     logger_instance.info("-------------------------")
+
+
+class ExecutionLogHandler(logging.Handler):
+    """
+    Custom logging handler that captures logs during inference execution.
+    
+    This handler captures all log messages emitted during an execution and stores
+    them in a buffer for later retrieval and persistence to a database.
+    """
+    
+    def __init__(self, execution_id: Optional[int] = None):
+        """
+        Initialize the execution log handler.
+        
+        Args:
+            execution_id: Optional execution ID to associate with captured logs
+        """
+        super().__init__()
+        self.execution_id = execution_id
+        self.log_buffer = io.StringIO()
+        self.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    
+    def emit(self, record):
+        """Capture log records to buffer."""
+        try:
+            msg = self.format(record)
+            self.log_buffer.write(msg + '\n')
+        except Exception:
+            self.handleError(record)
+    
+    def get_log_content(self) -> str:
+        """Get all captured log content."""
+        return self.log_buffer.getvalue()
+    
+    def clear(self):
+        """Clear the log buffer."""
+        self.log_buffer.seek(0)
+        self.log_buffer.truncate(0)

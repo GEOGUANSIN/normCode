@@ -1,13 +1,18 @@
 import logging
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import List, Dict, Optional, Any
 from infra._orchest._waitlist import WaitlistItem
 from infra._orchest._repo import ConceptRepo
+from infra._loggers import ExecutionLogHandler
 
 @dataclass
 class ProcessTracker:
     """Tracks the orchestration process and provides statistics."""
-    execution_history: List[Dict] = field(default_factory=list)
+    # execution_history is now managed via DB, but we keep a local list fallback or just rely on DB
+    # For backward compatibility/simplicity if DB is missing, we could keep it, 
+    # but the plan says "Instead of holding execution_history in memory lists... write directly to shared database".
+    # So we will prioritize DB.
+    
     completion_order: List[str] = field(default_factory=list)
     cycle_count: int = 0
     total_executions: int = 0
@@ -15,18 +20,32 @@ class ProcessTracker:
     skipped_executions: int = 0
     failed_executions: int = 0
     retry_count: int = 0
-    
+    db: Optional[Any] = None  # OrchestratorDB instance
+
+    def set_db(self, db: Any):
+        """Sets the shared database instance."""
+        self.db = db
+
     def add_execution_record(self, cycle: int, flow_index: str, inference_type: str, 
-                           status: str, concept_inferred: str):
-        """Adds a record of an execution attempt."""
-        record = {
-            'cycle': cycle,
-            'flow_index': flow_index,
-            'inference_type': inference_type,
-            'status': status,
-            'concept_inferred': concept_inferred
-        }
-        self.execution_history.append(record)
+                           status: str, concept_inferred: str) -> Optional[int]:
+        """Adds a record of an execution attempt. Returns execution_id."""
+        if self.db:
+            return self.db.insert_execution(cycle, flow_index, inference_type, status, concept_inferred)
+        return None
+    
+    def capture_inference_log(self, execution_id: int, log_content: str):
+        """Captures detailed logs for a specific execution."""
+        if self.db and execution_id is not None:
+            self.db.insert_log(execution_id, log_content)
+    
+    def update_execution_status(self, execution_id: int, status: str):
+        """Updates the status of an execution record."""
+        if self.db and execution_id is not None:
+            self.db.update_execution_status(execution_id, status)
+    
+    def create_log_handler(self, execution_id: Optional[int] = None) -> ExecutionLogHandler:
+        """Creates a logging handler for capturing logs during execution."""
+        return ExecutionLogHandler(execution_id=execution_id)
     
     def record_completion(self, flow_index: str):
         """Records a successful completion."""
@@ -41,6 +60,65 @@ class ProcessTracker:
         if terminal_executions == 0:
             return 0.0
         return (self.successful_executions / terminal_executions) * 100
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize tracker state (counters). History is in DB."""
+        return {
+            "completion_order": self.completion_order,
+            "cycle_count": self.cycle_count,
+            "total_executions": self.total_executions,
+            "successful_executions": self.successful_executions,
+            "skipped_executions": self.skipped_executions,
+            "failed_executions": self.failed_executions,
+            "retry_count": self.retry_count
+        }
+
+    def load_from_dict(self, data: Dict[str, Any]):
+        """Restore tracker state."""
+        self.completion_order = data.get("completion_order", [])
+        self.cycle_count = data.get("cycle_count", 0)
+        self.total_executions = data.get("total_executions", 0)
+        self.successful_executions = data.get("successful_executions", 0)
+        self.skipped_executions = data.get("skipped_executions", 0)
+        self.failed_executions = data.get("failed_executions", 0)
+        self.retry_count = data.get("retry_count", 0)
+    
+    def load_from_db(self):
+        """Initialize internal counters (success/fail counts) by querying the DB upon restart."""
+        if not self.db:
+            logging.warning("No database instance available. Cannot load counters from DB.")
+            return
+        
+        try:
+            execution_history = self.db.get_execution_history()
+            execution_counts = self.db.get_execution_counts()
+            
+            # Reset counters
+            self.total_executions = len(execution_history)
+            self.successful_executions = execution_counts.get('completed', 0)
+            self.failed_executions = execution_counts.get('failed', 0)
+            self.retry_count = execution_counts.get('pending', 0)
+            
+            # Determine skipped executions from completion details (would need to check blackboard or logs)
+            # For now, we'll use a simple heuristic: count 'completed' status as successful
+            # The actual skipped count should come from the checkpoint data
+            
+            # Get the maximum cycle count
+            if execution_history:
+                self.cycle_count = max(record.get('cycle', 0) for record in execution_history)
+            
+            # Rebuild completion order from history
+            self.completion_order = [
+                record['flow_index'] 
+                for record in execution_history 
+                if record.get('status') == 'completed'
+            ]
+            
+            logging.info(f"Loaded tracker state from DB: {self.total_executions} total executions, "
+                        f"{self.successful_executions} successful, {self.failed_executions} failed, "
+                        f"{self.retry_count} retries, cycle {self.cycle_count}")
+        except Exception as e:
+            logging.error(f"Failed to load tracker state from DB: {e}")
     
     def log_summary(self, waitlist_id: str, waitlist_items: List[WaitlistItem], blackboard, concept_repo: ConceptRepo):
         """Logs a comprehensive summary of the orchestration process."""
@@ -72,7 +150,11 @@ class ProcessTracker:
             logging.info(f"  {i:2d}. {flow_index}")
         
         logging.info("--- Execution Flow ---")
-        for record in self.execution_history:
+        execution_history = []
+        if self.db:
+            execution_history = self.db.get_execution_history()
+            
+        for record in execution_history:
             status_symbol = "[OK]" if record['status'] == 'completed' else "[RETRY]" if record['status'] == 'pending' else "[FAIL]"
             logging.info(f"  Cycle {record['cycle']}: {status_symbol} {record['flow_index']} ({record['inference_type']}) -> {record['concept_inferred']}")
 
