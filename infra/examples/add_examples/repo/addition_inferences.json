@@ -1,0 +1,656 @@
+[
+  {
+    "id": "32275442-ad4c-4880-b314-e37f19471f27",
+    "inference_sequence": "quantifying",
+    "concept_to_infer": "{new number pair}",
+    "function_concept": "*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]",
+    "value_concepts": [
+      "{number pair}"
+    ],
+    "context_concepts": [
+      "{number pair}*1",
+      "{carry-over number}*1"
+    ],
+    "flow_info": {
+      "flow_index": "1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "every",
+        "quantifier_index": 1,
+        "LoopBaseConcept": "{number pair}",
+        "CurrentLoopBaseConcept": "{number pair}*1",
+        "group_base": "number pair",
+        "InLoopConcept": {
+          "{carry-over number}*1": 1
+        },
+        "ConceptToInfer": [
+          "{new number pair}"
+        ]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": true,
+    "start_without_function": false,
+    "start_without_function_only_once": true,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": true
+  },
+  {
+    "id": "42265f26-5c7d-47ac-9613-976f34433b19",
+    "inference_sequence": "assigning",
+    "concept_to_infer": "*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]",
+    "function_concept": "$.({remainder})",
+    "value_concepts": [
+      "{remainder}",
+      "{digit sum}",
+      "{number pair}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{remainder}",
+        "assign_destination": "*every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "90308084-d76f-4548-b44a-e2aadb6c4938",
+    "inference_sequence": "imperative_python_indirect",
+    "concept_to_infer": "{digit sum}",
+    "function_concept": "::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)",
+    "value_concepts": [
+      "[all {unit place value} of numbers]",
+      "{carry-over number}*1",
+      "{sum}?",
+      "nominalized_action_sum",
+      "prompt_location_sum"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.2"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "[all {unit place value} of numbers]": 1,
+        "{carry-over number}*1": 2,
+        "{sum}?": 3,
+        "nominalized_action_sum": 4,
+        "prompt_location_sum": 5
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "59d868de-0466-4f67-bffe-053d3c5785c1",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "[all {unit place value} of numbers]",
+    "function_concept": "&across({unit place value}:{number pair}*1)",
+    "value_concepts": [
+      "{unit place value}"
+    ],
+    "context_concepts": [
+      "{number pair}*1"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.2.4"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axis_concepts": "{number pair}*1"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "3922c791-aa96-4284-aa56-48c1151ebc03",
+    "inference_sequence": "quantifying",
+    "concept_to_infer": "{unit place value}",
+    "function_concept": "*every({number pair}*1)%:[{number}]@(2)",
+    "value_concepts": [
+      "{number pair}*1"
+    ],
+    "context_concepts": [
+      "{number pair}*1*2"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.2.4.2"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "every",
+        "quantifier_index": 2,
+        "LoopBaseConcept": "{number pair}*1",
+        "CurrentLoopBaseConcept": "{number pair}*1*2",
+        "group_base": "number",
+        "InLoopConcept": {},
+        "ConceptToInfer": [
+          "{unit place value}"
+        ]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": true,
+    "start_without_function": false,
+    "start_without_function_only_once": true,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": true
+  },
+  {
+    "id": "6f9d7266-8436-4bb0-9600-3419fba7774c",
+    "inference_sequence": "assigning",
+    "concept_to_infer": "*every({number pair}*1)%:[{number}]@(2)",
+    "function_concept": "$.({single unit place value})",
+    "value_concepts": [
+      "{single unit place value}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.2.4.2.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{single unit place value}",
+        "assign_destination": "*every({number pair}*1)%:[{number}]@(2)"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "db773da2-82d6-47af-ade0-4d119beda8cd",
+    "inference_sequence": "imperative_python_indirect",
+    "concept_to_infer": "{single unit place value}",
+    "function_concept": "::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)",
+    "value_concepts": [
+      "{number pair}*1*2",
+      "{unit place digit}?",
+      "nominalized_action_get_digit",
+      "prompt_location_get_digit"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.2.4.2.1.2"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{number pair}*1*2": 1,
+        "{unit place digit}?": 2,
+        "nominalized_action_get_digit": 3,
+        "prompt_location_get_digit": 4
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "c89c691b-2eaf-4561-9c5d-b860ff8c0d7a",
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{number pair}",
+    "function_concept": "$+({number pair to append}:{number pair})",
+    "value_concepts": [
+      "{number pair to append}",
+      "{number pair}",
+      "<all number is 0>",
+      "<carry-over number is 0>"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "+",
+        "assign_source": "{number pair to append}",
+        "assign_destination": "{number pair}",
+        "by_axes": [
+          "number pair"
+        ]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "414e20cf-c176-4091-9bf2-40136144d5b6",
+    "inference_sequence": "timing",
+    "concept_to_infer": "$+({number pair to append}:{number pair})",
+    "function_concept": "@if!(<all number is 0>)",
+    "value_concepts": [],
+    "context_concepts": [
+      "<all number is 0>"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.3.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if!",
+        "condition": "<all number is 0>"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "7193806e-2c54-47d3-9251-57efa63d5fb6",
+    "inference_sequence": "timing",
+    "concept_to_infer": "@if!(<all number is 0>)",
+    "function_concept": "@if(<carry-over number is 0>)",
+    "value_concepts": [],
+    "context_concepts": [
+      "<carry-over number is 0>"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.3.1.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<carry-over number is 0>"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "38204766-fee3-4e6c-85ab-a47ccb1bfd1e",
+    "inference_sequence": "quantifying",
+    "concept_to_infer": "{number pair to append}",
+    "function_concept": "*every({number pair}*1)%:[{number}]@(3)",
+    "value_concepts": [
+      "{number pair}*1"
+    ],
+    "context_concepts": [
+      "{number pair}*1*3"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.3.2"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "every",
+        "quantifier_index": 3,
+        "LoopBaseConcept": "{number pair}*1",
+        "CurrentLoopBaseConcept": "{number pair}*1*3",
+        "group_base": "number",
+        "InLoopConcept": {},
+        "ConceptToInfer": [
+          "{number pair to append}"
+        ]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": true,
+    "start_without_function": false,
+    "start_without_function_only_once": true,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": true
+  },
+  {
+    "id": "3491496e-f16a-4d1a-afcf-981ba5db72ef",
+    "inference_sequence": "assigning",
+    "concept_to_infer": "*every({number pair}*1)%:[{number}]@(3)",
+    "function_concept": "$.({number with last digit removed})",
+    "value_concepts": [
+      "{number with last digit removed}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.2.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{number with last digit removed}",
+        "assign_destination": "*every({number pair}*1)%:[{number}]@(3)"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "3db54100-1208-4fe8-8246-a042b76e6204",
+    "inference_sequence": "imperative_python_indirect",
+    "concept_to_infer": "{number with last digit removed}",
+    "function_concept": "::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",
+    "value_concepts": [
+      "{number pair}*1*3",
+      "{unit place digit}?",
+      "nominalized_action_remove_digit",
+      "prompt_location_remove_digit"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.2.1.2"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{number pair}*1*3": 1,
+        "{unit place digit}?": 2,
+        "nominalized_action_remove_digit": 3,
+        "prompt_location_remove_digit": 4
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "b1aa589e-b708-4a87-b513-2d147790dfff",
+    "inference_sequence": "judgement_python_indirect",
+    "concept_to_infer": "<all number is 0>",
+    "function_concept": ":%(True):<{1}<$({number})%_> is 0>",
+    "value_concepts": [
+      "{number pair to append}",
+      "nominalized_action_is_zero",
+      "prompt_location_is_zero"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.3"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{number pair to append}": 1,
+        "nominalized_action_is_zero": 2,
+        "prompt_location_is_zero": 3
+      },
+      "condition": "True"
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "8800896b-a5ed-450e-a521-5ffb71f39109",
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(True):<{1}<$({number})%_> is 0>",
+    "function_concept": "@after({number pair to append}<$={1}>)",
+    "value_concepts": [
+      "{number pair to append}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.3.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "after",
+        "condition": "{number pair to append}"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "ba0a01f3-4bb3-497b-9307-e8d494ee7409",
+    "inference_sequence": "judgement_python_indirect",
+    "concept_to_infer": "<carry-over number is 0>",
+    "function_concept": ":%(True):<{1}<$({carry-over number})%_> is 0>",
+    "value_concepts": [
+      "{carry-over number}*1",
+      "nominalized_action_is_carry_zero",
+      "prompt_location_is_carry_zero"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.4"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{carry-over number}*1": 1,
+        "nominalized_action_is_carry_zero": 2,
+        "prompt_location_is_carry_zero": 3
+      },
+      "condition": "True"
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "64f70182-3f00-42cd-ac24-df63fe481a5c",
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(True):<{1}<$({carry-over number})%_> is 0>",
+    "function_concept": "@after({number pair to append}<$={1}>)",
+    "value_concepts": [
+      "{number pair to append}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.4.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "after",
+        "condition": "{number pair to append}"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "5d2e21cc-3178-445c-ba11-9857ec9e0ce8",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{carry-over number}*1",
+    "function_concept": "&across({carry-over number}*1:{carry-over number}*1<--<!_>>)",
+    "value_concepts": [
+      "{carry-over number}*1"
+    ],
+    "context_concepts": [
+      "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+      "{digit sum}",
+      "{quotient}?"
+    ],
+    "flow_info": {
+      "flow_index": "1.1.3.4.2"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axis_concepts": [
+          "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+          "{digit sum}",
+          "{quotient}?"
+        ],
+        "protect_axes": [
+          "carry-over number"
+        ]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "ddf198aa-e583-4547-aa7e-373d5cf2dd53",
+    "inference_sequence": "imperative_python_indirect",
+    "concept_to_infer": "{carry-over number}*1",
+    "function_concept": "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+    "value_concepts": [
+      "{digit sum}",
+      "{quotient}?",
+      "nominalized_action_get_quotient",
+      "prompt_location_get_quotient"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.4.2.2"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{quotient}?": 1,
+        "{digit sum}": 2,
+        "nominalized_action_get_quotient": 3,
+        "prompt_location_get_quotient": 4
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "03da6712-c794-4ac3-9e45-c510848b568d",
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
+    "function_concept": "@after({digit sum})",
+    "value_concepts": [
+      "{digit sum}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.3.4.2.2.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "after",
+        "condition": "{digit sum}"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "54861a94-3fd3-46d5-865e-b9e2d4cfa519",
+    "inference_sequence": "imperative_python_indirect",
+    "concept_to_infer": "{remainder}",
+    "function_concept": "::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)",
+    "value_concepts": [
+      "{digit sum}",
+      "{remainder}?",
+      "nominalized_action_get_remainder",
+      "prompt_location_get_remainder"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.4"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "value_order": {
+        "{remainder}?": 1,
+        "{digit sum}": 2,
+        "nominalized_action_get_remainder": 3,
+        "prompt_location_get_remainder": 4
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "74ace648-50ec-429d-a5ec-b0eeb1a5d1d4",
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)",
+    "function_concept": "@after({digit sum})",
+    "value_concepts": [
+      "{digit sum}"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1.1.4.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "after",
+        "condition": "{digit sum}"
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  }
+]

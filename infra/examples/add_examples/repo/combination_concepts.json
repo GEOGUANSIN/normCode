@@ -1,0 +1,125 @@
+[
+  {
+    "id": "concept-new-number-pair",
+    "concept_name": "{new number pair}",
+    "type": "{}",
+    "axis_name": "new number pair",
+    "description": "The collection of new number pairs (input).",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": [
+      [[[[[["%5d3(9)"]]]]]],
+      [[[[[["%58e(9)"]]]]]],
+      [[[[[["%e19(2)"]]]]]]
+    ],
+    "reference_axis_names": [
+      "number pair",
+      "remainder explanation",
+      "prompt_location",
+      "script_location",
+      "unit place digit",
+      "carry-over number",
+      "sum"
+    ]
+  },
+  {
+    "id": "concept-number-digits",
+    "concept_name": "{number digits}",
+    "type": "[]",
+    "axis_name": "number digits",
+    "description": "Collection of all digits from the new number pair.",
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": null,
+    "reference_axis_names": null
+  },
+  {
+    "id": "concept-sum",
+    "concept_name": "{sum}",
+    "type": "{}",
+    "axis_name": "sum",
+    "description": "The final combined sum number.",
+    "is_ground_concept": false,
+    "is_final_concept": true,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": null,
+    "reference_axis_names": null
+  },
+  {
+    "id": "concept-action-combine",
+    "concept_name": "nominalized_action_combine",
+    "type": "{}",
+    "axis_name": null,
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": [
+      "%{script_location}(generated_scripts/op_combine.py)"
+    ],
+    "reference_axis_names": [
+      "script_location"
+    ]
+  },
+  {
+    "id": "concept-prompt-combine",
+    "concept_name": "prompt_location_combine",
+    "type": "{}",
+    "axis_name": null,
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": [
+      "%{prompt_location}(generated_prompts/op_combine_prompt.txt)"
+    ],
+    "reference_axis_names": [
+      "prompt_location"
+    ]
+  },
+  {
+    "id": "fc-grouping",
+    "concept_name": "&across({new number pair}:{new number pair}<--<!_>>)",
+    "type": "&across",
+    "axis_name": null,
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": null,
+    "reference_axis_names": null
+  },
+  {
+    "id": "fc-imperative",
+    "concept_name": "::(combine all {1}<$({number digits})%_>)",
+    "type": "::({})",
+    "axis_name": null,
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "is_invariant": false,
+    "context": "",
+    "natural_name": null,
+    "reference_data": [
+      "::(combine all {1}<$({number digits})%_>)"
+    ],
+    "reference_axis_names": [
+      "action"
+    ]
+  }
+]
+
