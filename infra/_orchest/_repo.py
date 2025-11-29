@@ -1,5 +1,7 @@
 import uuid
 import logging
+import hashlib
+import json
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from infra._core import Concept, Reference, Inference
@@ -41,6 +43,25 @@ class ConceptEntry:
         self.natural_name = concept.natural_name
         if concept.reference:
             self.reference_data = concept.reference.data if hasattr(concept.reference, 'data') else None
+    
+    def get_signature(self) -> str:
+        """
+        Generates a deterministic hash signature for this concept's definition.
+        Used to detect if the logic/definition has changed between checkpoint and new repo.
+        """
+        # Hash the definition fields that affect the concept's meaning
+        signature_data = {
+            "concept_name": self.concept_name,
+            "type": self.type,
+            "context": self.context,
+            "axis_name": self.axis_name,
+            "natural_name": self.natural_name,
+            "is_ground_concept": self.is_ground_concept,
+            "is_invariant": self.is_invariant
+        }
+        # Serialize to JSON string for hashing (sorted keys for determinism)
+        signature_str = json.dumps(signature_data, sort_keys=True)
+        return hashlib.sha256(signature_str.encode('utf-8')).hexdigest()
 
 @dataclass
 class InferenceEntry:
@@ -59,6 +80,25 @@ class InferenceEntry:
     start_without_support_reference_only_once: bool = False
     inference: Optional['Inference'] = field(default=None, repr=False)
     working_interpretation: Optional[Dict[str, any]] = field(default=None, repr=False)
+    
+    def get_signature(self) -> str:
+        """
+        Generates a deterministic hash signature for this inference's definition.
+        Used to detect if the logic/definition has changed between checkpoint and new repo.
+        """
+        # Hash the definition fields that affect the inference's behavior
+        signature_data = {
+            "inference_sequence": self.inference_sequence,
+            "concept_to_infer": self.concept_to_infer.concept_name if self.concept_to_infer else None,
+            "function_concept": self.function_concept.concept_name if self.function_concept else None,
+            "value_concepts": sorted([vc.concept_name for vc in self.value_concepts]),
+            "context_concepts": sorted([cc.concept_name for cc in self.context_concepts]),
+            "flow_index": self.flow_info.get('flow_index') if self.flow_info else None,
+            "working_interpretation": self.working_interpretation if self.working_interpretation else {}
+        }
+        # Serialize to JSON string for hashing (sorted keys for determinism)
+        signature_str = json.dumps(signature_data, sort_keys=True, default=str)
+        return hashlib.sha256(signature_str.encode('utf-8')).hexdigest()
 
 
 
@@ -124,9 +164,12 @@ class ConceptRepo:
         for item in json_list:
             # Create ConceptEntry from dictionary, ensuring all fields are handled
             entry = ConceptEntry(
-                id=str(uuid.uuid4()),
+                id=item.get('id', str(uuid.uuid4())),
                 concept_name=item.get('concept_name'),
                 type=item.get('type'),
+                context=item.get('context', ''),
+                axis_name=item.get('axis_name'),
+                natural_name=item.get('natural_name'),
                 description=item.get('description'),
                 is_ground_concept=item.get('is_ground_concept', False),
                 is_final_concept=item.get('is_final_concept', False),

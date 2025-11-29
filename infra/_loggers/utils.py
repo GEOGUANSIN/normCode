@@ -33,15 +33,37 @@ def setup_logging(log_file: Optional[str] = None):
         logger.addHandler(file_handler)
         logging.info(f"Logging to file: {log_file}")
 
-def setup_orchestrator_logging(script_path: str, log_dir_name: str = "logs") -> str:
-    """Setup logging for orchestrator scripts with automatic log directory creation."""
+def setup_orchestrator_logging(script_path: str, log_dir_name: str = "logs", run_id: Optional[str] = None) -> str:
+    """
+    Setup logging for orchestrator scripts with automatic log directory creation.
+    
+    Args:
+        script_path: Path to the script file
+        log_dir_name: Name of the log directory (default: "logs")
+        run_id: Optional run_id to include in log filename and metadata
+    
+    Returns:
+        Path to the created log file
+    """
     script_dir = pathlib.Path(script_path).parent
     logs_dir = script_dir / log_dir_name
     logs_dir.mkdir(exist_ok=True)  # Ensure logs directory exists
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = str(logs_dir / f"orchestrator_log_{timestamp}.txt")
+    
+    # Include run_id in filename if provided (sanitize for filesystem)
+    if run_id:
+        # Sanitize run_id for filesystem (remove/replace invalid characters)
+        sanitized_run_id = run_id.replace(":", "_").replace("/", "_").replace("\\", "_")[:20]  # Limit length
+        log_filename = str(logs_dir / f"orchestrator_log_{sanitized_run_id}_{timestamp}.txt")
+    else:
+        log_filename = str(logs_dir / f"orchestrator_log_{timestamp}.txt")
+    
     setup_logging(log_filename)
+    
+    # Log run_id information at startup if provided
+    if run_id:
+        logging.info(f"=== Orchestrator Run ID: {run_id} ===")
     
     return log_filename
 
@@ -160,23 +182,43 @@ class ExecutionLogHandler(logging.Handler):
     them in a buffer for later retrieval and persistence to a database.
     """
     
-    def __init__(self, execution_id: Optional[int] = None):
+    def __init__(self, execution_id: Optional[int] = None, run_id: Optional[str] = None):
         """
         Initialize the execution log handler.
         
         Args:
             execution_id: Optional execution ID to associate with captured logs
+            run_id: Optional run ID to include in log context
         """
         super().__init__()
         self.execution_id = execution_id
+        self.run_id = run_id
         self.log_buffer = io.StringIO()
+        # Use a simple formatter - we'll add run_id/execution_id in emit()
         self.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     
     def emit(self, record):
         """Capture log records to buffer."""
         try:
+            # Build log message with run_id and execution_id context
+            run_id_str = f"[run_id:{self.run_id}] " if self.run_id else ""
+            exec_id_str = f"[exec_id:{self.execution_id}] " if self.execution_id else ""
+            context_prefix = run_id_str + exec_id_str if (run_id_str or exec_id_str) else ""
+            
             msg = self.format(record)
-            self.log_buffer.write(msg + '\n')
+            if context_prefix:
+                # Insert context after timestamp but before the rest
+                # Format is: timestamp - name - level - message
+                # We want: timestamp - [context] - name - level - message
+                parts = msg.split(' - ', 1)
+                if len(parts) == 2:
+                    formatted_msg = f"{parts[0]} - {context_prefix}- {parts[1]}"
+                else:
+                    formatted_msg = f"{context_prefix}{msg}"
+            else:
+                formatted_msg = msg
+                
+            self.log_buffer.write(formatted_msg + '\n')
         except Exception:
             self.handleError(record)
     

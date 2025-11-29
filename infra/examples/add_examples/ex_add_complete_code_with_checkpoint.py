@@ -1122,6 +1122,7 @@ def run_with_random_numbers(min_length: int = 1,
                 concept_repo=concept_repo,
                 inference_repo=inference_repo,
                 max_cycles=18*(len(number_1)+len(number_2)),
+                checkpoint_frequency=None  # Random mode doesn't use checkpointing by default
             )
             
             # Run the orchestrator
@@ -1216,12 +1217,69 @@ if __name__ == "__main__":
                        help='Additional cycles to run beyond the checkpoint (overrides --max-cycles when resuming)')
     parser.add_argument('--db-path', type=str, default="orchestration_checkpoint.db",
                        help='Path to the checkpoint database file')
+    parser.add_argument('--checkpoint-frequency', type=int, default=2,
+                       help='Save checkpoint every N inferences within a cycle (default: 2, set to None to only checkpoint at end of cycle)')
+    parser.add_argument('--run-id', type=str, default="demo-run",
+                       help='Run ID to use for this execution (default: "demo-run" for easy continuation, set to "None" to generate random ID)')
+    parser.add_argument('--cycle', type=int, default=None,
+                       help='Specific cycle number to load checkpoint from (default: None, uses latest)')
+    parser.add_argument('--inference-count', type=int, default=None,
+                       help='Specific inference count within cycle to load checkpoint from (default: None, uses latest for cycle)')
+    parser.add_argument('--list-runs', action='store_true',
+                       help='List all available runs in the database and exit')
+    parser.add_argument('--list-checkpoints', action='store_true',
+                       help='List all available checkpoints for the specified run and exit')
     
     args = parser.parse_args()
     
     # Ensure DB path is absolute or relative to script dir
     script_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(script_dir, args.db_path)
+
+    # Handle list commands
+    if args.list_runs:
+        print("\n" + "="*80)
+        print("AVAILABLE RUNS")
+        print("="*80)
+        try:
+            db = OrchestratorDB(db_path)
+            runs = db.list_runs()
+            if runs:
+                for i, run in enumerate(runs, 1):
+                    print(f"\nRun {i}:")
+                    print(f"  Run ID: {run['run_id']}")
+                    print(f"  First Execution: {run['first_execution']}")
+                    print(f"  Last Execution: {run['last_execution']}")
+                    print(f"  Execution Count: {run['execution_count']}")
+                    print(f"  Max Cycle: {run['max_cycle']}")
+            else:
+                print("No runs found in database.")
+        except Exception as e:
+            print(f"Error listing runs: {e}")
+        sys.exit(0)
+    
+    if args.list_checkpoints:
+        print("\n" + "="*80)
+        print("AVAILABLE CHECKPOINTS")
+        print("="*80)
+        try:
+            run_id_for_list = args.run_id if args.run_id != "None" else None
+            checkpoints = Orchestrator.list_available_checkpoints(db_path, run_id=run_id_for_list)
+            if checkpoints:
+                print(f"\nFound {len(checkpoints)} checkpoint(s):")
+                for i, cp in enumerate(checkpoints, 1):
+                    print(f"\nCheckpoint {i}:")
+                    print(f"  Run ID: {cp['run_id']}")
+                    print(f"  Cycle: {cp['cycle']}")
+                    print(f"  Inference Count: {cp.get('inference_count', 0)}")
+                    print(f"  Timestamp: {cp['timestamp']}")
+            else:
+                print("No checkpoints found.")
+                if run_id_for_list:
+                    print(f"(for run_id: {run_id_for_list})")
+        except Exception as e:
+            print(f"Error listing checkpoints: {e}")
+        sys.exit(0)
 
     if args.random:
         # Run with random numbers
@@ -1238,8 +1296,12 @@ if __name__ == "__main__":
         # Run with fixed numbers (original behavior)
         print("Running in FIXED MODE")
         
-        # Setup file logging
-        log_filename = setup_orchestrator_logging(__file__)
+        # Determine run_id early so we can use it in logging
+        # Use the specified run_id (default is "demo-run" for easy continuation)
+        run_id_to_use = args.run_id if args.run_id != "None" else None
+        
+        # Setup file logging with run_id
+        log_filename = setup_orchestrator_logging(__file__, run_id=run_id_to_use)
         logging.info("=== Starting Orchestrator Demo ===")
 
         # --- Create generated code directories if they don't exist ---
@@ -1282,18 +1344,41 @@ if __name__ == "__main__":
         # Determine if we should resume (default: auto-resume if checkpoint exists, unless --fresh is set)
         should_resume = False
         checkpoint_cycle = 0
+        checkpoint_inference_count = 0
         
         if not args.fresh and os.path.exists(db_path):
             # Check if checkpoint exists and get current cycle
             try:
-                db = OrchestratorDB(db_path)
+                db = OrchestratorDB(db_path, run_id=run_id_to_use)
                 checkpoint_manager = CheckpointManager(db)
-                checkpoint_data = checkpoint_manager.load_latest_checkpoint()
-                if checkpoint_data:
-                    # Get cycle count from checkpoint
-                    checkpoint_cycle = checkpoint_data.get("tracker", {}).get("cycle_count", 0)
-                    should_resume = True
-                    print(f"--- Found checkpoint at cycle {checkpoint_cycle} ---")
+                
+                # If specific cycle/inference_count provided, use those; otherwise get latest
+                if args.cycle is not None:
+                    checkpoint_data = checkpoint_manager.load_checkpoint_by_cycle(
+                        args.cycle, 
+                        run_id=run_id_to_use,
+                        inference_count=args.inference_count
+                    )
+                    if checkpoint_data:
+                        checkpoint_cycle = args.cycle
+                        checkpoint_inference_count = args.inference_count or 0
+                        should_resume = True
+                        print(f"--- Found checkpoint at cycle {checkpoint_cycle}, inference {checkpoint_inference_count} ---")
+                else:
+                    checkpoint_data = checkpoint_manager.load_latest_checkpoint(run_id=run_id_to_use)
+                    if checkpoint_data:
+                        # Get cycle count from checkpoint (we need to query DB to get the actual cycle/inference)
+                        # Since load_latest_checkpoint doesn't return cycle/inference, we'll query the DB
+                        checkpoints = db.list_checkpoints(run_id_to_use)
+                        if checkpoints:
+                            latest = checkpoints[-1]  # Last checkpoint (ordered by cycle ASC, inference_count ASC)
+                            checkpoint_cycle = latest['cycle']
+                            checkpoint_inference_count = latest.get('inference_count', 0)
+                        else:
+                            # Fallback: get from tracker in checkpoint data
+                            checkpoint_cycle = checkpoint_data.get("tracker", {}).get("cycle_count", 0)
+                        should_resume = True
+                        print(f"--- Found latest checkpoint at cycle {checkpoint_cycle}, inference {checkpoint_inference_count} ---")
             except Exception as e:
                 logging.warning(f"Could not read checkpoint: {e}. Starting fresh.")
                 should_resume = False
@@ -1302,20 +1387,29 @@ if __name__ == "__main__":
             # Calculate max_cycles: use additional_cycles if specified, otherwise add max_cycles to checkpoint
             if args.additional_cycles is not None:
                 max_cycles = checkpoint_cycle + args.additional_cycles
-                print(f"--- Resuming from cycle {checkpoint_cycle}, will run for {args.additional_cycles} additional cycles (total: {max_cycles}) ---")
+                print(f"--- Resuming from cycle {checkpoint_cycle}, inference {checkpoint_inference_count}")
+                print(f"    Will run for {args.additional_cycles} additional cycles (total: {max_cycles}) ---")
             else:
                 # Default: add max_cycles to the checkpoint cycle (e.g., if at cycle 50 and max_cycles=50, run until 100)
                 max_cycles = checkpoint_cycle + args.max_cycles
-                print(f"--- Resuming from cycle {checkpoint_cycle}, will run for {args.max_cycles} additional cycles (total: {max_cycles}) ---")
+                print(f"--- Resuming from cycle {checkpoint_cycle}, inference {checkpoint_inference_count}")
+                print(f"    Will run for {args.max_cycles} additional cycles (total: {max_cycles}) ---")
             
-            logging.info(f"Resuming orchestration from {db_path} (cycle {checkpoint_cycle}, max_cycles={max_cycles})")
+            logging.info(f"Resuming orchestration from {db_path} (cycle {checkpoint_cycle}, inference {checkpoint_inference_count}, max_cycles={max_cycles})")
             orchestrator = Orchestrator.load_checkpoint(
                 concept_repo=concept_repo,
                 inference_repo=inference_repo,
                 db_path=db_path,
                 body=body,
-                max_cycles=max_cycles
+                max_cycles=max_cycles,
+                run_id=run_id_to_use,
+                cycle=args.cycle if args.cycle is not None else None,
+                inference_count=args.inference_count if args.inference_count is not None else None
             )
+            
+            # Display run_id information
+            if orchestrator.run_id:
+                print(f"--- Using run_id: {orchestrator.run_id} ---")
         else:
             if args.fresh:
                 print("Starting fresh execution (--fresh flag set).")
@@ -1338,8 +1432,16 @@ if __name__ == "__main__":
                 body=body,
                 # max_cycles=20*length_max,
                 max_cycles=args.max_cycles,
-                db_path=db_path
+                db_path=db_path,
+                checkpoint_frequency=args.checkpoint_frequency,
+                run_id=run_id_to_use
             )
+            
+            # Display run_id and checkpoint frequency information
+            if orchestrator.run_id:
+                print(f"--- New run_id: {orchestrator.run_id} ---")
+            if args.checkpoint_frequency:
+                print(f"--- Checkpoint frequency: every {args.checkpoint_frequency} inferences ---")
 
         # 3. Run the orchestrator
         try:
@@ -1347,7 +1449,11 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("\n\n!!! Execution interrupted by user !!!")
             print("State has been saved to checkpoint.")
-            print(f"Run with --resume to continue from the last completed cycle.")
+            if orchestrator.run_id:
+                print(f"Run ID: {orchestrator.run_id}")
+            print(f"Run with --resume to continue from the last checkpoint.")
+            if orchestrator.run_id:
+                print(f"Or specify: --run-id {orchestrator.run_id} --resume")
             sys.exit(0)
 
         # 4. Log the final result
@@ -1383,8 +1489,35 @@ if __name__ == "__main__":
             # Filter out non-serializable parts for a quick dump if needed, or rely on export_state doing it right
             # For now just print confirmation
             print(f"\nFinal State Export contains {len(full_state.get('execution_history', []))} execution records.")
+            if orchestrator.run_id:
+                print(f"Run ID: {orchestrator.run_id}")
+                print(f"To resume this run, use: --run-id {orchestrator.run_id} --resume")
         except Exception as e:
             logging.error(f"Failed to export final state: {e}")
+        
+        # Display checkpoint information
+        if orchestrator.checkpoint_manager:
+            try:
+                checkpoints = orchestrator.checkpoint_manager.list_checkpoints(orchestrator.run_id)
+                if checkpoints:
+                    print(f"\n{'='*60}")
+                    print(f"CHECKPOINT SUMMARY (Run ID: {orchestrator.run_id})")
+                    print(f"{'='*60}")
+                    print(f"Total checkpoints: {len(checkpoints)}")
+                    if len(checkpoints) <= 10:
+                        print("\nCheckpoints:")
+                        for cp in checkpoints:
+                            print(f"  Cycle {cp['cycle']}, Inference {cp.get('inference_count', 0)}: {cp['timestamp']}")
+                    else:
+                        print(f"\nFirst 5 checkpoints:")
+                        for cp in checkpoints[:5]:
+                            print(f"  Cycle {cp['cycle']}, Inference {cp.get('inference_count', 0)}: {cp['timestamp']}")
+                        print(f"\n... and {len(checkpoints) - 5} more")
+                        print(f"\nLast checkpoint:")
+                        last = checkpoints[-1]
+                        print(f"  Cycle {last['cycle']}, Inference {last.get('inference_count', 0)}: {last['timestamp']}")
+            except Exception as e:
+                logging.warning(f"Could not list checkpoints: {e}")
     
     print(f"\n{'='*80}")
     print("PROGRAM COMPLETED")
