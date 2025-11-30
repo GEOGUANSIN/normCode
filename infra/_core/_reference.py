@@ -798,7 +798,11 @@ def cross_action(A, B, new_axis_name):
                 if any(r == "@#SKIP#@" for r in result):
                     return "@#SKIP#@"
                 return result
-            except Exception:
+            except Exception as e:
+                # Re-raise specific exceptions that need to propagate up (e.g., for human-in-the-loop)
+                # Check if this is a NeedsUserInteraction exception (avoiding import)
+                if e.__class__.__name__ == 'NeedsUserInteraction':
+                    raise
                 return "@#SKIP#@"
         else:
             axis = current_axes[0]
@@ -898,6 +902,10 @@ def element_action(f, references, index_awareness=False):
                     # logging.debug(f"element_action: applied function '{f.__name__}' to {elements}, result: {result}")
                     return result
             except Exception as e:
+                # Re-raise specific exceptions that need to propagate up (e.g., for human-in-the-loop)
+                # Check if this is a NeedsUserInteraction exception (avoiding import)
+                if e.__class__.__name__ == 'NeedsUserInteraction':
+                    raise
                 # logging.error(f"element_action: error applying function '{f.__name__}' to {elements}: {e}")
                 return "@#SKIP#@"
         else:

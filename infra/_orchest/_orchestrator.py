@@ -304,6 +304,10 @@ class Orchestrator:
             return status
 
         except Exception as e:
+            # Allow NeedsUserInteraction to propagate to app layer for human-in-the-loop
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                raise
+
             self._handle_inference_failure(item, e)
             
             # Capture logs even on failure
@@ -544,7 +548,16 @@ class Orchestrator:
         logging.info(f"Item {flow_index} is ready. Executing.")
 
         self.blackboard.set_item_status(flow_index, 'in_progress')
-        new_status = self._inference_execution(item)
+        
+        try:
+            new_status = self._inference_execution(item)
+        except Exception as e:
+            # Check for user interaction exception to reset status before propagating
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                logging.info(f"Item {flow_index} paused for user interaction. Resetting to 'pending'.")
+                self.blackboard.set_item_status(flow_index, 'pending')
+                raise
+            raise
 
         self.tracker.total_executions += 1
         self.blackboard.set_item_status(flow_index, new_status)

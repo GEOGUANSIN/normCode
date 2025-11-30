@@ -28,6 +28,9 @@ from infra._orchest._db import OrchestratorDB
 from infra._agent._body import Body
 from typing import List, Tuple, Dict, Any
 
+# Import custom Streamlit tools
+from tools import StreamlitInputTool, NeedsUserInteraction
+
 # Configure page
 st.set_page_config(
     page_title="NormCode Orchestrator",
@@ -279,6 +282,15 @@ if 'loaded_repo_files' not in st.session_state:
         'inferences': None,
         'inputs': None
     }
+# Session state for human-in-the-loop user interactions
+if 'pending_user_inputs' not in st.session_state:
+    st.session_state.pending_user_inputs = {}
+if 'orchestrator_state' not in st.session_state:
+    st.session_state.orchestrator_state = None
+if 'waiting_for_input' not in st.session_state:
+    st.session_state.waiting_for_input = False
+if 'current_interaction' not in st.session_state:
+    st.session_state.current_interaction = None
 
 # --- SIDEBAR: Configuration ---
 with st.sidebar:
@@ -635,6 +647,200 @@ tab1, tab2, tab3, tab4 = st.tabs(["🚀 Execute", "📊 Results", "📜 History"
 with tab1:
     st.header("Execute Orchestration")
     
+    # Show success message from previous resumption if flag is set
+    if st.session_state.get('show_success_message', False):
+        st.success("✅ Execution completed successfully!")
+        st.balloons()
+        # Clear the flag
+        st.session_state.show_success_message = False
+        
+        # Optionally show summary here too, or rely on Last Run
+        if st.session_state.last_run:
+            run_data = st.session_state.last_run
+            st.subheader("📊 Execution Summary")
+            summary_col1, summary_col2, summary_col3 = st.columns(3)
+            with summary_col1:
+                st.metric("Run ID", run_data['run_id'][:8] + "...")
+            with summary_col2:
+                st.metric("Duration", f"{run_data['duration']:.2f}s")
+            with summary_col3:
+                completed_concepts = sum(1 for fc in run_data['final_concepts'] if fc and fc.concept and fc.concept.reference)
+                st.metric("Completed Concepts", f"{completed_concepts}/{len(run_data['final_concepts'])}")
+    
+    # Handle user interaction if orchestrator is waiting for input
+    if st.session_state.waiting_for_input and st.session_state.current_interaction:
+        interaction = st.session_state.current_interaction
+        
+        st.warning("⏸️ **Execution Paused - Awaiting User Input**")
+        
+        # Display the prompt/context
+        st.markdown(f"**Prompt:** {interaction['prompt']}")
+        
+        # Show interaction type-specific UI
+        with st.form(key="user_interaction_form"):
+            if interaction['type'] == 'text_editor':
+                initial_text = interaction['kwargs'].get('initial_text', '')
+                st.caption(f"Initial text ({len(initial_text)} characters):")
+                st.code(initial_text, language="text")
+                user_input = st.text_area(
+                    "Edit the text below:",
+                    value=initial_text,
+                    height=300,
+                    key="interaction_text_editor"
+                )
+            elif interaction['type'] == 'confirm':
+                user_input = st.radio(
+                    "Please confirm:",
+                    options=[True, False],
+                    format_func=lambda x: "Yes" if x else "No",
+                    key="interaction_confirm"
+                )
+            else:  # Default to text_input
+                user_input = st.text_input(
+                    "Your response:",
+                    key="interaction_text_input"
+                )
+            
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                submit_btn = st.form_submit_button("✅ Submit & Resume", type="primary", use_container_width=True)
+            with col2:
+                cancel_btn = st.form_submit_button("❌ Cancel Execution", use_container_width=True)
+            
+            if submit_btn:
+                # Provide the input to the tool
+                st.session_state.pending_user_inputs[interaction['id']] = user_input
+                
+                # Resume execution
+                orchestrator_data = st.session_state.orchestrator_state
+                if orchestrator_data:
+                    try:
+                        with st.spinner("▶️ Resuming execution..."):
+                            # Re-initialize dependencies
+                            # Note: concept_repo and inference_repo must be available from session state or closure
+                            if not 'loaded_repo_files' in st.session_state:
+                                st.error("Cannot resume: Repository files not found in session.")
+                                st.stop()
+                                
+                            # Re-load repos if variables are not in scope (likely not in scope)
+                            # We use the loaded_repo_files from session state
+                            concepts_content = st.session_state.loaded_repo_files['concepts']['content']
+                            inferences_content = st.session_state.loaded_repo_files['inferences']['content']
+                            
+                            # Parse JSON
+                            concepts_json = json.loads(concepts_content)
+                            inferences_json = json.loads(inferences_content)
+                            
+                            # Re-create repos
+                            resume_concept_repo = ConceptRepo.from_json_list(concepts_json)
+                            resume_inference_repo = InferenceRepo.from_json_list(inferences_json, resume_concept_repo)
+                            
+                            # Inject inputs again?
+                            # If inputs were injected into the repo initially, they are needed here too 
+                            # unless we trust the checkpoint fully.
+                            # Since we use OVERWRITE mode, checkpoint data takes precedence.
+                            
+                            # Re-init Body & Tools
+                            resume_body = Body(
+                                llm_name=orchestrator_data['llm_model'], 
+                                base_dir=orchestrator_data['base_dir']
+                            )
+                            resume_body.user_input = StreamlitInputTool() # Inject tool
+                            
+                            # Load Checkpoint
+                            # We use load_checkpoint to get the exact state where we left off
+                            orchestrator = Orchestrator.load_checkpoint(
+                                concept_repo=resume_concept_repo,
+                                inference_repo=resume_inference_repo,
+                                db_path=orchestrator_data['db_path'],
+                                run_id=orchestrator_data['run_id'],
+                                body=resume_body,
+                                mode="OVERWRITE" # Trust the checkpoint implicitly
+                            )
+                            
+                            start_time = orchestrator_data['start_time']
+                            
+                            # Continue execution - the tool will now find the input and return it
+                            final_concepts = orchestrator.run()
+                            end_time = datetime.now()
+                            duration = (end_time - start_time).total_seconds()
+                            
+                            # Success!
+                            st.success(f"✅ Execution completed in {duration:.2f}s!")
+                            
+                            # Display results summary
+                            st.subheader("📊 Execution Summary")
+                            
+                            summary_col1, summary_col2, summary_col3 = st.columns(3)
+                            with summary_col1:
+                                st.metric("Run ID", orchestrator.run_id[:8] + "...")
+                            with summary_col2:
+                                st.metric("Duration", f"{duration:.2f}s")
+                            with summary_col3:
+                                completed_concepts = sum(1 for fc in final_concepts if fc and fc.concept and fc.concept.reference)
+                                st.metric("Completed Concepts", f"{completed_concepts}/{len(final_concepts)}")
+                            
+                            # Store results in session
+                            st.session_state.last_run = {
+                                'run_id': orchestrator.run_id,
+                                'timestamp': datetime.now().isoformat(),
+                                'duration': duration,
+                                'final_concepts': final_concepts,
+                                'llm_model': llm_model,
+                                'max_cycles': max_cycles,
+                                'base_dir': orchestrator.body.base_dir
+                            }
+                            
+                            # Add to execution log
+                            st.session_state.execution_log.insert(0, {
+                                'run_id': orchestrator.run_id,
+                                'timestamp': datetime.now().isoformat(),
+                                'status': 'success',
+                                'duration': duration,
+                                'completed': completed_concepts
+                            })
+                            
+                            # Clear waiting state
+                            st.session_state.waiting_for_input = False
+                            st.session_state.current_interaction = None
+                            st.session_state.orchestrator_state = None
+                            
+                            # Set flag to show success message on next run
+                            st.session_state.show_success_message = True
+                            st.rerun()
+                            
+                    except NeedsUserInteraction as next_interaction:
+                        # Another interaction is needed
+                        st.session_state.current_interaction = {
+                            'id': next_interaction.interaction_id,
+                            'type': next_interaction.interaction_type,
+                            'prompt': next_interaction.prompt,
+                            'kwargs': next_interaction.kwargs
+                        }
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Execution failed: {str(e)}")
+                        st.exception(e)
+                        
+                        # Clear waiting state
+                        st.session_state.waiting_for_input = False
+                        st.session_state.current_interaction = None
+                        st.session_state.orchestrator_state = None
+            
+            elif cancel_btn:
+                # Cancel execution
+                st.warning("Execution cancelled by user")
+                st.session_state.waiting_for_input = False
+                st.session_state.current_interaction = None
+                st.session_state.orchestrator_state = None
+                st.rerun()
+        
+        st.divider()
+        st.info("💡 **Tip:** The orchestrator will resume from where it paused once you submit your response.")
+        
+        # Don't show the normal execution UI when waiting for input
+        st.stop()
+    
     # Check if we have files (either uploaded or loaded)
     has_concepts = concepts_file is not None or loaded_concepts is not None
     has_inferences = inferences_file is not None or loaded_inferences is not None
@@ -719,14 +925,28 @@ with tab1:
                     # Get concepts data from uploaded or loaded file
                     if concepts_file:
                         concepts_file.seek(0)
-                        concepts_json_data = json.load(concepts_file)
+                        content = concepts_file.read().decode('utf-8')
+                        concepts_json_data = json.loads(content)
+                        # Populate session state for resumption
+                        st.session_state.loaded_repo_files['concepts'] = {
+                            'name': concepts_file.name,
+                            'content': content,
+                            'path': None
+                        }
                     else:
                         concepts_json_data = json.loads(loaded_concepts['content'])
                     
                     # Get inferences data from uploaded or loaded file
                     if inferences_file:
                         inferences_file.seek(0)
-                        inferences_json_data = json.load(inferences_file)
+                        content = inferences_file.read().decode('utf-8')
+                        inferences_json_data = json.loads(content)
+                        # Populate session state for resumption
+                        st.session_state.loaded_repo_files['inferences'] = {
+                            'name': inferences_file.name,
+                            'content': content,
+                            'path': None
+                        }
                     else:
                         inferences_json_data = json.loads(loaded_inferences['content'])
                     
@@ -734,7 +954,14 @@ with tab1:
                     inputs_json_data = None
                     if inputs_file:
                         inputs_file.seek(0)
-                        inputs_json_data = json.load(inputs_file)
+                        content = inputs_file.read().decode('utf-8')
+                        inputs_json_data = json.loads(content)
+                        # Populate session state for resumption
+                        st.session_state.loaded_repo_files['inputs'] = {
+                            'name': inputs_file.name,
+                            'content': content,
+                            'path': None
+                        }
                     elif loaded_inputs:
                         inputs_json_data = json.loads(loaded_inputs['content'])
                     
@@ -789,7 +1016,11 @@ with tab1:
                     
                     # Initialize Body
                     body = Body(llm_name=llm_model, base_dir=body_base_dir)
+                    
+                    # Inject Streamlit-native user input tool for human-in-the-loop
+                    body.user_input = StreamlitInputTool()
                     st.info(f"📂 Base directory: `{body_base_dir}`")
+                    st.info(f"🤝 Human-in-the-loop mode enabled")
                     
                     # Create or load orchestrator
                     if resume_option == "Fresh Run":
@@ -989,16 +1220,60 @@ with tab1:
                     progress_placeholder = st.empty()
                     progress_placeholder.text(f"⏳ Running orchestrator (Run ID: {orchestrator.run_id})...")
                     
-                    # Execute
+                    # Execute with human-in-the-loop support
                     start_time = datetime.now()
-                    final_concepts = orchestrator.run()
-                    end_time = datetime.now()
-                    duration = (end_time - start_time).total_seconds()
                     
-                    progress_placeholder.empty()
-                    
-                    # Success message
-                    st.success(f"✅ Execution completed in {duration:.2f}s!")
+                    try:
+                        final_concepts = orchestrator.run()
+                        end_time = datetime.now()
+                        duration = (end_time - start_time).total_seconds()
+                        
+                        progress_placeholder.empty()
+                        
+                        # Success message
+                        st.success(f"✅ Execution completed in {duration:.2f}s!")
+                        
+                        # Clear any waiting state
+                        st.session_state.waiting_for_input = False
+                        st.session_state.current_interaction = None
+                        
+                    except NeedsUserInteraction as interaction:
+                        # User interaction required - pause execution
+                        progress_placeholder.empty()
+                        
+                        # Save orchestrator state for resumption
+                        # We can't pickle the orchestrator object directly due to SQLite connection and Locks
+                        # So we save the parameters needed to re-load it
+                        st.session_state.orchestrator_state = {
+                            'run_id': orchestrator.run_id,
+                            'db_path': db_path,
+                            'llm_model': llm_model,
+                            'max_cycles': max_cycles,
+                            'base_dir': body_base_dir,
+                            'start_time': start_time
+                        }
+                        st.session_state.waiting_for_input = True
+                        st.session_state.current_interaction = {
+                            'id': interaction.interaction_id,
+                            'type': interaction.interaction_type,
+                            'prompt': interaction.prompt,
+                            'kwargs': interaction.kwargs
+                        }
+                        
+                        # Save a checkpoint so we can resume from this point
+                        if orchestrator.checkpoint_manager:
+                            orchestrator.checkpoint_manager.save_state(
+                                orchestrator.tracker.cycle_count,
+                                orchestrator,
+                                inference_count=orchestrator.tracker.total_executions
+                            )
+                            logging.info(f"Checkpoint saved at user interaction point")
+                        
+                        st.info("🛑 **Execution paused - User input required**")
+                        st.warning("⚠️ Please provide the requested information below and click Submit to continue execution.")
+                        
+                        # Don't proceed to success metrics - will be shown after resumption
+                        raise  # Re-raise to skip the rest of the execution flow
                     
                     # Display results summary
                     st.subheader("📊 Execution Summary")
@@ -1034,9 +1309,19 @@ with tab1:
                     
                     st.balloons()
                     
+                except NeedsUserInteraction:
+                    # User interaction required - UI is already shown above
+                    # Just rerun to display the interaction form
+                    st.rerun()
+                    
                 except Exception as e:
                     st.error(f"❌ Execution failed: {str(e)}")
                     st.exception(e)
+                    
+                    # Clear any waiting state on error
+                    st.session_state.waiting_for_input = False
+                    st.session_state.current_interaction = None
+                    st.session_state.orchestrator_state = None
                     
                     # Log failure
                     st.session_state.execution_log.insert(0, {
