@@ -4,146 +4,65 @@ A minimal web interface for running NormCode orchestrations without writing code
 
 ## 🚀 Quick Start
 
-### 1. Install Streamlit
+### Run the App
 
 ```bash
-pip install streamlit
-```
+# From project root
+python launch_streamlit_app.py
 
-### 2. Launch the App
-
-From the project root:
-```bash
+# Or directly
 cd streamlit_app
 streamlit run app.py
 ```
 
-Or use the launcher:
-```bash
-cd streamlit_app
-python run_app.py
-```
+### Basic Usage
 
-The app will open at `http://localhost:8501` 🎉
+1. Upload your repository files:
+   - `*_concepts.json` - Concept definitions
+   - `*_inferences.json` - Inference definitions
+   - `*_inputs.json` (optional) - Initial concept data
+
+2. Configure execution settings (LLM model, max cycles, etc.)
+   - **NEW in v1.3.1**: Load complete setups (config + files + database)!
+
+3. Choose execution mode:
+   - **Fresh Run**: Start a new execution
+   - **Resume**: Continue from a checkpoint
+   - **Fork from Checkpoint**: Load data from one run, execute with a different repository
+
+4. Click "▶️ Start Execution"
 
 ## 📚 Documentation
 
-- **[QUICK_START_APP.md](QUICK_START_APP.md)** - Get running in 60 seconds
-- **[STREAMLIT_APP_GUIDE.md](STREAMLIT_APP_GUIDE.md)** - Complete user guide with examples
-- **[FORKING_GUIDE.md](FORKING_GUIDE.md)** - Repository chaining & forking tutorial *(NEW in v1.2)*
-- **[APP_ARCHITECTURE.md](APP_ARCHITECTURE.md)** - Technical architecture
-- **[APP_SUMMARY.md](APP_SUMMARY.md)** - Implementation overview
-- **[LOGGING_FEATURES_UPDATE.md](LOGGING_FEATURES_UPDATE.md)** - v1.1 logging features
+All detailed documentation is available in the [`docs/`](./docs/) directory:
 
-## ✨ Features
+- **[Quick Start Guide](./docs/QUICK_START_APP.md)** - Get started quickly
+- **[Streamlit App Guide](./docs/STREAMLIT_APP_GUIDE.md)** - Complete user guide
+- **[Forking Guide](./docs/FORKING_GUIDE.md)** - How to fork between repositories
+- **[Complete Setup Loading](./COMPLETE_SETUP_LOADING.md)** - Load config + files + database (NEW in v1.3.1)
+- **[Configuration Loading](./docs/CONFIG_LOADING_FEATURE.md)** - Load settings from previous runs (v1.3)
+- **[App Architecture](./docs/APP_ARCHITECTURE.md)** - Technical architecture
+- **[Changelog](./docs/CHANGELOG.md)** - Version history
 
-- 📁 **Upload Repository Files** - Load concepts, inferences, and inputs from JSON
-- 🚀 **Execute Orchestrations** - Run with configurable LLM models and parameters
-- 💾 **Checkpoint & Resume** - Save and restore execution state (PATCH/OVERWRITE/FILL_GAPS modes)
-- 🔱 **Fork from Checkpoint** - Chain repositories together in pipelines *(NEW in v1.2)*
-- 📊 **View Results** - Explore final concepts and their values
-- 📜 **Browse History** - See all past runs and checkpoints
-- 📋 **Access Logs** - View detailed execution logs with filtering and export *(v1.1)*
-- 💾 **Export Results** - Download outputs and logs as JSON
+### Key Features
 
-## 📋 What You Need
+- ✅ Upload and execute repositories via web UI
+- ✅ **Load complete setups: config + files + database** (NEW in v1.3.1)
+  - One-click reload of entire previous runs
+  - Automatic file saving and retrieval
+  - No need to re-upload repository files
+- ✅ Resume from checkpoints
+- ✅ Fork between different repositories
+- ✅ View execution history and results with detailed configuration
+- ✅ Export checkpoints and logs
 
-Three JSON files (examples in `../infra/examples/add_examples/repo/`):
+## Requirements
 
-1. **concepts.json** - Concept definitions
-2. **inferences.json** - Inference steps
-3. **inputs.json** - Initial values (optional)
+- Python 3.8+
+- Streamlit: `pip install streamlit`
+- All dependencies from project root
 
-See `sample_inputs.json` for the input file format.
+## Support
 
-## 🎯 Example Workflow
-
-### Running the Addition Example
-
-1. Launch the app: `streamlit run app.py`
-
-2. Upload files from `../infra/examples/add_examples/repo/`:
-   - `addition_concepts.json`
-   - `addition_inferences.json`
-   - Create an `inputs.json` (or use `sample_inputs.json` as template)
-
-3. Configure:
-   - LLM Model: `qwen-plus`
-   - Max Cycles: `50`
-   - Base Directory: `App Directory (default)` or choose where to store generated files
-   - Mode: `Fresh Run`
-
-4. Click **▶️ Start Execution**
-
-5. View results in the **Results** tab
-
-### Forking: Addition → Combination Pipeline *(NEW)*
-
-After the addition example completes:
-
-1. Upload:
-   - `combination_concepts.json`
-   - `combination_inferences.json`
-   - **No inputs.json needed** (loads from checkpoint!)
-
-2. Configure:
-   - Mode: `Fork from Checkpoint`
-   - Run ID: Enter the addition run ID (or leave empty for latest)
-   - New Run ID: Leave empty or enter custom name
-
-3. Execute - the app will:
-   - Load `{new number pair}` from addition checkpoint
-   - Execute combination inferences
-   - Produce `{sum}` as final result
-   - Start fresh execution history for the new run!
-
-## 🛠️ Files in This Directory
-
-| File | Purpose |
-|------|---------|
-| `app.py` | Main Streamlit application (v1.2 with forking) |
-| `run_app.py` | Python launcher (checks dependencies) |
-| `run_app.bat` | Windows batch launcher |
-| `run_app.ps1` | PowerShell launcher |
-| `sample_inputs.json` | Example input file format |
-| `README.md` | This file |
-| `QUICK_START_APP.md` | 60-second quick start guide |
-| `STREAMLIT_APP_GUIDE.md` | Comprehensive user guide |
-| `FORKING_GUIDE.md` | Repository chaining tutorial (v1.2) |
-| `APP_ARCHITECTURE.md` | Technical architecture docs |
-| `APP_SUMMARY.md` | Implementation summary |
-| `LOGGING_FEATURES_UPDATE.md` | v1.1 logging features documentation |
-
-## 💡 Tips
-
-- **Use PATCH mode** - Safest for resuming with changed repositories
-- **Fork for pipelines** - Chain repositories together (e.g., addition → combination) *(NEW)*
-- **Check the Help tab** - Built-in documentation in the app
-- **View execution logs** - Debug issues by viewing detailed logs in Results or History tabs
-- **Filter logs** - Use cycle or status filters to find specific execution details
-- **Export results & logs** - Download JSON backups of executions and logs
-- **Browse history** - See all runs, checkpoints, and logs in the History tab
-
-## 🆘 Troubleshooting
-
-### "streamlit: command not found"
-```bash
-pip install streamlit
-```
-
-### "No module named 'infra'"
-Make sure you're running from the `streamlit_app` directory (this directory).
-
-### "Database not found"
-Normal on first run - the database is created automatically.
-
-## 🔗 Related Documentation
-
-- **Orchestration Engine**: `../infra/_orchest/README.md`
-- **Repository Compatibility**: `../infra/_orchest/REPO_COMPATIBILITY.md`
-- **Example Scripts**: `../infra/examples/add_examples/`
-
----
-
-**Ready to orchestrate!** 🎉
+For issues or questions, see the documentation in [`docs/`](./docs/) or check the project's main README.
 

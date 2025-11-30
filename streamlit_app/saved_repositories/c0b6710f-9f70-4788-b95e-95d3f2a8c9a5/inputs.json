@@ -1,0 +1,11 @@
+{
+  "_comment": "Input file for the Addition Example",
+  "_instructions": "This provides the required ground concept {number pair} for the addition repository",
+  "_note": "The numbers are wrapped in %() syntax. Change 123 and 98 to any numbers you want to add.",
+  
+  "{number pair}": {
+    "data": [["%(123)", "%(98)"]],
+    "axes": ["number pair", "number"]
+  }
+}
+

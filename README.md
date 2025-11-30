@@ -8,6 +8,8 @@ This repository contains the complete ecosystem for NormCode, including:
 - The core **`infra` Engine** for executing NormCode plans.
 - A web-based **`editor_app`** for creating, visualizing, and debugging plans.
 - A **`translate_agent`** that can convert natural language into NormCode.
+- A **Streamlit App** (`streamlit_app/`) for running orchestrations via web UI.
+- A **CLI Tool** (`cli_orchestrator.py`) for running orchestrations from command line.
 
 ## How It Works: A Visual Workflow
 

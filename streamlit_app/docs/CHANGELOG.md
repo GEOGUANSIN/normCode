@@ -2,6 +2,150 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2025-11-30
+
+### 🎉 Enhanced - Complete Setup Loading (Config + Files + Database)
+
+#### Automatic Repository File Saving
+- ✅ **Save Uploaded Files to Disk**
+  - All uploaded repository files automatically saved
+  - Stored in `saved_repositories/{run_id}/` directory
+  - Files persist for future loading
+  - Supports concepts.json, inferences.json, inputs.json
+
+#### Complete Configuration Storage
+- ✅ **Enhanced Metadata**
+  - Now includes file paths for all repository files
+  - Stores database path in configuration
+  - Tracks which files are available for loading
+  - Maintains backward compatibility
+
+#### Repository File Loading
+- ✅ **One-Click File Reload**
+  - Checkbox to load repository files with configuration
+  - Shows which files are available
+  - Displays loaded files in UI
+  - Button to change individual loaded files
+  - No need to manually re-upload files!
+
+#### UI Enhancements
+- ✅ **Smart File Display**
+  - Shows "Using loaded: filename" for loaded files
+  - "Upload Different" button to change loaded files
+  - Status indicator shows loaded files
+  - Preview shows available files before loading
+
+#### Database Path Loading
+- ✅ **Database Configuration**
+  - Database path now included in saved configuration
+  - Auto-populated when loading previous config
+  - Ensures checkpoint compatibility
+
+### Use Cases Enabled
+- ✅ **Exact Re-runs**: Load everything from previous run with one click
+- ✅ **Selective Modification**: Load config + some files, change others
+- ✅ **Template Workflows**: Load config without files for different repositories
+- ✅ **Guaranteed Reproduction**: Exact same files as before
+
+### Technical Implementation
+- Added `saved_repositories/` directory structure
+- Added `save_uploaded_file()` helper function
+- Added `load_file_from_path()` helper function
+- Enhanced session state with `loaded_repo_files`
+- Updated execution logic to handle both uploaded and loaded files
+- Updated all execution modes (Fresh, Resume, Fork) to save files
+
+### 📝 Documentation
+- Added `COMPLETE_SETUP_LOADING.md` - Complete guide for v1.3.1 features
+- Updated all existing documentation to reflect new capabilities
+
+### 🔧 Changed
+- Metadata structure now includes file paths (v1.3.1 format)
+- Footer updated to v1.3.1
+- App version metadata set to "1.3.1"
+
+### 🐛 Fixed
+- File loading now works seamlessly with execution
+- Loaded files properly used instead of requiring re-upload
+
+---
+
+## [1.3.0] - 2025-11-30
+
+### 🎉 Added - Configuration Loading Feature
+
+#### Load Previous Run Configurations
+- ✅ **New Sidebar Section**: "📋 Load Previous Config"
+  - Browse all previous runs with saved configurations
+  - Select from dropdown showing run_id and timestamp
+  - Load configuration with one click
+  - Preview configuration JSON before loading
+  - Clear loaded configuration to start fresh
+  
+#### Automatic Configuration Saving
+- ✅ **Comprehensive Metadata Storage**
+  - Saves configuration for all execution modes (Fresh/Resume/Fork)
+  - Stores: LLM model, max cycles, base directory, execution mode
+  - Tracks: Reconciliation mode, fork relationships, timestamps
+  - Uses existing `run_metadata` database table
+  - Fully backward compatible (old runs show "No metadata available")
+
+#### Auto-population of Settings
+- ✅ **Smart Form Population**
+  - LLM Model: Auto-selected from loaded config
+  - Max Cycles: Auto-filled from loaded config
+  - Base Directory: Auto-detected and selected from loaded config
+  - All settings remain editable after loading
+  - Help text indicates when settings are loaded
+
+#### Enhanced History Tab
+- ✅ **Configuration Display for Each Run**
+  - Shows configuration summary (LLM, cycles, mode)
+  - Displays base directory and reconciliation mode
+  - Shows fork relationships if applicable
+  - Full configuration viewable in expandable JSON section
+
+#### Use Cases Enabled
+- ✅ **Quick Re-runs**: Load exact settings from successful runs
+- ✅ **Repository Comparison**: Test different repos with same config
+- ✅ **Configuration Templates**: Create and reuse optimized settings
+- ✅ **Reproducibility**: Guarantee exact same settings as previous runs
+
+#### Technical Implementation
+- Uses existing `OrchestratorDB.save_run_metadata()` and `get_run_metadata()`
+- Session state tracking: `loaded_config` and `config_loaded_from_run`
+- Database path initialization fix for early access
+- Configuration saved at orchestrator creation for all modes
+- Resume mode updates existing metadata with latest settings
+
+### 📝 Documentation
+- Added `CONFIG_LOADING_FEATURE.md` - Comprehensive guide (400+ lines)
+  - Usage instructions and examples
+  - Technical details and API reference
+  - Troubleshooting and migration guide
+- Added `CONFIG_LOADING_SUMMARY.md` - Quick reference
+  - One-page summary with use cases
+  - Quick start guide
+- Added `CONFIG_LOADING_UI_GUIDE.md` - Visual walkthrough
+  - UI screenshots and layouts
+  - User interaction flows
+  - Error states and best practices
+- Added `CONFIGURATION_LOADING_IMPLEMENTATION.md` - Developer guide
+  - Implementation summary
+  - Code examples and test cases
+- Updated `README.md` - Feature announcement
+- Updated Help tab - Usage instructions
+
+### 🔧 Changed
+- Footer updated to v1.3
+- Sidebar reorganized with config loading at top
+- Runtime settings enhanced with auto-population logic
+
+### 🐛 Fixed
+- Database path initialization order in sidebar
+
+---
+
 ## [1.2.0] - 2025-11-30
 
 ### 🎉 Added - Repository Forking Feature

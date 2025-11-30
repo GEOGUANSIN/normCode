@@ -19,6 +19,10 @@ project_root = script_dir.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+# Create directory for storing uploaded repository files
+REPO_FILES_DIR = script_dir / "saved_repositories"
+REPO_FILES_DIR.mkdir(exist_ok=True)
+
 from infra import ConceptRepo, InferenceRepo, Orchestrator
 from infra._orchest._db import OrchestratorDB
 from infra._agent._body import Body
@@ -33,6 +37,57 @@ st.set_page_config(
 )
 
 # --- Helper Functions ---
+
+def save_uploaded_file(uploaded_file, run_id: str, file_type: str) -> str:
+    """
+    Save an uploaded file to disk for future reloading.
+    
+    Args:
+        uploaded_file: Streamlit UploadedFile object
+        run_id: Current run ID
+        file_type: 'concepts', 'inferences', or 'inputs'
+    
+    Returns:
+        Path to saved file
+    """
+    if uploaded_file is None:
+        return None
+    
+    # Create directory for this run
+    run_dir = REPO_FILES_DIR / run_id
+    run_dir.mkdir(exist_ok=True)
+    
+    # Save file with standard name
+    file_path = run_dir / f"{file_type}.json"
+    
+    # Write file contents
+    uploaded_file.seek(0)
+    with open(file_path, 'wb') as f:
+        f.write(uploaded_file.read())
+    
+    uploaded_file.seek(0)  # Reset for later use
+    
+    return str(file_path)
+
+def load_file_from_path(file_path: str):
+    """
+    Load a JSON file from disk and return its contents.
+    
+    Args:
+        file_path: Path to JSON file
+    
+    Returns:
+        File contents as string or None if file doesn't exist
+    """
+    if not file_path or not os.path.exists(file_path):
+        return None
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        logging.error(f"Failed to load file from {file_path}: {e}")
+        return None
 
 def verify_repository_files(concept_repo: ConceptRepo, inference_repo: InferenceRepo, base_dir: str) -> Tuple[bool, List[str], List[str]]:
     """
@@ -214,45 +269,256 @@ if 'execution_log' not in st.session_state:
     st.session_state.execution_log = []
 if 'last_run' not in st.session_state:
     st.session_state.last_run = None
+if 'loaded_config' not in st.session_state:
+    st.session_state.loaded_config = None
+if 'config_loaded_from_run' not in st.session_state:
+    st.session_state.config_loaded_from_run = None
+if 'loaded_repo_files' not in st.session_state:
+    st.session_state.loaded_repo_files = {
+        'concepts': None,
+        'inferences': None,
+        'inputs': None
+    }
 
 # --- SIDEBAR: Configuration ---
 with st.sidebar:
     st.title("⚙️ Configuration")
     
-    st.subheader("📁 Repository Files")
-    concepts_file = st.file_uploader("Concepts JSON", type=['json'], key='concepts')
-    inferences_file = st.file_uploader("Inferences JSON", type=['json'], key='inferences')
-    inputs_file = st.file_uploader(
-        "Inputs JSON",
-        type=['json'],
-        key='inputs',
-        help="Provides data for ground concepts (e.g., {number pair} for addition). See sample_inputs.json for format."
-    )
+    # Load Configuration from Previous Runs
+    st.subheader("📋 Load Previous Config")
     
-    if not inputs_file:
+    # Default database path - check common locations
+    # User can override this later in Checkpoint Settings
+    default_db_path = "orchestration.db"
+    
+    # Check if default exists (absolute or relative paths both work)
+    db_path_for_config = default_db_path if os.path.exists(default_db_path) else None
+    
+    # Also check absolute path in app directory
+    if not db_path_for_config:
+        abs_path = str(script_dir / default_db_path)
+        if os.path.exists(abs_path):
+            db_path_for_config = abs_path
+    
+    if db_path_for_config:
+        try:
+            db_for_config = OrchestratorDB(db_path_for_config)
+            runs_with_config = db_for_config.list_runs(include_metadata=True)
+            
+            if runs_with_config:
+                # Create options for selectbox: run_id with timestamp
+                config_options = ["-- Select a previous run --"] + [
+                    f"{run['run_id'][:12]}... ({run['first_execution'][:16]})"
+                    for run in runs_with_config
+                ]
+                
+                selected_config_idx = st.selectbox(
+                    "Load settings from:",
+                    range(len(config_options)),
+                    format_func=lambda i: config_options[i],
+                    key="config_selector",
+                    help="Load configuration from a previous run to quickly replicate settings"
+                )
+                
+                if selected_config_idx > 0:  # Not the placeholder option
+                    selected_run = runs_with_config[selected_config_idx - 1]
+                    
+                    # Check if repository files exist for this run
+                    run_config = selected_run.get('config', {})
+                    has_repo_files = any([
+                        run_config.get('concepts_file_path'),
+                        run_config.get('inferences_file_path'),
+                        run_config.get('inputs_file_path')
+                    ])
+                    
+                    # Option to load repository files too
+                    load_repo_files = False
+                    if has_repo_files:
+                        load_repo_files = st.checkbox(
+                            "📁 Also load repository files",
+                            value=True,
+                            help="Load the exact repository files used in this run",
+                            key=f"load_files_{selected_run['run_id']}"
+                        )
+                        
+                        # Show which files are available
+                        available_files = []
+                        if run_config.get('concepts_file_path'):
+                            available_files.append("concepts.json")
+                        if run_config.get('inferences_file_path'):
+                            available_files.append("inferences.json")
+                        if run_config.get('inputs_file_path'):
+                            available_files.append("inputs.json")
+                        
+                        if available_files:
+                            st.caption(f"Available: {', '.join(available_files)}")
+                    
+                    col1, col2 = st.columns([1, 1])
+                    with col1:
+                        if st.button("🔄 Load Config", use_container_width=True):
+                            st.session_state.loaded_config = run_config
+                            st.session_state.config_loaded_from_run = selected_run['run_id']
+                            
+                            # Load repository files if requested
+                            if load_repo_files:
+                                for file_type in ['concepts', 'inferences', 'inputs']:
+                                    file_path = run_config.get(f'{file_type}_file_path')
+                                    if file_path:
+                                        file_contents = load_file_from_path(file_path)
+                                        if file_contents:
+                                            st.session_state.loaded_repo_files[file_type] = {
+                                                'name': os.path.basename(file_path),
+                                                'content': file_contents,
+                                                'path': file_path
+                                            }
+                            
+                            success_msg = f"✓ Loaded config from {selected_run['run_id'][:8]}..."
+                            if load_repo_files and has_repo_files:
+                                success_msg += " (with repository files)"
+                            st.success(success_msg)
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("👁️ Preview", use_container_width=True):
+                            if run_config:
+                                with st.expander("Configuration Details", expanded=True):
+                                    st.json(run_config)
+                            else:
+                                st.info("No configuration metadata saved for this run")
+                
+                # Show loaded config indicator
+                if st.session_state.config_loaded_from_run:
+                    # Check if files were also loaded
+                    loaded_files = [k for k, v in st.session_state.loaded_repo_files.items() if v is not None]
+                    
+                    if loaded_files:
+                        st.success(f"📌 Config + Files loaded from: `{st.session_state.config_loaded_from_run[:12]}...`")
+                        st.caption(f"Loaded files: {', '.join(loaded_files)}")
+                    else:
+                        st.success(f"📌 Config loaded from: `{st.session_state.config_loaded_from_run[:12]}...`")
+                    
+                    if st.button("🗑️ Clear Loaded Config", use_container_width=True):
+                        st.session_state.loaded_config = None
+                        st.session_state.config_loaded_from_run = None
+                        st.session_state.loaded_repo_files = {
+                            'concepts': None,
+                            'inferences': None,
+                            'inputs': None
+                        }
+                        st.rerun()
+            else:
+                st.info("No previous runs with configurations found")
+        except Exception as e:
+            st.warning(f"Could not load run configurations: {e}")
+    else:
+        st.info(f"Database not found. Run an orchestration to create it.")
+    
+    st.divider()
+    
+    st.subheader("📁 Repository Files")
+    
+    # Check if files were loaded from config
+    loaded_concepts = st.session_state.loaded_repo_files.get('concepts')
+    loaded_inferences = st.session_state.loaded_repo_files.get('inferences')
+    loaded_inputs = st.session_state.loaded_repo_files.get('inputs')
+    
+    # Concepts file
+    if loaded_concepts:
+        st.info(f"📄 Using loaded: `{loaded_concepts['name']}`")
+        if st.button("🔄 Upload Different Concepts File", key='change_concepts'):
+            st.session_state.loaded_repo_files['concepts'] = None
+            st.rerun()
+        concepts_file = None  # Will use loaded file
+    else:
+        concepts_file = st.file_uploader("Concepts JSON", type=['json'], key='concepts')
+    
+    # Inferences file
+    if loaded_inferences:
+        st.info(f"📄 Using loaded: `{loaded_inferences['name']}`")
+        if st.button("🔄 Upload Different Inferences File", key='change_inferences'):
+            st.session_state.loaded_repo_files['inferences'] = None
+            st.rerun()
+        inferences_file = None  # Will use loaded file
+    else:
+        inferences_file = st.file_uploader("Inferences JSON", type=['json'], key='inferences')
+    
+    # Inputs file
+    if loaded_inputs:
+        st.info(f"📄 Using loaded: `{loaded_inputs['name']}`")
+        if st.button("🔄 Upload Different Inputs File", key='change_inputs'):
+            st.session_state.loaded_repo_files['inputs'] = None
+            st.rerun()
+        inputs_file = None  # Will use loaded file
+    else:
+        inputs_file = st.file_uploader(
+            "Inputs JSON",
+            type=['json'],
+            key='inputs',
+            help="Provides data for ground concepts (e.g., {number pair} for addition). See sample_inputs.json for format."
+        )
+    
+    # Show tip only if no files are loaded or uploaded
+    if not inputs_file and not loaded_inputs:
         st.info("💡 **Tip**: Most repositories need an inputs.json file to provide ground concept data. Check `sample_inputs.json` for an example.")
     
     st.divider()
     
     st.subheader("🔧 Runtime Settings")
+    
+    # Get defaults from loaded config if available
+    loaded_config = st.session_state.loaded_config or {}
+    
+    # LLM Model selection
+    llm_models = ["qwen-plus", "gpt-4o", "claude-3-sonnet", "qwen-turbo-latest"]
+    default_llm = loaded_config.get("llm_model", "qwen-plus")
+    try:
+        default_llm_idx = llm_models.index(default_llm) if default_llm in llm_models else 0
+    except ValueError:
+        default_llm_idx = 0
+    
     llm_model = st.selectbox(
         "LLM Model",
-        ["qwen-plus", "gpt-4o", "claude-3-sonnet", "qwen-turbo-latest"],
-        index=0
+        llm_models,
+        index=default_llm_idx,
+        help="Loaded from previous run" if loaded_config.get("llm_model") else None
     )
-    max_cycles = st.number_input("Max Cycles", min_value=1, max_value=1000, value=50, step=10)
+    
+    # Max Cycles
+    default_max_cycles = loaded_config.get("max_cycles", 50)
+    max_cycles = st.number_input(
+        "Max Cycles", 
+        min_value=1, 
+        max_value=1000, 
+        value=int(default_max_cycles), 
+        step=10,
+        help="Loaded from previous run" if loaded_config.get("max_cycles") else None
+    )
     
     # Base directory for LLM file operations
+    loaded_base_dir = loaded_config.get("base_dir")
+    
+    # Determine default base_dir_option from loaded config
+    if loaded_base_dir:
+        if loaded_base_dir == str(script_dir):
+            default_base_dir_idx = 0  # App Directory
+        elif loaded_base_dir == str(project_root):
+            default_base_dir_idx = 1  # Project Root
+        else:
+            default_base_dir_idx = 2  # Custom Path
+    else:
+        default_base_dir_idx = 0
+    
     base_dir_option = st.radio(
         "Base Directory",
         ["App Directory (default)", "Project Root", "Custom Path"],
-        help="Where generated scripts and prompts will be stored"
+        index=default_base_dir_idx,
+        help="Where generated scripts and prompts will be stored. Loaded from previous run" if loaded_base_dir else "Where generated scripts and prompts will be stored"
     )
     
     if base_dir_option == "Custom Path":
         custom_base_dir = st.text_input(
             "Custom Base Directory",
-            value=str(script_dir),
+            value=loaded_base_dir if loaded_base_dir and loaded_base_dir not in [str(script_dir), str(project_root)] else str(script_dir),
             help="Absolute or relative path for LLM file operations"
         )
     else:
@@ -261,7 +527,20 @@ with st.sidebar:
     st.divider()
     
     st.subheader("💾 Checkpoint Settings")
-    db_path = st.text_input("Database Path", value="orchestration.db")
+    
+    # Get database path from loaded config if available
+    default_db_path = loaded_config.get("db_path", "orchestration.db")
+    
+    if loaded_config.get("db_path"):
+        db_path_help = "Loaded from previous run. Supports both absolute and relative paths."
+    else:
+        db_path_help = "Path to SQLite database file. Can be absolute (e.g., /path/to/db.sqlite) or relative (e.g., orchestration.db)"
+    
+    db_path = st.text_input(
+        "Database Path", 
+        value=default_db_path,
+        help=db_path_help
+    )
     
     resume_option = st.radio(
         "Execution Mode",
@@ -269,22 +548,48 @@ with st.sidebar:
         help="Fresh Run: Start new execution\nResume: Continue existing run (configure reconciliation in Advanced Options)\nFork: Load state from one run, execute different repository with fresh history"
     )
     
-    if resume_option != "Fresh Run":
-        run_id_to_resume = st.text_input("Run ID to Resume", placeholder="Leave empty for latest")
+    if resume_option == "Fresh Run":
+        # Allow custom run name/ID for fresh runs
+        # Load from previous config if available
+        default_custom_run_id = loaded_config.get("custom_run_id", "")
+        custom_run_id = st.text_input(
+            "Run Name/ID (optional)",
+            value=default_custom_run_id,
+            placeholder="Leave empty to auto-generate",
+            help="Specify a custom name/ID for this run. Leave empty to auto-generate a UUID. This helps identify and organize your runs." + (" (Loaded from previous run)" if default_custom_run_id else "")
+        )
+        run_id_to_resume = None
+        new_run_id = None
+    elif resume_option != "Fresh Run":
+        # Load from previous config if available
+        # For Fork mode, load forked_from_run_id; for Resume mode, load resumed_from_run_id
+        default_run_id_to_resume = ""
+        if resume_option == "Fork from Checkpoint":
+            default_run_id_to_resume = loaded_config.get("forked_from_run_id", "")
+        else:  # Resume from Checkpoint
+            default_run_id_to_resume = loaded_config.get("resumed_from_run_id", "")
+        
+        run_id_to_resume = st.text_input(
+            "Run ID to Resume", 
+            value=default_run_id_to_resume,
+            placeholder="Leave empty for latest",
+            help="The run ID to load state from" + (" (Loaded from previous run)" if default_run_id_to_resume else "")
+        )
+        custom_run_id = None  # Not used for Resume/Fork modes
         
         # Forking option: specify a new run ID
         if resume_option == "Fork from Checkpoint":
             st.info("💡 **Forking**: Load state from one run, start a new run with different repository")
+            # Load from previous config if available
+            default_new_run_id = loaded_config.get("new_run_id", "")
             new_run_id = st.text_input(
                 "New Run ID (optional)",
+                value=default_new_run_id,
                 placeholder="Leave empty to auto-generate",
-                help="Specify a new run ID for the forked run. Leave empty to auto-generate."
+                help="Specify a new run ID for the forked run. Leave empty to auto-generate." + (" (Loaded from previous run)" if default_new_run_id else "")
             )
         else:
             new_run_id = None
-    else:
-        run_id_to_resume = None
-        new_run_id = None
     
     # Advanced options (must come after resume_option is defined)
     with st.expander("🔧 Advanced Options"):
@@ -330,15 +635,24 @@ tab1, tab2, tab3, tab4 = st.tabs(["🚀 Execute", "📊 Results", "📜 History"
 with tab1:
     st.header("Execute Orchestration")
     
-    if concepts_file and inferences_file:
+    # Check if we have files (either uploaded or loaded)
+    has_concepts = concepts_file is not None or loaded_concepts is not None
+    has_inferences = inferences_file is not None or loaded_inferences is not None
+    
+    if has_concepts and has_inferences:
         # Preview section
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("📦 Concepts Preview")
             try:
-                concepts_file.seek(0)
-                concepts_data = json.load(concepts_file)
+                # Get concepts data from uploaded or loaded file
+                if concepts_file:
+                    concepts_file.seek(0)
+                    concepts_data = json.load(concepts_file)
+                else:
+                    concepts_data = json.loads(loaded_concepts['content'])
+                
                 st.metric("Total Concepts", len(concepts_data))
                 
                 if concepts_data:
@@ -350,8 +664,13 @@ with tab1:
         with col2:
             st.subheader("🔗 Inferences Preview")
             try:
-                inferences_file.seek(0)
-                inferences_data = json.load(inferences_file)
+                # Get inferences data from uploaded or loaded file
+                if inferences_file:
+                    inferences_file.seek(0)
+                    inferences_data = json.load(inferences_file)
+                else:
+                    inferences_data = json.loads(loaded_inferences['content'])
+                
                 st.metric("Total Inferences", len(inferences_data))
                 
                 if inferences_data:
@@ -361,11 +680,17 @@ with tab1:
                 st.error(f"Error loading inferences: {e}")
         
         # Inputs preview
-        if inputs_file:
+        has_inputs = inputs_file is not None or loaded_inputs is not None
+        if has_inputs:
             st.subheader("📥 Inputs Preview")
             try:
-                inputs_file.seek(0)
-                inputs_data = json.load(inputs_file)
+                # Get inputs data from uploaded or loaded file
+                if inputs_file:
+                    inputs_file.seek(0)
+                    inputs_data = json.load(inputs_file)
+                else:
+                    inputs_data = json.loads(loaded_inputs['content'])
+                
                 st.write(f"**{len(inputs_data)} input concept(s) will be injected:**")
                 for concept_name in inputs_data.keys():
                     st.write(f"- `{concept_name}`")
@@ -391,18 +716,34 @@ with tab1:
         if execute_btn:
             with st.spinner("🔄 Executing orchestration..."):
                 try:
-                    # Reset file pointers
-                    concepts_file.seek(0)
-                    inferences_file.seek(0)
+                    # Get concepts data from uploaded or loaded file
+                    if concepts_file:
+                        concepts_file.seek(0)
+                        concepts_json_data = json.load(concepts_file)
+                    else:
+                        concepts_json_data = json.loads(loaded_concepts['content'])
                     
-                    # Load repositories
-                    concept_repo = ConceptRepo.from_json_list(json.load(concepts_file))
+                    # Get inferences data from uploaded or loaded file
+                    if inferences_file:
+                        inferences_file.seek(0)
+                        inferences_json_data = json.load(inferences_file)
+                    else:
+                        inferences_json_data = json.loads(loaded_inferences['content'])
                     
-                    # Load and inject inputs
+                    # Get inputs data if available
+                    inputs_json_data = None
                     if inputs_file:
                         inputs_file.seek(0)
-                        inputs_data = json.load(inputs_file)
-                        for concept_name, details in inputs_data.items():
+                        inputs_json_data = json.load(inputs_file)
+                    elif loaded_inputs:
+                        inputs_json_data = json.loads(loaded_inputs['content'])
+                    
+                    # Load repositories
+                    concept_repo = ConceptRepo.from_json_list(concepts_json_data)
+                    
+                    # Load and inject inputs
+                    if inputs_json_data:
+                        for concept_name, details in inputs_json_data.items():
                             if isinstance(details, dict) and 'data' in details:
                                 data = details['data']
                                 axes = details.get('axes')
@@ -410,11 +751,10 @@ with tab1:
                                 data = details
                                 axes = None
                             concept_repo.add_reference(concept_name, data, axis_names=axes)
-                        st.info(f"✓ Injected {len(inputs_data)} input concept(s)")
+                        st.info(f"✓ Injected {len(inputs_json_data)} input concept(s)")
                     
                     # Load inferences
-                    inferences_file.seek(0)
-                    inference_repo = InferenceRepo.from_json_list(json.load(inferences_file), concept_repo)
+                    inference_repo = InferenceRepo.from_json_list(inferences_json_data, concept_repo)
                     
                     # Determine base directory for Body
                     st.info("Determining base directory...")
@@ -453,14 +793,70 @@ with tab1:
                     
                     # Create or load orchestrator
                     if resume_option == "Fresh Run":
+                        # Use custom run_id if provided, otherwise auto-generate
+                        run_id_for_fresh_run = custom_run_id.strip() if custom_run_id and custom_run_id.strip() else None
+                        
                         orchestrator = Orchestrator(
                             concept_repo=concept_repo,
                             inference_repo=inference_repo,
                             body=body,
                             max_cycles=max_cycles,
-                            db_path=db_path
+                            db_path=db_path,
+                            run_id=run_id_for_fresh_run  # Pass custom run_id if provided
                         )
-                        st.info(f"🆕 Started fresh run: `{orchestrator.run_id}`")
+                        
+                        if run_id_for_fresh_run:
+                            st.info(f"🆕 Started fresh run with custom ID: `{orchestrator.run_id}`")
+                        else:
+                            st.info(f"🆕 Started fresh run: `{orchestrator.run_id}`")
+                        
+                        # Save repository files to disk and get their paths
+                        saved_file_paths = {}
+                        try:
+                            if concepts_file:
+                                saved_file_paths['concepts'] = save_uploaded_file(concepts_file, orchestrator.run_id, 'concepts')
+                            elif loaded_concepts:
+                                saved_file_paths['concepts'] = loaded_concepts['path']
+                            
+                            if inferences_file:
+                                saved_file_paths['inferences'] = save_uploaded_file(inferences_file, orchestrator.run_id, 'inferences')
+                            elif loaded_inferences:
+                                saved_file_paths['inferences'] = loaded_inferences['path']
+                            
+                            if inputs_file:
+                                saved_file_paths['inputs'] = save_uploaded_file(inputs_file, orchestrator.run_id, 'inputs')
+                            elif loaded_inputs:
+                                saved_file_paths['inputs'] = loaded_inputs['path']
+                            
+                            st.info(f"✓ Saved repository files for run: {orchestrator.run_id[:8]}...")
+                        except Exception as e:
+                            st.warning(f"Could not save repository files: {e}")
+                            logging.warning(f"Failed to save repository files: {e}")
+                        
+                        # Save app-specific configuration to database
+                        try:
+                            db_for_config = OrchestratorDB(db_path, run_id=orchestrator.run_id)
+                            app_config = {
+                                "llm_model": llm_model,
+                                "max_cycles": max_cycles,
+                                "base_dir": body_base_dir,
+                                "base_dir_option": base_dir_option,
+                                "db_path": db_path,
+                                "agent_frame_model": orchestrator.agent_frame_model,
+                                "resume_mode": "Fresh Run",
+                                "verify_files": verify_files,
+                                "app_version": "1.3.1",
+                                # Add file paths
+                                "concepts_file_path": saved_file_paths.get('concepts'),
+                                "inferences_file_path": saved_file_paths.get('inferences'),
+                                "inputs_file_path": saved_file_paths.get('inputs'),
+                                # Save custom run name if provided
+                                "custom_run_id": run_id_for_fresh_run if run_id_for_fresh_run else None
+                            }
+                            db_for_config.save_run_metadata(orchestrator.run_id, app_config)
+                            logging.info(f"Saved app configuration for run_id: {orchestrator.run_id}")
+                        except Exception as e:
+                            logging.warning(f"Could not save app configuration: {e}")
                     elif resume_option == "Fork from Checkpoint":
                         # Forking: Load state from one run, start new history
                         import uuid
@@ -479,6 +875,53 @@ with tab1:
                         )
                         st.success(f"🔱 Forked from `{run_id_to_resume or 'latest'}` → New run: `{orchestrator.run_id}`")
                         st.info(f"✓ State loaded from source run using {reconciliation_mode} mode, starting fresh execution history")
+                        
+                        # Save repository files to disk and get their paths
+                        saved_file_paths = {}
+                        try:
+                            if concepts_file:
+                                saved_file_paths['concepts'] = save_uploaded_file(concepts_file, orchestrator.run_id, 'concepts')
+                            elif loaded_concepts:
+                                saved_file_paths['concepts'] = loaded_concepts['path']
+                            
+                            if inferences_file:
+                                saved_file_paths['inferences'] = save_uploaded_file(inferences_file, orchestrator.run_id, 'inferences')
+                            elif loaded_inferences:
+                                saved_file_paths['inferences'] = loaded_inferences['path']
+                            
+                            if inputs_file:
+                                saved_file_paths['inputs'] = save_uploaded_file(inputs_file, orchestrator.run_id, 'inputs')
+                            elif loaded_inputs:
+                                saved_file_paths['inputs'] = loaded_inputs['path']
+                        except Exception as e:
+                            logging.warning(f"Failed to save repository files: {e}")
+                        
+                        # Save app-specific configuration to database
+                        try:
+                            db_for_config = OrchestratorDB(db_path, run_id=orchestrator.run_id)
+                            app_config = {
+                                "llm_model": llm_model,
+                                "max_cycles": max_cycles,
+                                "base_dir": body_base_dir,
+                                "base_dir_option": base_dir_option,
+                                "db_path": db_path,
+                                "agent_frame_model": orchestrator.agent_frame_model,
+                                "resume_mode": "Fork from Checkpoint",
+                                "forked_from_run_id": run_id_to_resume or "latest",
+                                "reconciliation_mode": reconciliation_mode,
+                                "verify_files": verify_files,
+                                "app_version": "1.3.1",
+                                # Add file paths
+                                "concepts_file_path": saved_file_paths.get('concepts'),
+                                "inferences_file_path": saved_file_paths.get('inferences'),
+                                "inputs_file_path": saved_file_paths.get('inputs'),
+                                # Save custom run name if provided
+                                "new_run_id": new_run_id if new_run_id and new_run_id.strip() else None
+                            }
+                            db_for_config.save_run_metadata(orchestrator.run_id, app_config)
+                            logging.info(f"Saved app configuration for forked run_id: {orchestrator.run_id}")
+                        except Exception as e:
+                            logging.warning(f"Could not save app configuration: {e}")
                     else:
                         # Resume mode - use reconciliation_mode from Advanced Options
                         orchestrator = Orchestrator.load_checkpoint(
@@ -491,6 +934,56 @@ with tab1:
                             mode=reconciliation_mode  # Use user-selected mode
                         )
                         st.info(f"♻️ Resumed run: `{orchestrator.run_id}` (reconciliation: {reconciliation_mode})")
+                        
+                        # Save repository files to disk and get their paths
+                        saved_file_paths = {}
+                        try:
+                            if concepts_file:
+                                saved_file_paths['concepts'] = save_uploaded_file(concepts_file, orchestrator.run_id, 'concepts')
+                            elif loaded_concepts:
+                                saved_file_paths['concepts'] = loaded_concepts['path']
+                            
+                            if inferences_file:
+                                saved_file_paths['inferences'] = save_uploaded_file(inferences_file, orchestrator.run_id, 'inferences')
+                            elif loaded_inferences:
+                                saved_file_paths['inferences'] = loaded_inferences['path']
+                            
+                            if inputs_file:
+                                saved_file_paths['inputs'] = save_uploaded_file(inputs_file, orchestrator.run_id, 'inputs')
+                            elif loaded_inputs:
+                                saved_file_paths['inputs'] = loaded_inputs['path']
+                        except Exception as e:
+                            logging.warning(f"Failed to save repository files: {e}")
+                        
+                        # Update app-specific configuration in database (for resumed runs)
+                        try:
+                            db_for_config = OrchestratorDB(db_path, run_id=orchestrator.run_id)
+                            # Get existing metadata and update it
+                            existing_metadata = db_for_config.get_run_metadata(orchestrator.run_id) or {}
+                            app_config = {
+                                **existing_metadata,  # Keep existing metadata
+                                "llm_model": llm_model,
+                                "max_cycles": max_cycles,
+                                "base_dir": body_base_dir,
+                                "base_dir_option": base_dir_option,
+                                "db_path": db_path,
+                                "agent_frame_model": orchestrator.agent_frame_model,
+                                "resume_mode": "Resume from Checkpoint",
+                                "reconciliation_mode": reconciliation_mode,
+                                "verify_files": verify_files,
+                                "app_version": "1.3.1",
+                                "last_resumed": datetime.now().isoformat(),
+                                # Update file paths
+                                "concepts_file_path": saved_file_paths.get('concepts') or existing_metadata.get('concepts_file_path'),
+                                "inferences_file_path": saved_file_paths.get('inferences') or existing_metadata.get('inferences_file_path'),
+                                "inputs_file_path": saved_file_paths.get('inputs') or existing_metadata.get('inputs_file_path'),
+                                # Save resumed_from_run_id if it was a fresh resume (not continuing same run)
+                                "resumed_from_run_id": run_id_to_resume if run_id_to_resume and run_id_to_resume.strip() else existing_metadata.get('resumed_from_run_id')
+                            }
+                            db_for_config.save_run_metadata(orchestrator.run_id, app_config)
+                            logging.info(f"Updated app configuration for resumed run_id: {orchestrator.run_id}")
+                        except Exception as e:
+                            logging.warning(f"Could not update app configuration: {e}")
                     
                     # Progress tracking
                     progress_placeholder = st.empty()
@@ -741,6 +1234,40 @@ with tab3:
                         
                         st.divider()
                         
+                        # Show run configuration
+                        st.write("**Run Configuration:**")
+                        run_metadata = db.get_run_metadata(run['run_id'])
+                        if run_metadata:
+                            config_col1, config_col2 = st.columns(2)
+                            
+                            with config_col1:
+                                if 'llm_model' in run_metadata:
+                                    st.caption(f"🤖 LLM Model: `{run_metadata['llm_model']}`")
+                                if 'max_cycles' in run_metadata:
+                                    st.caption(f"🔄 Max Cycles: `{run_metadata['max_cycles']}`")
+                                if 'resume_mode' in run_metadata:
+                                    st.caption(f"▶️ Mode: `{run_metadata['resume_mode']}`")
+                            
+                            with config_col2:
+                                if 'base_dir' in run_metadata:
+                                    st.caption(f"📂 Base Dir: `{run_metadata['base_dir'][-30:]}`")
+                                if 'reconciliation_mode' in run_metadata:
+                                    st.caption(f"🔧 Reconciliation: `{run_metadata['reconciliation_mode']}`")
+                                if 'forked_from_run_id' in run_metadata:
+                                    st.caption(f"🔱 Forked from: `{run_metadata['forked_from_run_id'][:12]}...`")
+                            
+                            # Show full config with checkbox toggle (can't use nested expander)
+                            show_full_config = st.checkbox(
+                                "View Full Configuration",
+                                key=f"show_config_{run['run_id']}"
+                            )
+                            if show_full_config:
+                                st.json(run_metadata)
+                        else:
+                            st.caption("ℹ️ No configuration metadata available")
+                        
+                        st.divider()
+                        
                         # Show checkpoints
                         checkpoints = db.list_checkpoints(run['run_id'])
                         if checkpoints:
@@ -882,6 +1409,23 @@ with tab4:
     
     st.markdown("""
     ## How to Use This App
+    
+    ### 🆕 Load Configuration from Previous Runs
+    
+    **NEW in v1.3!** You can now load configurations from previous runs to quickly replicate settings:
+    
+    1. In the sidebar, look for "📋 Load Previous Config"
+    2. Select a previous run from the dropdown
+    3. Click "🔄 Load Config" to automatically populate settings
+    4. Settings loaded include: LLM model, max cycles, base directory, and more
+    5. Click "👁️ Preview" to see full configuration details
+    
+    This feature is perfect for:
+    - Re-running experiments with the same settings
+    - Comparing results with different repositories but same configuration
+    - Quickly setting up similar runs without manual configuration
+    
+    ---
     
     ### 1️⃣ Prepare Your Repository Files
     
@@ -1046,5 +1590,5 @@ with tab4:
 
 # Footer
 st.divider()
-st.caption("NormCode Orchestrator v1.2 | Powered by Streamlit | 🔱 Fork repositories for pipeline workflows!")
+st.caption("NormCode Orchestrator v1.3.1 | Powered by Streamlit | 📋 Load complete setups (config + files + database)!")
 
