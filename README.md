@@ -114,7 +114,25 @@ Then, run the script:
 python infra/examples/add_examples/ex_add_complete_code.py
 ```
 
-### 4. Launching the Editor
+### 4. Using the Streamlit Orchestrator App
+
+For a quick and easy way to run orchestrations, we provide a minimal Streamlit web app:
+
+```bash
+cd streamlit_app
+pip install streamlit
+streamlit run app.py
+```
+
+This provides a web interface to:
+- Upload repository JSON files (concepts, inferences, inputs)
+- Configure execution parameters
+- Start/resume orchestrations with checkpointing
+- View results and execution history
+
+See [**streamlit_app/README.md**](streamlit_app/README.md) for detailed instructions.
+
+### 5. Launching the Editor
 
 The `editor_app` is a powerful web-based IDE for working with NormCode. It has its own set of dependencies and requires a separate setup process for its FastAPI backend and React frontend.
 

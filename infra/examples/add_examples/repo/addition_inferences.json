@@ -66,7 +66,7 @@
   },
   {
     "id": "90308084-d76f-4548-b44a-e2aadb6c4938",
-    "inference_sequence": "imperative_python_indirect",
+    "inference_sequence": "imperative_python",
     "concept_to_infer": "{digit sum}",
     "function_concept": "::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)",
     "value_concepts": [
@@ -187,7 +187,7 @@
   },
   {
     "id": "db773da2-82d6-47af-ade0-4d119beda8cd",
-    "inference_sequence": "imperative_python_indirect",
+    "inference_sequence": "imperative_python",
     "concept_to_infer": "{single unit place value}",
     "function_concept": "::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)",
     "value_concepts": [
@@ -361,7 +361,7 @@
   },
   {
     "id": "3db54100-1208-4fe8-8246-a042b76e6204",
-    "inference_sequence": "imperative_python_indirect",
+    "inference_sequence": "imperative_python",
     "concept_to_infer": "{number with last digit removed}",
     "function_concept": "::(output 0 if {1}<$({number})%_> is less than 10, otherwise remove {2}?<$({unit place digit})%_> from {1}<$({number})%_>)",
     "value_concepts": [
@@ -393,7 +393,7 @@
   },
   {
     "id": "b1aa589e-b708-4a87-b513-2d147790dfff",
-    "inference_sequence": "judgement_python_indirect",
+    "inference_sequence": "judgement_python",
     "concept_to_infer": "<all number is 0>",
     "function_concept": ":%(True):<{1}<$({number})%_> is 0>",
     "value_concepts": [
@@ -449,7 +449,7 @@
   },
   {
     "id": "ba0a01f3-4bb3-497b-9307-e8d494ee7409",
-    "inference_sequence": "judgement_python_indirect",
+    "inference_sequence": "judgement_python",
     "concept_to_infer": "<carry-over number is 0>",
     "function_concept": ":%(True):<{1}<$({carry-over number})%_> is 0>",
     "value_concepts": [
@@ -541,7 +541,7 @@
   },
   {
     "id": "ddf198aa-e583-4547-aa7e-373d5cf2dd53",
-    "inference_sequence": "imperative_python_indirect",
+    "inference_sequence": "imperative_python",
     "concept_to_infer": "{carry-over number}*1",
     "function_concept": "::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)",
     "value_concepts": [
@@ -598,7 +598,7 @@
   },
   {
     "id": "54861a94-3fd3-46d5-865e-b9e2d4cfa519",
-    "inference_sequence": "imperative_python_indirect",
+    "inference_sequence": "imperative_python",
     "concept_to_infer": "{remainder}",
     "function_concept": "::(get the {1}?<$({remainder})%_> of {2}<$({digit sum})%_> divided by 10)",
     "value_concepts": [
