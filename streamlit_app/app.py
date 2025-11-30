@@ -258,14 +258,6 @@ with st.sidebar:
     else:
         custom_base_dir = None
     
-    # Advanced options
-    with st.expander("🔧 Advanced Options"):
-        verify_files = st.checkbox(
-            "Verify repository file references",
-            value=True,
-            help="Check that all files referenced in concepts/inferences exist in base_dir before execution"
-        )
-    
     st.divider()
     
     st.subheader("💾 Checkpoint Settings")
@@ -273,14 +265,60 @@ with st.sidebar:
     
     resume_option = st.radio(
         "Execution Mode",
-        ["Fresh Run", "Resume (PATCH)", "Resume (OVERWRITE)", "Resume (FILL_GAPS)"],
-        help="PATCH: Smart merge (discards stale state)\nOVERWRITE: Trust checkpoint completely\nFILL_GAPS: Only fill empty concepts"
+        ["Fresh Run", "Resume from Checkpoint", "Fork from Checkpoint"],
+        help="Fresh Run: Start new execution\nResume: Continue existing run (configure reconciliation in Advanced Options)\nFork: Load state from one run, execute different repository with fresh history"
     )
     
     if resume_option != "Fresh Run":
         run_id_to_resume = st.text_input("Run ID to Resume", placeholder="Leave empty for latest")
+        
+        # Forking option: specify a new run ID
+        if resume_option == "Fork from Checkpoint":
+            st.info("💡 **Forking**: Load state from one run, start a new run with different repository")
+            new_run_id = st.text_input(
+                "New Run ID (optional)",
+                placeholder="Leave empty to auto-generate",
+                help="Specify a new run ID for the forked run. Leave empty to auto-generate."
+            )
+        else:
+            new_run_id = None
     else:
         run_id_to_resume = None
+        new_run_id = None
+    
+    # Advanced options (must come after resume_option is defined)
+    with st.expander("🔧 Advanced Options"):
+        verify_files = st.checkbox(
+            "Verify repository file references",
+            value=True,
+            help="Check that all files referenced in concepts/inferences exist in base_dir before execution"
+        )
+        
+        # Reconciliation mode (only shown for Resume/Fork modes)
+        if resume_option != "Fresh Run":
+            st.write("**Checkpoint Reconciliation Mode:**")
+            
+            # Set smart default based on execution mode
+            if resume_option == "Fork from Checkpoint":
+                default_reconciliation = "OVERWRITE"
+                help_text = "OVERWRITE (default for forking): Trusts checkpoint data completely, keeps all values even if logic changed. PATCH: Discards values with changed logic. FILL_GAPS: Only fills empty concepts."
+            else:
+                default_reconciliation = "PATCH"
+                help_text = "PATCH (default for resuming): Smart merge - discards stale state, keeps valid data. OVERWRITE: Trusts checkpoint completely. FILL_GAPS: Only fills empty concepts."
+            
+            # Map to radio button index
+            mode_options = ["PATCH", "OVERWRITE", "FILL_GAPS"]
+            default_index = mode_options.index(default_reconciliation)
+            
+            reconciliation_mode = st.radio(
+                "How to apply checkpoint state:",
+                mode_options,
+                index=default_index,
+                help=help_text,
+                key="reconciliation_mode"
+            )
+        else:
+            reconciliation_mode = None
 
 # --- MAIN AREA ---
 st.markdown('<h1 class="main-header">🧠 NormCode Orchestrator</h1>', unsafe_allow_html=True)
@@ -423,9 +461,10 @@ with tab1:
                             db_path=db_path
                         )
                         st.info(f"🆕 Started fresh run: `{orchestrator.run_id}`")
-                    else:
-                        # Extract mode from resume_option
-                        mode = resume_option.split("(")[1].strip(")")
+                    elif resume_option == "Fork from Checkpoint":
+                        # Forking: Load state from one run, start new history
+                        import uuid
+                        fork_new_run_id = new_run_id if new_run_id else f"fork-{uuid.uuid4().hex[:8]}"
                         
                         orchestrator = Orchestrator.load_checkpoint(
                             concept_repo=concept_repo,
@@ -434,9 +473,24 @@ with tab1:
                             body=body,
                             max_cycles=max_cycles,
                             run_id=run_id_to_resume if run_id_to_resume else None,
-                            mode=mode
+                            new_run_id=fork_new_run_id,
+                            mode=reconciliation_mode,  # Use user-selected mode
+                            validate_compatibility=True
                         )
-                        st.info(f"♻️ Resumed run: `{orchestrator.run_id}` (mode: {mode})")
+                        st.success(f"🔱 Forked from `{run_id_to_resume or 'latest'}` → New run: `{orchestrator.run_id}`")
+                        st.info(f"✓ State loaded from source run using {reconciliation_mode} mode, starting fresh execution history")
+                    else:
+                        # Resume mode - use reconciliation_mode from Advanced Options
+                        orchestrator = Orchestrator.load_checkpoint(
+                            concept_repo=concept_repo,
+                            inference_repo=inference_repo,
+                            db_path=db_path,
+                            body=body,
+                            max_cycles=max_cycles,
+                            run_id=run_id_to_resume if run_id_to_resume else None,
+                            mode=reconciliation_mode  # Use user-selected mode
+                        )
+                        st.info(f"♻️ Resumed run: `{orchestrator.run_id}` (reconciliation: {reconciliation_mode})")
                     
                     # Progress tracking
                     progress_placeholder = st.empty()
@@ -861,9 +915,16 @@ with tab4:
     ### 4️⃣ Choose Execution Mode
     
     - **Fresh Run**: Start a new execution from scratch
-    - **Resume (PATCH)**: Smart merge - discards stale state, keeps valid data
-    - **Resume (OVERWRITE)**: Trust checkpoint completely
-    - **Resume (FILL_GAPS)**: Only fill empty concepts from checkpoint
+    - **Resume from Checkpoint**: Continue an existing run from its last checkpoint
+    - **Fork from Checkpoint**: Load state from one run, start new execution with different repository
+    
+    #### Reconciliation Mode (Advanced Options)
+    
+    When resuming or forking, you can choose how checkpoint state is applied:
+    
+    - **PATCH** (default for Resume): Smart merge - discards values with changed logic, keeps valid data
+    - **OVERWRITE** (default for Fork): Trusts checkpoint completely - keeps all values even if logic changed
+    - **FILL_GAPS**: Only fills empty concepts - prefers new repo defaults
     
     ### 5️⃣ Execute & View Results
     
@@ -901,6 +962,42 @@ with tab4:
     - View execution history
     
     See the **History** tab for available runs and checkpoints.
+    
+    ### Forking Runs (Repository Chaining)
+    
+    **Forking** allows you to chain repositories together by loading completed concepts from one run and using them in a different repository:
+    
+    **Example: Addition → Combination**
+    
+    1. **Run the Addition Repository:**
+       - Upload `addition_concepts.json`, `addition_inferences.json`, `addition_inputs.json`
+       - Execute (produces `{new number pair}` with digit-by-digit results)
+       - Note the run ID
+    
+    2. **Fork to Combination Repository:**
+       - Upload `combination_concepts.json`, `combination_inferences.json`
+       - NO inputs.json needed (will load from checkpoint)
+       - Choose "Fork from Checkpoint" mode
+       - Enter the addition run ID
+       - Execute!
+    
+    **What Happens:**
+    - State from addition run is loaded (including `{new number pair}`)
+    - **OVERWRITE mode** keeps all checkpoint data (even if logic differs between repos)
+    - New repository's inferences execute using the loaded data
+    - Fresh execution history starts for the new run
+    - Cycle count resets to 1
+    
+    **Why OVERWRITE for Forking?**
+    - Different repos may have different signatures for same concept
+    - PATCH would discard data due to signature mismatch
+    - OVERWRITE trusts the checkpoint and keeps all data
+    - You can change to PATCH in Advanced Options if needed
+    
+    **Use Cases:**
+    - Multi-stage pipelines (addition → combination → analysis)
+    - Testing different post-processing on same input
+    - Reusing expensive computation results
     
     ---
     
@@ -949,5 +1046,5 @@ with tab4:
 
 # Footer
 st.divider()
-st.caption("NormCode Orchestrator v1.1 | Powered by Streamlit | 📋 Now with detailed execution logs!")
+st.caption("NormCode Orchestrator v1.2 | Powered by Streamlit | 🔱 Fork repositories for pipeline workflows!")
 

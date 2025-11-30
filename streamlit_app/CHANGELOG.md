@@ -2,6 +2,67 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2025-11-30
+
+### 🎉 Added - Repository Forking Feature
+
+#### Fork from Checkpoint Mode
+- ✅ **New Execution Mode**: "Fork from Checkpoint"
+  - Load state from one run
+  - Execute with a different repository
+  - Start fresh execution history
+  - Enables repository chaining workflows
+  
+#### Reconciliation Mode Selection
+- ✅ **Separated Execution Mode from Reconciliation Mode**
+  - Execution Mode: Fresh Run / Resume / Fork (main choice)
+  - Reconciliation Mode: PATCH / OVERWRITE / FILL_GAPS (Advanced Options)
+  - **Smart defaults:** 
+    - **PATCH for Resume** - Safe for same repo with bug fixes
+    - **OVERWRITE for Fork** - Essential for repository chaining (keeps data despite signature differences)
+  - Users can override defaults as needed in Advanced Options
+
+#### UI Enhancements
+- ✅ **New Run ID Field**: Specify custom run ID for forked runs
+  - Auto-generates if left empty (`fork-abc123...`)
+  - Supports semantic naming for better organization
+- ✅ **Forking Status Messages**: Clear feedback when forking
+  - Shows source run ID
+  - Shows new run ID
+  - Confirms state transfer
+
+#### Use Cases Enabled
+- ✅ **Repository Chaining**: Connect repositories in pipelines (e.g., addition → combination)
+- ✅ **Multi-stage Processing**: Load data → Process → Analyze → Visualize
+- ✅ **Testing Variations**: Run same input through different repositories
+- ✅ **Reuse Expensive Computations**: Don't re-run costly operations
+
+#### Technical Implementation
+- ✅ Uses `Orchestrator.load_checkpoint()` with `new_run_id` parameter
+- ✅ Automatically applies PATCH mode for safe state transfer
+- ✅ Resets execution counters and cycle count
+- ✅ Preserves completed concept data from source run
+- ✅ Compatible with existing checkpoint database
+
+### 📝 Documentation
+- Added `FORKING_GUIDE.md` - Comprehensive forking tutorial
+  - Step-by-step instructions
+  - Example workflows (addition→combination)
+  - Best practices
+  - Troubleshooting guide
+- Updated Help tab with forking section
+  - Example: Addition → Combination pipeline
+  - Use cases and benefits
+- Updated README with forking feature mention
+
+### 🔧 Technical Changes
+- Modified execution mode selection UI
+- Added fork handling in orchestrator initialization
+- Added `import uuid` for auto-generating fork IDs
+- Enhanced status messaging for forking
+
+---
+
 ## [1.1.0] - 2025-11-30
 
 ### 🎉 Added - Comprehensive Logging Features
@@ -66,10 +127,15 @@ All notable changes to this project will be documented in this file.
 - No new dependencies
 
 ### 🐛 Fixed
-- **Issue**: Detailed execution logs stored in database were not accessible through the UI
-- **Solution**: Added comprehensive log viewing in Results and History tabs
-- **Impact**: Users can now debug and analyze executions effectively
-- **Technical Fix**: Used checkboxes instead of nested expanders to avoid Streamlit API limitations
+- **Issue**: Fork mode was using PATCH reconciliation, causing data loss
+  - When forking (e.g., Addition → Combination), concepts like `{new number pair}` have different signatures in each repo
+  - PATCH mode discarded them due to signature mismatch
+  - Caused "missing ground concept data" errors
+- **Solution**: 
+  - Default to OVERWRITE mode for forking (keeps all checkpoint data)
+  - Default to PATCH mode for resuming (safe for same repo)
+  - Allow users to override in Advanced Options
+- **Impact**: Repository chaining workflows now work correctly
 
 ---
 

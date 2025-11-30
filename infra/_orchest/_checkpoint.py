@@ -231,7 +231,7 @@ class CheckpointManager:
         return self.db.list_checkpoints(run_id)
 
     def reconcile_state(self, checkpoint_data: Dict[str, Any], orchestrator: 'Orchestrator', 
-                       mode: str = "PATCH"):
+                       mode: str = "PATCH", is_forking: bool = False):
         """
         Reconciles the state of a new orchestrator with data from a checkpoint.
         
@@ -242,6 +242,7 @@ class CheckpointManager:
                 - "PATCH" (default): Smart merge - discard stale state, keep valid state
                 - "OVERWRITE": Trust checkpoint 100%, ignore repo changes
                 - "FILL_GAPS": Only fill missing values, prefer new repo defaults
+            is_forking: If True, skip restoring item_statuses (items are different inferences in new repo)
         """
         if not checkpoint_data:
             logging.warning("Checkpoint data is empty. Cannot reconcile.")
@@ -345,7 +346,19 @@ class CheckpointManager:
                     orchestrator.blackboard.concept_statuses[concept_name] = "empty"
         else:
             # OVERWRITE or FILL_GAPS: restore all blackboard state
-            orchestrator.blackboard.load_from_dict(blackboard_data)
+            # BUT: when forking, exclude item_statuses (items are different inferences)
+            if is_forking:
+                # Manually restore everything EXCEPT item_statuses
+                orchestrator.blackboard.concept_statuses.update(blackboard_data.get("concept_statuses", {}))
+                orchestrator.blackboard.item_results.update(blackboard_data.get("item_results", {}))
+                orchestrator.blackboard.item_execution_counts.update(blackboard_data.get("item_execution_counts", {}))
+                orchestrator.blackboard.item_completion_details.update(blackboard_data.get("item_completion_details", {}))
+                orchestrator.blackboard.completed_concept_timestamps.update(blackboard_data.get("completed_concept_timestamps", {}))
+                orchestrator.blackboard.concept_to_flow_index.update(blackboard_data.get("concept_to_flow_index", {}))
+                # item_statuses deliberately SKIPPED - will remain as initialized (all 'pending')
+                logging.info("Forking: Restored blackboard state except item_statuses (new repo has different items)")
+            else:
+                orchestrator.blackboard.load_from_dict(blackboard_data)
             
         # Ensure all hydrated concepts are marked as complete
         # This fixes issues where OVERWRITE restores 'empty' status or FILL_GAPS leaves it empty
@@ -357,7 +370,12 @@ class CheckpointManager:
         items_discarded = []
         items_kept = []
         
-        if orchestrator.waitlist:
+        # CRITICAL: When forking, DO NOT restore item statuses
+        # The items in the new repo are completely different inferences
+        # (even if they share the same flow_index)
+        if is_forking:
+            logging.info("Forking mode: Skipping item status restoration (new repo has different inferences)")
+        elif orchestrator.waitlist:
             saved_item_statuses = blackboard_data.get("item_statuses", {})
             for item in orchestrator.waitlist.items:
                 flow_index = item.inference_entry.flow_info['flow_index']

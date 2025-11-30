@@ -806,7 +806,7 @@ class Orchestrator:
         
         # Reconcile state with the specified mode
         if checkpoint_data:
-            checkpoint_manager.reconcile_state(checkpoint_data, orchestrator, mode=mode)
+            checkpoint_manager.reconcile_state(checkpoint_data, orchestrator, mode=mode, is_forking=is_forking)
             logging.info(f"Successfully reconciled checkpoint state (Mode: {mode})")
             
             # If forking, reset the tracker counters (start fresh history)

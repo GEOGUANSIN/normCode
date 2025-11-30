@@ -30,18 +30,20 @@ The app will open at `http://localhost:8501` 🎉
 
 - **[QUICK_START_APP.md](QUICK_START_APP.md)** - Get running in 60 seconds
 - **[STREAMLIT_APP_GUIDE.md](STREAMLIT_APP_GUIDE.md)** - Complete user guide with examples
+- **[FORKING_GUIDE.md](FORKING_GUIDE.md)** - Repository chaining & forking tutorial *(NEW in v1.2)*
 - **[APP_ARCHITECTURE.md](APP_ARCHITECTURE.md)** - Technical architecture
 - **[APP_SUMMARY.md](APP_SUMMARY.md)** - Implementation overview
-- **[LOGGING_FEATURES_UPDATE.md](LOGGING_FEATURES_UPDATE.md)** - v1.1 logging features *(NEW)*
+- **[LOGGING_FEATURES_UPDATE.md](LOGGING_FEATURES_UPDATE.md)** - v1.1 logging features
 
 ## ✨ Features
 
 - 📁 **Upload Repository Files** - Load concepts, inferences, and inputs from JSON
 - 🚀 **Execute Orchestrations** - Run with configurable LLM models and parameters
 - 💾 **Checkpoint & Resume** - Save and restore execution state (PATCH/OVERWRITE/FILL_GAPS modes)
+- 🔱 **Fork from Checkpoint** - Chain repositories together in pipelines *(NEW in v1.2)*
 - 📊 **View Results** - Explore final concepts and their values
 - 📜 **Browse History** - See all past runs and checkpoints
-- 📋 **Access Logs** - View detailed execution logs with filtering and export *(NEW in v1.1)*
+- 📋 **Access Logs** - View detailed execution logs with filtering and export *(v1.1)*
 - 💾 **Export Results** - Download outputs and logs as JSON
 
 ## 📋 What You Need
@@ -75,24 +77,31 @@ See `sample_inputs.json` for the input file format.
 
 5. View results in the **Results** tab
 
-### Combining from Checkpoint
+### Forking: Addition → Combination Pipeline *(NEW)*
 
 After the addition example completes:
 
 1. Upload:
    - `combination_concepts.json`
    - `combination_inferences.json`
+   - **No inputs.json needed** (loads from checkpoint!)
 
 2. Configure:
-   - Mode: `Resume (PATCH)`
+   - Mode: `Fork from Checkpoint`
+   - Run ID: Enter the addition run ID (or leave empty for latest)
+   - New Run ID: Leave empty or enter custom name
 
-3. Execute - the app will load `{new number pair}` from the previous checkpoint!
+3. Execute - the app will:
+   - Load `{new number pair}` from addition checkpoint
+   - Execute combination inferences
+   - Produce `{sum}` as final result
+   - Start fresh execution history for the new run!
 
 ## 🛠️ Files in This Directory
 
 | File | Purpose |
 |------|---------|
-| `app.py` | Main Streamlit application (v1.1 with logging) |
+| `app.py` | Main Streamlit application (v1.2 with forking) |
 | `run_app.py` | Python launcher (checks dependencies) |
 | `run_app.bat` | Windows batch launcher |
 | `run_app.ps1` | PowerShell launcher |
@@ -100,6 +109,7 @@ After the addition example completes:
 | `README.md` | This file |
 | `QUICK_START_APP.md` | 60-second quick start guide |
 | `STREAMLIT_APP_GUIDE.md` | Comprehensive user guide |
+| `FORKING_GUIDE.md` | Repository chaining tutorial (v1.2) |
 | `APP_ARCHITECTURE.md` | Technical architecture docs |
 | `APP_SUMMARY.md` | Implementation summary |
 | `LOGGING_FEATURES_UPDATE.md` | v1.1 logging features documentation |
@@ -107,6 +117,7 @@ After the addition example completes:
 ## 💡 Tips
 
 - **Use PATCH mode** - Safest for resuming with changed repositories
+- **Fork for pipelines** - Chain repositories together (e.g., addition → combination) *(NEW)*
 - **Check the Help tab** - Built-in documentation in the app
 - **View execution logs** - Debug issues by viewing detailed logs in Results or History tabs
 - **Filter logs** - Use cycle or status filters to find specific execution details
