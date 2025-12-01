@@ -2,7 +2,9 @@
 Tab modules for NormCode Orchestrator Streamlit App.
 """
 
-from .execute_tab import render_execute_tab
+# Use the refactored execute tab (now organized in execute/ package)
+from .execute import render_execute_tab
+
 from .results_tab import render_results_tab
 from .history_tab import render_history_tab
 from .help_tab import render_help_tab

@@ -4,6 +4,7 @@ Configuration and session state management for NormCode Orchestrator Streamlit A
 
 import streamlit as st
 from pathlib import Path
+from core.log_manager import LogManager
 
 # Get directory paths
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -67,8 +68,16 @@ def init_session_state():
         st.session_state.show_success_message = False
     
     # File operations monitoring
+    if 'file_operations_log_manager' not in st.session_state:
+        st.session_state.file_operations_log_manager = LogManager()
+    elif not hasattr(st.session_state.file_operations_log_manager, 'drain_queue'):
+        # Reinitialize if old version without queue support
+        # This handles upgrading from the old lock-based to new queue-based implementation
+        st.session_state.file_operations_log_manager = LogManager()
+    
+    # Backward compatibility for code accessing the list directly (though they should switch to manager)
     if 'file_operations_log' not in st.session_state:
-        st.session_state.file_operations_log = []
+        st.session_state.file_operations_log = [] # Deprecated
     
     if 'is_executing' not in st.session_state:
         st.session_state.is_executing = False
@@ -100,5 +109,7 @@ def clear_interaction_state():
 
 def clear_file_operations_log():
     """Clear file operations log."""
+    if 'file_operations_log_manager' in st.session_state:
+        st.session_state.file_operations_log_manager.clear()
     st.session_state.file_operations_log = []
 

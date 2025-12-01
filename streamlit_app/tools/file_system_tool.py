@@ -9,29 +9,52 @@ within the Streamlit app structure to allow for future UI integrations
 import os
 import logging
 import json
+import time
 import streamlit as st
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Testing delay - set to 0.2 seconds for testing queue-based updates
+TESTING_DELAY_SECONDS = 2
+
 
 class StreamlitFileSystemTool:
-    def __init__(self, base_dir: str | None = None):
+    def __init__(self, base_dir: str | None = None, log_manager: Any = None):
         """
         Initializes the StreamlitFileSystemTool.
 
         Args:
             base_dir (str | None): An optional designated directory path to use as the
                                    base for all file operations.
+            log_manager (LogManager | None): Optional reference to a LogManager for thread-safe logging.
         """
         self.base_dir = base_dir
+        self.log_manager = log_manager
+        if self.log_manager is None:
+            logger.warning("StreamlitFileSystemTool: log_manager is None! Background logging will fail.")
+        else:
+            logger.info(f"StreamlitFileSystemTool: Initialized with log_manager (id={id(self.log_manager)})")
     
     def _log_operation(self, operation_type: str, location: str, status: str, details: str = ""):
         """Log a file operation to session state for monitoring."""
-        # Check if session state exists and has the log
-        if hasattr(st, 'session_state') and 'file_operations_log' in st.session_state:
+        
+        # Priority 1: Use injected log manager (works in background threads)
+        if self.log_manager is not None:
+            try:
+                self.log_manager.add_log(operation_type, location, status, details)
+                logger.info(f"StreamlitFileSystemTool: Logged {operation_type} for {location} - status={status}")
+                return
+            except Exception as e:
+                logger.error(f"Failed to add log to manager: {e}")
+
+        # Priority 2: Try direct session state access (only works in main thread)
+        if hasattr(st, 'session_state') and 'file_operations_log_manager' in st.session_state:
+             st.session_state.file_operations_log_manager.add_log(operation_type, location, status, details)
+        elif hasattr(st, 'session_state') and 'file_operations_log' in st.session_state:
+            # Deprecated fallback
             st.session_state.file_operations_log.append({
                 'timestamp': datetime.now().isoformat(),
                 'operation': operation_type,
@@ -73,6 +96,15 @@ class StreamlitFileSystemTool:
 
         try:
             file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+            
+            # DEBUG: Log that operation is starting (commented out for production)
+            # self._log_operation('SAVE_START', str(file_path), 'SUCCESS', f'⏳ Starting...')
+            
+            # TESTING: Add delay to test queue-based real-time updates
+            logger.info(f"TESTING: Delaying {TESTING_DELAY_SECONDS}s before save operation...")
+            time.sleep(TESTING_DELAY_SECONDS)
+            logger.info(f"TESTING: Delay complete, proceeding with save operation")
+            
             # Ensure the directory exists
             dir_path = file_path.parent
             if not dir_path.exists():
@@ -85,8 +117,13 @@ class StreamlitFileSystemTool:
             
             logger.info(f"Successfully saved content to {file_path}")
             
-            # Log the operation
-            self._log_operation('SAVE', str(file_path), 'SUCCESS', f'{len(content)} chars')
+            # Log the completion - this should appear in the next UI update
+            completion_msg = f'Saved {len(content)} chars'
+            self._log_operation('SAVE', str(file_path), 'SUCCESS', completion_msg)
+            logger.info(f"TESTING: Logged completion message: {completion_msg}")
+            
+            # Brief delay after logging to ensure UI picks up the message
+            time.sleep(1.0)
                 
             return {"status": "success", "location": str(file_path)}
         except Exception as e:
@@ -147,6 +184,15 @@ class StreamlitFileSystemTool:
         """
         try:
             file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+            
+            # DEBUG: Log that operation is starting (commented out for production)
+            # self._log_operation('READ_START', str(file_path), 'SUCCESS', f'⏳ Starting...')
+            
+            # TESTING: Add delay to test queue-based real-time updates
+            logger.info(f"TESTING: Delaying {TESTING_DELAY_SECONDS}s before read operation...")
+            time.sleep(TESTING_DELAY_SECONDS)
+            logger.info(f"TESTING: Delay complete, proceeding with read operation")
+            
             if not file_path.exists():
                 logger.warning(f"File not found at {file_path}")
                 self._log_operation('READ', str(file_path), 'ERROR', 'File not found')
@@ -156,7 +202,12 @@ class StreamlitFileSystemTool:
                 content = f.read()
             
             logger.info(f"Successfully read content from {file_path}")
-            self._log_operation('READ', str(file_path), 'SUCCESS', f'{len(content)} chars')
+            completion_msg = f'Read {len(content)} chars'
+            self._log_operation('READ', str(file_path), 'SUCCESS', completion_msg)
+            logger.info(f"TESTING: Logged completion message: {completion_msg}")
+            
+            # Brief delay after logging to ensure UI picks up the message
+            time.sleep(1.0)
             return {"status": "success", "content": content}
         except Exception as e:
             logger.error(f"Failed to read file at {location}: {e}")
@@ -176,8 +227,22 @@ class StreamlitFileSystemTool:
         """
         try:
             file_path = Path(location) if Path(location).is_absolute() else self._get_base_dir() / location
+            
+            # DEBUG: Log that operation is starting (commented out for production)
+            # self._log_operation('EXISTS_START', str(file_path), 'SUCCESS', f'⏳ Starting...')
+            
+            # TESTING: Add delay to test queue-based real-time updates
+            logger.info(f"TESTING: Delaying {TESTING_DELAY_SECONDS}s before exists check...")
+            time.sleep(TESTING_DELAY_SECONDS)
+            logger.info(f"TESTING: Delay complete, proceeding with exists check")
+            
             exists = file_path.exists()
-            self._log_operation('EXISTS', str(file_path), 'SUCCESS', f'exists={exists}')
+            completion_msg = f'exists={exists}'
+            self._log_operation('EXISTS', str(file_path), 'SUCCESS', completion_msg)
+            logger.info(f"TESTING: Logged completion message: {completion_msg}")
+            
+            # Brief delay after logging to ensure UI picks up the message
+            time.sleep(1.0)
             return exists
         except Exception as e:
             logger.error(f"Error checking for file existence at {location}: {e}")
@@ -199,6 +264,14 @@ class StreamlitFileSystemTool:
         """
         file_path = self._get_memorized_file_path()
         lookup_key = content
+        
+        # Log that operation is starting (before delay) - visible in UI immediately
+        self._log_operation('MEMORIZED_READ', str(file_path), 'SUCCESS', f'⏳ Starting (will delay {TESTING_DELAY_SECONDS}s)')
+        
+        # TESTING: Add delay to test queue-based real-time updates
+        logger.info(f"TESTING: Delaying {TESTING_DELAY_SECONDS}s before memorized read operation...")
+        time.sleep(TESTING_DELAY_SECONDS)
+        logger.info(f"TESTING: Delay complete, proceeding with memorized read operation")
         try:
             params = json.loads(content)
             if isinstance(params, dict) and "key" in params:
@@ -248,6 +321,14 @@ class StreamlitFileSystemTool:
             dict: A dictionary with the status of the operation.
         """
         file_path = self._get_memorized_file_path()
+        
+        # Log that operation is starting (before delay) - visible in UI immediately
+        self._log_operation('MEMORIZED_SAVE', str(file_path), 'SUCCESS', f'⏳ Starting (will delay {TESTING_DELAY_SECONDS}s)')
+        
+        # TESTING: Add delay to test queue-based real-time updates
+        logger.info(f"TESTING: Delaying {TESTING_DELAY_SECONDS}s before memorized save operation...")
+        time.sleep(TESTING_DELAY_SECONDS)
+        logger.info(f"TESTING: Delay complete, proceeding with memorized save operation")
         try:
             params = json.loads(content)
             if not isinstance(params, dict) or "key" not in params or "value" not in params:

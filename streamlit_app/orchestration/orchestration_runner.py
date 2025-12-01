@@ -53,7 +53,15 @@ async def create_orchestrator(
     body.user_input = StreamlitInputTool()
     
     # Inject Streamlit-native file system tool
-    body.file_system = StreamlitFileSystemTool(base_dir=base_dir)
+    # Pass the log manager explicitly to ensure it works in background threads
+    log_manager = None
+    if hasattr(st, 'session_state') and 'file_operations_log_manager' in st.session_state:
+        log_manager = st.session_state.file_operations_log_manager
+        logging.info(f"OrchestrationRunner: Found file_operations_log_manager (id={id(log_manager)})")
+    else:
+        logging.warning("OrchestrationRunner: st.session_state.file_operations_log_manager not found!")
+        
+    body.file_system = StreamlitFileSystemTool(base_dir=base_dir, log_manager=log_manager)
     
     st.info(f"📂 Base directory: `{base_dir}`")
     st.info(f"🤝 Human-in-the-loop mode enabled")
