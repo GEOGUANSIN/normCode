@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from config import REPO_FILES_DIR
+from .config import REPO_FILES_DIR
 
 
 def save_uploaded_file(uploaded_file, run_id: str, file_type: str) -> Optional[str]:

@@ -65,6 +65,13 @@ def init_session_state():
     
     if 'show_success_message' not in st.session_state:
         st.session_state.show_success_message = False
+    
+    # File operations monitoring
+    if 'file_operations_log' not in st.session_state:
+        st.session_state.file_operations_log = []
+    
+    if 'is_executing' not in st.session_state:
+        st.session_state.is_executing = False
 
 
 def clear_loaded_config():
@@ -89,4 +96,9 @@ def clear_interaction_state():
     st.session_state.waiting_for_input = False
     st.session_state.current_interaction = None
     st.session_state.orchestrator_state = None
+
+
+def clear_file_operations_log():
+    """Clear file operations log."""
+    st.session_state.file_operations_log = []
 

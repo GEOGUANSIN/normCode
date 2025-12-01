@@ -92,3 +92,5 @@ if __name__ == "__main__":
             logging.info(f"No reference found for final concept '{final_concept_entry.concept_name}'.")
     
     logging.info(f"=== Simplified Execution Complete - Log saved to {log_filename} ===")
+
+    print(SCRIPT_DIR)

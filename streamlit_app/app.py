@@ -26,9 +26,8 @@ import sys
 if str(script_dir) not in sys.path:
     sys.path.insert(0, str(script_dir))
 
-from config import init_session_state
-from ui_components import apply_custom_styling, render_main_header, render_footer
-from sidebar import render_sidebar
+from core import init_session_state
+from ui import apply_custom_styling, render_main_header, render_footer, render_sidebar
 from tabs import render_execute_tab, render_results_tab, render_history_tab, render_help_tab
 
 # Configure page

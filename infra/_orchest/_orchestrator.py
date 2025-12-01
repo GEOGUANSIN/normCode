@@ -1,5 +1,6 @@
 import uuid
 import logging
+import asyncio
 from typing import List, Optional, Dict, Any
 
 # Import dependencies
@@ -325,6 +326,12 @@ class Orchestrator:
                 root_logger.removeHandler(log_handler)
                 log_handler.clear()
 
+    async def _inference_execution_async(self, item: WaitlistItem) -> str:
+        """
+        Executes inference in a separate thread to avoid blocking the event loop.
+        """
+        return await asyncio.to_thread(self._inference_execution, item)
+
     def _execute_agent_frame(self, item: WaitlistItem, inference: Inference) -> BaseStates:
         """Creates and executes an AgentFrame for a given inference."""
         working_interpretation = item.inference_entry.working_interpretation or {}
@@ -566,6 +573,30 @@ class Orchestrator:
 
         return new_status
 
+    async def _execute_item_async(self, item: WaitlistItem) -> str:
+        """Executes a single waitlist item asynchronously and updates its status and tracking info."""
+        flow_index = item.inference_entry.flow_info['flow_index']
+        logging.info(f"Item {flow_index} is ready. Executing.")
+
+        self.blackboard.set_item_status(flow_index, 'in_progress')
+        
+        try:
+            new_status = await self._inference_execution_async(item)
+        except Exception as e:
+            # Check for user interaction exception to reset status before propagating
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                logging.info(f"Item {flow_index} paused for user interaction. Resetting to 'pending'.")
+                self.blackboard.set_item_status(flow_index, 'pending')
+                raise
+            raise
+
+        self.tracker.total_executions += 1
+        self.blackboard.set_item_status(flow_index, new_status)
+
+        self._update_execution_tracking(item, new_status)
+
+        return new_status
+
     def _run_cycle(self, retries_from_previous_cycle: List[WaitlistItem]) -> tuple[bool, List[WaitlistItem]]:
         """Processes one cycle of the orchestration loop."""
         cycle_executions = 0
@@ -585,6 +616,45 @@ class Orchestrator:
                 cycle_executions += 1
                 inference_count_in_cycle += 1
                 new_status = self._execute_item(item)
+
+                if new_status == 'completed':
+                    cycle_successes += 1
+                else:
+                    next_cycle_retries.append(item)
+                
+                # Checkpoint based on frequency (if enabled)
+                if self.checkpoint_frequency and self.checkpoint_manager:
+                    if inference_count_in_cycle % self.checkpoint_frequency == 0:
+                        self.checkpoint_manager.save_state(
+                            self.tracker.cycle_count, 
+                            self, 
+                            inference_count=inference_count_in_cycle
+                        )
+                        logging.info(f"Intra-cycle checkpoint saved at cycle {self.tracker.cycle_count}, inference {inference_count_in_cycle}")
+
+        logging.info(f"Cycle {self.tracker.cycle_count}: {cycle_executions} executions, {cycle_successes} completions")
+
+        return cycle_executions > 0, next_cycle_retries
+
+    async def _run_cycle_async(self, retries_from_previous_cycle: List[WaitlistItem]) -> tuple[bool, List[WaitlistItem]]:
+        """Processes one cycle of the orchestration loop asynchronously."""
+        cycle_executions = 0
+        cycle_successes = 0
+        next_cycle_retries: List[WaitlistItem] = []
+        inference_count_in_cycle = 0  # Track inferences executed in this cycle
+
+        # Get items to process for this cycle, prioritizing retries
+        retried_items_set = set(retries_from_previous_cycle)
+        items_to_process = retries_from_previous_cycle + [
+            item for item in self.waitlist.items if item not in retried_items_set
+        ]
+
+        for item in items_to_process:
+            flow_index = item.inference_entry.flow_info['flow_index']
+            if self.blackboard.get_item_status(flow_index) == 'pending' and self._is_ready(item):
+                cycle_executions += 1
+                inference_count_in_cycle += 1
+                new_status = await self._execute_item_async(item)
 
                 if new_status == 'completed':
                     cycle_successes += 1
@@ -973,6 +1043,48 @@ class Orchestrator:
                 for cp in run_checkpoints:
                     all_checkpoints.append({'run_id': run['run_id'], **cp})
             return all_checkpoints
+
+    async def run_async(self) -> List[ConceptEntry]:
+        """Runs the orchestration loop asynchronously until completion or deadlock."""
+        if not self.waitlist:
+            logging.error("No waitlist created.")
+            return []
+
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Starting Async Orchestration for Waitlist {self.waitlist.id}{run_id_info} ---")
+
+        retries: List[WaitlistItem] = []
+
+        while self.blackboard.get_all_pending_or_in_progress_items() and self.tracker.cycle_count < self.max_cycles:
+            self.tracker.cycle_count += 1
+            logging.info(f"--- Cycle {self.tracker.cycle_count} ---")
+            
+            progress_made, retries = await self._run_cycle_async(retries)
+            
+            # Save checkpoint at the end of each cycle (if frequency-based checkpointing didn't already save it)
+            # Note: We still save at end of cycle even with frequency-based checkpointing to ensure we have a complete state
+            if self.checkpoint_manager:
+                # Get the current inference count for this cycle from the tracker
+                # We'll use 0 as a marker for "end of cycle" checkpoint
+                self.checkpoint_manager.save_state(self.tracker.cycle_count, self, inference_count=0)
+            
+            if not progress_made:
+                logging.warning("No progress made in the last cycle. Deadlock detected.")
+                self._log_stuck_items()
+                break
+        
+        if self.tracker.cycle_count >= self.max_cycles:
+            logging.error(f"Maximum cycles ({self.max_cycles}) reached. Stopping orchestration.")
+        
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Orchestration Finished for Waitlist {self.waitlist.id}{run_id_info} ---")
+        
+        # Automatically log summary when orchestration completes
+        if self.waitlist:
+            self.tracker.log_summary(self.waitlist.id, self.waitlist.items, self.blackboard, self.concept_repo)
+
+        final_concepts = [c for c in self.concept_repo.get_all_concepts() if c.is_final_concept]
+        return final_concepts
 
     def run(self) -> List[ConceptEntry]:
         """Runs the orchestration loop until completion or deadlock."""

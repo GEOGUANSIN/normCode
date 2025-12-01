@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 from infra._orchest._db import OrchestratorDB
-from ui_components import (
+from ui.ui_components import (
     display_run_info_header,
     display_log_entry,
     display_concept_result

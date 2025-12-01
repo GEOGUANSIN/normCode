@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 from infra._orchest._db import OrchestratorDB
-from ui_components import display_log_entry
+from ui.ui_components import display_log_entry
 
 
 def render_history_tab(db_path: str):

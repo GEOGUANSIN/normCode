@@ -7,12 +7,12 @@ import os
 from pathlib import Path
 
 from infra._orchest._db import OrchestratorDB
-from config import (
+from core.config import (
     SCRIPT_DIR, PROJECT_ROOT, DEFAULT_DB_PATH, LLM_MODELS,
     EXECUTION_MODES, RECONCILIATION_MODES, DEFAULT_MAX_CYCLES,
     clear_loaded_config
 )
-from file_utils import load_file_from_path
+from core.file_utils import load_file_from_path
 
 
 def render_sidebar():
