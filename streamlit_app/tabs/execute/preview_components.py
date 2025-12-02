@@ -310,7 +310,8 @@ def _render_inputs_preview(inputs_data: Dict[str, Any]):
                         _render_tensor_input(
                             item.get('concept_name', 'Unknown'),
                             item.get('reference_data', item.get('value', '')),
-                            source="input"
+                            source="input",
+                            editable=False
                         )
         return
     
@@ -324,8 +325,11 @@ def _render_inputs_preview(inputs_data: Dict[str, Any]):
         else:
             concept_inputs[key] = value
     
-    # Display metrics
-    col1, col2, col3 = st.columns(3)
+    # Edit mode toggle and metrics row
+    col_toggle, col1, col2, col3 = st.columns([1.5, 1, 1, 1])
+    
+    with col_toggle:
+        edit_mode = st.toggle("✏️ Edit Mode", key="input_edit_mode", help="Enable editing of input values")
     with col1:
         st.metric("Ground Concepts", len(concept_inputs))
     with col2:
@@ -336,6 +340,10 @@ def _render_inputs_preview(inputs_data: Dict[str, Any]):
                           if isinstance(v, dict) and 'data' in v and 'axes' in v)
         st.metric("Tensor Inputs", tensor_count)
     
+    # Initialize edited inputs storage in session state
+    if 'edited_inputs' not in st.session_state:
+        st.session_state.edited_inputs = {}
+    
     # Render metadata section (if any)
     if metadata:
         with st.expander("📝 Input File Metadata", expanded=False):
@@ -345,7 +353,18 @@ def _render_inputs_preview(inputs_data: Dict[str, Any]):
     if concept_inputs:
         with st.expander(f"🌱 Ground Concept References ({len(concept_inputs)} concepts)", expanded=True):
             for key, value in concept_inputs.items():
-                _render_tensor_input(key, value, source="input")
+                _render_tensor_input(key, value, source="input", editable=edit_mode)
+    
+    # Show apply button when in edit mode and changes exist
+    if edit_mode and st.session_state.edited_inputs:
+        st.divider()
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.info(f"📝 {len(st.session_state.edited_inputs)} concept(s) modified")
+        with col2:
+            if st.button("🔄 Reset Changes", use_container_width=True):
+                st.session_state.edited_inputs = {}
+                st.rerun()
 
 
 def _render_metadata_section(metadata: Dict[str, Any]):
@@ -407,7 +426,7 @@ def _render_concept_repo_references(concepts_with_refs: List[Dict[str, Any]]):
             _render_tensor_input(name, value, source="repo", is_invariant=is_invariant, description=description)
 
 
-def _render_tensor_input(key: str, value: Any, source: str = "input", is_invariant: bool = False, description: str = ""):
+def _render_tensor_input(key: str, value: Any, source: str = "input", is_invariant: bool = False, description: str = "", editable: bool = False):
     """
     Render a single input item with special handling for tensor data.
     
@@ -417,31 +436,23 @@ def _render_tensor_input(key: str, value: Any, source: str = "input", is_invaria
         source: "input" for inputs.json, "repo" for concept repo
         is_invariant: Whether this is an invariant reference
         description: Optional description of the concept
+        editable: Whether the value can be edited
     
     Tensor format: {"data": [[...]], "axes": ["axis1", "axis2"]}
     """
     # Check if this is a tensor with data and axes
     if isinstance(value, dict) and 'data' in value and 'axes' in value:
-        _render_tensor_display(key, value['data'], value['axes'], source=source, is_invariant=is_invariant, description=description)
+        _render_tensor_display(key, value['data'], value['axes'], source=source, is_invariant=is_invariant, description=description, editable=editable)
     elif isinstance(value, dict) and 'data' in value:
         # Has data but no axes - treat as simple tensor
-        _render_tensor_display(key, value['data'], None, source=source, is_invariant=is_invariant, description=description)
+        _render_tensor_display(key, value['data'], None, source=source, is_invariant=is_invariant, description=description, editable=editable)
     else:
         # Simple value - render as before
-        _render_simple_input(key, value, source=source, is_invariant=is_invariant, description=description)
+        _render_simple_input(key, value, source=source, is_invariant=is_invariant, description=description, editable=editable)
 
 
-def _render_simple_input(key: str, value: Any, source: str = "input", is_invariant: bool = False, description: str = ""):
-    """Render a simple (non-tensor) input value."""
-    if isinstance(value, (list, dict)):
-        preview = json.dumps(value, ensure_ascii=False)
-        if len(preview) > 100:
-            preview = preview[:97] + "..."
-    else:
-        preview = str(value)
-        if len(preview) > 100:
-            preview = preview[:97] + "..."
-    
+def _render_simple_input(key: str, value: Any, source: str = "input", is_invariant: bool = False, description: str = "", editable: bool = False):
+    """Render a simple (non-tensor) input value, optionally editable."""
     # Choose color based on source
     border_color = "#22c55e" if source == "input" else "#6366f1"  # Green for input, Indigo for repo
     icon = "📥" if source == "input" else "📚"
@@ -450,12 +461,15 @@ def _render_simple_input(key: str, value: Any, source: str = "input", is_invaria
     badges = []
     if is_invariant:
         badges.append("<span style='background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; font-size: 0.7em;'>🔒 Invariant</span>")
+    if editable:
+        badges.append("<span style='background: #dbeafe; color: #1d4ed8; padding: 1px 6px; border-radius: 3px; font-size: 0.7em;'>✏️ Editable</span>")
     
     badge_html = " ".join(badges)
     
     # Description line
     desc_html = f"<div style='font-size: 0.75em; color: #888; font-style: italic;'>{description}</div>" if description else ""
     
+    # Header
     st.markdown(
         f"<div style='border-left: 3px solid {border_color}; padding-left: 8px; margin-bottom: 8px; background: #fafafa; border-radius: 0 4px 4px 0; padding: 8px;'>"
         f"<div style='display: flex; justify-content: space-between; align-items: center;'>"
@@ -463,10 +477,61 @@ def _render_simple_input(key: str, value: Any, source: str = "input", is_invaria
         f"<span>{badge_html}</span>"
         f"</div>"
         f"{desc_html}"
-        f"<div style='font-size: 0.85em; color: #444; margin-top: 4px; font-family: monospace; background: white; padding: 4px 8px; border-radius: 4px;'>{preview}</div>"
         f"</div>",
         unsafe_allow_html=True
     )
+    
+    # Editable or display mode
+    if editable and source == "input":  # Only allow editing input data, not repo data
+        edit_key = f"edit_simple_{key.replace(' ', '_').replace('{', '').replace('}', '')}"
+        
+        # Get current value (edited or original)
+        current_value = st.session_state.edited_inputs.get(key, value)
+        
+        if isinstance(value, (list, dict)):
+            # JSON editor for complex values
+            new_value = st.text_area(
+                "Value (JSON)",
+                value=json.dumps(current_value, ensure_ascii=False, indent=2),
+                key=edit_key,
+                height=100,
+                label_visibility="collapsed"
+            )
+            try:
+                parsed = json.loads(new_value)
+                if parsed != value:
+                    st.session_state.edited_inputs[key] = parsed
+                elif key in st.session_state.edited_inputs:
+                    del st.session_state.edited_inputs[key]
+            except json.JSONDecodeError:
+                st.error("Invalid JSON")
+        else:
+            # Simple text input
+            new_value = st.text_input(
+                "Value",
+                value=str(current_value),
+                key=edit_key,
+                label_visibility="collapsed"
+            )
+            if new_value != str(value):
+                st.session_state.edited_inputs[key] = new_value
+            elif key in st.session_state.edited_inputs:
+                del st.session_state.edited_inputs[key]
+    else:
+        # Display-only mode
+        if isinstance(value, (list, dict)):
+            preview = json.dumps(value, ensure_ascii=False)
+            if len(preview) > 100:
+                preview = preview[:97] + "..."
+        else:
+            preview = str(value)
+            if len(preview) > 100:
+                preview = preview[:97] + "..."
+        
+        st.markdown(
+            f"<div style='font-size: 0.85em; color: #444; font-family: monospace; background: white; padding: 4px 8px; border-radius: 4px;'>{preview}</div>",
+            unsafe_allow_html=True
+        )
 
 
 def _render_tensor_display(
@@ -475,7 +540,8 @@ def _render_tensor_display(
     axes: Optional[List[str]],
     source: str = "input",
     is_invariant: bool = False,
-    description: str = ""
+    description: str = "",
+    editable: bool = False
 ):
     """
     Render tensor data with an interactive viewer.
@@ -490,6 +556,7 @@ def _render_tensor_display(
         source: "input" for inputs.json, "repo" for concept repo
         is_invariant: Whether this is an invariant reference
         description: Optional description
+        editable: Whether the tensor can be edited
     """
     # Calculate shape and dimensions
     shape = _get_tensor_shape(data)
@@ -522,7 +589,9 @@ def _render_tensor_display(
     # Build badges
     badges_html = f"<span style='font-size: 0.65em; color: white; background: {badge_bg}; padding: 2px 6px; border-radius: 3px; margin-right: 4px;'>{source_label}</span>"
     if is_invariant:
-        badges_html += "<span style='font-size: 0.65em; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px;'>🔒 Invariant</span>"
+        badges_html += "<span style='font-size: 0.65em; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; margin-right: 4px;'>🔒 Invariant</span>"
+    if editable and source == "input":
+        badges_html += "<span style='font-size: 0.65em; background: #dbeafe; color: #1d4ed8; padding: 2px 6px; border-radius: 3px;'>✏️ Editable</span>"
     
     # Container with styled border
     with st.container():
@@ -548,19 +617,35 @@ def _render_tensor_display(
             unsafe_allow_html=True
         )
         
+        # Check if we should use edit mode
+        can_edit = editable and source == "input"
+        
         # Display based on dimensions
         if dims == 0:
-            # Scalar
-            _render_scalar_value(data)
+            # Scalar - editable as text input
+            if can_edit:
+                _render_editable_scalar(concept_name, data, viewer_key)
+            else:
+                _render_scalar_value(data)
         elif dims == 1:
             # 1D tensor - show as list
-            _render_1d_tensor(data, axes[0] if axes else "index")
+            if can_edit:
+                _render_editable_1d_tensor(concept_name, data, axes[0] if axes else "index", viewer_key)
+            else:
+                _render_1d_tensor(data, axes[0] if axes else "index")
         elif dims == 2:
-            # 2D tensor - show as table
-            _render_2d_tensor(data, axes)
+            # 2D tensor - show as editable table
+            if can_edit:
+                _render_editable_2d_tensor(concept_name, data, axes, viewer_key)
+            else:
+                _render_2d_tensor(data, axes)
         else:
-            # Higher dimensional - show interactive slicer
-            _render_interactive_tensor_viewer(data, axes, shape, viewer_key)
+            # Higher dimensional - show interactive slicer (editing not supported yet)
+            if can_edit:
+                st.caption("⚠️ Editing 3D+ tensors: Edit the JSON directly")
+                _render_editable_nd_tensor(concept_name, data, axes, viewer_key)
+            else:
+                _render_interactive_tensor_viewer(data, axes, shape, viewer_key)
 
 
 def _get_tensor_shape(data: Any) -> Tuple[int, ...]:
@@ -639,43 +724,8 @@ def _render_1d_tensor(data: List[Any], axis_name: str):
 
 def _render_2d_tensor(data: List[List[Any]], axes: Optional[List[str]]):
     """Render a 2D tensor as a styled table."""
-    import pandas as pd
-    
-    row_axis = axes[0] if axes and len(axes) > 0 else "row"
-    col_axis = axes[1] if axes and len(axes) > 1 else "col"
-    
-    # For small tensors, use HTML table for better formatting
-    max_cols = max(len(row) for row in data) if data else 0
-    
-    # Use HTML table for better control over styling
-    if len(data) <= 20 and max_cols <= 10:
-        _render_2d_tensor_html(data, axes)
-        return
-    
-    # For larger tensors, use pandas DataFrame
-    try:
-        col_headers = [f"{col_axis}[{i}]" for i in range(max_cols)]
-        row_headers = [f"{row_axis}[{i}]" for i in range(len(data))]
-        
-        # Format data (use plain text for DataFrame)
-        formatted_data = []
-        for row in data:
-            formatted_row = [_format_cell_value(cell, html=False) for cell in row]
-            # Pad if needed
-            formatted_row.extend([''] * (max_cols - len(formatted_row)))
-            formatted_data.append(formatted_row)
-        
-        df = pd.DataFrame(formatted_data, columns=col_headers, index=row_headers)
-        
-        # Display dataframe
-        st.dataframe(
-            df,
-            use_container_width=True,
-            height=min(400, 40 + len(data) * 35)
-        )
-    except Exception as e:
-        # Fallback to custom HTML table
-        _render_2d_tensor_html(data, axes)
+    # Always use HTML table for consistent display (avoids PyArrow issues)
+    _render_2d_tensor_html(data, axes)
 
 
 def _render_2d_tensor_html(data: List[List[Any]], axes: Optional[List[str]]):
@@ -708,6 +758,202 @@ def _render_2d_tensor_html(data: List[List[Any]], axes: Optional[List[str]]):
     table_html += "</tbody></table>"
     
     st.markdown(table_html, unsafe_allow_html=True)
+
+
+# =============================================================================
+# EDITABLE TENSOR FUNCTIONS
+# =============================================================================
+
+def _render_editable_scalar(concept_name: str, data: Any, viewer_key: str):
+    """Render an editable scalar value."""
+    edit_key = f"{viewer_key}_scalar"
+    
+    # Get current value (edited or original)
+    current_value = st.session_state.edited_inputs.get(concept_name, data)
+    
+    # Determine if it's a special value like %(...)
+    if isinstance(current_value, str) and current_value.startswith('%(') and current_value.endswith(')'):
+        inner = current_value[2:-1]
+        st.caption("📌 Value wrapped in %() syntax")
+        new_inner = st.text_input("Value", value=inner, key=edit_key, label_visibility="collapsed")
+        new_value = f"%({new_inner})"
+    else:
+        new_value = st.text_input("Value", value=str(current_value), key=edit_key, label_visibility="collapsed")
+    
+    # Store if changed
+    if new_value != str(data) and new_value != data:
+        st.session_state.edited_inputs[concept_name] = new_value
+    elif concept_name in st.session_state.edited_inputs and new_value == str(data):
+        del st.session_state.edited_inputs[concept_name]
+
+
+def _render_editable_1d_tensor(concept_name: str, data: List[Any], axis_name: str, viewer_key: str):
+    """Render an editable 1D tensor."""
+    # Get current data (edited or original)
+    current_data = st.session_state.edited_inputs.get(concept_name, {}).get('data', data)
+    if isinstance(current_data, dict):
+        current_data = current_data.get('data', data)
+    
+    st.caption(f"📝 Edit values for {axis_name}")
+    
+    # Create columns for each value
+    num_items = len(current_data)
+    edited_values = []
+    
+    if num_items <= 6:
+        cols = st.columns(num_items)
+        for i, (col, item) in enumerate(zip(cols, current_data)):
+            with col:
+                # Handle %(value) syntax
+                if isinstance(item, str) and item.startswith('%(') and item.endswith(')'):
+                    inner = item[2:-1]
+                    new_val = st.text_input(f"{axis_name}[{i}]", value=inner, key=f"{viewer_key}_1d_{i}")
+                    edited_values.append(f"%({new_val})")
+                else:
+                    new_val = st.text_input(f"{axis_name}[{i}]", value=str(item), key=f"{viewer_key}_1d_{i}")
+                    edited_values.append(new_val)
+    else:
+        # For longer lists, use two columns
+        for i in range(0, num_items, 2):
+            cols = st.columns(2)
+            for j, col in enumerate(cols):
+                idx = i + j
+                if idx < num_items:
+                    item = current_data[idx]
+                    with col:
+                        if isinstance(item, str) and item.startswith('%(') and item.endswith(')'):
+                            inner = item[2:-1]
+                            new_val = st.text_input(f"{axis_name}[{idx}]", value=inner, key=f"{viewer_key}_1d_{idx}")
+                            edited_values.append(f"%({new_val})")
+                        else:
+                            new_val = st.text_input(f"{axis_name}[{idx}]", value=str(item), key=f"{viewer_key}_1d_{idx}")
+                            edited_values.append(new_val)
+    
+    # Check if values changed
+    if edited_values != data:
+        # Store the edited tensor
+        original_input = st.session_state.loaded_repo_files.get('inputs', {})
+        if isinstance(original_input, dict) and 'content' in original_input:
+            try:
+                orig_data = json.loads(original_input['content'])
+                if concept_name in orig_data:
+                    orig_tensor = orig_data[concept_name]
+                    if isinstance(orig_tensor, dict):
+                        st.session_state.edited_inputs[concept_name] = {
+                            'data': [edited_values],
+                            'axes': orig_tensor.get('axes', [axis_name])
+                        }
+            except:
+                st.session_state.edited_inputs[concept_name] = {'data': [edited_values], 'axes': [axis_name]}
+        else:
+            st.session_state.edited_inputs[concept_name] = {'data': [edited_values], 'axes': [axis_name]}
+
+
+def _render_editable_2d_tensor(concept_name: str, data: List[List[Any]], axes: Optional[List[str]], viewer_key: str):
+    """Render an editable 2D tensor using text inputs in a grid."""
+    row_axis = axes[0] if axes and len(axes) > 0 else "row"
+    col_axis = axes[1] if axes and len(axes) > 1 else "col"
+    
+    # Get current data
+    current_data = st.session_state.edited_inputs.get(concept_name, {}).get('data', data)
+    if not isinstance(current_data, list):
+        current_data = data
+    
+    st.caption(f"📝 Edit tensor values ({row_axis} × {col_axis})")
+    
+    max_cols = max(len(row) for row in current_data) if current_data else 0
+    num_rows = len(current_data)
+    
+    # Create editable grid using columns
+    edited_tensor = []
+    
+    for i in range(num_rows):
+        row = current_data[i] if i < len(current_data) else []
+        
+        # Create row header + value columns
+        cols = st.columns([1] + [2] * max_cols)
+        
+        # Row header
+        with cols[0]:
+            st.markdown(
+                f"<div style='padding: 8px; background: #f1f5f9; border-radius: 4px; text-align: center; font-size: 0.8em; color: #64748b;'>{row_axis}[{i}]</div>",
+                unsafe_allow_html=True
+            )
+        
+        edited_row = []
+        for j in range(max_cols):
+            with cols[j + 1]:
+                # Get cell value
+                cell = row[j] if j < len(row) else ""
+                
+                # Handle %(value) syntax
+                if isinstance(cell, str) and cell.startswith('%(') and cell.endswith(')'):
+                    inner = cell[2:-1]
+                    new_val = st.text_input(
+                        f"{col_axis}[{j}]",
+                        value=inner,
+                        key=f"{viewer_key}_2d_{i}_{j}",
+                        label_visibility="collapsed"
+                    )
+                    edited_row.append(f"%({new_val})")
+                else:
+                    new_val = st.text_input(
+                        f"{col_axis}[{j}]",
+                        value=str(cell) if cell is not None else "",
+                        key=f"{viewer_key}_2d_{i}_{j}",
+                        label_visibility="collapsed"
+                    )
+                    edited_row.append(new_val)
+        
+        edited_tensor.append(edited_row)
+    
+    # Column headers (show after first row to indicate column names)
+    if num_rows > 0:
+        header_cols = st.columns([1] + [2] * max_cols)
+        with header_cols[0]:
+            st.caption("")
+        for j in range(max_cols):
+            with header_cols[j + 1]:
+                st.caption(f"{col_axis}[{j}]")
+    
+    # Store if changed
+    if edited_tensor != data:
+        st.session_state.edited_inputs[concept_name] = {
+            'data': edited_tensor,
+            'axes': axes or [row_axis, col_axis]
+        }
+    elif concept_name in st.session_state.edited_inputs:
+        del st.session_state.edited_inputs[concept_name]
+
+
+def _render_editable_nd_tensor(concept_name: str, data: Any, axes: List[str], viewer_key: str):
+    """Render an editable higher-dimensional tensor as JSON."""
+    # Get current data
+    current_data = st.session_state.edited_inputs.get(concept_name, {}).get('data', data)
+    
+    st.caption("📝 Edit tensor as JSON")
+    
+    json_str = json.dumps(current_data, ensure_ascii=False, indent=2)
+    
+    edited_json = st.text_area(
+        "Tensor Data (JSON)",
+        value=json_str,
+        height=200,
+        key=f"{viewer_key}_nd_json",
+        label_visibility="collapsed"
+    )
+    
+    try:
+        parsed = json.loads(edited_json)
+        if parsed != data:
+            st.session_state.edited_inputs[concept_name] = {
+                'data': parsed,
+                'axes': axes
+            }
+        elif concept_name in st.session_state.edited_inputs:
+            del st.session_state.edited_inputs[concept_name]
+    except json.JSONDecodeError as e:
+        st.error(f"Invalid JSON: {e}")
 
 
 def _render_interactive_tensor_viewer(
