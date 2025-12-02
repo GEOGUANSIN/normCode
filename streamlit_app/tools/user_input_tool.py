@@ -297,4 +297,185 @@ class StreamlitInputTool:
             return answer
         
         return interaction_fn
+    
+    def create_sandbox_function(self, display_code: str, context_key: str = "context") -> Callable:
+        """
+        Creates a function that renders a custom sandbox UI with user-provided display code.
+        
+        The display code can use:
+        - `display.*` helpers for UI components (title, code_block, instruction, etc.)
+        - `interact.*` helpers to specify the interaction type (text_input, text_editor, confirm, select)
+        - `context` dict containing data passed at runtime
+        
+        Args:
+            display_code: Python code string that uses display.* and interact.* helpers.
+                          This code defines both what to show AND what input to collect.
+            context_key: The key in vars that contains the context dictionary for the display code.
+                         Defaults to "context".
+        
+        Returns:
+            A callable that:
+            1. Executes the display_code to render UI and determine interaction type
+            2. Blocks until user provides input
+            3. Returns the user's response
+        
+        Example:
+            display_code = '''
+            display.title(context.get("title", "Review"))
+            display.code_block(context["code"], language="python")
+            display.instruction("Please review and provide feedback.")
+            interact.text_input(label="Your feedback:")
+            '''
+            
+            sandbox_fn = tool.create_sandbox_function(display_code)
+            result = sandbox_fn(context={"title": "Code Review", "code": "def hello(): pass"})
+        """
+        def sandbox_fn(vars: Dict[str, Any] | None = None, **kwargs: Any) -> Any:
+            logger.info("=" * 80)
+            logger.info(f"[USER_INPUT_TOOL] SANDBOX INTERACTION STARTED")
+            logger.info(f"[USER_INPUT_TOOL] display_code length={len(display_code)}")
+            logger.info(f"[USER_INPUT_TOOL] vars={vars}")
+            logger.info(f"[USER_INPUT_TOOL] kwargs={kwargs}")
+            logger.info("=" * 80)
+            time.sleep(0.5)
+            
+            # Handle both positional dict and kwargs
+            if vars is None:
+                vars = {}
+            vars.update(kwargs)
+            
+            # Extract context for the display code
+            context = vars.get(context_key, {})
+            
+            # Allocate a new request ID
+            request_id = st.session_state.user_input_next_id
+            st.session_state.user_input_next_id += 1
+            
+            logger.info(f"[Worker] Requesting sandbox interaction (ID={request_id})")
+            
+            # Create the request object with sandbox type
+            st.session_state.user_input_request = {
+                "id": request_id,
+                "prompt": "Sandbox Interaction",
+                "type": "sandbox",
+                "display_code": display_code,
+                "context": context,
+                "vars": vars,
+                "kwargs": kwargs
+            }
+            
+            # Clear any old response + reset event
+            st.session_state.user_input_response = None
+            st.session_state.user_input_event.clear()
+            
+            # Block this worker thread until UI provides an answer
+            logger.info(f"[Worker] Blocking on event (ID={request_id})...")
+            event = st.session_state.user_input_event
+            event.wait()
+            
+            # When unblocked, read the response
+            logger.info(f"[Worker] Unblocked! Reading response (ID={request_id})...")
+            resp = st.session_state.user_input_response
+            
+            if not resp or resp.get("id") != request_id:
+                logger.error(f"[Worker] Response mismatch! Expected ID={request_id}, got {resp}")
+                raise RuntimeError(f"user_input response mismatch or missing (expected ID={request_id})")
+            
+            answer = resp["answer"]
+            logger.info(f"[Worker] Received sandbox answer (ID={request_id})")
+            
+            # Clear the request now that it's been handled
+            st.session_state.user_input_request = None
+            
+            return answer
+        
+        return sandbox_fn
+    
+    def create_sandbox_interaction(self, display_code_key: str = "display_code", context_key: str = "context") -> Callable:
+        """
+        Creates a sandbox interaction function where the display code is provided at runtime.
+        
+        Unlike create_sandbox_function() where display_code is fixed at creation time,
+        this method allows the display_code to be passed dynamically when the function is called.
+        
+        Args:
+            display_code_key: The key in vars that contains the display code string.
+            context_key: The key in vars that contains the context dictionary.
+        
+        Returns:
+            A callable that expects display_code and context in its vars/kwargs.
+        
+        Example:
+            sandbox_fn = tool.create_sandbox_interaction()
+            result = sandbox_fn(
+                display_code='''
+                    display.title(context["title"])
+                    interact.confirm(label="Approve?")
+                ''',
+                context={"title": "Approval Required"}
+            )
+        """
+        def sandbox_fn(vars: Dict[str, Any] | None = None, **kwargs: Any) -> Any:
+            logger.info("=" * 80)
+            logger.info(f"[USER_INPUT_TOOL] DYNAMIC SANDBOX INTERACTION STARTED")
+            logger.info(f"[USER_INPUT_TOOL] vars={vars}")
+            logger.info(f"[USER_INPUT_TOOL] kwargs={kwargs}")
+            logger.info("=" * 80)
+            time.sleep(0.5)
+            
+            # Handle both positional dict and kwargs
+            if vars is None:
+                vars = {}
+            vars.update(kwargs)
+            
+            # Extract display code and context
+            display_code = vars.get(display_code_key, "")
+            context = vars.get(context_key, {})
+            
+            if not display_code:
+                raise ValueError(f"No display_code provided. Expected key: '{display_code_key}'")
+            
+            # Allocate a new request ID
+            request_id = st.session_state.user_input_next_id
+            st.session_state.user_input_next_id += 1
+            
+            logger.info(f"[Worker] Requesting dynamic sandbox interaction (ID={request_id})")
+            
+            # Create the request object with sandbox type
+            st.session_state.user_input_request = {
+                "id": request_id,
+                "prompt": "Sandbox Interaction",
+                "type": "sandbox",
+                "display_code": display_code,
+                "context": context,
+                "vars": vars,
+                "kwargs": kwargs
+            }
+            
+            # Clear any old response + reset event
+            st.session_state.user_input_response = None
+            st.session_state.user_input_event.clear()
+            
+            # Block this worker thread until UI provides an answer
+            logger.info(f"[Worker] Blocking on event (ID={request_id})...")
+            event = st.session_state.user_input_event
+            event.wait()
+            
+            # When unblocked, read the response
+            logger.info(f"[Worker] Unblocked! Reading response (ID={request_id})...")
+            resp = st.session_state.user_input_response
+            
+            if not resp or resp.get("id") != request_id:
+                logger.error(f"[Worker] Response mismatch! Expected ID={request_id}, got {resp}")
+                raise RuntimeError(f"user_input response mismatch or missing (expected ID={request_id})")
+            
+            answer = resp["answer"]
+            logger.info(f"[Worker] Received dynamic sandbox answer (ID={request_id})")
+            
+            # Clear the request now that it's been handled
+            st.session_state.user_input_request = None
+            
+            return answer
+        
+        return sandbox_fn
 

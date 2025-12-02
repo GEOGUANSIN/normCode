@@ -28,7 +28,7 @@ if str(script_dir) not in sys.path:
 
 from core import init_session_state
 from ui import apply_custom_styling, render_main_header, render_footer, render_sidebar
-from tabs import render_execute_tab, render_results_tab, render_history_tab, render_help_tab
+from tabs import render_execute_tab, render_results_tab, render_history_tab, render_help_tab, render_sandbox_tab
 
 # Configure page
 st.set_page_config(
@@ -51,7 +51,7 @@ config = render_sidebar()
 render_main_header()
 
 # Create tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🚀 Execute", "📊 Results", "📜 History", "📖 Help"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🚀 Execute", "📊 Results", "📜 History", "🧪 Sandbox", "📖 Help"])
 
 # Render tabs
 with tab1:
@@ -64,6 +64,9 @@ with tab3:
     render_history_tab(config['db_path'])
 
 with tab4:
+    render_sandbox_tab()
+
+with tab5:
     render_help_tab()
 
 # Render footer

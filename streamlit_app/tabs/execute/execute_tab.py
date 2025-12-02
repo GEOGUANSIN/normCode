@@ -18,13 +18,7 @@ from core.config import (
     SCRIPT_DIR, PROJECT_ROOT, clear_interaction_state, 
     clear_results, clear_file_operations_log
 )
-from core.file_utils import get_file_content
-from ui.ui_components import (
-    display_execution_summary,
-    display_concept_preview,
-    display_inference_preview,
-    display_inputs_preview
-)
+from ui.ui_components import display_execution_summary
 
 # Import new refactored modules
 from .state import ExecutionState, ExecutionStatus
@@ -36,6 +30,7 @@ from .ui_components import (
     render_file_operations_monitor,
     render_debug_panel
 )
+from .preview_components import render_file_previews
 from .constants import ExecutionPhase
 
 logger = logging.getLogger(__name__)
@@ -49,18 +44,6 @@ def render_execute_tab(config: Dict[str, Any]):
         config: Configuration dictionary from sidebar
     """
     st.header("Execute Orchestration")
-    
-    # Check for pending user input requests FIRST (before anything else)
-    if st.session_state.get("user_input_request") is not None:
-        request = st.session_state.user_input_request
-        response = st.session_state.get("user_input_response")
-        
-        # Only show form if no response yet
-        if response is None:
-            logger.info(f"[UI] Showing user input form for request ID={request['id']}")
-            st.info("⏸️ **Orchestration is waiting for your input...**")
-            _render_user_input_form_inline(request)
-            # Don't use st.stop() - let the rest of the page render so auto-polling continues
     
     # Show success message from previous resumption if flag is set
     if st.session_state.get('show_success_message', False):
@@ -84,9 +67,20 @@ def render_execute_tab(config: Dict[str, Any]):
         return
     
     # Preview section
-    _render_file_previews(config, loaded_concepts, loaded_inferences, loaded_inputs)
+    render_file_previews(config, loaded_concepts, loaded_inferences, loaded_inputs)
     
     st.divider()
+    
+    # User interaction monitor (rendered here, below file previews, near file operations)
+    # Check for pending user input requests
+    if st.session_state.get("user_input_request") is not None:
+        request = st.session_state.user_input_request
+        response = st.session_state.get("user_input_response")
+        
+        # Only show form if no response yet
+        if response is None:
+            logger.info(f"[UI] Showing user input form for request ID={request['id']}")
+            _render_user_input_form_inline(request)
     
     # File operations monitor (always visible) - placeholder for dynamic updates
     file_ops_placeholder = st.empty()
@@ -236,14 +230,86 @@ def _handle_interaction_cancel():
     st.rerun()
 
 
+def _stop_execution():
+    """
+    Stop any running execution and clear all execution state.
+    
+    This clears:
+    - is_executing flag
+    - user_input_request and response
+    - user_input_event
+    - execution_thread reference
+    - execution_completed/result/error flags
+    """
+    import threading
+    
+    logger.info("[STOP] Stopping execution and clearing state...")
+    
+    # Clear the executing flag
+    st.session_state.is_executing = False
+    
+    # Clear user input state
+    st.session_state.user_input_request = None
+    st.session_state.user_input_response = None
+    
+    # Signal any waiting thread to unblock (it will fail due to missing response, but won't deadlock)
+    if 'user_input_event' in st.session_state:
+        st.session_state.user_input_event.set()
+        # Reset the event for next execution
+        st.session_state.user_input_event = threading.Event()
+    
+    # Reset ID counter
+    st.session_state.user_input_next_id = 1
+    
+    # Clear execution result state
+    if 'execution_completed' in st.session_state:
+        del st.session_state.execution_completed
+    if 'execution_result' in st.session_state:
+        del st.session_state.execution_result
+    if 'execution_error' in st.session_state:
+        del st.session_state.execution_error
+    
+    # Clear thread reference (note: we can't actually kill the thread, 
+    # but clearing the reference allows a new execution to start)
+    if 'execution_thread' in st.session_state:
+        del st.session_state.execution_thread
+    
+    # Clear interaction state
+    clear_interaction_state()
+    
+    logger.info("[STOP] Execution state cleared")
+
+
 def _render_user_input_form_inline(request: Dict[str, Any]):
     """
     Render user input form inline during execution (threading-based approach).
     
+    All user interactions are contained in an expander for consistent UI.
+    
     Args:
         request: The user input request dict from session state
     """
-    st.warning("⏸️ **Orchestrator Needs Your Input**")
+    # Determine the expander title based on interaction type
+    interaction_type = request.get('type', 'text_input')
+    if interaction_type == 'sandbox':
+        expander_title = "⏸️ User Interaction Required (Custom UI)"
+    elif interaction_type == 'text_editor':
+        expander_title = "⏸️ User Interaction Required (Text Editor)"
+    elif interaction_type == 'confirm':
+        expander_title = "⏸️ User Interaction Required (Confirmation)"
+    else:
+        expander_title = "⏸️ User Interaction Required"
+    
+    # Wrap everything in an expander (always expanded when waiting for input)
+    with st.expander(expander_title, expanded=True):
+        if interaction_type == 'sandbox':
+            _render_sandbox_interaction_content(request)
+        else:
+            _render_standard_interaction_content(request)
+
+
+def _render_standard_interaction_content(request: Dict[str, Any]):
+    """Render standard (non-sandbox) interaction content inside the expander."""
     st.markdown(f"**Prompt:** {request['prompt']}")
     
     with st.form(key=f"user_input_form_{request['id']}"):
@@ -304,8 +370,159 @@ def _render_user_input_form_inline(request: Dict[str, Any]):
             # For cancel, we DO need to rerun to stop showing the form
             st.rerun()
     
-    st.divider()
     st.info("💡 **Tip:** The orchestrator is waiting for your response. Submit your answer to continue execution.")
+
+
+def _render_sandbox_interaction_content(request: Dict[str, Any]):
+    """
+    Render sandbox-style interaction content inside the expander.
+    
+    The display code uses display.* helpers for UI and interact.* helpers
+    to specify what kind of input is needed.
+    """
+    display_code = request.get('display_code', '')
+    context = request.get('context', {})
+    
+    # Container for the sandbox UI
+    sandbox_container = st.container(border=True)
+    
+    with sandbox_container:
+        # Execute the display code and get the interaction spec
+        interaction_spec = _execute_sandbox_display_code(display_code, context)
+        
+        if interaction_spec is None:
+            st.error("⚠️ No interaction specified in display code. Add an `interact.*` call.")
+            interaction_spec = {"type": "text_input", "label": "Your response:"}
+        
+        st.divider()
+        
+        # Render the interaction input based on the spec
+        _render_sandbox_form(request, interaction_spec)
+
+
+def _execute_sandbox_display_code(code: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Execute user-provided display code in a sandboxed environment.
+    
+    Returns the interaction specification if one was defined.
+    """
+    try:
+        # Import helpers
+        from tools.display_helpers import DisplayHelpers, InteractionBuilder
+        
+        # Create fresh instances for this execution
+        display = DisplayHelpers()
+        interact = InteractionBuilder()
+        
+        # Create a restricted namespace for execution
+        exec_globals = {
+            "__builtins__": {
+                "len": len, "str": str, "int": int, "float": float,
+                "bool": bool, "list": list, "dict": dict, "tuple": tuple,
+                "range": range, "enumerate": enumerate, "zip": zip,
+                "map": map, "filter": filter, "sorted": sorted, "reversed": reversed,
+                "min": min, "max": max, "sum": sum, "abs": abs, "round": round,
+                "print": print, "isinstance": isinstance, "type": type,
+                "getattr": getattr, "hasattr": hasattr,
+            }
+        }
+        
+        exec_locals = {
+            "display": display,
+            "interact": interact,
+            "context": context.copy(),
+        }
+        
+        # Execute the display code
+        exec(code, exec_globals, exec_locals)
+        
+        # Get the interaction spec if one was defined
+        spec = interact.get_spec()
+        if spec:
+            return spec.to_dict()
+        
+        return None
+        
+    except Exception as e:
+        st.error(f"⚠️ Error in display code: {e}")
+        logger.error(f"Sandbox execution error: {e}")
+        return None
+
+
+def _render_sandbox_form(request: Dict[str, Any], spec: Dict[str, Any]):
+    """Render the interaction form based on the specification from display code."""
+    interaction_type = spec.get("type", "text_input")
+    label = spec.get("label", "Your response:")
+    initial_value = spec.get("initial_value", "")
+    options = spec.get("options", [])
+    height = spec.get("height", 150)
+    help_text = spec.get("help_text", "")
+    
+    st.markdown("**🎯 Your Input Required**")
+    
+    with st.form(key=f"sandbox_form_{request['id']}"):
+        # Render appropriate input based on type
+        if interaction_type == "text_editor":
+            user_input = st.text_area(
+                label,
+                value=initial_value,
+                height=height,
+                help=help_text if help_text else None,
+                key=f"sandbox_editor_{request['id']}"
+            )
+        elif interaction_type == "confirm":
+            user_input = st.radio(
+                label,
+                options=[True, False],
+                format_func=lambda x: "✅ Yes" if x else "❌ No",
+                help=help_text if help_text else None,
+                key=f"sandbox_confirm_{request['id']}"
+            )
+        elif interaction_type == "select":
+            user_input = st.selectbox(
+                label,
+                options=options,
+                help=help_text if help_text else None,
+                key=f"sandbox_select_{request['id']}"
+            )
+        elif interaction_type == "multi_select":
+            user_input = st.multiselect(
+                label,
+                options=options,
+                help=help_text if help_text else None,
+                key=f"sandbox_multiselect_{request['id']}"
+            )
+        else:  # Default: text_input
+            user_input = st.text_input(
+                label,
+                value=initial_value,
+                help=help_text if help_text else None,
+                key=f"sandbox_text_{request['id']}"
+            )
+        
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            submit_btn = st.form_submit_button("✅ Submit & Continue", type="primary", use_container_width=True)
+        with col2:
+            cancel_btn = st.form_submit_button("❌ Cancel Execution", use_container_width=True)
+        
+        if submit_btn:
+            st.session_state.user_input_response = {
+                "id": request["id"],
+                "answer": user_input
+            }
+            st.session_state.user_input_event.set()
+            logger.info(f"[UI] User submitted sandbox answer for request ID={request['id']}")
+            st.session_state.user_input_request = None
+            st.success("✅ Answer submitted!")
+            time.sleep(0.3)
+            st.rerun()
+        
+        elif cancel_btn:
+            st.warning("Execution cancelled by user")
+            st.session_state.user_input_request = None
+            st.session_state.is_executing = False
+            st.rerun()
 
 
 def _render_instructions():
@@ -320,42 +537,6 @@ def _render_instructions():
     
     You can find example files in `infra/examples/add_examples/repo/`
     """)
-
-
-def _render_file_previews(
-    config: Dict[str, Any],
-    loaded_concepts: Optional[Dict],
-    loaded_inferences: Optional[Dict],
-    loaded_inputs: Optional[Dict]
-):
-    """Render file preview sections."""
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        try:
-            concepts_content = get_file_content(config['concepts_file'], loaded_concepts)
-            concepts_data = json.loads(concepts_content)
-            display_concept_preview(concepts_data)
-        except Exception as e:
-            st.error(f"Error loading concepts: {e}")
-    
-    with col2:
-        try:
-            inferences_content = get_file_content(config['inferences_file'], loaded_inferences)
-            inferences_data = json.loads(inferences_content)
-            display_inference_preview(inferences_data)
-        except Exception as e:
-            st.error(f"Error loading inferences: {e}")
-    
-    # Inputs preview
-    has_inputs = config['inputs_file'] is not None or loaded_inputs is not None
-    if has_inputs:
-        try:
-            inputs_content = get_file_content(config['inputs_file'], loaded_inputs)
-            inputs_data = json.loads(inputs_content)
-            display_inputs_preview(inputs_data)
-        except Exception as e:
-            st.error(f"Error loading inputs: {e}")
 
 
 def _render_execution_controls(
@@ -388,6 +569,21 @@ def _render_execution_controls(
         if st.button("🗑️ Clear Results", use_container_width=True):
             clear_results()
             st.success("Results cleared!")
+            st.rerun()
+    
+    with col3:
+        # Stop/Clear execution button - enabled when executing or when there's a pending request
+        has_pending_request = st.session_state.get('user_input_request') is not None
+        can_stop = is_currently_executing or has_pending_request
+        
+        if st.button(
+            "🛑 Stop Execution", 
+            use_container_width=True, 
+            disabled=not can_stop,
+            type="secondary" if can_stop else "secondary"
+        ):
+            _stop_execution()
+            st.warning("⏹️ Execution stopped and cleared!")
             st.rerun()
     
     if execute_btn and not is_currently_executing:
