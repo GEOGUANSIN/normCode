@@ -1,17 +1,23 @@
 
 ## Goal
 
-Expose the internal activity of a **black-box orchestrator runner** in the existing **Streamlit UI** whenever it uses a **file tool**.
+Expose and handle calls to a **black-box orchestrator runner’s `user_input` tool** through the existing **Streamlit UI**, so that:
+
+* When the orchestrator calls `user_input(...)`,
+* The question is surfaced in the UI,
+* The user answers via Streamlit,
+* The answer is passed back into the orchestrator as the return value of `user_input(...)`.
 
 Constraints:
 
-* The orchestrator runner is already implemented and treated as a black box.
-* The orchestrator runner receives the **file tool via an attribute** (or constructor argument).
-* The Streamlit app already exists and should not be heavily refactored.
-* We can change:
+* The **orchestrator runner is a black box** (already implemented).
+* The orchestrator expects a **synchronous `user_input` function** (e.g. `answer = user_input(prompt)`).
+* The orchestrator receives the `user_input` tool **via an attribute** (or constructor argument).
+* The **Streamlit app already exists**.
+* We are allowed to:
 
-  * The **file tool implementation**, and/or
-  * **Wrap** the file tool with a decorator before passing it into the orchestrator runner.
+  * Change / wrap the **`user_input` tool**,
+  * Wire it into the orchestrator when we construct it.
 
 ---
 
@@ -21,172 +27,244 @@ We do **not** modify the orchestrator runner.
 
 Instead we:
 
-1. **Instrument the file tool** (via decorator or callback hook) so that every time the orchestrator runner calls it, a **progress event** is emitted.
-2. Emit those events into a **thread-safe queue** stored in `st.session_state`.
-3. On each Streamlit rerun, the app:
+1. **Instrument the `user_input` tool** so that every call:
 
-   * Drains the queue,
-   * Appends the new messages to a persistent list in `session_state`,
-   * Renders them in the UI (log view, progress section, etc.).
+   * Publishes a “question” event into shared state,
+   * Blocks the worker thread until an answer is supplied.
+2. Use **Streamlit UI** to:
 
-This way:
+   * Detect pending questions,
+   * Render the question(s) to the user,
+   * Collect the user’s answer,
+   * Write the answer back into shared state.
+3. Unblock the instrumented `user_input` wrapper so it can return the answer to the orchestrator.
 
-* The orchestrator runner continues to call the file tool as usual.
-* The UI gets a stream of “file tool activity” without needing to know about the orchestrator’s internals.
+So from the orchestrator’s point of view nothing changes:
+
+```python
+answer = user_input("Please confirm the path:")
+```
+
+But under the hood, that call now routes through Streamlit.
 
 ---
 
 ## Architecture
 
-### 1. Progress channel: queue in `st.session_state`
+We need **two-way communication** between:
 
-In the Streamlit app startup logic (or a shared initialization module), ensure we have:
+* The **worker thread** running the orchestrator, and
+* The **Streamlit main thread** driving the UI.
 
-* `st.session_state.file_tool_queue` – `queue.Queue()` for cross-thread communication.
-* `st.session_state.file_tool_messages` – list of strings to display in the UI.
+We’ll use `st.session_state` to hold:
 
-The queue is **thread-safe**, so it can be safely written from the orchestrator runner’s worker thread.
+* A **single active request** (or a queue, if we need many),
+* A **response slot**,
+* A **synchronization primitive** (`threading.Event`) so the worker can wait for an answer.
 
-### 2. Instrumented file tool (decorator approach)
+### 1. Shared state in `st.session_state`
 
-We keep the existing file tool API unchanged, but wrap it before passing it into the orchestrator runner.
-
-**Core idea:**
-
-* A decorator `instrument_file_tool` that:
-
-  * Logs “before” and “after” each file tool call,
-  * Optionally logs errors,
-  * Writes these logs into `st.session_state.file_tool_queue`.
-
-In pseudocode:
+At Streamlit startup:
 
 ```python
-def instrument_file_tool(file_tool_fn):
-    def wrapper(*args, **kwargs):
-        q = st.session_state.file_tool_queue
-        q.put(f"[file_tool] starting {file_tool_fn.__name__} args={args} kwargs={kwargs}")
-        try:
-            result = file_tool_fn(*args, **kwargs)
-            q.put(f"[file_tool] finished {file_tool_fn.__name__}")
-            return result
-        except Exception as e:
-            q.put(f"[file_tool] ERROR in {file_tool_fn.__name__}: {e}")
-            raise
+import threading
+import streamlit as st
+
+if "user_input_request" not in st.session_state:
+    # e.g. {"id": 1, "prompt": "…"} or None if no active request
+    st.session_state.user_input_request = None
+
+if "user_input_response" not in st.session_state:
+    # e.g. {"id": 1, "answer": "…"} or None if no answer ready
+    st.session_state.user_input_response = None
+
+if "user_input_event" not in st.session_state:
+    # Worker waits on this; UI sets it when answer is ready
+    st.session_state.user_input_event = threading.Event()
+
+if "user_input_next_id" not in st.session_state:
+    st.session_state.user_input_next_id = 1
+```
+
+We assume **one active `user_input` at a time** for simplicity.
+If you need multiple concurrent requests, this can be generalized to a dict/queue keyed by IDs.
+
+### 2. Instrumented `user_input` tool (wrapper)
+
+We keep the original `user_input` API but wrap it before giving it to the orchestrator.
+
+```python
+import time
+import streamlit as st
+
+def instrument_user_input(user_input_fn):
+    """
+    Wraps a user_input function so that calls are routed through Streamlit.
+    If user_input_fn is just a placeholder, the wrapper can ignore it and
+    implement the behavior entirely itself.
+    """
+    def wrapper(prompt: str, *args, **kwargs) -> str:
+        # Allocate a new request id
+        request_id = st.session_state.user_input_next_id
+        st.session_state.user_input_next_id += 1
+
+        # Create the request object
+        st.session_state.user_input_request = {
+            "id": request_id,
+            "prompt": prompt,
+            # optional: extra metadata
+            "args": args,
+            "kwargs": kwargs,
+        }
+
+        # Clear any old response + reset event
+        st.session_state.user_input_response = None
+        st.session_state.user_input_event.clear()
+
+        # Block this worker thread until UI provides an answer
+        # (the UI will set st.session_state.user_input_response and set the event)
+        event = st.session_state.user_input_event
+        event.wait()  # worker blocks here
+
+        # When unblocked, read the response
+        resp = st.session_state.user_input_response
+        if not resp or resp.get("id") != request_id:
+            # Defensive fallback; in normal operation these should match
+            raise RuntimeError("user_input response mismatch or missing")
+
+        answer = resp["answer"]
+        return answer
+
     return wrapper
 ```
 
-This wrapper is then passed into the orchestrator runner instead of the raw file tool.
+Notes:
 
-### 3. Injecting the wrapped file tool into the orchestrator runner
+* The wrapper **does not need to call the original `user_input_fn` at all**, unless you want a fallback / default (e.g., for tests).
+* The important behavior is:
 
-Wherever we currently construct or configure the orchestrator runner:
+  * Write `user_input_request`,
+  * Wait on `user_input_event`,
+  * Read `user_input_response`,
+  * Return `answer`.
 
-* Take the existing file tool object/function.
-* Wrap it using `instrument_file_tool`.
-* Assign the wrapped version to the orchestrator runner’s file tool attribute.
+### 3. Injecting the wrapped user_input into the orchestrator runner
 
-Example patterns:
+Where we construct the orchestrator runner, we pass in the **wrapped** tool:
 
-* If the orchestrator is a class:
+```python
+from user_tools import user_input  # original, or dummy default
+from instrumentation import instrument_user_input
+from orchestrator_module import OrchestratorRunner
 
-  ```python
-  raw_file_tool = FileTool(...)
-  wrapped_file_tool = instrument_file_tool(raw_file_tool)
+wrapped_user_input = instrument_user_input(user_input)
 
-  orchestrator = OrchestratorRunner(...)
-  orchestrator.file_tool = wrapped_file_tool
-  ```
+orchestrator = OrchestratorRunner(...)
+orchestrator.user_input_tool = wrapped_user_input  # or whatever attribute is used
+```
 
-* If the orchestrator is a function that takes the file tool as a parameter:
+The orchestrator continues to call `self.user_input_tool(prompt, ...)` as before; now that call goes through the wrapper.
 
-  ```python
-  orchestrator_runner(
-      file_tool=instrument_file_tool(raw_file_tool),
-      ...
-  )
-  ```
+### 4. Streamlit UI: showing questions and sending answers back
 
-The orchestrator doesn’t know the difference; it just calls `file_tool(...)` as before.
+In the existing Streamlit app code, we add UI for pending `user_input` requests.
 
-### 4. Streamlit: consuming and rendering file tool activity
+At the top of the app (after init):
 
-In the existing Streamlit app code:
+```python
+st.title("Orchestrator UI")
 
-* At the top of each run, **drain the queue** into a persistent list:
+request = st.session_state.user_input_request
+response = st.session_state.user_input_response
+event = st.session_state.user_input_event
+```
 
-  ```python
-  while not st.session_state.file_tool_queue.empty():
-      msg = st.session_state.file_tool_queue.get_nowait()
-      st.session_state.file_tool_messages.append(msg)
-  ```
+If there is a pending request, render it:
 
-* Render the messages somewhere in the UI (e.g., a collapsible log pane, a status section):
+```python
+if request is not None and response is None:
+    st.subheader("Orchestrator question")
+    st.write(request["prompt"])
 
-  ```python
-  st.subheader("File tool activity")
-  for msg in st.session_state.file_tool_messages:
-      st.write("•", msg)
-  ```
+    user_answer = st.text_input("Your answer:", key="user_input_answer")
 
-* Ensure the app triggers reruns while the orchestrator runner is active (you may already have this):
+    if st.button("Submit answer"):
+        # Store the response and signal the worker
+        st.session_state.user_input_response = {
+            "id": request["id"],
+            "answer": user_answer,
+        }
+        event.set()  # Unblock the worker thread waiting in wrapper()
+        # Optionally force a rerun so the UI reflects that the question is no longer pending
+        st.experimental_rerun()
 
-  * Either via user actions (buttons like “Refresh” / “Next step”), or
-  * Via an auto-refresh mechanism (e.g. periodic reruns).
+elif request is not None and response is not None:
+    # Optional: show the last answered question & answer
+    st.write("Last question answered:")
+    st.write(request["prompt"])
+    st.write("Answer:", response["answer"])
+else:
+    st.write("No pending questions from orchestrator.")
+```
 
-Each rerun picks up **new messages** from the queue and shows them to the user.
+Meanwhile, separately, you have whatever controls you already use to **start the orchestrator runner** in a background thread; that part doesn’t need to change much.
 
 ---
 
-## Alternative: Global callback hook on the file tool
+## Behavior Summary
 
-If modifying the file tool’s source is acceptable, you can avoid decorators and instead:
-
-1. Add a **global or static callback** that the Streamlit layer can register:
+1. Orchestrator calls:
 
    ```python
-   # inside the file tool module
-
-   _file_tool_callback = None
-
-   def set_file_tool_callback(cb):
-       global _file_tool_callback
-       _file_tool_callback = cb
-
-   def _report(msg):
-       if _file_tool_callback:
-           _file_tool_callback(msg)
+   answer = user_input("Please choose a target environment:")
    ```
 
-2. Call `_report(...)` inside the file tool implementation wherever meaningful (start, per file, end, errors).
+2. Because we injected the wrapper:
 
-3. In the Streamlit app, set that callback once:
+   * `wrapper("Please choose a target environment:")` runs in the orchestrator’s worker thread.
+   * It:
 
-   ```python
-   def file_tool_cb(msg: str):
-       st.session_state.file_tool_queue.put(msg)
+     * Creates a new `user_input_request` in `session_state`,
+     * Clears old response,
+     * Calls `event.wait()` and **blocks**.
 
-   set_file_tool_callback(file_tool_cb)
-   ```
+3. On the next Streamlit rerun:
 
-Any orchestrator runner that uses this file tool will automatically emit events the UI can display.
+   * The app sees `user_input_request` is set and `user_input_response` is `None`.
+   * It shows the prompt and a text input / button.
+
+4. The user types an answer and clicks **“Submit answer”**:
+
+   * The app writes `user_input_response = {"id": ..., "answer": ...}`,
+   * Calls `user_input_event.set()`.
+
+5. The worker thread unblocks:
+
+   * `event.wait()` returns.
+   * The wrapper reads the response, returns the answer string to the orchestrator.
+
+6. Orchestrator continues as if it had just gotten the result from a synchronous `user_input` call.
 
 ---
 
-## Why this approach
+## Why this works with our constraints
 
-* **No changes to the orchestrator runner**
-  We respect it as a black box. All instrumentation is outside it.
+* **Orchestrator remains a black box**
+  We never change its code; we only control the tool it receives.
 
-* **File tool keeps its public contract**
-  We wrap or augment it without breaking its signature, so existing orchestrator logic continues to work.
+* **Streamlit remains the only UI**
+  All user interaction is in the Streamlit app; the worker just waits for answers.
 
-* **Thread-safe and Streamlit-friendly**
-  File tool activity is emitted from the worker thread into a queue; the Streamlit main thread consumes and renders it during normal reruns.
+* **API compatibility**
+  The orchestrator still sees `user_input(prompt) -> str`.
 
-* **Incremental adoption**
-  The decorator/hook can be introduced gradually and extended (e.g., richer events: timestamps, file paths, durations, etc.) without touching orchestrator code.
+* **Thread-safe & Streamlit-compatible**
 
----
+  * Worker blocks on a `threading.Event`, not on Streamlit.
+  * Streamlit main thread never blocks waiting for the worker; it just reads/writes `session_state`.
 
-If you’d like, this can be extended with a small event schema (e.g., `{"type": "copy", "src": "...", "dst": "...", "status": "start|end|error"}`) instead of raw strings, to support more structured UI elements like progress bars or per-file status tables.
+Final Recommendation for Developers
+
+Refreshing every 0.5 seconds is safe and recommended.
+Just ensure thread creation, state initialization, and orchestrator start logic are placed inside if blocks guarded by session_state flags.
+The worker communicates via queues/events, which remain stable across reruns.

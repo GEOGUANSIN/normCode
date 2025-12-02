@@ -1,13 +1,15 @@
 """
 Streamlit-native user input tool for human-in-the-loop orchestration.
 
-This tool replaces the default CLI/GUI-based UserInputTool with one that
-integrates seamlessly with Streamlit's session state and rerun mechanism.
+This tool uses a threading-based approach where the orchestrator worker thread
+blocks on a threading.Event while waiting for user input through the Streamlit UI.
 """
 
 import streamlit as st
 import logging
-from typing import Callable, Any, Dict
+import threading
+import time
+from typing import Callable, Any, Dict, Optional
 import hashlib
 
 logger = logging.getLogger(__name__)
@@ -17,8 +19,8 @@ class NeedsUserInteraction(Exception):
     """
     Exception raised when the orchestrator needs user input.
     
-    This signals the Streamlit app to pause execution, show a UI element
-    for user input, and resume after the user provides the input.
+    NOTE: This is kept for backwards compatibility but is NOT used
+    in the threading-based approach.
     """
     def __init__(self, prompt: str, interaction_id: str, interaction_type: str = "text_input", **kwargs):
         """
@@ -37,66 +39,58 @@ class NeedsUserInteraction(Exception):
 
 class StreamlitInputTool:
     """
-    A user input tool that integrates with Streamlit's session state.
+    A user input tool that integrates with Streamlit using threading.
     
-    Instead of blocking execution with input() or tkinter dialogs,
-    this tool raises NeedsUserInteraction exceptions that the app
-    can catch, display UI for, and resume execution after.
+    When user input is needed:
+    1. Worker thread posts a request to session state
+    2. Worker thread blocks on a threading.Event
+    3. UI detects the pending request and shows a form
+    4. User submits answer through UI
+    5. UI writes response and sets the event
+    6. Worker thread unblocks and returns the answer
     """
     
-    def __init__(self, session_state_key: str = "pending_user_inputs"):
-        """
-        Args:
-            session_state_key: The key in st.session_state where pending inputs are stored
-        """
-        self.session_state_key = session_state_key
+    def __init__(self):
+        """Initialize the threading-based user input tool."""
+        self._init_session_state()
+    
+    def _init_session_state(self):
+        """Initialize session state for user input handling."""
+        if "user_input_request" not in st.session_state:
+            st.session_state.user_input_request = None
         
-        # Initialize session state if needed
-        if self.session_state_key not in st.session_state:
-            st.session_state[self.session_state_key] = {}
+        if "user_input_response" not in st.session_state:
+            st.session_state.user_input_response = None
+        
+        if "user_input_event" not in st.session_state:
+            st.session_state.user_input_event = threading.Event()
+        
+        if "user_input_next_id" not in st.session_state:
+            st.session_state.user_input_next_id = 1
     
-    def _generate_interaction_id(self, prompt: str, context: Dict[str, Any]) -> str:
-        """
-        Generate a unique but deterministic ID for an interaction.
-        This allows the same prompt to be answered consistently during retries.
-        """
-        # Create a hash from prompt + relevant context
-        context_str = str(sorted(context.items()))
-        combined = f"{prompt}_{context_str}"
-        return hashlib.md5(combined.encode()).hexdigest()[:16]
-    
-    def _get_pending_inputs(self) -> Dict[str, Any]:
-        """Get the pending inputs dictionary from session state."""
-        if self.session_state_key not in st.session_state:
-            st.session_state[self.session_state_key] = {}
-        return st.session_state[self.session_state_key]
-    
-    def _has_input(self, interaction_id: str) -> bool:
-        """Check if input is available for a given interaction ID."""
-        pending = self._get_pending_inputs()
-        return interaction_id in pending
-    
-    def _get_input(self, interaction_id: str) -> Any:
-        """Get and remove input for a given interaction ID."""
-        pending = self._get_pending_inputs()
-        value = pending.pop(interaction_id, None)
-        logger.debug(f"Retrieved input for interaction {interaction_id}: {value}")
-        return value
-    
-    def create_input_function(self, prompt_key: str = "prompt_text") -> Callable:
+    def create_input_function(self, prompt_key: str = "prompt_text", interaction_type: str = "text_input") -> Callable:
         """
         Creates a function that prompts the user for text input.
         
         This mimics the interface of UserInputTool.create_input_function()
-        but integrates with Streamlit instead of CLI/GUI.
+        but blocks the worker thread until the UI provides an answer.
         
         Args:
             prompt_key: The key in kwargs that contains the prompt text
+            interaction_type: Type of interaction (text_input, text_editor, etc.)
             
         Returns:
-            A callable that either returns the input (if available) or raises NeedsUserInteraction
+            A callable that blocks until user provides input via UI
         """
         def input_fn(vars: Dict[str, Any] | None = None, **kwargs: Any) -> str:
+            # DEBUG: Log entry and delay
+            logger.info("=" * 80)
+            logger.info(f"[USER_INPUT_TOOL] TEXT INPUT EXECUTION STARTED")
+            logger.info(f"[USER_INPUT_TOOL] vars={vars}")
+            logger.info(f"[USER_INPUT_TOOL] kwargs={kwargs}")
+            logger.info("=" * 80)
+            time.sleep(0.5)  # Debug delay
+            
             # Handle both positional dict and kwargs
             if vars is None:
                 vars = {}
@@ -106,26 +100,46 @@ class StreamlitInputTool:
             
             prompt_text = vars.get(prompt_key, "Enter input: ")
             
-            # Build context from vars (excluding the prompt itself)
-            context = {k: v for k, v in vars.items() if k != prompt_key}
+            # Allocate a new request ID
+            request_id = st.session_state.user_input_next_id
+            st.session_state.user_input_next_id += 1
             
-            # Generate deterministic interaction ID
-            interaction_id = self._generate_interaction_id(prompt_text, context)
+            logger.info(f"[Worker] Requesting user input (ID={request_id}): '{prompt_text[:100]}...'")
             
-            # Check if we already have the answer
-            if self._has_input(interaction_id):
-                value = self._get_input(interaction_id)
-                logger.info(f"User input provided for '{prompt_text[:50]}...': '{value[:50]}...'")
-                return value
+            # Create the request object
+            st.session_state.user_input_request = {
+                "id": request_id,
+                "prompt": prompt_text,
+                "type": interaction_type,
+                "vars": vars,
+                "kwargs": kwargs
+            }
             
-            # If not, signal that we need user interaction
-            logger.info(f"Requesting user input for: '{prompt_text[:100]}...'")
-            raise NeedsUserInteraction(
-                prompt=prompt_text,
-                interaction_id=interaction_id,
-                interaction_type="text_input",
-                context=context
-            )
+            # Clear any old response + reset event
+            st.session_state.user_input_response = None
+            st.session_state.user_input_event.clear()
+            
+            # Block this worker thread until UI provides an answer
+            logger.info(f"[Worker] Blocking on event (ID={request_id})...")
+            event = st.session_state.user_input_event
+            event.wait()  # Worker blocks here until UI calls event.set()
+            
+            # When unblocked, read the response
+            logger.info(f"[Worker] Unblocked! Reading response (ID={request_id})...")
+            resp = st.session_state.user_input_response
+            
+            if not resp or resp.get("id") != request_id:
+                # Defensive fallback
+                logger.error(f"[Worker] Response mismatch! Expected ID={request_id}, got {resp}")
+                raise RuntimeError(f"user_input response mismatch or missing (expected ID={request_id})")
+            
+            answer = resp["answer"]
+            logger.info(f"[Worker] Received answer (ID={request_id}): '{str(answer)[:50]}...'")
+            
+            # Clear the request now that it's been handled
+            st.session_state.user_input_request = None
+            
+            return answer
         
         return input_fn
     
@@ -138,9 +152,17 @@ class StreamlitInputTool:
             initial_text_key: The key in kwargs that contains the initial text to edit
             
         Returns:
-            A callable that either returns the edited text or raises NeedsUserInteraction
+            A callable that blocks until user provides edited text via UI
         """
         def editor_fn(vars: Dict[str, Any] | None = None, **kwargs: Any) -> str:
+            # DEBUG: Log entry and delay
+            logger.info("=" * 80)
+            logger.info(f"[USER_INPUT_TOOL] TEXT EDITOR EXECUTION STARTED")
+            logger.info(f"[USER_INPUT_TOOL] vars={vars}")
+            logger.info(f"[USER_INPUT_TOOL] kwargs={kwargs}")
+            logger.info("=" * 80)
+            time.sleep(0.5)  # Debug delay
+            
             # Handle both positional dict and kwargs
             if vars is None:
                 vars = {}
@@ -151,27 +173,48 @@ class StreamlitInputTool:
             prompt_text = vars.get(prompt_key, "Edit the text below:")
             initial_text = vars.get(initial_text_key, "")
             
-            # Build context
-            context = {k: v for k, v in vars.items() if k not in [prompt_key, initial_text_key]}
+            # Store initial_text in vars for UI to access
+            vars["initial_text"] = initial_text
             
-            # Generate interaction ID
-            interaction_id = self._generate_interaction_id(prompt_text, context)
+            # Allocate a new request ID
+            request_id = st.session_state.user_input_next_id
+            st.session_state.user_input_next_id += 1
             
-            # Check if we already have the answer
-            if self._has_input(interaction_id):
-                value = self._get_input(interaction_id)
-                logger.info(f"User edited text provided for '{prompt_text[:50]}...'")
-                return value
+            logger.info(f"[Worker] Requesting text editor (ID={request_id}): '{prompt_text[:100]}...'")
             
-            # If not, signal that we need user interaction
-            logger.info(f"Requesting text editor for: '{prompt_text[:100]}...'")
-            raise NeedsUserInteraction(
-                prompt=prompt_text,
-                interaction_id=interaction_id,
-                interaction_type="text_editor",
-                initial_text=initial_text,
-                context=context
-            )
+            # Create the request object
+            st.session_state.user_input_request = {
+                "id": request_id,
+                "prompt": prompt_text,
+                "type": "text_editor",
+                "vars": vars,
+                "kwargs": kwargs
+            }
+            
+            # Clear any old response + reset event
+            st.session_state.user_input_response = None
+            st.session_state.user_input_event.clear()
+            
+            # Block this worker thread until UI provides an answer
+            logger.info(f"[Worker] Blocking on event (ID={request_id})...")
+            event = st.session_state.user_input_event
+            event.wait()
+            
+            # When unblocked, read the response
+            logger.info(f"[Worker] Unblocked! Reading response (ID={request_id})...")
+            resp = st.session_state.user_input_response
+            
+            if not resp or resp.get("id") != request_id:
+                logger.error(f"[Worker] Response mismatch! Expected ID={request_id}, got {resp}")
+                raise RuntimeError(f"user_input response mismatch or missing (expected ID={request_id})")
+            
+            answer = resp["answer"]
+            logger.info(f"[Worker] Received edited text (ID={request_id})")
+            
+            # Clear the request now that it's been handled
+            st.session_state.user_input_request = None
+            
+            return answer
         
         return editor_fn
     
@@ -188,12 +231,21 @@ class StreamlitInputTool:
                 - Other type-specific config
                 
         Returns:
-            A callable that either returns the result or raises NeedsUserInteraction
+            A callable that blocks until user provides response via UI
         """
         interaction_type = config.get("interaction_type", "text_input")
         prompt_key = config.get("prompt_key", "prompt_text")
         
         def interaction_fn(vars: Dict[str, Any] | None = None, **kwargs: Any) -> Any:
+            # DEBUG: Log entry and delay
+            logger.info("=" * 80)
+            logger.info(f"[USER_INPUT_TOOL] GENERIC INTERACTION EXECUTION STARTED")
+            logger.info(f"[USER_INPUT_TOOL] interaction_type={interaction_type}")
+            logger.info(f"[USER_INPUT_TOOL] vars={vars}")
+            logger.info(f"[USER_INPUT_TOOL] kwargs={kwargs}")
+            logger.info("=" * 80)
+            time.sleep(0.5)  # Debug delay
+            
             # Handle both positional dict and kwargs
             if vars is None:
                 vars = {}
@@ -203,47 +255,46 @@ class StreamlitInputTool:
             
             prompt_text = vars.get(prompt_key, "User interaction required")
             
-            # Build context from all kwargs and config
-            context = {**config, **vars}
-            context.pop(prompt_key, None)  # Remove prompt from context
+            # Allocate a new request ID
+            request_id = st.session_state.user_input_next_id
+            st.session_state.user_input_next_id += 1
             
-            # Generate interaction ID
-            interaction_id = self._generate_interaction_id(prompt_text, context)
+            logger.info(f"[Worker] Requesting interaction (ID={request_id}, type={interaction_type}): '{prompt_text[:100]}...'")
             
-            # Check if we already have the answer
-            if self._has_input(interaction_id):
-                value = self._get_input(interaction_id)
-                logger.info(f"User interaction ({interaction_type}) completed: '{prompt_text[:50]}...'")
-                return value
+            # Create the request object
+            st.session_state.user_input_request = {
+                "id": request_id,
+                "prompt": prompt_text,
+                "type": interaction_type,
+                "vars": vars,
+                "kwargs": kwargs,
+                "config": config
+            }
             
-            # If not, signal that we need user interaction
-            logger.info(f"Requesting user interaction ({interaction_type}): '{prompt_text[:100]}...'")
-            raise NeedsUserInteraction(
-                prompt=prompt_text,
-                interaction_id=interaction_id,
-                interaction_type=interaction_type,
-                **context
-            )
+            # Clear any old response + reset event
+            st.session_state.user_input_response = None
+            st.session_state.user_input_event.clear()
+            
+            # Block this worker thread until UI provides an answer
+            logger.info(f"[Worker] Blocking on event (ID={request_id})...")
+            event = st.session_state.user_input_event
+            event.wait()
+            
+            # When unblocked, read the response
+            logger.info(f"[Worker] Unblocked! Reading response (ID={request_id})...")
+            resp = st.session_state.user_input_response
+            
+            if not resp or resp.get("id") != request_id:
+                logger.error(f"[Worker] Response mismatch! Expected ID={request_id}, got {resp}")
+                raise RuntimeError(f"user_input response mismatch or missing (expected ID={request_id})")
+            
+            answer = resp["answer"]
+            logger.info(f"[Worker] Received answer (ID={request_id}, type={interaction_type})")
+            
+            # Clear the request now that it's been handled
+            st.session_state.user_input_request = None
+            
+            return answer
         
         return interaction_fn
-    
-    def provide_input(self, interaction_id: str, value: Any):
-        """
-        Manually provide input for a specific interaction ID.
-        
-        This is typically called by the Streamlit app after the user
-        submits their response through the UI.
-        
-        Args:
-            interaction_id: The interaction ID to provide input for
-            value: The user's input value
-        """
-        pending = self._get_pending_inputs()
-        pending[interaction_id] = value
-        logger.info(f"Input provided for interaction {interaction_id}")
-    
-    def clear_all_inputs(self):
-        """Clear all pending inputs from session state."""
-        st.session_state[self.session_state_key] = {}
-        logger.info("Cleared all pending user inputs")
 

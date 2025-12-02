@@ -311,15 +311,82 @@ def _render_runtime_settings():
             loaded_base_dir not in [str(SCRIPT_DIR), str(PROJECT_ROOT)]
             else str(SCRIPT_DIR)
         )
-        custom_base_dir = st.text_input(
-            "Custom Base Directory",
-            value=default_custom,
-            help="Absolute or relative path for LLM file operations"
-        )
+        
+        # Initialize session state for custom base dir if not set
+        if 'custom_base_dir_value' not in st.session_state:
+            st.session_state.custom_base_dir_value = default_custom
+        
+        # Folder browser button and text input
+        col1, col2 = st.columns([3, 1])
+        
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True)  # Align with text input
+            browse_clicked = st.button("📁 Browse", key="browse_base_dir", use_container_width=True)
+        
+        # Handle browse button click BEFORE rendering text input
+        if browse_clicked:
+            import tkinter as tk
+            from tkinter import filedialog
+            
+            # Create hidden root window
+            root = tk.Tk()
+            root.withdraw()
+            root.wm_attributes('-topmost', 1)
+            
+            # Open folder dialog
+            folder_path = filedialog.askdirectory(
+                title="Select Base Directory",
+                initialdir=st.session_state.custom_base_dir_value or str(SCRIPT_DIR)
+            )
+            
+            # Close root window
+            root.destroy()
+            
+            # Update session state if folder selected
+            if folder_path:
+                st.session_state.custom_base_dir_value = folder_path
+                st.rerun()
+        
+        with col1:
+            custom_base_dir = st.text_input(
+                "Custom Base Directory",
+                value=st.session_state.custom_base_dir_value,
+                help="Absolute or relative path for LLM file operations"
+            )
+            # Update session state if user types manually
+            if custom_base_dir != st.session_state.custom_base_dir_value:
+                st.session_state.custom_base_dir_value = custom_base_dir
     else:
         custom_base_dir = None
+        # Clear selected folder when not using custom path
+        if 'custom_base_dir_value' in st.session_state:
+            del st.session_state.custom_base_dir_value
     
     return llm_model, max_cycles, base_dir_option, custom_base_dir
+
+
+def _get_available_runs(db_path: str) -> list:
+    """
+    Get list of available runs from the database.
+    
+    Args:
+        db_path: Path to the orchestrator database
+        
+    Returns:
+        List of run dictionaries with run_id, max_cycle, execution_count
+    """
+    try:
+        if not os.path.exists(db_path):
+            return []
+        
+        db = OrchestratorDB(db_path)
+        runs = db.list_runs(include_metadata=False)
+        return runs
+    except Exception as e:
+        # If database query fails, return empty list
+        import logging
+        logging.warning(f"Failed to query runs from database: {e}")
+        return []
 
 
 def _render_checkpoint_settings():
@@ -376,12 +443,53 @@ def _render_checkpoint_settings():
         else:
             default_run_id = loaded_config.get("resumed_from_run_id", "")
         
-        run_id_to_resume = st.text_input(
-            "Run ID to Resume",
-            value=default_run_id,
-            placeholder="Leave empty for latest",
-            help="The run ID to load state from" + (" (Loaded from previous run)" if default_run_id else "")
-        )
+        # Try to get available runs from database
+        available_runs = _get_available_runs(db_path)
+        
+        if available_runs:
+            # Build options list with run info
+            options = ["⏱️ (Latest)", "✏️ (Enter Custom)"] + [
+                f"{run['run_id']}  •  Cycle {run['max_cycle']}  •  {run['execution_count']} execs"
+                for run in available_runs
+            ]
+            
+            # Find default index
+            default_index = 0  # Default to "Latest"
+            if default_run_id:
+                for i, run in enumerate(available_runs):
+                    if run['run_id'] == default_run_id:
+                        default_index = i + 2  # +2 for "Latest" and "Enter Custom"
+                        break
+            
+            selected = st.selectbox(
+                "Run ID to Resume/Fork",
+                options=options,
+                index=default_index,
+                help="Select a run from the database, or choose to enter a custom ID"
+            )
+            
+            if selected == "⏱️ (Latest)":
+                run_id_to_resume = ""  # Empty means latest
+            elif selected == "✏️ (Enter Custom)":
+                run_id_to_resume = st.text_input(
+                    "Enter Custom Run ID",
+                    value=default_run_id,
+                    placeholder="Enter run ID",
+                    help="Manually enter a run ID"
+                )
+            else:
+                # Extract run_id from the selected option (format: "run_id  •  Cycle X  •  Y execs")
+                run_id_to_resume = selected.split("  •  ")[0]
+        else:
+            # No runs in database, fall back to text input
+            st.info("📝 No runs found in database. Enter a run ID manually or leave empty for a fresh start.")
+            run_id_to_resume = st.text_input(
+                "Run ID to Resume",
+                value=default_run_id,
+                placeholder="Leave empty for latest",
+                help="The run ID to load state from"
+            )
+        
         custom_run_id = None
         
         # Forking specific
@@ -399,11 +507,9 @@ def _render_checkpoint_settings():
             )
         else:
             new_run_id = None
-        
-        # Reconciliation mode
-        reconciliation_mode = _render_reconciliation_mode(resume_option)
     
-    # Advanced options (includes reconciliation mode if applicable)
+    # Advanced options (includes reconciliation mode)
+    reconciliation_mode = "PATCH"  # Default value
     if resume_option != "Fresh Run":
         with st.expander("🔧 Advanced Options"):
             verify_files = st.checkbox(

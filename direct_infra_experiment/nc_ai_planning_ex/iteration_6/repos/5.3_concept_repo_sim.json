@@ -4,7 +4,7 @@
         "type": "{}",
         "is_ground_concept": true,
         "reference_data": [
-            "%{file_location}(prompts/0_original_prompt.md)"
+            "%{file_location}(gold/raw.md)"
         ]
     },
     {
@@ -63,7 +63,7 @@
         "type": "{}",
         "is_ground_concept": true,
         "reference_data": [
-            "%{save_dir}id(next_iteration/)"
+            "%{save_dir}id(gold/)"
         ]
     }
 ]

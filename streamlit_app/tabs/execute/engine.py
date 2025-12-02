@@ -6,6 +6,7 @@ Separated from UI for better debugging and testability.
 import logging
 import asyncio
 import streamlit as st
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 from datetime import datetime
 from typing import Optional, Tuple, Dict, Any
 
@@ -149,8 +150,28 @@ class OrchestrationExecutionEngine:
         if not self.orchestrator:
             raise RuntimeError("Orchestrator not initialized")
         
-        # Start async execution as a task
-        task = asyncio.create_task(self.orchestrator.run_async())
+        # Get current script run context to pass to worker thread
+        ctx = get_script_run_ctx()
+        logger.info(f"[ENGINE] Got script run context: {ctx}")
+        
+        def run_with_context():
+            """Run orchestrator in thread with proper Streamlit context."""
+            import threading
+            current_thread = threading.current_thread()
+            
+            # Add script run context to this thread
+            if ctx:
+                add_script_run_ctx(current_thread, ctx)
+                logger.info(f"[ENGINE] Added script run context to thread: {current_thread.name}")
+            else:
+                logger.warning(f"[ENGINE] No script run context available for thread: {current_thread.name}")
+            
+            # Run the orchestrator synchronously in this thread
+            logger.info(f"[ENGINE] Starting orchestrator.run() in thread: {current_thread.name}")
+            return self.orchestrator.run()
+        
+        # Start execution in a separate thread (with context)
+        task = asyncio.create_task(asyncio.to_thread(run_with_context))
         
         # Track progress while running
         while not task.done():
