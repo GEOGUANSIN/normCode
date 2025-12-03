@@ -1215,7 +1215,7 @@ def _render_graph_view(
     st.subheader("🔀 Dependency Graph")
     
     # Info about the graph
-    with st.expander("ℹ️ Graph Legend", expanded=False):
+    with st.expander("ℹ️ Graph Legend & Controls", expanded=False):
         st.markdown("""
 **Node Colors:**
 - 🟣 **Purple** (ellipse): Semantic Functions (`::({})`, `<{}>`)
@@ -1229,19 +1229,241 @@ def _render_graph_view(
 **Node Shapes:**
 - 🔶 **Double circle**: Ground concepts (inputs)
 - 🎯 **Bold border**: Final concepts (outputs)
+
+**Controls:**
+- 🖱️ **Scroll to zoom** in/out
+- 🖱️ **Click and drag** to pan
+- 🔄 **Double-click** to reset view
+- ⬇️ **Download** button in top-right of graph
         """)
     
     # Build and render the graph
     try:
         graph_source = _build_graphviz_source(concepts_data, inferences_data)
-        st.graphviz_chart(graph_source, use_container_width=True)
+        _render_zoomable_graph_with_vizjs(graph_source)
+        
     except Exception as e:
         st.error(f"Error rendering graph: {e}")
-        st.info("💡 Make sure graphviz is installed: `pip install graphviz`")
         
         # Fallback: show text-based representation
         st.markdown("### Text-based Flow")
         _render_text_flow(inferences_data)
+
+
+def _render_zoomable_graph_with_vizjs(dot_source: str):
+    """
+    Render a Graphviz graph using Viz.js (pure JavaScript, no system binaries needed)
+    with pan/zoom capabilities using svg-pan-zoom library.
+    
+    Args:
+        dot_source: DOT format graph description
+    """
+    # Escape the DOT source for JavaScript
+    dot_escaped = dot_source.replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
+    
+    # Create HTML with Viz.js + svg-pan-zoom
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <script src="https://unpkg.com/@viz-js/viz@3.2.4/lib/viz-standalone.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+        <style>
+            * {{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            }}
+            #graph-container {{
+                width: 100%;
+                height: 550px;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+                position: relative;
+                overflow: hidden;
+            }}
+            #svg-container {{
+                width: 100%;
+                height: 100%;
+            }}
+            #svg-container svg {{
+                width: 100%;
+                height: 100%;
+            }}
+            .controls {{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: rgba(255, 255, 255, 0.95);
+                padding: 6px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+                z-index: 1000;
+                display: flex;
+                gap: 4px;
+                flex-wrap: wrap;
+            }}
+            .controls button {{
+                padding: 6px 10px;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                background: white;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.15s;
+            }}
+            .controls button:hover {{
+                background: #f3f4f6;
+                border-color: #9ca3af;
+            }}
+            .controls button.download {{
+                background: #3b82f6;
+                color: white;
+                border-color: #2563eb;
+            }}
+            .controls button.download:hover {{
+                background: #2563eb;
+            }}
+            #loading {{
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 14px;
+                color: #666;
+            }}
+            #error {{
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #dc2626;
+                text-align: center;
+                padding: 20px;
+            }}
+            .zoom-info {{
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(255,255,255,0.9);
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                color: #666;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="graph-container">
+            <div class="controls">
+                <button onclick="zoomIn()" title="Zoom In">🔍+</button>
+                <button onclick="zoomOut()" title="Zoom Out">🔍−</button>
+                <button onclick="resetView()" title="Reset View">🔄</button>
+                <button onclick="fitGraph()" title="Fit to View">📐</button>
+                <button onclick="downloadSvg()" class="download" title="Download SVG">⬇️ SVG</button>
+            </div>
+            <div id="loading">⏳ Rendering graph...</div>
+            <div id="svg-container"></div>
+            <div class="zoom-info" id="zoom-info">Scroll to zoom • Drag to pan</div>
+        </div>
+        <script>
+            var panZoom = null;
+            var svgContent = null;
+            
+            const dotSource = `{dot_escaped}`;
+            
+            async function renderGraph() {{
+                try {{
+                    const viz = await Viz.instance();
+                    svgContent = viz.renderSVGElement(dotSource);
+                    svgContent.id = 'graph-svg';
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('svg-container').appendChild(svgContent);
+                    
+                    // Initialize pan-zoom
+                    panZoom = svgPanZoom('#graph-svg', {{
+                        zoomEnabled: true,
+                        controlIconsEnabled: false,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.1,
+                        maxZoom: 15,
+                        zoomScaleSensitivity: 0.25,
+                        dblClickZoomEnabled: false,
+                        mouseWheelZoomEnabled: true,
+                        preventMouseEventsDefault: true
+                    }});
+                    
+                    // Double-click to reset
+                    svgContent.addEventListener('dblclick', resetView);
+                    
+                }} catch (e) {{
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').innerHTML = '❌ Error: ' + e.message;
+                    console.error('Graph render error:', e);
+                }}
+            }}
+            
+            function zoomIn() {{
+                if (panZoom) panZoom.zoomIn();
+            }}
+            
+            function zoomOut() {{
+                if (panZoom) panZoom.zoomOut();
+            }}
+            
+            function resetView() {{
+                if (panZoom) {{
+                    panZoom.reset();
+                    panZoom.center();
+                }}
+            }}
+            
+            function fitGraph() {{
+                if (panZoom) {{
+                    panZoom.fit();
+                    panZoom.center();
+                }}
+            }}
+            
+            function downloadSvg() {{
+                if (!svgContent) return;
+                
+                // Clone and clean up SVG for download
+                const svgClone = svgContent.cloneNode(true);
+                svgClone.removeAttribute('style');
+                
+                const serializer = new XMLSerializer();
+                let svgString = serializer.serializeToString(svgClone);
+                svgString = '<?xml version="1.0" encoding="UTF-8"?>\\n' + svgString;
+                
+                const blob = new Blob([svgString], {{ type: 'image/svg+xml' }});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'concept_graph.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }}
+            
+            // Initialize
+            renderGraph();
+        </script>
+        <div id="error"></div>
+    </body>
+    </html>
+    """
+    
+    # Render the HTML component
+    st.components.v1.html(html_content, height=580, scrolling=False)
 
 
 def _build_graphviz_source(
