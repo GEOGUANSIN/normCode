@@ -48,26 +48,88 @@ from infra._agent._body import Body
 
 
 def setup_logging(verbose: bool = False):
-    """Setup logging configuration."""
+    """
+    Setup logging configuration.
+    Forcefully sets logging levels even if logging was already configured by other modules.
+    """
     level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(),
-        ]
-    )
+    
+    # Get root logger
+    root_logger = logging.getLogger()
+    
+    # Forcefully set root logger level
+    root_logger.setLevel(level)
+    
+    # Set level on all existing handlers
+    for handler in root_logger.handlers:
+        handler.setLevel(level)
+    
+    # If no handlers exist, or we want to ensure our handler is there, add one
+    if not root_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
+    else:
+        # Update formatter on existing handlers to ensure consistent format
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        for handler in root_logger.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                handler.setFormatter(formatter)
+    
+    # Also set level on CompositionTool's logger specifically
+    # This ensures debug logs from composition steps are visible
+    composition_logger = logging.getLogger('infra._agent._models._composition_tool')
+    composition_logger.setLevel(level)
+    
+    # Set level on other relevant loggers that might be used in composition
+    relevant_loggers = [
+        'infra._agent._models._composition_tool',
+        'infra._agent._steps.imperative_in_composition',
+        'infra._agent._steps.imperative_direct',
+    ]
+    for logger_name in relevant_loggers:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(level)
 
 
-def load_repositories(concepts_file: str, inferences_file: str, inputs_file: Optional[str] = None):
+def resolve_file_path(path: Optional[str], base_dir: Optional[str] = None) -> Optional[str]:
+    """
+    Resolve file path with smart fallbacks:
+    1. If path is absolute or None, return as is.
+    2. If base_dir is provided, try resolving relative to base_dir.
+    3. If file exists at joined path, return joined path.
+    4. Fallback to original path (relative to CWD).
+    """
+    if not path or os.path.isabs(path) or not base_dir:
+        return path
+    
+    # Try relative to base_dir
+    joined = os.path.join(base_dir, path)
+    if os.path.exists(joined):
+        return joined
+        
+    # Fallback to CWD (original path)
+    return path
+
+
+def load_repositories(concepts_file: str, inferences_file: str, inputs_file: Optional[str] = None, base_dir: Optional[str] = None):
     """Load concept and inference repositories from JSON files."""
+    # Resolve paths
+    concepts_file = resolve_file_path(concepts_file, base_dir)
+    inferences_file = resolve_file_path(inferences_file, base_dir)
+    inputs_file = resolve_file_path(inputs_file, base_dir)
+
     print(f"Loading repositories...")
+    if base_dir:
+        print(f"  (Context: {base_dir})")
     
     # Load concepts
     with open(concepts_file, 'r', encoding='utf-8') as f:
         concept_data = json.load(f)
     concept_repo = ConceptRepo.from_json_list(concept_data)
-    print(f"  ✓ Loaded {len(concept_repo._concept_map)} concepts from {concepts_file}")
+    print(f"  - Loaded {len(concept_repo._concept_map)} concepts from {concepts_file}")
     
     # Load and inject inputs if provided
     if inputs_file:
@@ -81,13 +143,13 @@ def load_repositories(concepts_file: str, inferences_file: str, inputs_file: Opt
                 data = details
                 axes = None
             concept_repo.add_reference(concept_name, data, axis_names=axes)
-        print(f"  ✓ Injected {len(inputs_data)} input concept(s) from {inputs_file}")
+        print(f"  - Injected {len(inputs_data)} input concept(s) from {inputs_file}")
     
     # Load inferences
     with open(inferences_file, 'r', encoding='utf-8') as f:
         inference_data = json.load(f)
     inference_repo = InferenceRepo.from_json_list(inference_data, concept_repo)
-    print(f"  ✓ Loaded {len(inference_repo.inferences)} inferences from {inferences_file}")
+    print(f"  - Loaded {len(inference_repo.inferences)} inferences from {inferences_file}")
     
     return concept_repo, inference_repo
 
@@ -98,31 +160,43 @@ def run_fresh(args):
     print("FRESH RUN")
     print("="*60)
     
+    # Initialize Body (to get base_dir context)
+    # Convert base_dir to absolute path to avoid path duplication issues when combining with relative paths
+    if args.base_dir:
+        base_dir = os.path.abspath(args.base_dir)
+    else:
+        base_dir = os.getcwd()
+    
     # Load repositories
     concept_repo, inference_repo = load_repositories(
-        args.concepts, args.inferences, args.inputs
+        args.concepts, args.inferences, args.inputs, base_dir=args.base_dir
     )
     
-    # Initialize Body
-    base_dir = args.base_dir or os.getcwd()
-    body = Body(llm_name=args.llm, base_dir=base_dir)
-    print(f"  ✓ Base directory: {base_dir}")
-    print(f"  ✓ LLM model: {args.llm}")
+    # Default to new_user_input_tool=True to match script behavior
+    body = Body(llm_name=args.llm, base_dir=base_dir, new_user_input_tool=True)
+    print(f"  - Base directory: {base_dir}")
+    print(f"  - LLM model: {args.llm}")
     
     # Create orchestrator
+    # Resolve DB path relative to base_dir if not absolute
+    db_path = args.db_path
+    if db_path and not os.path.isabs(db_path) and base_dir:
+         db_path = os.path.join(base_dir, db_path)
+         
     orchestrator = Orchestrator(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
         body=body,
         max_cycles=args.max_cycles,
-        db_path=args.db_path
+        db_path=db_path,
+        run_id=args.new_run_id
     )
     
-    print(f"\n🆕 Started fresh run: {orchestrator.run_id}")
-    print(f"Database: {args.db_path}")
+    print(f"\n[NEW] Started fresh run: {orchestrator.run_id}")
+    print(f"Database: {db_path}")
     
     # Execute
-    print("\n⏳ Running orchestration...")
+    print("\n[Running] orchestration...")
     start_time = datetime.now()
     final_concepts = orchestrator.run()
     end_time = datetime.now()
@@ -140,24 +214,34 @@ def run_resume(args):
     print("RESUME FROM CHECKPOINT")
     print("="*60)
     
+    # Initialize Body
+    # Convert base_dir to absolute path to avoid path duplication issues when combining with relative paths
+    if args.base_dir:
+        base_dir = os.path.abspath(args.base_dir)
+    else:
+        base_dir = os.getcwd()
+
+    body = Body(llm_name=args.llm, base_dir=base_dir)
+    
     # Load repositories
     concept_repo, inference_repo = load_repositories(
-        args.concepts, args.inferences, args.inputs
+        args.concepts, args.inferences, args.inputs, base_dir=args.base_dir
     )
-    
-    # Initialize Body
-    base_dir = args.base_dir or os.getcwd()
-    body = Body(llm_name=args.llm, base_dir=base_dir)
     
     # Load from checkpoint
     mode = args.mode or "PATCH"
-    print(f"  ✓ Resuming from run: {args.run_id or 'latest'}")
-    print(f"  ✓ Reconciliation mode: {mode}")
+    print(f"  - Resuming from run: {args.run_id or 'latest'}")
+    print(f"  - Reconciliation mode: {mode}")
     
+    # Resolve DB path relative to base_dir if not absolute
+    db_path = args.db_path
+    if db_path and not os.path.isabs(db_path) and base_dir:
+         db_path = os.path.join(base_dir, db_path)
+
     orchestrator = Orchestrator.load_checkpoint(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        db_path=args.db_path,
+        db_path=db_path,
         body=body,
         max_cycles=args.max_cycles,
         run_id=args.run_id,
@@ -165,10 +249,10 @@ def run_resume(args):
         validate_compatibility=True
     )
     
-    print(f"\n♻️ Resumed run: {orchestrator.run_id}")
+    print(f"\n[RESUMED] Resumed run: {orchestrator.run_id}")
     
     # Execute
-    print("\n⏳ Running orchestration...")
+    print("\n[Running] orchestration...")
     start_time = datetime.now()
     final_concepts = orchestrator.run()
     end_time = datetime.now()
@@ -186,29 +270,39 @@ def run_fork(args):
     print("FORK FROM CHECKPOINT")
     print("="*60)
     
+    # Initialize Body
+    # Convert base_dir to absolute path to avoid path duplication issues when combining with relative paths
+    if args.base_dir:
+        base_dir = os.path.abspath(args.base_dir)
+    else:
+        base_dir = os.getcwd()
+        
+    body = Body(llm_name=args.llm, base_dir=base_dir, new_user_input_tool=True)
+    
     # Load repositories (new/different repository)
     concept_repo, inference_repo = load_repositories(
-        args.concepts, args.inferences, args.inputs
+        args.concepts, args.inferences, args.inputs, base_dir=args.base_dir
     )
-    
-    # Initialize Body
-    base_dir = args.base_dir or os.getcwd()
-    body = Body(llm_name=args.llm, base_dir=base_dir)
     
     # Determine new run ID
     import uuid
     new_run_id = args.new_run_id or f"fork-{uuid.uuid4().hex[:8]}"
     mode = args.mode or "OVERWRITE"
     
-    print(f"  ✓ Forking from: {args.from_run or 'latest'}")
-    print(f"  ✓ New run ID: {new_run_id}")
-    print(f"  ✓ Reconciliation mode: {mode}")
+    print(f"  - Forking from: {args.from_run or 'latest'}")
+    print(f"  - New run ID: {new_run_id}")
+    print(f"  - Reconciliation mode: {mode}")
     
+    # Resolve DB path relative to base_dir if not absolute
+    db_path = args.db_path
+    if db_path and not os.path.isabs(db_path) and base_dir:
+         db_path = os.path.join(base_dir, db_path)
+
     # Load from checkpoint with new repository
     orchestrator = Orchestrator.load_checkpoint(
         concept_repo=concept_repo,
         inference_repo=inference_repo,
-        db_path=args.db_path,
+        db_path=db_path,
         body=body,
         max_cycles=args.max_cycles,
         run_id=args.from_run,
@@ -217,11 +311,11 @@ def run_fork(args):
         validate_compatibility=True
     )
     
-    print(f"\n🔱 Forked to: {orchestrator.run_id}")
+    print(f"\n[FORKED] Forked to: {orchestrator.run_id}")
     print(f"State loaded from source, starting fresh execution history")
     
     # Execute
-    print("\n⏳ Running orchestration...")
+    print("\n[Running] orchestration...")
     start_time = datetime.now()
     final_concepts = orchestrator.run()
     end_time = datetime.now()
@@ -293,13 +387,13 @@ def export_checkpoint(args):
         result = db.load_latest_checkpoint(args.run_id)
     
     if not result:
-        print(f"❌ No checkpoint found for run: {args.run_id or 'latest'}")
+        print(f"[ERROR] No checkpoint found for run: {args.run_id or 'latest'}")
         return
     
     cycle, inf_count, checkpoint_data = result
     
-    print(f"  ✓ Loaded checkpoint: Cycle {cycle}, Inference {inf_count}")
-    print(f"  ✓ Run ID: {args.run_id or 'latest'}")
+    print(f"  - Loaded checkpoint: Cycle {cycle}, Inference {inf_count}")
+    print(f"  - Run ID: {args.run_id or 'latest'}")
     
     # Export to file
     output_file = args.output or f"checkpoint_{args.run_id or 'latest'}_c{cycle}_i{inf_count}.json"
@@ -307,7 +401,7 @@ def export_checkpoint(args):
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(checkpoint_data, f, indent=2, default=str)
     
-    print(f"\n✅ Exported to: {output_file}")
+    print(f"\n[EXPORTED] Exported to: {output_file}")
     print()
 
 
@@ -317,7 +411,7 @@ def print_results(orchestrator, final_concepts, duration):
     print("EXECUTION RESULTS")
     print("="*60)
     
-    print(f"\n✅ Execution completed in {duration:.2f}s")
+    print(f"\n[DONE] Execution completed in {duration:.2f}s")
     print(f"Run ID: {orchestrator.run_id}")
     
     # Count completed concepts
@@ -351,6 +445,7 @@ def main():
     # Global arguments
     parser.add_argument('--db-path', type=str, default='orchestration.db',
                        help='Path to checkpoint database (default: orchestration.db)')
+    parser.add_argument('--base-dir', help='Base directory for Body (default: current dir)')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Enable verbose logging')
     
@@ -363,8 +458,8 @@ def main():
     run_parser.add_argument('--inferences', required=True, help='Inferences JSON file')
     run_parser.add_argument('--inputs', help='Inputs JSON file (optional)')
     run_parser.add_argument('--llm', default='demo', help='LLM model name (default: demo)')
-    run_parser.add_argument('--base-dir', help='Base directory for Body (default: current dir)')
     run_parser.add_argument('--max-cycles', type=int, default=30, help='Maximum cycles (default: 30)')
+    run_parser.add_argument('--new-run-id', help='Optional custom Run ID for this execution')
     
     # Resume command
     resume_parser = subparsers.add_parser('resume', help='Resume from a checkpoint')
@@ -375,7 +470,6 @@ def main():
     resume_parser.add_argument('--mode', choices=['PATCH', 'OVERWRITE', 'FILL_GAPS'], 
                                default='PATCH', help='Reconciliation mode (default: PATCH)')
     resume_parser.add_argument('--llm', default='demo', help='LLM model name (default: demo)')
-    resume_parser.add_argument('--base-dir', help='Base directory for Body (default: current dir)')
     resume_parser.add_argument('--max-cycles', type=int, default=30, help='Maximum cycles (default: 30)')
     
     # Fork command
@@ -388,7 +482,6 @@ def main():
     fork_parser.add_argument('--mode', choices=['PATCH', 'OVERWRITE', 'FILL_GAPS'],
                             default='OVERWRITE', help='Reconciliation mode (default: OVERWRITE)')
     fork_parser.add_argument('--llm', default='demo', help='LLM model name (default: demo)')
-    fork_parser.add_argument('--base-dir', help='Base directory for Body (default: current dir)')
     fork_parser.add_argument('--max-cycles', type=int, default=30, help='Maximum cycles (default: 30)')
     
     # List runs command

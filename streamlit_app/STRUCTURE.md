@@ -27,10 +27,23 @@ streamlit_app/
 │
 ├── tabs/                     # Tab modules
 │   ├── __init__.py
-│   ├── execute_tab.py       # Execute orchestration tab
-│   ├── results_tab.py       # Results viewer tab
+│   ├── execute/             # Execute tab package (refactored)
+│   │   ├── __init__.py
+│   │   ├── execute_tab.py   # Main entry point
+│   │   ├── constants.py     # Configuration constants
+│   │   ├── state.py         # State management
+│   │   ├── engine.py        # Execution engine
+│   │   ├── ui_components.py # UI rendering components
+│   │   ├── logging.py       # Logging utilities
+│   │   └── preview_components.py
+│   ├── results/             # Results tab package (refactored)
+│   │   ├── __init__.py
+│   │   ├── results_tab.py   # Main entry point
+│   │   ├── constants.py     # Configuration constants
+│   │   └── ui_components.py # UI rendering components
 │   ├── history_tab.py       # Execution history tab
-│   └── help_tab.py          # Help/documentation tab
+│   ├── help_tab.py          # Help/documentation tab
+│   └── sandbox_tab.py       # Sandbox/testing tab
 │
 ├── tools/                    # Custom tools
 │   ├── __init__.py
@@ -92,10 +105,21 @@ streamlit_app/
 ### `tabs/` - Tab Modules
 **Purpose:** Individual tab implementations
 
-- **`execute_tab.py`**: Main execution interface
-- **`results_tab.py`**: Results viewer and export
+- **`execute/`**: Modular execute tab package
+  - `execute_tab.py`: Main execution interface
+  - `state.py`: Execution state and metrics tracking
+  - `engine.py`: Orchestration execution engine
+  - `ui_components.py`: Reusable UI components
+  - `constants.py`: Display configuration
+  
+- **`results/`**: Modular results tab package
+  - `results_tab.py`: Results viewer and export
+  - `ui_components.py`: Results display components
+  - `constants.py`: Display configuration
+  
 - **`history_tab.py`**: Execution history and logs
 - **`help_tab.py`**: Documentation and guides
+- **`sandbox_tab.py`**: Testing and experimentation
 
 ## Import Structure
 

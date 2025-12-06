@@ -31,6 +31,58 @@ class UnpackedList(list):
 
 # --- Top-Level Helper Functions ---
 
+def _extract_path_from_wrapper(value: str) -> str:
+    """
+    Extract the inner path/content from a wrapper string.
+    E.g., "%{file_location}id(gold/raw.md)" -> "gold/raw.md"
+    """
+    if not isinstance(value, str) or not value.startswith("%"):
+        return value
+    
+    # Simple wrapper: %id(content)
+    simple_pattern = re.compile(r"^%[a-zA-Z0-9]*\((.*)\)$")
+    simple_match = simple_pattern.match(value)
+    if simple_match:
+        return simple_match.group(1)
+    
+    # Complex wrapper: %{type}id(content)
+    complex_pattern = re.compile(r"^%\{.+?\}.*?\((.+)\)$")
+    complex_match = complex_pattern.match(value)
+    if complex_match:
+        return complex_match.group(1)
+    
+    return value
+
+
+def _apply_branch_wrapper(value: str, wrapper_name: str, file_system_tool, prompt_tool) -> Any:
+    """
+    Apply a specific wrapper transformation to a value for branching.
+    
+    This function constructs a wrapped string and delegates to _resolve_wrapper_string
+    to ensure consistent behavior with the main wrapper resolution logic.
+    
+    Args:
+        value: The raw value (e.g., a path string or wrapped value like "%{file_location}(path)")
+        wrapper_name: The wrapper to apply ("NULL", "file_location", "prompt_location", etc.)
+        file_system_tool: FileSystemTool instance
+        prompt_tool: PromptTool instance
+    
+    Returns:
+        The transformed value
+    """
+    # First, extract the raw path from any existing wrapper
+    raw_path = _extract_path_from_wrapper(value)
+    
+    # NULL wrapper: just return the raw path (no further processing)
+    if wrapper_name == "NULL":
+        return raw_path
+    
+    # For other wrappers, construct a wrapped string and use the standard resolver
+    # This ensures we reuse the logic in _resolve_wrapper_string
+    wrapped_value = f"%{{{wrapper_name}}}id({raw_path})"
+    return _resolve_wrapper_string(wrapped_value, file_system_tool, prompt_tool)
+
+
 def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
     """Applies a selector to a reference to extract a specific value."""
     index = selector.get("index")
@@ -39,6 +91,7 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
     unpack_before = selector.get("unpack_before_selection", False)
     strip_wrapper = selector.get("strip_wrapper", False)
     new_wrapper = selector.get("new_wrapper")
+    branch = selector.get("branch")  # NEW: branching configuration
 
     def selector_action(element):
         import ast
@@ -90,10 +143,28 @@ def _apply_selector(ref: Reference, selector: Dict[str, Any]) -> Reference:
         if key is not None and isinstance(selected, dict):
             selected = selected.get(key)
 
-        if unpack and isinstance(selected, list):
-            return UnpackedList([process_final_item(item) for item in selected])
+        # Helper function to apply branching to a single value
+        def apply_branching_if_needed(val):
+            if branch and isinstance(branch, dict):
+                file_system_tool = selector.get("_file_system_tool")
+                prompt_tool = selector.get("_prompt_tool")
+                
+                # Apply each branch wrapper to create a dict result
+                branch_result = {}
+                for branch_key, wrapper_name in branch.items():
+                    branch_result[branch_key] = _apply_branch_wrapper(
+                        val, wrapper_name, file_system_tool, prompt_tool
+                    )
+                return branch_result
+            else:
+                return process_final_item(val)
 
-        return process_final_item(selected)
+        # Handle unpacking with per-item branching
+        if unpack and isinstance(selected, list):
+            return UnpackedList([apply_branching_if_needed(item) for item in selected])
+
+        # Single value (no unpacking)
+        return apply_branching_if_needed(selected)
 
     def nested_selector_action(element):
         return selector_action(element)
@@ -185,39 +256,78 @@ def _resolve_wrapper_string(item: str, file_system_tool: "FileSystemTool" | None
     else:
         return content
 
+def _is_branch_output_dict(d: Dict) -> bool:
+    """
+    Checks if a dictionary looks like a branch output (values are resolved content)
+    rather than a wrapper container (values are wrapped strings).
+    """
+    if not d:
+        return False
+    for value in d.values():
+        if isinstance(value, str) and value.startswith("%"):
+            return False  # Contains wrapper, not a branch output
+    return True
+
+
 def _process_and_format_element(element: Any, file_system_tool: "FileSystemTool" | None, prompt_tool: "PromptTool" | None) -> Any:
     """
     The main processing function for each element in a Reference. It flattens
     nested structures, resolves special wrappers, and formats the result.
+    
+    Dictionaries that are branch outputs (contain resolved data) are preserved
+    as-is and not flattened.
     """
+    # If this is a dictionary from branch (contains non-wrapper values), preserve it
+    if isinstance(element, dict) and _is_branch_output_dict(element):
+        return element
+    
+    # If this is an UnpackedList of branch dictionaries, preserve each one
+    if isinstance(element, UnpackedList):
+        if all(isinstance(item, dict) and _is_branch_output_dict(item) for item in element):
+            return element
+    
+    # If this is a regular list of branch dictionaries, preserve each one
+    if isinstance(element, list) and all(isinstance(item, dict) and _is_branch_output_dict(item) for item in element):
+        return element
+
     flat_list: List[Any] = []
     def flatten(el: Any):
         if isinstance(el, UnpackedList):
-             # Preserve UnpackedList structure so we can distinguish it later,
-             # but we still need to process its children.
-             # Actually, to process children, we might need to flatten it temporarily
-             # or handle it specifically.
-             # Let's treat UnpackedList as a list that we MUST flatten into the main flow
-             # but we need to resolve wrappers inside it first.
              for item in el: flatten(item)
         elif isinstance(el, list):
             for item in el: flatten(item)
         elif isinstance(el, dict):
-            for value in el.values(): flatten(value)
+            # Only flatten dicts that are wrapper containers, not branch outputs
+            if _is_branch_output_dict(el):
+                flat_list.append(el)  # Preserve branch output dicts
+            else:
+                for value in el.values(): flatten(value)
         else:
             flat_list.append(el)
     
     flatten(element)
 
-    resolved_list = [_resolve_wrapper_string(item, file_system_tool, prompt_tool) for item in flat_list]
+    resolved_list = []
+    for item in flat_list:
+        if isinstance(item, dict):
+            # Already a branch dict, keep it
+            resolved_list.append(item)
+        else:
+            resolved_list.append(_resolve_wrapper_string(item, file_system_tool, prompt_tool))
 
     # If any item was resolved into a special instruction, return the list as-is
     if any(isinstance(s, str) and s.startswith('{%{') for s in resolved_list):
         return resolved_list
 
-    # Otherwise, format into a human-readable string
+    # Otherwise, format into a human-readable string (unless we have dicts)
     if not resolved_list:
         return ""
+    
+    # If we have dicts (branch outputs), return as-is
+    if any(isinstance(item, dict) for item in resolved_list):
+        if len(resolved_list) == 1:
+            return resolved_list[0]
+        return resolved_list
     
     # If we have multiple items, return the list so _format_inputs_as_dict can explode it
     if len(resolved_list) > 1:
@@ -270,7 +380,7 @@ def _format_inputs_as_dict(values_list: List[Any]) -> Dict[str, Any]:
             
     return output_dict
 
-def _get_ordered_input_references(states: States) -> List[Reference]:
+def _get_ordered_input_references(states: States, file_system_tool=None, prompt_tool=None) -> List[Reference]:
     """
     Orders and selects input values from the initial state based on the
     working configuration (`value_order` and `value_selectors`).
@@ -291,7 +401,9 @@ def _get_ordered_input_references(states: States) -> List[Reference]:
             source_name = selector["source_concept"]
             for i, v_record in enumerate(ir_values):
                 if v_record.concept.name == source_name:
-                    selected_ref = _apply_selector(v_record.reference.copy(), selector)
+                    # Inject tools into selector for branching support
+                    selector_with_tools = {**selector, "_file_system_tool": file_system_tool, "_prompt_tool": prompt_tool}
+                    selected_ref = _apply_selector(v_record.reference.copy(), selector_with_tools)
                     ordered_refs.append(selected_ref)
                     # Do NOT mark as used here, so other selectors can use it too
                     # used_ir_values[i] = True 
@@ -332,7 +444,7 @@ def memory_value_perception(states: States) -> States:
     prompt_tool = getattr(states.body, "prompt_tool", None)
 
     # 1. Order and select input values from the initial state
-    ordered_refs = _get_ordered_input_references(states)
+    ordered_refs = _get_ordered_input_references(states, file_system_tool, prompt_tool)
 
     if not ordered_refs:
         states.set_current_step("MVP")

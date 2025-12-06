@@ -1,0 +1,21 @@
+{
+    "{input files}": {
+        "data": [
+            {
+                "{original prompt}": "%{file_location}(gold/raw.md)",
+                "{other input files}": [
+                    "%{file_location}(context_store/test_context.md)"
+                ]
+            }
+        ]
+    },
+    "[{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]": {
+        "axes": ["batch"],
+        "data": [
+            [
+                "%{file_location}2f3(C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\context_store\\initial_context_registered.json)",
+                "%{file_location}ef1(C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\context_store\\file_mapping.json)"
+            ]
+        ]
+    }
+}

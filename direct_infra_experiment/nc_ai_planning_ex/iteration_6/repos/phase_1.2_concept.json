@@ -1,0 +1,81 @@
+[
+    {
+        "concept_name": "{input files}",
+        "type": "{}",
+        "is_ground_concept": true
+    },
+    {
+        "concept_name": "{context file registration prompt}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/[1.2.3.2.]1.2_context_registration.md)"
+        ]
+    },
+    {
+        "concept_name": "{output directory of context file registration}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{save_dir}(gold/context_store/)"
+        ]
+    },
+    {
+        "concept_name": "::{%(composition)}({prompt}<$({context file registration prompt})%>: {1}<$%={normal/location_string}>; {output}<$({output directory of context file registration})>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "[{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]",
+        "type": "{}",
+        "is_ground_concept": true,
+        "is_final_concept": false
+    },
+    {
+        "concept_name": "{context file copying script}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{script_location}(scripts/1.2a_context_file_copying.py)"
+        ]
+    },
+    {
+        "concept_name": "{context file copying prompt}",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/[1.2.3.3.]1.2a_context_file_copying.md)"
+        ]
+    },
+    {
+        "concept_name": "::{%(composition)}({prompt}<$({context file copying prompt})%>, {script}<$({context file copying script})%>: {1}>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "{context_store/raw--*.md}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    },
+    {
+        "concept_name": "&in",
+        "type": "&in",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "[{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]",
+        "type": "[]",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    }
+]

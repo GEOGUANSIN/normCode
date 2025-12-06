@@ -91,8 +91,11 @@ class FileSystemTool:
             
             for filename, content in content_dict.items():
                 if not isinstance(content, str):
-                    logger.warning(f"Skipping non-string content for filename '{filename}'.")
-                    continue
+                    try:
+                        content = json.dumps(content, indent=2)
+                    except (TypeError, ValueError):
+                        logger.warning(f"Skipping non-serializable content for filename '{filename}'.")
+                        continue
                 
                 # Use the save method to handle directory creation and writing
                 result = self.save(content, str(base_save_path / filename))

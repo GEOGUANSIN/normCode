@@ -18,7 +18,6 @@ from infra._states._model_state import (
 )
 from infra._states._common_states import ReferenceRecordLite
 from infra._core import Reference, Concept
-from infra._agent._models._paradigms import Paradigm
 
 
 def input_working_interpretation(
@@ -42,12 +41,15 @@ def input_working_interpretation(
     if not paradigm_name:
         raise ValueError("IWI for imperative_in_composition requires a 'paradigm' key in the working_interpretation.")
     
-    paradigm = Paradigm.load(paradigm_name)
+    paradigm = body.paradigm_tool.load(paradigm_name)
     logger.info(f"Loaded composition paradigm: '{paradigm_name}'")
 
     # Build and save the specs for MFP to execute
     states.mfp_env_spec = paradigm.env_spec
     states.mfp_sequence_spec = paradigm.sequence_spec
+    
+    # Store axis creation preference (default is True for backward compatibility)
+    states.create_axis_on_list_output = config.get("create_axis_on_list_output", True)
     
     # Set value_order and initial values for MVP
     states.value_order = config.get("value_order")

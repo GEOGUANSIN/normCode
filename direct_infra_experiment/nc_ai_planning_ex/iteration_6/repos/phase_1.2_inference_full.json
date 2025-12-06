@@ -1,0 +1,89 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1.2.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "[{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]",
+        "function_concept": "::{%(composition)}({prompt}<$({context file registration prompt})%>: {1}<$%={normal/location_string}>; {output}<$({output directory of context file registration})>)",
+        "value_concepts": [
+            "{context file registration prompt}",
+            "{input files}",
+            "{output directory of context file registration}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocationList",
+            "create_axis_on_list_output": false,
+            "value_order": {
+                "{context file registration prompt}": 0,
+                "input_files_as_dict": 1,
+                "{output directory of context file registration}": 2,
+                "other_input_files": 3
+            },
+            "value_selectors": {
+                "input_files_as_dict": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{original prompt}",
+                    "branch": {
+                        "path": "NULL",
+                        "content": "file_location"
+                    }
+                },
+                "other_input_files": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{other input files}",
+                    "unpack": true,
+                    "branch": {
+                        "path": "NULL",
+                        "content": "file_location"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.2"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{context_store/raw--*.md}",
+        "function_concept": "::{%(composition)}({prompt}<$({context file copying prompt})%>, {script}<$({context file copying script})%>: {1}>)",
+        "value_concepts": [
+            "{1.2_initial_context_registerd.json}",
+            "{context file copying script}",
+            "{context file copying prompt}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_ContextCopy-c_Script_Exec-o_Files",
+            "value_order": {
+                "{1.2_initial_context_registerd.json}": 0,
+                "{context file copying script}": 1
+            },
+            "value_selectors": {
+                "{1.2_initial_context_registerd.json}": {
+                    "arg_name": "input_1"
+                }
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.3"
+        },
+        "inference_sequence": "grouping",
+        "concept_to_infer": "[{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]",
+        "function_concept": "&in",
+        "value_concepts": [
+            "{1.2_initial_context_registerd.json}",
+            "{context_store/raw--*.md}"
+        ],
+        "working_interpretation": {
+            "syntax": {
+                "marker": "in"
+            }
+        }
+    }
+]
+

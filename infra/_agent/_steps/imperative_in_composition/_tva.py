@@ -11,6 +11,9 @@ def tool_value_actuation(states: States) -> States:
     func_ref = states.get_reference("function", "MFP")
     values_ref = states.get_reference("values", "MVP")
 
+    # Retrieve the flag, default to True to maintain backward compatibility
+    create_axis = getattr(states, "create_axis_on_list_output", True)
+
     if func_ref and values_ref:
         # The function is stored as a callable in the reference tensor
         axis_name = func_ref.axes[0]
@@ -20,7 +23,15 @@ def tool_value_actuation(states: States) -> States:
             # as required by the `cross_action` function.
             def _list_wrapper_fn(*args, **kwargs):
                 result = func_callable(*args, **kwargs)
-                return result if isinstance(result, list) else [result]
+                
+                if create_axis:
+                    # Original behavior: ensure it's a list to create an axis
+                    return result if isinstance(result, list) else [result]
+                else:
+                    # New behavior: wrap in a single-element list to avoid axis explosion
+                    # cross_action expects a list of results, so [result] means "one result"
+                    # regardless of whether 'result' is a list or an object.
+                    return [result]
 
             # Create a new reference for the wrapped function to avoid side effects.
             wrapped_func_ref = func_ref.copy()

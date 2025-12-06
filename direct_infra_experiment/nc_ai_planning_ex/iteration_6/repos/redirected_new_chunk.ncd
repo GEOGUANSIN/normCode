@@ -1,0 +1,35 @@
+:<:({result files})
+    <= &across
+    <- {Phase 1: Confirmation of Instruction}
+        <= $.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])
+        <- {1.1_instruction_block.md}
+            <= :%(Composition):{paradigm}({prompt}<$({PromptTemplateWInputOther})%>; {output}<$({SaveDir})%>; {1}<$({Input})%>; {2+}<$({InputOther})%>)
+                | %{paradigm}: h_PromptTemplateWInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {instruction distillation prompt}<:{prompt}>
+                | %{prompt_location}: prompts/1.1_instruction_distillation.md
+            <- {output dir}<:{output}><$=>
+                | %{location_string}: next_iteration/
+            <- {input files}<${_}=><[{original prompt}:{1}, {other input files}:{2+}]>
+                <= &in[{original prompt}, {other input files}]
+                <- {original prompt}
+                    | %{file_location}: prompts/0_original_prompt.md
+                <- {other input files}
+                    <= :%>(Composition):{paradigm}({prompt}<$({UserPrompt})%>)
+                        | %{paradigm}: h_UserPrompt-c_AskForMultipleFiles-o_FileLocationList
+                    <- the prompt is location of related files prompt given
+                        | %{prompt_location}: location_of_related_files_prompt.md
+        <- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]
+            <= :%(Composition):{paradigm}({prompt}<$({PromptTemplateWInputOther})%>; {output}<$({SaveDir})%>; {1}<$({Input})%>; {2+}<$({InputOther})%>)
+                | %{paradigm}: h_PromptTemplateWInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocationList
+            <- {context file registration prompt}<:{prompt}>
+                | %{prompt_location}: prompts/[1.2.3.2.]1.2_context_registration.md
+            <- {output dir}<:{output}><$=>
+            <- {input files}<[{original prompt}:{1}<$%[{location string}, {file location}]>, {other input files}:{2+}<$%[{location string}, {file location}]>]><$=>
+        <- {context_store/raw--*.md}<$%{file_location}>
+            <= :%(Composition):{paradigm}({prompt}<$({PromptTemplate})%>; {script}<$({ScriptLocation})%>; {1}<$({Input})%>)
+                | %{paradigm}: h_PromptTemplate_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_ExecuteWBody-o_FileLocationList
+            <- {context file copying prompt}<:{prompt}>
+                | %{prompt_location}: prompts/[1.2.3.3.]1.2a_context_file_copying.md
+            <- {context file copying script}<:{script}>
+                | %{script_location}: scripts/1.2a_context_file_copying.py
+            <- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]<{*2}:{1}>

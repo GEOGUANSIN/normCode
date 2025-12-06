@@ -112,10 +112,13 @@ def main(input_1, body):
                 "error_message": f"Unexpected error: {str(e)}"
             })
     
-    return {
-        "copied_files": copied_files,
-        "context_store_directory": context_store_dir or "./context_store"
-    }
+    # Helper to resolve absolute path using body's file system base_dir if needed
+    def get_absolute_path(p):
+        if Path(p).is_absolute():
+            return str(Path(p).resolve())
+        return str((Path(body.file_system.base_dir) / p).resolve())
+
+    return [get_absolute_path(file["target_path"]) for file in copied_files if file["status"] == "success"]
 
 
 if __name__ == "__main__":

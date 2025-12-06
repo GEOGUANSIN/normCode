@@ -65,9 +65,36 @@ class FormatterTool:
             file_counter = 1
             for k in sorted_keys:
                 if k not in used_vars:
-                    content = str(substitution_vars[k])
-                    # Wrap in XML tags
-                    combined_parts.append(f"<file_{file_counter}>\n{content}\n</file_{file_counter}>")
+                    val = substitution_vars[k]
+                    
+                    # Handle dictionary input from branching
+                    if isinstance(val, dict):
+                        # Look for a "content-like" key to use as inner text
+                        content_keys = ["content", "data", "text", "body"]
+                        content_text = None
+                        attrs = {}
+                        
+                        for key, value in val.items():
+                            if key in content_keys:
+                                content_text = str(value)
+                            else:
+                                # All other keys become XML attributes
+                                attrs[key] = str(value)
+                        
+                        # Build attribute string
+                        attr_str = "".join([f' {k}="{v}"' for k, v in attrs.items()])
+                        
+                        # Format based on whether we have content
+                        if content_text is not None:
+                            combined_parts.append(f"<file_{file_counter}{attr_str}>\n{content_text}\n</file_{file_counter}>")
+                        else:
+                            # No content key found, all values are attributes (self-closing tag)
+                            combined_parts.append(f"<file_{file_counter}{attr_str} />")
+                    else:
+                        # Plain string value
+                        content_text = str(val)
+                        combined_parts.append(f"<file_{file_counter}>\n{content_text}\n</file_{file_counter}>")
+                    
                     file_counter += 1
             
             # 3. Combine them into the special key

@@ -10,7 +10,7 @@ from infra._agent._models import (
 
 
 class Body:
-    def __init__(self, llm_name: str = "qwen-turbo-latest", base_dir: str | None = None, new_user_input_tool: bool = False) -> None:
+    def __init__(self, llm_name: str = "qwen-turbo-latest", base_dir: str | None = None, new_user_input_tool: bool = True, paradigm_tool: Any = None) -> None:
         self.base_dir = base_dir
         self.prompt_tool = PromptTool(base_dir=base_dir)
         # Backwards-compatible alias
@@ -86,6 +86,17 @@ class Body:
 
         self.formatter_tool = FormatterTool()
         self.composition_tool = CompositionTool()
+
+        # Set up paradigm tool - default to Paradigm class if not provided
+        if paradigm_tool is None:
+            from infra._agent._models._paradigms import Paradigm
+            # Create a wrapper that provides a load method
+            class _DefaultParadigmTool:
+                def load(self, paradigm_name: str):
+                    return Paradigm.load(paradigm_name)
+            self.paradigm_tool = _DefaultParadigmTool()
+        else:
+            self.paradigm_tool = paradigm_tool
 
         # Pass the body's tool instances to the llm to ensure they share the same context (e.g., base_dir)
         if hasattr(self.llm, "file_tool"):

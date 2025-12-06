@@ -17,8 +17,18 @@ streamlit_app/
 ├── orchestration_runner.py     # Orchestration execution logic
 └── tabs/
     ├── __init__.py
-    ├── execute_tab.py          # Execute orchestration tab
-    ├── results_tab.py          # Results viewer tab
+    ├── execute/                # Execute tab package (refactored)
+    │   ├── __init__.py
+    │   ├── execute_tab.py      # Main entry point
+    │   ├── constants.py        # Configuration constants
+    │   ├── state.py            # State management
+    │   ├── engine.py           # Execution engine
+    │   └── ui_components.py    # UI components
+    ├── results/                # Results tab package (refactored)
+    │   ├── __init__.py
+    │   ├── results_tab.py      # Main entry point
+    │   ├── constants.py        # Configuration
+    │   └── ui_components.py    # UI components
     ├── history_tab.py          # Execution history tab
     └── help_tab.py             # Help/documentation tab
 ```
@@ -88,25 +98,28 @@ streamlit_app/
 - `inject_inputs_into_repo()` - Inject input data into concept repository
 - `verify_files_if_enabled()` - Conditional file verification
 
-### `tabs/execute_tab.py`
-**Purpose:** Execute orchestration tab
+### `tabs/execute/` (Package)
+**Purpose:** Execute orchestration tab - REFACTORED into modular package
 
-**Key Functions:**
-- `render_execute_tab()` - Main tab rendering
-- `_render_interaction_form()` - Human-in-the-loop interaction UI
-- `_handle_interaction_submit()` - Handle user input submission
-- `_execute_orchestration()` - Main orchestration execution logic
-- `_load_repository_data()` - Load repos from files
-- `_store_execution_results()` - Save results to session state
+**Key Modules:**
+- `execute_tab.py` - Main tab rendering and coordination
+- `state.py` - ExecutionState, ExecutionMetrics, ExecutionStatus tracking
+- `engine.py` - OrchestrationExecutionEngine for core execution logic
+- `ui_components.py` - Reusable UI rendering components
+- `constants.py` - Display constants and configuration
+- `logging.py` - Structured logging utilities
+- `preview_components.py` - File preview components
 
-### `tabs/results_tab.py`
-**Purpose:** Results viewer tab
+### `tabs/results/` (Package)
+**Purpose:** Results viewer tab - REFACTORED into modular package
 
-**Key Functions:**
-- `render_results_tab()` - Main tab rendering
-- `_display_execution_logs()` - Show logs for current run
-- `_display_export_button()` - Export results to JSON
-- `_display_final_concepts()` - Show final concepts with filtering
+**Key Modules:**
+- `results_tab.py` - Main tab rendering
+- `ui_components.py` - UI components for logs, concepts, and exports
+  - `render_execution_logs()` - Show logs with expandable sections
+  - `render_export_button()` - Export results to JSON
+  - `render_final_concepts()` - Show final concepts with filtering
+- `constants.py` - Display configuration constants
 
 ### `tabs/history_tab.py`
 **Purpose:** Execution history tab

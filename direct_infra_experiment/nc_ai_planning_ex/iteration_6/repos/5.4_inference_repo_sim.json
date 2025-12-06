@@ -1,4 +1,86 @@
 [
+    {
+        "flow_info": {
+            "flow_index": "5.3.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{other input files}",
+        "function_concept": "::{%(composition)}({prompt}<$({location of related files prompt})%>)",
+        "value_concepts": [
+            "{location of related files prompt}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForMultipleFiles-o_FileLocationList",
+            "value_order": {
+                "{location of related files prompt}": 0
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "5.3.2"
+        },
+        "inference_sequence": "grouping",
+        "concept_to_infer": "{input files}",
+        "function_concept": "&in",
+        "value_concepts": [
+            "{original prompt}",
+            "{other input files}"
+        ],
+        "working_interpretation": {
+            "syntax": {
+                "marker": "in"
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "5.3.3"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{1.1_instruction_block.md}",
+        "function_concept": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "value_concepts": [
+            "{instruction distillation prompt}",
+            "{input files}",
+            "{output file location of instruction distillation}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocation",
+            "value_order": {
+                "{instruction distillation prompt}": 0,
+                "input_files_as_dict": 1,
+                "{output file location of instruction distillation}": 2,
+                "other_input_files": 3
+            },
+            "value_selectors": {
+                "input_files_as_dict": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{original prompt}"
+                },
+                "other_input_files": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{other input files}",
+                    "unpack": true
+                }
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "5.4.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{context file copying result}",
+        "function_concept": "::{%(composition)}({prompt}<$({context file copying prompt})%>)",
+        "value_concepts": [
+            "{context file copying prompt}"
+
+        ]
+    },
+
 
     {
         "flow_info": {
