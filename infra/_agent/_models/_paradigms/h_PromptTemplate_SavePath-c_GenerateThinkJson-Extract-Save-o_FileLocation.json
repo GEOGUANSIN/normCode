@@ -1,4 +1,18 @@
 {
+  "metadata": {
+    "description": "Takes a prompt template and a save path, generates a JSON response from an LLM, extracts the 'answer' from it, saves that answer to the specified path, and returns the file location.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string for the LLM prompt.",
+        "save_path": "The file path where the extracted answer should be saved."
+      }
+    },
+    "outputs": {
+      "type": "FileLocation",
+      "description": "The path to the saved file, wrapped in %{file_location}."
+    }
+  },
   "env_spec": {
     "tools": [
       {

@@ -1,4 +1,19 @@
 {
+  "metadata": {
+    "description": "Similar to the standard prompt-and-save, but bundles all unused inputs into an '$input_other' variable for the prompt. Saves the result to a directory.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string for the LLM prompt (must include $input_other).",
+        "save_dir": "The directory where the result file should be saved.",
+        "input_other": "Any other inputs provided will be bundled here."
+      }
+    },
+    "outputs": {
+      "type": "FileLocation",
+      "description": "The path to the saved file, wrapped in %{file_location}."
+    }
+  },
   "env_spec": {
     "tools": [
       {

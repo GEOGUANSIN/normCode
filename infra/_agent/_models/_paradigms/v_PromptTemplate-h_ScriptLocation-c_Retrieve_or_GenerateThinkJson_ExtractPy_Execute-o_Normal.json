@@ -1,4 +1,20 @@
 {
+  "metadata": {
+    "description": "Executes a Python script. If the script is missing, generates it using a prompt provided by the function definition (Vertical Input).",
+    "inputs": {
+      "vertical": {
+        "template": "The prompt template string (sourced from function_concept.name)."
+      },
+      "horizontal": {
+        "script_location": "Path to the python script to execute/generate.",
+        "script_inputs": "Any other inputs provided will be passed to the script as variables."
+      }
+    },
+    "outputs": {
+      "type": "Normal",
+      "description": "The return value of the executed script."
+    }
+  },
   "env_spec": {
     "tools": [
       {

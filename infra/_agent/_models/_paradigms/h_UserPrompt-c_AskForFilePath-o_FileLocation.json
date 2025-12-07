@@ -1,4 +1,17 @@
 {
+  "metadata": {
+    "description": "Asks the user to provide a file path. Returns the path wrapped as a FileLocation.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "input_1": "The prompt to display to the user."
+      }
+    },
+    "outputs": {
+      "type": "FileLocation",
+      "description": "The file path provided by the user."
+    }
+  },
   "env_spec": {
     "tools": [
       {

@@ -1,4 +1,19 @@
 {
+  "metadata": {
+    "description": "Executes a Python script (generating it if missing). The script is injected with the agent's Body, allowing it to call other tools. Expects a list of file locations as output.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string to generate the script if it is missing.",
+        "script_location": "The path to the python script to execute/generate.",
+        "script_inputs": "Inputs passed to the script."
+      }
+    },
+    "outputs": {
+      "type": "FileLocationList",
+      "description": "A list of file paths returned by the script."
+    }
+  },
   "env_spec": {
     "tools": [
       {

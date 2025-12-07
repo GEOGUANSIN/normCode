@@ -1,4 +1,18 @@
 {
+  "metadata": {
+    "description": "Generates a JSON response (thinking/answer), extracts the answer (which must be a dictionary), and saves it to a directory.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string for the LLM prompt.",
+        "save_dir": "The directory where the dictionary result should be saved."
+      }
+    },
+    "outputs": {
+      "type": "FileLocation",
+      "description": "The location where the file was saved."
+    }
+  },
   "env_spec": {
     "tools": [
       {

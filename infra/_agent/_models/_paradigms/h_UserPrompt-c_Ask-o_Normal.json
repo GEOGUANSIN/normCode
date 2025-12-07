@@ -1,4 +1,17 @@
 {
+  "metadata": {
+    "description": "Prompts the user for input and returns the raw string response.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "input_1": "The question/prompt to display to the user."
+      }
+    },
+    "outputs": {
+      "type": "Normal",
+      "description": "The user's response string."
+    }
+  },
   "env_spec": {
     "tools": [
       {

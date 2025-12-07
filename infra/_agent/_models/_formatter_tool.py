@@ -132,7 +132,16 @@ class FormatterTool:
         return dictionary.get(key, default)
 
     def wrap(self, data: Any, type: str | None = None) -> str:
-        """Wraps the data in the normcode format %xxx() or %{type}xxx()."""
+        """
+        Wraps the data in the normcode format %xxx() or %{type}xxx().
+        Delegates to the Body's Perception faculty if available (via encode_sign).
+        """
+        if hasattr(self, 'perception_router'):
+            wrapped_data = self.perception_router.encode_sign(data, type)
+            print(f">>> MIA step: Encoded sign -> {wrapped_data}")
+            return wrapped_data
+
+        # Fallback
         unique_code = uuid.uuid4().hex[:3]
         if type:
             wrapped_data = f"%{{{type}}}{unique_code}({data})"

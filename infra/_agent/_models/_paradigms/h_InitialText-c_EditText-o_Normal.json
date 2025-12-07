@@ -1,4 +1,18 @@
 {
+  "metadata": {
+    "description": "Opens a text editor GUI with initial text. The user modifies it, and the result is returned as a string.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "input_1": "The instruction/prompt to display to the user.",
+        "input_2": "The initial text to populate the editor with."
+      }
+    },
+    "outputs": {
+      "type": "Normal",
+      "description": "The modified text string."
+    }
+  },
   "env_spec": {
     "tools": [
       {

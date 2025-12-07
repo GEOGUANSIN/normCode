@@ -335,12 +335,252 @@ class UnifiedParser:
             "lines": merged_lines
         }
 
+    def to_nci(self, nc_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Convert nc.json structure to nci.json format.
+        
+        Identifies groups where a concept has a child starting with '<='.
+        Returns a list of dicts, each containing:
+          - concept_to_infer: The parent concept
+          - function_concept: The '<=' child concept
+          - value_concepts: The '<-' sibling concepts
+          - other_concepts: Other sibling concepts (preserved for mutual translation)
+        """
+        lines = nc_json.get('lines', [])
+        if not lines:
+            return []
+        
+        # 1. Group lines by flow_index to keep main lines and comments together
+        # Map: flow_index -> { main: Line, comments: [Line] }
+        concepts_by_index: Dict[str, Dict] = {}
+        # Also keep track of unattached comments (e.g. header comments)
+        unattached_comments = []
+        
+        for line in lines:
+            fi = line.get('flow_index')
+            if not fi:
+                unattached_comments.append(line)
+                continue
+                
+            if fi not in concepts_by_index:
+                concepts_by_index[fi] = {"main": None, "comments": []}
+                
+            if line['type'] == 'main':
+                concepts_by_index[fi]['main'] = line
+            else:
+                concepts_by_index[fi]['comments'].append(line)
+        
+        # 2. Reconstruct hierarchy and identify groups
+        # We iterate through all concepts to find parent-child relationships.
+        # A concept C is a child of P if C.depth == P.depth + 1 and C follows P.
+        
+        # Sort concepts by flow_index implies document order usually
+        # But flow indices like 1.1, 1.2, 1.2.1 are hierarchical strings.
+        # We can rely on the original list order for parent-finding.
+        
+        nci_groups = []
+        
+        # Helper to get full object for a flow_index
+        def get_concept_obj(fi):
+            c = concepts_by_index.get(fi)
+            if not c: return None
+            # Construct a clean object with main content and comments
+            obj = c['main'].copy() if c['main'] else {"flow_index": fi, "type": "virtual", "depth": -1}
+            # Remove ncn_content from main if we want it cleaner? No, keep it.
+            # Add comments list
+            obj['attached_comments'] = c['comments']
+            return obj
+
+        # Stack to track parents: list of (flow_index, depth)
+        # Only track 'main' concepts as potential parents
+        parent_stack = [] # [(flow_index, depth)]
+        
+        # We also need to track children for each parent to group them later
+        # Map: parent_flow_index -> list of child_flow_indices
+        children_map = {} 
+        
+        # Track root concepts (depth 0)
+        root_concepts = []
+
+        for line in lines:
+            if line['type'] != 'main':
+                continue
+                
+            depth = line['depth']
+            fi = line['flow_index']
+            if not fi: continue
+            
+            # Find parent
+            parent_fi = None
+            while parent_stack:
+                last_fi, last_depth = parent_stack[-1]
+                if last_depth < depth:
+                    parent_fi = last_fi
+                    break
+                else:
+                    parent_stack.pop()
+            
+            if parent_fi:
+                if parent_fi not in children_map:
+                    children_map[parent_fi] = []
+                children_map[parent_fi].append(fi)
+            else:
+                root_concepts.append(fi)
+            
+            parent_stack.append((fi, depth))
+            
+        # 3. Build NCI groups
+        # Iterate over all potential parents (keys in children_map)
+        # Also check root concepts if they form a group? No, root concepts are children of "nothing".
+        # The user said "concept it leads to is called the concept to infer".
+        # So if we have root -> child (<=), root is the concept to infer.
+        
+        # Collect all concepts that have children
+        all_parents = list(children_map.keys())
+        
+        # Sort by flow index to maintain order
+        def index_sort_key(fi):
+            try:
+                return [int(x) for x in fi.split('.')]
+            except:
+                return []
+                
+        all_parents.sort(key=index_sort_key)
+        
+        # Set of flow_indices that have been used in a group as function or value or infer
+        # Actually we just want to generate the list.
+        
+        for parent_fi in all_parents:
+            children_fis = children_map[parent_fi]
+            
+            # Check if any child starts with '<='
+            function_child_fi = None
+            value_child_fis = []
+            other_child_fis = []
+            
+            has_function = False
+            
+            for child_fi in children_fis:
+                child_obj = concepts_by_index[child_fi]['main']
+                content = child_obj.get('nc_main', '').strip()
+                
+                if content.startswith('<='):
+                    # If multiple functions, we might need multiple groups?
+                    # For now assuming one primary function per block or first one wins?
+                    # Or generate multiple groups.
+                    # "identifies all concept/line with <=".
+                    # If I have multiple <=, I should probably create multiple entries.
+                    # But usually inputs (<-) are shared?
+                    # Let's collect all functions.
+                    if function_child_fi is None:
+                        function_child_fi = child_fi
+                        has_function = True
+                    else:
+                        # If we already have a function, this is a second function concept?
+                        # Treat as another "other" for now unless we want to support multiple functions.
+                        # Or maybe iterate again.
+                        # Let's stick to finding *the* function concept.
+                        other_child_fis.append(child_fi) 
+                elif content.startswith('<-'):
+                    value_child_fis.append(child_fi)
+                else:
+                    other_child_fis.append(child_fi)
+            
+            if has_function:
+                # Create entry
+                group = {
+                    "concept_to_infer": get_concept_obj(parent_fi),
+                    "function_concept": get_concept_obj(function_child_fi),
+                    "value_concepts": [get_concept_obj(f) for f in value_child_fis],
+                    "other_concepts": [get_concept_obj(f) for f in other_child_fis]
+                }
+                nci_groups.append(group)
+            else:
+                # Parent has children but no function.
+                # These children and parent are not captured in any NCI group if we strictly follow "identifies... with <=".
+                # For mutual translation, we need to preserve them.
+                # I'll add a "generic_groups" list or just include them as a group without function?
+                # But user specified the schema strictly.
+                # Let's store them in a separate list 'orphaned_concepts' in the root dict?
+                pass
+        
+        return nci_groups
+
+    def from_nci(self, nci_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Convert nci.json structure back to nc.json format.
+        Reconstructs the flat list of lines.
+        If duplicates or conflicts exist (same flow_index but different content), 
+        warnings are printed and the first occurrence is preserved.
+        """
+        # We need to collect all unique concepts from the groups.
+        # Use a dict to deduplicate by flow_index.
+        unique_concepts = {}
+        
+        def add_concept(c_obj, context_info=""):
+            if not c_obj: return
+            fi = c_obj.get('flow_index')
+            if not fi: return # Should not happen for concepts
+            
+            # Prepare the content we are trying to add
+            main_line = c_obj.copy()
+            comments = main_line.pop('attached_comments', [])
+            
+            # Clean fields for comparison
+            # Comparison should base on core content. 
+            # If flow_index matches but content differs, that's a conflict.
+            
+            if fi in unique_concepts:
+                existing = unique_concepts[fi]
+                # Compare main content
+                existing_main = existing['main'].get('nc_main', '')
+                new_main = main_line.get('nc_main', '')
+                
+                if existing_main != new_main:
+                    print(f"WARNING: Conflict detected for flow_index {fi} in {context_info}.")
+                    print(f"  Existing: {existing_main[:50]}...")
+                    print(f"  New:      {new_main[:50]}...")
+                    print(f"  Action:   Keeping existing version.")
+                
+                # We could merge comments if they differ, but for now let's stick to "first one wins" strategy
+                # to avoid duplication if the same object is passed around.
+            else:
+                unique_concepts[fi] = {"main": main_line, "comments": comments}
+        
+        for i, group in enumerate(nci_data):
+            group_id = f"group_{i}"
+            add_concept(group.get('concept_to_infer'), f"{group_id}.concept_to_infer")
+            add_concept(group.get('function_concept'), f"{group_id}.function_concept")
+            for j, c in enumerate(group.get('value_concepts', [])):
+                add_concept(c, f"{group_id}.value_concepts[{j}]")
+            for j, c in enumerate(group.get('other_concepts', [])):
+                add_concept(c, f"{group_id}.other_concepts[{j}]")
+                
+        # Sort by flow index
+        def index_sort_key(item):
+            fi = item[0]
+            try:
+                return [int(x) for x in fi.split('.')]
+            except:
+                return []
+                
+        sorted_items = sorted(unique_concepts.items(), key=index_sort_key)
+        
+        reconstructed_lines = []
+        for fi, data in sorted_items:
+            reconstructed_lines.append(data['main'])
+            reconstructed_lines.extend(data['comments'])
+            
+        return {"lines": reconstructed_lines}
+
+
 if __name__ == "__main__":
     # Paths to example files
     base_path = os.path.dirname(os.path.abspath(__file__))
     ncd_path = os.path.join(base_path, "example.ncd")
     ncn_path = os.path.join(base_path, "example.ncn")
     output_path = os.path.join(base_path, "example.nc.json")
+    nci_output_path = os.path.join(base_path, "example.nci.json")
 
     # Load contents
     try:
@@ -358,7 +598,52 @@ if __name__ == "__main__":
             
         print(f"\nSuccessfully saved parsed output to {output_path}")
         
-        # Test reverse serialization
+        # Test NCI generation
+        print("\n" + "="*30)
+        print("NCI FORMAT GENERATION:")
+        print("="*30)
+        nci_output = parser.to_nci(json_output)
+        
+        with open(nci_output_path, 'w', encoding='utf-8') as f:
+            json.dump(nci_output, f, indent=2)
+        print(f"Saved NCI to {nci_output_path}")
+        print(f"Generated {len(nci_output)} inference groups.")
+        
+        # Test NCI round-trip
+        print("\n" + "="*30)
+        print("NCI ROUND-TRIP TEST:")
+        print("="*30)
+        restored_nc = parser.from_nci(nci_output)
+        
+        # Compare restored_nc lines with original json_output lines
+        # Note: Order might be slightly different if original wasn't sorted by flow_index, 
+        # or if some concepts were lost (orphans).
+        
+        # Let's check strict equality of sets of lines (ignoring order for a moment if needed, but flow_index sort should match)
+        # However, 'attached_comments' field was removed in from_nci so structure should match.
+        
+        def get_line_set(data):
+            s = set()
+            for line in data['lines']:
+                # Create tuple signature
+                sig = (line.get('flow_index'), line.get('type'), line.get('nc_main'), line.get('nc_comment'))
+                s.add(sig)
+            return s
+            
+        original_set = get_line_set(json_output)
+        restored_set = get_line_set(restored_nc)
+        
+        missing = original_set - restored_set
+        extra = restored_set - original_set
+        
+        print(f"Consistent? {original_set == restored_set}")
+        if missing:
+            print(f"Missing lines in restored: {len(missing)}")
+            # print(list(missing)[:3])
+        if extra:
+            print(f"Extra lines in restored: {len(extra)}")
+            
+        # Verify original consistency
         serialized = parser.serialize(json_output)
         
         print("\n" + "="*30)

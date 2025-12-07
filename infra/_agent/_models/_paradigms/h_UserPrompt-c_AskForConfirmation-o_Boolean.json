@@ -1,4 +1,17 @@
 {
+  "metadata": {
+    "description": "Asks the user a Yes/No question and returns a boolean.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "input_1": "The question/prompt to display to the user."
+      }
+    },
+    "outputs": {
+      "type": "Boolean",
+      "description": "True for Yes, False for No."
+    }
+  },
   "env_spec": {
     "tools": [
       {

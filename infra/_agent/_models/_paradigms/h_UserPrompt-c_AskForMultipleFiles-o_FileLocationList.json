@@ -1,7 +1,22 @@
 
 {
-    "env_spec": {
-      "tools": [
+  "metadata": {
+    "description": "Opens a file selection dialog allowing the user to select multiple files. Returns a list of FileLocations.",
+    "inputs": {
+      "vertical": {
+        "initial_directory": "The starting directory for the file picker (defaults to agent base_dir)."
+      },
+      "horizontal": {
+        "prompt_template": "The prompt to display in the dialog."
+      }
+    },
+    "outputs": {
+      "type": "FileLocationList",
+      "description": "A list of selected file paths."
+    }
+  },
+  "env_spec": {
+    "tools": [
         {
           "tool_name": "composition_tool",
           "affordances": [

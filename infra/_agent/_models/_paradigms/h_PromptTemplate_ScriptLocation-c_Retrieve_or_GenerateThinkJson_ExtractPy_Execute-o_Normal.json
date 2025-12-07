@@ -1,4 +1,19 @@
 {
+  "metadata": {
+    "description": "Executes a Python script. If the script does not exist, generates it using the provided prompt template. Inputs for the script are collected from the horizontal inputs.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string to generate the script if it is missing.",
+        "script_location": "The path to the python script to execute/generate.",
+        "script_inputs": "Any other inputs provided will be passed to the script as variables."
+      }
+    },
+    "outputs": {
+      "type": "Normal",
+      "description": "The return value of the executed script."
+    }
+  },
   "env_spec": {
     "tools": [
       {

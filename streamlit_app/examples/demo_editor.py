@@ -549,6 +549,25 @@ def load_ncdn(ncdn_path):
         st.error(f"Error loading NCDN: {e}")
         return False
 
+def load_nci(nci_path):
+    """Load from .nci.json file."""
+    try:
+        with open(nci_path, 'r', encoding='utf-8') as f:
+            nci_data = json.load(f)
+        # Convert NCI back to NC format
+        parsed = parser.from_nci(nci_data)
+        st.session_state.lines = parsed.get('lines', [])
+        st.session_state.current_file = nci_path
+        st.session_state.modified = False
+        st.session_state.line_view_modes = {}  # Reset per-line view modes
+        st.session_state.collapsed_indices = set()  # Reset collapsed indices
+        st.session_state.pending_text = None  # Reset pending text changes
+        st.session_state.text_editor_key += 1  # Force text editor refresh
+        return True
+    except Exception as e:
+        st.error(f"Error loading NCI: {e}")
+        return False
+
 # Main UI
 st.title("📝 NormCode Inline Editor")
 st.markdown("Minimal demo for editing .ncd and .ncn files with inline editing")
@@ -562,7 +581,7 @@ base_path = Path(__file__).parent
 # File input
 file_option = st.sidebar.radio(
     "Choose action:",
-    ["Load Example", "Load Custom Files", "Load from JSON", "Load from NCDN"]
+    ["Load Example", "Load Custom Files", "Load from JSON", "Load from NCDN", "Load from NCI"]
 )
 
 if file_option == "Load Example":
@@ -593,13 +612,24 @@ elif file_option == "Load from JSON":
         else:
             st.error("File not found")
 
-else:  # Load from NCDN
+elif file_option == "Load from NCDN":
     ncdn_input = st.sidebar.text_input("NCDN file path:", value="example.ncdn")
     
     if st.sidebar.button("Load NCDN"):
         if os.path.exists(ncdn_input):
             if load_ncdn(ncdn_input):
                 st.success(f"Loaded {ncdn_input}")
+                st.rerun()
+        else:
+            st.error("File not found")
+
+else:  # Load from NCI
+    nci_input = st.sidebar.text_input("NCI file path:", value="example.nci.json")
+    
+    if st.sidebar.button("Load NCI"):
+        if os.path.exists(nci_input):
+            if load_nci(nci_input):
+                st.success(f"Loaded {nci_input}")
                 st.rerun()
         else:
             st.error("File not found")
@@ -617,6 +647,8 @@ save_ncdn_path = st.sidebar.text_input("NCDN path:", value="output.ncdn", key='s
 st.session_state.save_ncdn_path = save_ncdn_path
 save_json_path = st.sidebar.text_input("JSON path:", value="output.nc.json", key='sidebar_json_path')
 st.session_state.save_json_path = save_json_path
+save_nci_path = st.sidebar.text_input("NCI path:", value="output.nci.json", key='sidebar_nci_path')
+st.session_state.save_nci_path = save_nci_path
 
 st.sidebar.info("💡 Use the 💾 Export section below the editor to save files")
 
@@ -1079,11 +1111,12 @@ if st.session_state.lines:
     st.divider()
     
     with st.expander("🔍 Preview Output", expanded=False):
-        tab1, tab2, tab3, tab4 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "📄 NCD Preview", 
             "📖 NCN Preview", 
             "📝 NCDN Preview",
-            "📊 JSON Preview"
+            "📊 JSON Preview",
+            "🔗 NCI Preview"
         ])
         
         parsed_data = {"lines": st.session_state.lines}
@@ -1105,6 +1138,11 @@ if st.session_state.lines:
         with tab4:
             st.json(st.session_state.lines[:5])  # Show first 5 lines
             st.caption(f"Showing first 5 of {len(st.session_state.lines)} lines")
+        
+        with tab5:
+            nci_output = parser.to_nci(parsed_data)
+            st.json(nci_output)
+            st.caption(f"Inference format (.nci.json) - {len(nci_output)} inference group(s)")
     
     # Export section (after preview)
     st.divider()
@@ -1178,4 +1216,28 @@ if st.session_state.lines:
                     st.session_state.modified = False
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
+        
+        # Add NCI export in a new row
+        st.divider()
+        st.markdown("**Export Inference Format**")
+        
+        col_export_nci = st.columns([3, 9])[0]
+        with col_export_nci:
+            st.text_input("NCI path:", value=st.session_state.get('save_nci_path', 'output.nci.json'), key='export_nci_path')
+            if st.button("💾 Export .nci.json", use_container_width=True):
+                try:
+                    parsed_data = {"lines": st.session_state.lines}
+                    nci_output = parser.to_nci(parsed_data)
+                    export_path = st.session_state.export_nci_path
+                    
+                    os.makedirs(os.path.dirname(export_path) if os.path.dirname(export_path) else '.', exist_ok=True)
+                    with open(export_path, 'w', encoding='utf-8') as f:
+                        json.dump(nci_output, f, indent=2, ensure_ascii=False)
+                    
+                    st.success(f"✅ Exported {export_path} ({len(nci_output)} inference group(s))")
+                    st.session_state.modified = False
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+        
+        st.caption("ℹ️ NCI format identifies inference groups with function concepts (<=) and value concepts (<-)")
 

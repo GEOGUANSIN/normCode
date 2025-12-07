@@ -1,7 +1,12 @@
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Callable
 
 from infra._core import Reference
+
+
+class UnpackedList(list):
+    """Wrapper to signal that a list should be exploded into multiple inputs."""
+    pass
 
 
 def _flatten_to_list(data):
@@ -60,3 +65,41 @@ class Assigner:
 
         logging.debug(f"Appending with axis: '{append_axis}'")
         return dest_ref.append(source_ref, by_axis=append_axis)
+
+    def derelation(self, selector: Dict[str, Any]) -> Callable[[Any], Any]:
+        """
+        Returns a function (closure) configured with the selector logic for pure structural selection.
+        Does NOT handle perception, decoding, or branching.
+        """
+        index = selector.get("index")
+        key = selector.get("key")
+        unpack = selector.get("unpack", False)
+        unpack_before = selector.get("unpack_before_selection", False)
+
+        def selector_action(element):
+            # 1. Determine target for selection (handling unpack_before)
+            target = element
+            if unpack_before and isinstance(element, list):
+                results = []
+                for item in element:
+                    selected_item = item
+                    if key is not None and isinstance(selected_item, dict):
+                        selected_item = selected_item.get(key)
+                    results.append(selected_item)
+                return UnpackedList(results)
+
+            # 2. Standard Selection
+            selected = target
+            if index is not None and isinstance(selected, list) and len(selected) > index:
+                selected = selected[index]
+
+            if key is not None and isinstance(selected, dict):
+                selected = selected.get(key)
+
+            # 3. Handle Unpack After
+            if unpack and isinstance(selected, list):
+                return UnpackedList(selected)
+
+            return selected
+
+        return selector_action

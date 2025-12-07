@@ -87,13 +87,55 @@ class Body:
         self.formatter_tool = FormatterTool()
         self.composition_tool = CompositionTool()
 
+        # Initialize Perception faculty
+        from infra._agent._models._perception_router import PerceptionRouter
+        self.perception_router = PerceptionRouter()
+        
+        # Inject perception into formatter tool
+        self.formatter_tool.perception_router = self.perception_router
+
         # Set up paradigm tool - default to Paradigm class if not provided
         if paradigm_tool is None:
-            from infra._agent._models._paradigms import Paradigm
+            from infra._agent._models._paradigms import Paradigm, PARADIGMS_DIR
+            import json
+            import os
+
             # Create a wrapper that provides a load method
             class _DefaultParadigmTool:
                 def load(self, paradigm_name: str):
                     return Paradigm.load(paradigm_name)
+                
+                def list_manifest(self) -> str:
+                    """
+                    Scans the paradigms directory and returns a formatted string 
+                    describing all available paradigms and their inputs.
+                    """
+                    manifest = []
+                    # List all .json files in PARADIGMS_DIR
+                    for filename in os.listdir(PARADIGMS_DIR):
+                        if filename.endswith(".json"):
+                            name = filename[:-5] # Remove .json
+                            try:
+                                with open(PARADIGMS_DIR / filename, 'r', encoding='utf-8') as f:
+                                    data = json.load(f)
+                                    metadata = data.get('metadata', {})
+                                    
+                                    desc = metadata.get('description', 'No description provided.')
+                                    v_inputs = metadata.get('inputs', {}).get('vertical', {})
+                                    h_inputs = metadata.get('inputs', {}).get('horizontal', {})
+                                    
+                                    entry = f"- **{name}**\n  - *Description*: {desc}"
+                                    if v_inputs:
+                                        entry += "\n  - *Vertical Inputs (Function)*: " + ", ".join([f"`{k}`" for k in v_inputs.keys()])
+                                    if h_inputs:
+                                        entry += "\n  - *Horizontal Inputs (Values)*: " + ", ".join([f"`{k}`" for k in h_inputs.keys()])
+                                    
+                                    manifest.append(entry)
+                            except Exception as e:
+                                manifest.append(f"- **{name}**: Error reading metadata ({str(e)})")
+                    
+                    return "\n".join(manifest)
+
             self.paradigm_tool = _DefaultParadigmTool()
         else:
             self.paradigm_tool = paradigm_tool

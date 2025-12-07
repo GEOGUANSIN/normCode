@@ -1,4 +1,19 @@
 {
+  "metadata": {
+    "description": "Opens a text editor GUI with initial text. The user modifies it, and the result is saved to a specific path.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "input_1": "The instruction/prompt to display to the user.",
+        "input_2": "The initial text to populate the editor with.",
+        "save_path": "The path where the modified text will be saved."
+      }
+    },
+    "outputs": {
+      "type": "FileLocation",
+      "description": "The path to the saved file."
+    }
+  },
   "env_spec": {
     "tools": [
       {

@@ -63,9 +63,10 @@ class Paradigm:
     Loads and reconstructs a full composition paradigm (environment and sequence specs)
     from a JSON file.
     """
-    def __init__(self, env_spec: ModelEnvSpecLite, sequence_spec: ModelSequenceSpecLite):
+    def __init__(self, env_spec: ModelEnvSpecLite, sequence_spec: ModelSequenceSpecLite, metadata: Dict[str, Any] | None = None):
         self.env_spec = env_spec
         self.sequence_spec = sequence_spec
+        self.metadata = metadata or {}
 
     @classmethod
     def load(cls, paradigm_name: str) -> 'Paradigm':
@@ -87,9 +88,10 @@ class Paradigm:
 
         env_spec_data = raw_spec['env_spec']
         sequence_spec_data = raw_spec['sequence_spec']
+        metadata_data = raw_spec.get('metadata', {})
 
         # Reconstruct the spec objects from the loaded data
         env_spec = _build_env_spec(env_spec_data)
         sequence_spec = _build_sequence_spec(sequence_spec_data, env_spec)
         
-        return cls(env_spec, sequence_spec)
+        return cls(env_spec, sequence_spec, metadata_data)

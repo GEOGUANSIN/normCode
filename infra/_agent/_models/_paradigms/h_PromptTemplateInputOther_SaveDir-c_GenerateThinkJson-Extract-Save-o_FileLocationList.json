@@ -1,4 +1,19 @@
 {
+  "metadata": {
+    "description": "Bundles unused inputs into '$input_other', prompts LLM for a JSON list of files, saves them to a directory, and returns the list of file paths.",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "prompt_template": "The template string for the LLM prompt.",
+        "save_dir": "The directory where results should be saved.",
+        "input_other": "Bundled unused inputs."
+      }
+    },
+    "outputs": {
+      "type": "FileLocationList",
+      "description": "A list of paths to the saved files."
+    }
+  },
   "env_spec": {
     "tools": [
       {
