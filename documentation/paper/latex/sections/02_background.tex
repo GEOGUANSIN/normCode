@@ -1,0 +1,38 @@
+\section{Background and Related Work}
+
+NormCode builds on three research traditions: classical AI planning, modern LLM-based agents, and intermediate representations for structured reasoning. This section positions NormCode within this landscape.
+
+\subsection{Classical Planning and Structured Task Decomposition}
+
+NormCode inherits its hierarchical task decomposition from classical AI planning. The seminal STRIPS system introduced representing actions with preconditions and effects for goal-directed problem solving. The Planning Domain Definition Language (PDDL) emerged as a standardized formalism for encoding planning domains---providing structured symbolic blueprints (predicates, actions, goals) that automated planners use to generate valid action sequences.
+
+Hierarchical Task Network (HTN) planning is particularly relevant to NormCode's design~\cite{erol1994}. HTN represents tasks in a hierarchy where high-level goals are recursively decomposed into lower-level primitive actions. This decomposition mirrors NormCode's approach of breaking complex inferences into hierarchies of sub-inferences, each with explicit dependencies. However, while HTN planning operates in fully symbolic domains with deterministic actions, NormCode extends this paradigm to handle \textit{probabilistic reasoning} (via LLM calls) within a structured framework.
+
+\subsection{Modern LLM-Based Agent Frameworks}
+
+Recent agent frameworks demonstrate how LLMs can plan and act through iterative reasoning. \textbf{ReAct} (Yao et al., 2022)~\cite{yao2022} interleaves reasoning traces with action outputs, allowing models to ``think aloud'' while interfacing with tools. \textbf{Reflexion} (Shinn et al., 2023)~\cite{shinn2023} extends this with self-evaluation: after each trial, the agent generates linguistic feedback stored as episodic memory, enabling iterative self-correction without parameter updates.
+
+Frameworks like \textbf{LangChain} and \textbf{AutoGPT} provide orchestration for multi-step LLM workflows~\cite{ibm2025}. \textbf{LangGraph}~\cite{ibm_langgraph} explicitly models agent workflows as directed graphs of nodes (decisions, tool uses, conditionals), increasing transparency over linear chains. However, these frameworks leave data flow largely implicit---the system manages prompts and memory behind the scenes, making it difficult to audit what each step actually ``sees.''
+
+\textbf{NormCode differs in enforcing explicit data isolation.} While LangGraph provides structural transparency (the graph topology is visible), NormCode provides \textit{data-flow transparency}: every input to every step is explicitly declared. When debugging a failure at step 7, NormCode allows precise inspection of step 7's inputs, not just its position in the workflow graph.
+
+\subsection{Intermediate Representations and Structured Reasoning}
+
+The concept of an intermediate representation (IR) between high-level intent and low-level execution has deep roots in computer science~\cite{wiki_ir}. In compilers, an IR (e.g., LLVM IR) abstracts away machine details, enabling optimization passes independent of source language. A good IR is accurate (captures all essential information) and modular (supports transformation without loss of meaning).
+
+In LLM research, structured reasoning traces serve analogous purposes. \textbf{Chain-of-Thought (CoT)} prompting (Wei et al., 2022)~\cite{wei2022} encourages models to generate step-by-step reasoning, significantly improving complex problem-solving. \textbf{Tree-of-Thought (ToT)} (Yao et al., 2023)~\cite{yao2023} generalizes this by exploring branching paths and backtracking. \textbf{Graph-of-Thought (GoT)}~\cite{han2023} allows non-linear exploration of reasoning networks.
+
+NormCode can be viewed as an IR for AI planning that combines these insights: it provides a structured ``language of thought'' that is simultaneously human-authored (like natural CoT), machine-executable (like compiled code), and inspectable (like a computation graph). Recent work on ``Abstractions-of-Thought'' (DeLorenzo et al., 2025)~\cite{delorenzo2025} and ``Blueprint First'' approaches~\cite{qiu2025} uses structured IRs to separate functional decomposition from syntax in LLM-based hardware design---a similar philosophy to NormCode's separation of reasoning structure from execution details.
+
+Critically, NormCode's IR supports \textbf{progressive formalization}: plans can start as rough sketches and be iteratively refined. This contrasts with traditional IRs (which demand full formalization upfront) and free-form CoT (which lacks enforceable structure).
+
+\subsection{Semi-Formal Languages and the Formalization Spectrum}
+
+NormCode occupies a deliberate position between natural language and formal specification. Pure natural language is expressive but ambiguous; fully formal languages (PDDL, code) are unambiguous but rigid. Semi-formal languages strike a balance, imposing structure to reduce ambiguity while remaining accessible to humans~\cite{silva_dl}.
+
+In requirements engineering, UML provides semi-formal diagrams that allow automated consistency checks while staying understandable to stakeholders. NormCode follows this philosophy for AI planning: the language is strict enough for reliable compilation and execution, but flexible enough that humans can author plans in near-natural language (\texttt{.ncds} format) and verify them as readable narratives (\texttt{.ncn} format).
+
+The name ``NormCode'' references normative reasoning---the study of obligations, permissions, and prohibitions in deontic logic~\cite{stanford_deontic}. While NormCode does not explicitly encode deontic modalities, the spirit of ``norms'' suggests rules that agents should follow. Recent work evaluates LLMs' consistency in handling normative constraints~\cite{sordoni2025}, and NormCode's design facilitates such evaluation by making every reasoning step explicit and auditable.
+
+\textbf{Why semi-formal for LLMs?} Models excel at natural language but struggle with fully formal syntax---small errors break rigid parsers. A semi-formal format provides structural guidance (reducing ambiguity) without unforgiving exactness, allowing LLMs to generate valid plans more reliably. This pragmatic balance enables the progressive formalization lifecycle that NormCode supports.
+
