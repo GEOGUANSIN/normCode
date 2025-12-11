@@ -124,17 +124,28 @@ class Body:
                                     v_inputs = metadata.get('inputs', {}).get('vertical', {})
                                     h_inputs = metadata.get('inputs', {}).get('horizontal', {})
                                     
-                                    entry = f"- **{name}**\n  - *Description*: {desc}"
-                                    if v_inputs:
-                                        entry += "\n  - *Vertical Inputs (Function)*: " + ", ".join([f"`{k}`" for k in v_inputs.keys()])
-                                    if h_inputs:
-                                        entry += "\n  - *Horizontal Inputs (Values)*: " + ", ".join([f"`{k}`" for k in h_inputs.keys()])
+                                    # XML-like formatting
+                                    entry = f"<paradigm name=\"{name}\">\n"
+                                    entry += f"    <description>{desc}</description>\n"
                                     
+                                    if v_inputs:
+                                        entry += "    <vertical_inputs>\n"
+                                        for k, v in v_inputs.items():
+                                            entry += f"        <input name=\"{k}\">{v}</input>\n"
+                                        entry += "    </vertical_inputs>\n"
+                                        
+                                    if h_inputs:
+                                        entry += "    <horizontal_inputs>\n"
+                                        for k, v in h_inputs.items():
+                                            entry += f"        <input name=\"{k}\">{v}</input>\n"
+                                        entry += "    </horizontal_inputs>\n"
+                                    
+                                    entry += "</paradigm>"
                                     manifest.append(entry)
                             except Exception as e:
-                                manifest.append(f"- **{name}**: Error reading metadata ({str(e)})")
+                                manifest.append(f"<error paradigm=\"{name}\">{str(e)}</error>")
                     
-                    return "\n".join(manifest)
+                    return "\n\n".join(manifest)
 
             self.paradigm_tool = _DefaultParadigmTool()
         else:

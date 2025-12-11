@@ -95,3 +95,26 @@ class Paradigm:
         sequence_spec = _build_sequence_spec(sequence_spec_data, env_spec)
         
         return cls(env_spec, sequence_spec, metadata_data)
+
+
+if __name__ == "__main__":
+    # Test the paradigm manifest generation
+    try:
+        from infra._agent._body import Body
+        
+        # Initialize a Body (which sets up the default paradigm tool)
+        print("Initializing Body and Paradigm Tool...")
+        body = Body()
+        
+        if hasattr(body, "paradigm_tool") and hasattr(body.paradigm_tool, "list_manifest"):
+            print("\n--- Generating Paradigm Manifest ---\n")
+            manifest = body.paradigm_tool.list_manifest()
+            print(manifest)
+            print("\n--- End of Manifest ---")
+        else:
+            print("Error: Body does not have a valid paradigm_tool with list_manifest method.")
+
+    except ImportError:
+        print("Could not import Body for testing. Make sure you are running this from the project root.")
+    except Exception as e:
+        print(f"An error occurred during testing: {e}")

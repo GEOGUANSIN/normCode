@@ -10,12 +10,14 @@ This process converts a raw or "stripped" NormCode plan (abstract logic) into a 
 ## Step 1: Implementation Design (The "Architect")
 
 **Objective:** Select the concrete tools (Paradigms and Prompts) for each abstract inference unit.
-**Input:** List of Inference Units from `stripped.nci.json`, `Paradigms/README.md`, `Context`.
+**Input:** List of Inference Units from `stripped.nci.json`, `Dynamic Paradigm Manifest` (XML-formatted list of available tools), `Context`.
 
 **Prompt Skeleton:**
 1.  **Iterate** through each Inference Unit object in the input list.
-2.  **Analyze** the `function_concept` to understand the abstract action (e.g., `imperative`, `composition`).
-3.  **Select Paradigm:** Choose the exact paradigm filename that matches the intent of this specific unit.
+2.  **Analyze & Normalize:** Check `function_concept`. If it's a raw imperative (e.g., `::(instruction)`), judgement (`::<>`), or subject (`:xx:`), **transform** it:
+    *   Rewrite function to `:%(Composition):{paradigm}(...)`.
+    *   Extract the instruction text to a new `value_concept`.
+3.  **Select Paradigm:** Query the `Paradigm Manifest` to find the XML entry that best matches the unit's intent. Select that filename.
 4.  **Select Resources:** Identify necessary prompts/scripts for this unit.
 5.  **Output:** An annotated or "Enriched" version of the Inference Unit (adding `attached_comments` with `| %{paradigm}: ...`).
 

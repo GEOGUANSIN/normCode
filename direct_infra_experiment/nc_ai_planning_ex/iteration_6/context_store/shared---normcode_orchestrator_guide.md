@@ -1,66 +1,139 @@
-## 6. Orchestration: Executing the Plan
+# NormCode Guide - The Orchestrator
 
-While Agent's Sequences define how a *single* inference is executed, the **Orchestrator** is the component responsible for managing the execution of the *entire plan* of inferences. It ensures that inferences are run in the correct logical order based on their dependencies. The system operates on a simple but powerful principle: **an inference can only be executed when all of its inputs are ready.**
+The **Orchestrator** is the central engine of the NormCode system. While NormCode scripts define *what* should happen (the plan) and Agents define *how* to do it (the capabilities), the Orchestrator defines *when* it happens. It manages the execution flow, dependency resolution, state tracking, and persistence of the entire inference plan.
 
-The core components of the orchestration mechanism are:
+## 1. Core Architecture
 
-*   **`Orchestrator`**: The central conductor. It runs a loop that repeatedly checks which inferences are ready to execute and triggers them.
-*   **`ConceptRepo` & `InferenceRepo`**: These repositories hold the definitions for all the concepts (the "data") and inferences (the "steps") in the plan.
-*   **`Waitlist`**: A prioritized queue of all inferences, sorted by their `flow_index` (e.g., `1.1`, `1.1.2`). This defines the structural hierarchy of the plan.
-*   **`Blackboard`**: The central state-tracking system. It holds the real-time status (`pending`, `in_progress`, `completed`) of every single concept and inference in the plan. This is the "single source of truth" the `Orchestrator` uses to make decisions.
-*   **`ProcessTracker`**: A logger that records the entire execution flow for debugging and analysis.
+The Orchestrator operates on a dependency-driven, bottom-up execution model. An inference is executed only when its required inputs (value concepts) and logical dependencies are ready.
 
-### A Complete Example: Tracing the Addition Algorithm
+### 1.1. Key Components
 
-Let's trace a simplified path through the multi-digit addition example to see how these components work together. The goal is to calculate `{digit sum}` (flow index `1.1.2`), which requires the `[all {unit place value} of numbers]` (from `1.1.2.4`).
+*   **`Orchestrator`**: The main class that runs the execution loop.
+*   **`Waitlist`**: A prioritized queue of all `InferenceEntry` items, sorted hierarchically by their `flow_index` (e.g., `1.1`, `1.1.2`). This static list defines the structural order of the plan.
+*   **`Blackboard`**: The dynamic state container. It tracks the real-time status (`pending`, `in_progress`, `completed`, `skipped`) of every concept and inference. It is the "single source of truth" for readiness checks.
+*   **`ProcessTracker`**: A logging system that records the history of every execution cycle, including success/failure rates and detailed logs.
+*   **`Repositories`**:
+    *   `ConceptRepo`: Stores the definitions and references (data) of all concepts.
+    *   `InferenceRepo`: Stores the definitions of all inferences.
 
-#### 6.1. Initialization
+## 2. The Execution Logic
 
-1.  When the `Orchestrator` is initialized, it receives the `concept_repo` and `inference_repo` containing all the definitions for the plan.
-2.  It creates a `Waitlist` of all inferences, sorted hierarchically by flow index.
-3.  It populates the `Blackboard` with every concept and inference. Initially, all concepts that are not "ground concepts" (i.e., provided as initial inputs like `{number pair}`) and all inferences are marked as **`pending`**.
+The Orchestrator runs in **Cycles**. In each cycle, it iterates through the `Waitlist` to find and execute "ready" inferences.
 
-Here's the state of our key items on the `Blackboard` at the start:
+### 2.1. Readiness Criteria
+An inference is considered **Ready** to run only if:
+1.  **Dependencies are Met**: All "supporting items" (child inferences in the indentation tree) are `completed`.
+2.  **Functional Concept is Ready**: The concept defining the operation (e.g., the specific imperative command) is `complete`.
+3.  **Value Concepts are Ready**: All input concepts (data) required for the operation are `complete`.
+    *   *Exception*: For `assigning` inferences with multiple candidate sources, only *one* valid source needs to be ready.
 
-| ID                                   | Type       | Status    |
-| ------------------------------------ | ---------- | --------- |
-| `{number pair}`                      | Concept    | `complete`  |
-| `{carry-over number}*1`              | Concept    | `complete`  |
-| `[all {unit place value} of numbers]`| Concept    | `pending`   |
-| `{digit sum}`                        | Concept    | `pending`   |
-| `1.1.2.4` (grouping)                 | Inference  | `pending`   |
-| `1.1.2` (imperative)                 | Inference  | `pending`   |
+### 2.2. The Execution Cycle
+1.  **Check**: The Orchestrator scans the `Waitlist` for `pending` items that satisfy the readiness criteria.
+2.  **Execute**: It constructs an `AgentFrame` for the item and triggers the inference execution (e.g., calling an LLM or tool).
+3.  **Update**:
+    *   **Success**: The item is marked `completed`. The result (reference) is updated in the `ConceptRepo`.
+    *   **Failure**: The item is marked for retry (or failed if critical).
+    *   **Skip**: If a Timing inference (e.g., `@if`) determines a branch should be skipped, the Orchestrator **propagates the skip state** to all dependent children, marking them as `completed` (with detail `skipped`) so the plan can proceed without them.
 
-#### 6.2. The Execution Loop
+## 3. Advanced Orchestration Features
 
-The `Orchestrator` now enters its main loop, which runs in cycles. In each cycle, it iterates through the `Waitlist` and checks for any `pending` items that are now ready to run based on the status of their dependencies on the `Blackboard`.
+### 3.1. Loop Management (Quantifying)
+The Orchestrator has specialized logic for handling loops (`*every`).
+*   **Workspace**: It maintains a `workspace` to track the iteration state of each quantifier.
+*   **Reset & Re-run**: When a loop finishes one iteration but hasn't processed all items, the Orchestrator **resets the status** of all its child inferences (supporting items) back to `pending`. This allows the same logical structure to be re-executed for the next item in the collection.
+*   **Invariant Concepts**: Concepts marked as "invariant" are *not* reset, preserving their value across iterations (useful for accumulating results or constants).
 
-**Cycle 1: Executing the Inner Steps**
+### 3.2. Persistence and Checkpointing
+The Orchestrator includes a robust **Checkpointing System** backed by a SQLite database (`OrchestratorDB`).
 
-*   The orchestrator checks `1.1.2` (`::(sum ...)`). This check fails because one of its value concepts, `[all {unit place value} of numbers]`, is still `pending`.
-*   It continues down the hierarchy and finds that the deepest inferences, like the one that gets a single digit, are ready because their inputs are available.
-*   The `Orchestrator` executes these deep inferences. The corresponding `Agent's Sequence` runs and produces an output.
-*   After execution, the `Blackboard` is updated. The concepts produced by these steps are now marked as **`complete`**.
+*   **Run IDs**: Every execution is associated with a unique `run_id`. You can resume a past run or "fork" it into a new run.
+*   **Snapshots**: It saves the full state (Blackboard, Workspace, References) at the end of every cycle (or more frequently if configured).
+*   **Resuming & Forking**:
+    *   **Resume**: Continue a run from where it left off.
+    *   **Fork**: Load a past state but start a new history (new `run_id`). Useful for "branching" experiments or retrying from a specific point.
 
-**Cycle 2: Executing the Grouping Inference (`1.1.2.4`)**
+### 3.3. Compatibility & Patching
+When loading a checkpoint, the codebase (definitions in Repos) might have changed since the run was saved. The Orchestrator handles this via **Reconciliation Modes**:
 
-*   The orchestrator begins a new cycle. It checks `1.1.2.4` (`&across(...)`). This time, the check succeeds because all of its supporting items (the inner loops that extract individual digits) completed in the previous cycle, marking the necessary input concepts as `complete`.
-*   The `Orchestrator` executes the `1.1.2.4` inference. The `grouping` agent sequence runs, collects the digits, and populates the `[all {unit place value} of numbers]` concept.
-*   The `Blackboard` is updated. The concept `[all {unit place value} of numbers]` now has a reference to the collected digits and its status is changed to **`complete`**.
+*   **`PATCH` Mode (Default)**: A "Smart Merge". It loads the saved state but validates it against the current Repos.
+    *   If a concept's definition (logic signature) has changed, its saved state is discarded (set to `pending`) so it re-runs with the new logic.
+    *   Valid states are kept, saving time.
+*   **`OVERWRITE`**: Trusts the checkpoint entirely (legacy behavior).
+*   **`FILL_GAPS`**: Only populates missing data, preferring current Repo defaults.
 
-**Blackboard State after Cycle 2:**
+The system also validates the **Environment Compatibility** (e.g., checking if the LLM model or AgentFrame settings match the saved run) and warns of discrepancies.
 
-| ID                                   | Type       | Status    |
-| ------------------------------------ | ---------- | --------- |
-| `[all {unit place value} of numbers]`| Concept    | `complete`  |
-| `{digit sum}`                        | Concept    | `pending`   |
-| `1.1.2.4` (grouping)                 | Inference  | `completed` |
-| `1.1.2` (imperative)                 | Inference  | `pending`   |
+## 4. Usage
 
-**Cycle 3: Executing the Imperative Inference (`1.1.2`)**
+### 4.1. Basic Execution
+```python
+orchestrator = Orchestrator(concept_repo, inference_repo)
+final_concepts = orchestrator.run()
+```
 
-*   The orchestrator begins a new cycle and checks `1.1.2` (`::(sum ...)`). Now, the check finally **succeeds** because all its value concepts are `complete` on the `Blackboard`.
-*   The `Orchestrator` executes the inference. The `imperative` sequence runs, performs the sum, and gets a result.
-*   The `Blackboard` is updated. The concept `{digit sum}` now has a reference to the calculated value and its status is changed to **`complete`**.
+### 4.2. Loading from Checkpoint (Patch Mode)
+```python
+# Resumes the latest run, re-running any modified logic
+orchestrator = Orchestrator.load_checkpoint(
+    concept_repo, 
+    inference_repo, 
+    db_path="orchestration.db",
+    mode="PATCH"
+)
+orchestrator.run()
+```
 
-This bottom-up, dependency-driven process continues cycle after cycle. Each time a concept is marked `complete`, it may unlock one or more higher-level inferences that depend on it, until eventually the final concept of the entire plan is completed. This ensures that every step is executed in the correct logical order, purely by observing the state of the shared `Blackboard`.
+### 4.3. Async Support
+The Orchestrator fully supports asynchronous execution for non-blocking operations in web or UI contexts:
+```python
+await orchestrator.run_async()
+```
+
+## 5. Tools for Running the Orchestrator
+
+While you can write custom scripts, NormCode provides two primary tools for running and managing orchestrations.
+
+### 5.1. Command Line Interface (CLI)
+
+The `cli_orchestrator.py` tool provides a robust way to run, resume, and manage orchestrations from the terminal.
+
+**Common Commands:**
+
+*   **Start a Fresh Run**:
+    ```bash
+    python cli_orchestrator.py run --concepts concepts.json --inferences inferences.json --inputs inputs.json
+    ```
+
+*   **Resume a Run**:
+    ```bash
+    # Resumes the latest run in 'PATCH' mode (smart merge)
+    python cli_orchestrator.py resume --concepts concepts.json --inferences inferences.json
+
+    # Resume a specific run ID
+    python cli_orchestrator.py resume --concepts concepts.json --inferences inferences.json --run-id <UUID>
+    ```
+
+*   **List Runs**:
+    ```bash
+    python cli_orchestrator.py list-runs
+    ```
+
+*   **Fork a Run**:
+    Creates a new run history starting from an old checkpoint, often used with updated repositories.
+    ```bash
+    python cli_orchestrator.py fork --concepts new_concepts.json --inferences new_inferences.json --from-run <OLD_UUID>
+    ```
+
+### 5.2. Streamlit Application
+
+The `streamlit_app` provides a visual interface for the Orchestrator. It is ideal for monitoring progress, debugging, and inspecting the state of concepts in real-time.
+
+*   **Visualizes the Plan**: Shows the hierarchy of inferences as a tree.
+*   **Real-time Status**: Updates the status (pending/running/done) of each step live.
+*   **Inspection**: Click on any concept to view its current value/reference.
+*   **Controls**: Buttons to Start, Pause, Resume, and Reset runs.
+
+**To Launch:**
+```bash
+streamlit run streamlit_app/app.py
+```
