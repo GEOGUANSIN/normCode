@@ -2,6 +2,32 @@ import copy
 from typing import Any, Optional, List
 import logging
 
+# Dev mode flag - when True, exceptions in cross_action and element_action are raised instead of returning skip values
+_DEV_MODE = False
+
+def set_dev_mode(enabled: bool):
+    """
+    Enable or disable dev mode for Reference operations.
+    
+    When dev mode is enabled, exceptions in cross_action and element_action
+    will be raised instead of being silently converted to skip values.
+    This is useful for debugging.
+    
+    Args:
+        enabled (bool): True to enable dev mode, False to disable
+    """
+    global _DEV_MODE
+    _DEV_MODE = enabled
+    if enabled:
+        logging.info("Reference dev mode ENABLED - exceptions will be raised")
+    else:
+        logging.info("Reference dev mode DISABLED - exceptions will return skip values")
+
+def get_dev_mode() -> bool:
+    """Check if dev mode is currently enabled."""
+    global _DEV_MODE
+    return _DEV_MODE
+
 class Reference:
     def __init__(self, axes, shape, initial_value=None, skip_value="@#SKIP#@"):
         if len(axes) != len(set(axes)):
@@ -803,6 +829,10 @@ def cross_action(A, B, new_axis_name):
                 # Check if this is a NeedsUserInteraction exception (avoiding import)
                 if e.__class__.__name__ == 'NeedsUserInteraction':
                     raise
+                # In dev mode, always raise exceptions for debugging
+                if get_dev_mode():
+                    logging.error(f"cross_action: Exception in dev mode at {a_indices}: {type(e).__name__}: {e}")
+                    raise
                 return "@#SKIP#@"
         else:
             axis = current_axes[0]
@@ -905,6 +935,10 @@ def element_action(f, references, index_awareness=False):
                 # Re-raise specific exceptions that need to propagate up (e.g., for human-in-the-loop)
                 # Check if this is a NeedsUserInteraction exception (avoiding import)
                 if e.__class__.__name__ == 'NeedsUserInteraction':
+                    raise
+                # In dev mode, always raise exceptions for debugging
+                if get_dev_mode():
+                    logging.error(f"element_action: Exception in dev mode at {index_dict}: {type(e).__name__}: {e}")
                     raise
                 # logging.error(f"element_action: error applying function '{f.__name__}' to {elements}: {e}")
                 return "@#SKIP#@"
