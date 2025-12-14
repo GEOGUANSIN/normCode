@@ -187,9 +187,13 @@ These sequences handle the organization of data into collections or iterations.
 | **Grouping** | `(IWI-IR-GR-OR-OWI)` | `&in`, `&across` | Collects, filters, and groups disparate data items into collections or relations. |
 
 #### Implementation Details (Grouping)
-The `Grouping` sequence logic is centrally handled by the `Grouper` class in the `_syntax` module during the **GR** step. It heavily relies on **Context Concepts** (`<*`) to determine the axes of aggregation.
+The `Grouping` sequence logic is centrally handled by the `Grouper` class in the `_syntax` module during the **GR** step. 
+
 *   **And-In (`&in`)**: Uses `Grouper.and_in`. It aligns multiple input references by their shared axes and performs a cross-product to combine elements. Crucially, it creates a **Relation** (a dictionary-like structure) where elements are annotated with their source concept names. It aggregates (slices) the result along axes specified by the *context concepts* present in the inference state.
-*   **Or-Across (`&across`)**: Uses `Grouper.or_across`. Similar to `&in`, it aligns and cross-products inputs, but it produces a **Collection** (a flat list) by flattening the result. It also uses context concepts to determine the `by_axes` for aggregation.
+
+*   **Or-Across (`&across`)**: Uses `Grouper.or_across`. Supports two modes:
+    *   **Legacy mode**: Aligns and cross-products inputs, then produces a **Collection** (a flat list) by flattening the result. Uses context concepts to determine `by_axes` for aggregation.
+    *   **Per-reference mode** (new): When `by_axes` is specified as a list of lists (one per input) and `create_axis` is provided, it collapses each input reference along its specified axes independently, concatenates all resulting elements, and wraps them in a new axis dimension. This allows combining distinct concepts (with different axis structures) into a unified axis. Example: combining `{quantitative signal}`, `{narrative signal}`, and `{theoretical framework}` into a single `signal` axis.
 
 ### 3.3. Control Flow
 These sequences control the execution order or branching logic of the plan, rather than manipulating the data itself.
