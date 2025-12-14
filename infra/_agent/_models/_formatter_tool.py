@@ -160,7 +160,7 @@ class FormatterTool:
     def collect_script_inputs(self, all_inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Collects all key-value pairs from a dictionary where the key starts
-        with the prefix 'input_'.
+        with the prefix 'input_'. If a value is a JSON string, parse it.
         """
         if not isinstance(all_inputs, dict):
             return {}
@@ -168,7 +168,16 @@ class FormatterTool:
         script_inputs = {}
         for key, value in all_inputs.items():
             if key.startswith("input_"):
-                script_inputs[key] = value
+                # If value is a JSON string, try to parse it
+                if isinstance(value, str):
+                    try:
+                        parsed = json.loads(value)
+                        script_inputs[key] = parsed
+                    except (json.JSONDecodeError, ValueError):
+                        # If not valid JSON, use as-is
+                        script_inputs[key] = value
+                else:
+                    script_inputs[key] = value
         return script_inputs
 
     def clean_code(self, raw_code: str) -> str:

@@ -95,3 +95,14 @@ class PythonInterpreterTool:
             logger.error(f"Error executing function '{function_name}' from script: {e}")
             logger.error(f"Script that failed:\n{script_code}")
             return {"status": "error", "message": str(e)}
+
+    def create_function_executor(self, script_code: str, function_name: str):
+        """
+        Creates a bound function that executes a specific function from the script.
+        
+        Used by paradigms to create a callable function for script execution.
+        Returns a function that accepts function_params dict and calls the script function.
+        """
+        def executor_fn(function_params: Dict[str, Any]) -> Any:
+            return self.function_execute(script_code, function_name, function_params)
+        return executor_fn

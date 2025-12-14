@@ -27,6 +27,9 @@ class PromptTool:
 	- render(template_name: str, variables: Dict[str, Any]) -> str
 	  Renders the current cached template with variables and returns a string without
 	  mutating the cache.
+	- create_template_function(template: Template) -> Callable
+	  Creates a function that fills the template with provided variables.
+	  Used by paradigms to create callable functions for template rendering.
 	"""
 
 	def __init__(self, base_dir: Optional[str] = None, encoding: str = "utf-8") -> None:
@@ -90,6 +93,25 @@ class PromptTool:
 		if tmpl is None:
 			tmpl = self.read(template_name)
 		return str(tmpl.safe_substitute(variables))
+
+	def create_template_function(self, template: Template):
+		"""Create a function that fills the template with provided variables.
+		
+		Used by paradigms to create a callable function for template rendering.
+		Returns a function that accepts a dict as positional arg or **kwargs and returns the filled template string.
+		"""
+		def template_fn(*args, **kwargs):
+			# If called with a positional argument (dict), use it as the variables
+			if args:
+				if len(args) == 1 and isinstance(args[0], dict):
+					variables = args[0]
+				else:
+					raise ValueError(f"template_fn expects a single dict as positional arg, got {len(args)} args")
+			else:
+				# Otherwise use keyword arguments
+				variables = kwargs
+			return str(template.safe_substitute(variables))
+		return template_fn
 
 	# Optional: manage cache
 	def clear_cache(self) -> None:
