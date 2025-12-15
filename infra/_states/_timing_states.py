@@ -1,7 +1,7 @@
 from infra._states._common_states import BaseStates, SequenceStepSpecLite
 from infra._orchest._blackboard import Blackboard
 from types import SimpleNamespace
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class States(BaseStates):
@@ -16,9 +16,11 @@ class States(BaseStates):
         ]
         self.sequence_state.current_step = "IWI"
         self.syntax: SimpleNamespace = SimpleNamespace(
-            marker=None,  # "after"
+            marker=None,  # "after", "if", "if!"
             condition=None,
         )
         self.blackboard: Optional[Blackboard] = None
+        self.workspace: Dict[str, Any] = {}  # Shared workspace for filter injection
+        self.flow_index: Optional[str] = None  # Flow index of this timing inference
         self.timing_ready: bool = False
-        self.to_be_skipped: bool = False 
+        self.to_be_skipped: bool = False

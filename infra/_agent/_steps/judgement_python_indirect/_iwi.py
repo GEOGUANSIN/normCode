@@ -108,7 +108,10 @@ def input_working_interpretation(
 ) -> States:
     """Initialize states with tools, specs, and placeholder records for the indirect sequence."""
     states.body = body
-
+    states.workspace = working_interpretation.get("workspace", {})
+    flow_info = working_interpretation.get("flow_info", {})
+    states.flow_index = flow_info.get("flow_index")
+	
     is_relation = (working_interpretation or {}).get("is_relation_output", False)
     with_thinking = (working_interpretation or {}).get("with_thinking", False)
     states.is_relation_output = is_relation

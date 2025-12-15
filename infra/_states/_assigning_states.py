@@ -18,5 +18,13 @@ class States(BaseStates):
             marker=None,
             assign_source=None,
             assign_destination=None,
-            by_axes=[]
+            by_axes=[],
+            # For abstraction ($%)
+            face_value=None,
+            axis_names=None,
+            # For derelation ($-)
+            selector=None,
+            # For identity ($=) - uses blackboard
+            canonical_concept=None,
+            alias_concept=None
         )

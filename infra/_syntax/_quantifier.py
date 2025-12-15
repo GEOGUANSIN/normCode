@@ -3,6 +3,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from infra._core import Reference, element_action, cross_product, join
 
+"""
+This is an archive implementation of the looper - where the name of quantifier is incorrectly used as the loop base concept name.
+"""
+
 
 class Quantifier:
     """

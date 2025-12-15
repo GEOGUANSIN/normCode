@@ -337,6 +337,7 @@ class Orchestrator:
         working_interpretation = item.inference_entry.working_interpretation or {}
         working_interpretation["blackboard"] = self.blackboard
         working_interpretation["workspace"] = self.workspace
+        working_interpretation["flow_info"] = item.inference_entry.flow_info
         
         agent_frame = AgentFrame(
             self.agent_frame_model,
@@ -407,10 +408,49 @@ class Orchestrator:
             elif condition_met is False:
                 logging.info(f"Judgement condition for item {flow_index} not met. Marking as 'condition_not_met'.")
                 self.blackboard.set_item_completion_detail(flow_index, 'condition_not_met')
+            
+            # Store truth mask for filter injection if available (from TIA step)
+            self._store_truth_mask_if_available(states, item)
         
         all_conditions_met = self._update_references_and_check_completion(states, item)
         
         return "completed" if all_conditions_met else "pending"
+
+    def _store_truth_mask_if_available(self, states: BaseStates, item: WaitlistItem):
+        """
+        Store truth mask from judgement inference for filter injection.
+        
+        When a judgement inference with a 'for-each' quantifier completes,
+        the TIA step produces a truth mask. We store this on the blackboard
+        so that timing steps can inject it for downstream filtering.
+        """
+        # Check if there's a primary_filter_axis (indicates for-each quantifier was used)
+        primary_filter_axis = getattr(states, 'primary_filter_axis', None)
+        if not primary_filter_axis:
+            logging.debug(f"No primary_filter_axis in states - no truth mask to store")
+            return
+        
+        # Try to get the TIA output reference
+        tia_ref = None
+        if hasattr(states, 'get_reference'):
+            tia_ref = states.get_reference("inference", "TIA")
+        
+        if not tia_ref:
+            logging.debug(f"No TIA reference found in states")
+            return
+        
+        # Build truth mask data
+        concept_name = item.inference_entry.concept_to_infer.concept_name
+        truth_mask_data = {
+            'tensor': tia_ref.tensor if hasattr(tia_ref, 'tensor') else None,
+            'axes': tia_ref.axes if hasattr(tia_ref, 'axes') else [],
+            'filter_axis': primary_filter_axis,
+            'shape': tia_ref.shape if hasattr(tia_ref, 'shape') else None,
+        }
+        
+        self.blackboard.set_truth_mask(concept_name, truth_mask_data)
+        logging.info(f"Stored truth mask for judgement concept '{concept_name}' "
+                    f"(filter_axis='{primary_filter_axis}', shape={truth_mask_data['shape']})")
 
     def _update_references_and_check_completion(self, states: BaseStates, item: WaitlistItem) -> bool:
         """

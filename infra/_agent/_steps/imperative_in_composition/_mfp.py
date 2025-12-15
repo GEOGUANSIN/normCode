@@ -29,6 +29,7 @@ def model_function_perception(states: States) -> States:
     class _MfpStateProxy:
         def __init__(self, s: States, instruction_name_override: str):
             self.body = s.body
+            self.vertical = instruction_name_override  # Pass instruction directly as string
 
             # Create a copy of the original concept and override its name
             # This is the key to making the generic plan from IWI work for a specific instruction

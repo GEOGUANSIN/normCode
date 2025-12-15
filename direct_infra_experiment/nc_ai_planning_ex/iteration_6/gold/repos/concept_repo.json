@@ -1,0 +1,504 @@
+[
+  {
+    "id": "c-final-output",
+    "concept_name": ":<:({investment decision})",
+    "type": ":<:",
+    "description": "Final output marker - the investment decision to be returned",
+    "is_final_concept": true,
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-price-data",
+    "concept_name": "[price data]",
+    "type": "[]",
+    "axis_name": "_none_axis",
+    "description": "Price data retrieved from market sources",
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-news-data",
+    "concept_name": "[news data]",
+    "type": "[]",
+    "axis_name": "_none_axis",
+    "description": "News data retrieved from text sources",
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-theoretical-framework",
+    "concept_name": "{theoretical framework}",
+    "type": "{}",
+    "axis_name": "_none_axis",
+    "description": "Theoretical framework from domain experts",
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-investor-risk-profile",
+    "concept_name": "{investor risk profile}",
+    "type": "{}",
+    "axis_name": "_none_axis",
+    "description": "Investor constraints including risk tolerance, position size, stop-loss, and horizon",
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-validated-signal",
+    "concept_name": "{validated signal}",
+    "type": "{}",
+    "axis_name": "signal",
+    "description": "Unified signals from quantitative and narrative analysis plus theoretical framework",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-quantitative-signal",
+    "concept_name": "{quantitative signal}",
+    "type": "{}",
+    "axis_name": "quantitative_signal",
+    "description": "Price-based technical indicators",
+    "reference_axis_names": [
+      "quantitative_signal"
+    ]
+  },
+  {
+    "id": "c-narrative-signal",
+    "concept_name": "{narrative signal}",
+    "type": "{}",
+    "axis_name": "narrative_signal",
+    "description": "Sentiment and themes extracted from news",
+    "reference_axis_names": [
+      "narrative_signal"
+    ]
+  },
+  {
+    "id": "c-signals-surpass",
+    "concept_name": "<signals surpass theoretical expectations>",
+    "type": "<>",
+    "axis_name": "signal",
+    "description": "Truth mask: which signals exceed theoretical predictions (bullish)",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-signals-deviate",
+    "concept_name": "<signals deviate from theoretical expectations>",
+    "type": "<>",
+    "axis_name": "signal",
+    "description": "Truth mask: which signals fall below theoretical predictions (bearish)",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-signals-neutral",
+    "concept_name": "<signals are neutral>",
+    "type": "<>",
+    "axis_name": "signal",
+    "description": "Truth mask: which signals are neither bullish nor bearish",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-signal-status",
+    "concept_name": "<signal status>",
+    "type": "<>",
+    "axis_name": "signal",
+    "description": "Grouped truth markers (surpass + deviate) for neutral evaluation",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-investment-decision",
+    "concept_name": "{investment decision}",
+    "type": "{}",
+    "axis_name": "_none_axis",
+    "description": "Final synthesized investment decision with action, rationale, and confidence",
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-all-recommendations",
+    "concept_name": "[all recommendations]",
+    "type": "[]",
+    "axis_name": "recommendation",
+    "description": "Collection of all recommendation branches (bullish, bearish, neutral)",
+    "reference_axis_names": [
+      "recommendation"
+    ]
+  },
+  {
+    "id": "c-bullish-recommendation",
+    "concept_name": "{bullish recommendation}",
+    "type": "{}",
+    "axis_name": "signal",
+    "description": "Buy recommendation with position sizing (filtered by bullish signals)",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-bearish-recommendation",
+    "concept_name": "{bearish recommendation}",
+    "type": "{}",
+    "axis_name": "signal",
+    "description": "Sell recommendation with position sizing (filtered by bearish signals)",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-neutral-recommendation",
+    "concept_name": "{neutral recommendation}",
+    "type": "{}",
+    "axis_name": "signal",
+    "description": "Hold recommendation (filtered by neutral signals)",
+    "reference_axis_names": [
+      "signal"
+    ]
+  },
+  {
+    "id": "c-ground-price-data",
+    "concept_name": "{simulated data: price data}",
+    "type": "{}",
+    "description": "Ground concept: file path for simulated price data",
+    "is_ground_concept": true,
+    "reference_data": [
+      "%{file_location}price(provision/data/price_data.json)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-ground-news-data",
+    "concept_name": "{simulated data: news data}",
+    "type": "{}",
+    "description": "Ground concept: file path for simulated news data",
+    "is_ground_concept": true,
+    "reference_data": [
+      "%{file_location}news(provision/data/news_data.json)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-ground-theoretical-framework",
+    "concept_name": "{simulated data: theoretical framework}",
+    "type": "{}",
+    "description": "Ground concept: file path for simulated theoretical framework",
+    "is_ground_concept": true,
+    "reference_data": [
+      "%{file_location}theory(provision/data/theoretical_framework.json)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "c-ground-investor-risk-profile",
+    "concept_name": "{simulated data: investor risk profile}",
+    "type": "{}",
+    "description": "Ground concept: file path for simulated investor risk profile",
+    "is_ground_concept": true,
+    "reference_data": [
+      "%{file_location}risk(provision/data/investor_risk_profile.json)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-assign-investment-decision",
+    "concept_name": "$. %>({investment decision})",
+    "type": "$.",
+    "description": "Functional: specification assignment for final output",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "$. %>({investment decision})"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-retrieve-price-data",
+    "concept_name": ":%(composition):{paradigm}(retrieve price data from market sources)",
+    "type": "({})",
+    "description": "Functional: retrieve price data using file load paradigm",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      ":%(composition):{paradigm}(retrieve price data from market sources)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-retrieve-news-data",
+    "concept_name": ":%(composition):{paradigm}(retrieve news data from text sources)",
+    "type": "({})",
+    "description": "Functional: retrieve news data using file load paradigm",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      ":%(composition):{paradigm}(retrieve news data from text sources)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-obtain-theoretical-framework",
+    "concept_name": ":%(composition):{paradigm}(obtain theoretical framework from domain experts)",
+    "type": "({})",
+    "description": "Functional: obtain theoretical framework using file load paradigm",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      ":%(composition):{paradigm}(obtain theoretical framework from domain experts)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-collect-investor-constraints",
+    "concept_name": ":%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)",
+    "type": "({})",
+    "description": "Functional: collect investor risk profile using file load paradigm",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      ":%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-group-validated-signal",
+    "concept_name": "&[#] %>[{quantitative signal}, {narrative signal}] %+(signal)",
+    "type": "&[#]",
+    "description": "Functional: grouping across to unify signals with per-reference collapse",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "_"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-compute-quantitative-signal",
+    "concept_name": ":%(composition):(compute price-based indicators from {1}<$([price data])%>)",
+    "type": "({})",
+    "description": "Functional: compute technical indicators via Python script",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}script(provision/scripts/technical_analysis.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-extract-narrative-signal",
+    "concept_name": ":%(composition):(extract sentiment and themes from {1}<$([news data])%>)",
+    "type": "({})",
+    "description": "Functional: extract sentiment via LLM prompt",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/sentiment_extraction.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-evaluate-bullish",
+    "concept_name": ":%(composition):({1}<$({validated signal})%> exceeds predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+    "type": "<{}>",
+    "description": "Functional judgement: evaluate if signals exceed theory (bullish)",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/bullish_evaluation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-evaluate-bearish",
+    "concept_name": ":%(composition):({1}<$({validated signal})%> falls below predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+    "type": "<{}>",
+    "description": "Functional judgement: evaluate if signals fall below theory (bearish)",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/bearish_evaluation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-evaluate-neutral",
+    "concept_name": ":%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>",
+    "type": "<{}>",
+    "description": "Functional judgement: evaluate if signals are neutral (neither bullish nor bearish)",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      ":%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-group-signal-status",
+    "concept_name": "&[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>",
+    "type": "&[#]",
+    "description": "Functional: grouping truth masks with signal axis protected (legacy mode)",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "&[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-synthesize-final-decision",
+    "concept_name": ":%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)",
+    "type": "({})",
+    "description": "Functional: synthesize final decision via LLM",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/final_synthesis.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-group-all-recommendations",
+    "concept_name": "&[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}] %+(recommendation)",
+    "type": "&[{}]",
+    "description": "Functional: grouping recommendations into annotated dict with per-reference collapse",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "_"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-generate-bullish-recommendation",
+    "concept_name": ":%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "type": "({})",
+    "description": "Functional: generate buy recommendation via LLM",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/buy_recommendation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-timing-bullish",
+    "concept_name": "@:' (<signals surpass theoretical expectations>)",
+    "type": "@:'",
+    "description": "Functional: timing gate for bullish branch",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "@:' (<signals surpass theoretical expectations>)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-generate-bearish-recommendation",
+    "concept_name": ":%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "type": "({})",
+    "description": "Functional: generate sell recommendation via LLM",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/sell_recommendation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-timing-bearish",
+    "concept_name": "@:' (<signals deviate from theoretical expectations>)",
+    "type": "@:'",
+    "description": "Functional: timing gate for bearish branch",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "@:' (<signals deviate from theoretical expectations>)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-generate-neutral-recommendation",
+    "concept_name": ":%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+    "type": "({})",
+    "description": "Functional: generate hold recommendation via LLM",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "%{file_location}prompt(provision/prompts/hold_recommendation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  },
+  {
+    "id": "fc-timing-neutral",
+    "concept_name": "@:' (<signals are neutral>)",
+    "type": "@:'",
+    "description": "Functional: timing gate for neutral branch",
+    "is_ground_concept": true,
+    "is_invariant": true,
+    "reference_data": [
+      "@:' (<signals are neutral>)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ]
+  }
+]

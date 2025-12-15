@@ -2,10 +2,13 @@ import logging
 from infra._core._inference import Inference
 from infra._states._grouping_states import States
 from infra._states._common_states import ConceptInfoLite, ReferenceRecordLite
+from infra._agent._steps._filter_utils import apply_injected_filters
 
 
 def input_references(inference: Inference, states: States) -> States:
     """Populate references and concept info into the state from the inference instance."""
+
+    apply_injected_filters(inference, states)
     if inference.function_concept:
         states.function.append(
             ReferenceRecordLite(

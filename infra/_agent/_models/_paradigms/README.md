@@ -25,9 +25,7 @@ To ensure that a paradigm's function is completely clear from its name, all para
 **Full Example:**
 `h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation.json`
 
-This name provides a complete, self-documenting summary of the paradigm's entire workflow.
-
-## Paradigm Library
+## Paradigm Library (An incomplete list)
 
 #### `h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation.json`
 -   **Purpose**: An end-to-end workflow that takes a prompt template and a save path, generates a JSON response from an LLM, extracts the "answer" from it, and saves that answer to the specified path. The final output is the location of the saved file.

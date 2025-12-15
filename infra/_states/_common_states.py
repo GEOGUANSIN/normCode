@@ -44,6 +44,8 @@ class BaseStates:
 		self.values: List[ReferenceRecordLite] = []
 		self.context: List[ReferenceRecordLite] = []
 		self.inference: List[ReferenceRecordLite] = []
+		self.workspace: Dict[str, Any] = {}
+		self.flow_index: str | None = None
 
 	def set_current_step(self, name: str) -> None:
 		self.sequence_state.current_step = name

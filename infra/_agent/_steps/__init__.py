@@ -20,6 +20,7 @@ from . import judgement_python
 from . import imperative_python_indirect
 from . import judgement_python_indirect
 from . import imperative_in_composition
+from . import judgement_in_composition
 
 from .simple import simple_methods
 from .imperative import imperative_methods
@@ -36,9 +37,12 @@ from .judgement_python import judgement_python_methods
 from .imperative_python_indirect import imperative_python_indirect_methods
 from .judgement_python_indirect import judgement_python_indirect_methods
 from .imperative_in_composition import imperative_in_composition_methods
+from .judgement_in_composition import judgement_in_composition_methods
 
+from ._filter_utils import apply_injected_filters
 
 __all__ = [
+    'apply_injected_filters',
     'simple_methods',
     'imperative_methods',
     'grouping_methods',
@@ -54,4 +58,5 @@ __all__ = [
     'imperative_python_indirect_methods',
     'judgement_python_indirect_methods',
     'imperative_in_composition_methods',
+    'judgement_in_composition_methods',
 ]

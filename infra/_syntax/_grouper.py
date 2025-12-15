@@ -73,16 +73,95 @@ class Grouper:
 
         return element_actuation
 
-    def and_in(self, references: List[Reference], annotation_list: List[str], by_axes: Optional[List[str]] = None, template: Optional[Template] = None) -> Reference:
-        shared_axes = self.find_share_axes(references)
-        sliced_refs = [ref.slice(*shared_axes) for ref in references]
+    def and_in(
+        self, 
+        references: List[Reference], 
+        annotation_list: List[str], 
+        by_axes: Optional[List] = None,  # List[str] (shared) or List[List[str]] (per-ref)
+        template: Optional[Template] = None,
+        create_axis: Optional[str] = None
+    ) -> Reference:
+        """
+        Group references into a labeled relation (dict-like structure).
+        
+        Args:
+            references: List of references to group
+            annotation_list: Names to use as keys in the dict
+            by_axes: Either:
+                - List[str]: Shared axes to collapse (legacy behavior)
+                - List[List[str]]: Per-reference axes to collapse
+            template: Optional template for formatting
+            create_axis: Name for the resulting axis dimension (enables per-ref mode)
+        
+        When create_axis is specified with per-ref by_axes:
+            1. For each reference, collapse its specified axes
+            2. Annotate each with its concept name
+            3. Wrap in create_axis dimension
+        
+        Otherwise uses legacy cross_product + annotate behavior.
+        """
+        if not references:
+            axis_name = create_axis or "_none_axis"
+            return Reference(axes=[axis_name], shape=(0,))
+        
+        # Normalize by_axes format for backward compatibility
+        normalized_by_axes = by_axes
+        if by_axes is not None and len(by_axes) > 0:
+            if not isinstance(by_axes[0], list):
+                # Flat list (legacy format) - broadcast to all references if create_axis specified
+                if create_axis is not None:
+                    normalized_by_axes = [by_axes for _ in references]
+        
+        # Check if per-reference mode
+        is_per_ref_mode = (
+            create_axis is not None and 
+            normalized_by_axes is not None and 
+            len(normalized_by_axes) > 0 and 
+            isinstance(normalized_by_axes[0], list)
+        )
+        
+        if is_per_ref_mode:
+            # Per-reference collapse + annotate mode
+            annotated_elements = []
+            
+            for i, (ref, name) in enumerate(zip(references, annotation_list)):
+                # Get axes to collapse for this reference
+                axes_to_collapse = normalized_by_axes[i] if i < len(normalized_by_axes) else list(ref.axes)
+                
+                # Determine which axes to PRESERVE (not collapse)
+                preserve_axes = [ax for ax in ref.axes if ax not in axes_to_collapse]
+                
+                if preserve_axes:
+                    # Partial collapse: slice to preserve axes, then extract leaves
+                    sliced = ref.slice(*preserve_axes)
+                    elements = list(sliced._get_leaves())
+                else:
+                    # Full collapse: extract all leaves directly
+                    elements = list(ref._get_leaves())
+                
+                # Annotate each element with concept name
+                for elem in elements:
+                    annotated_elements.append({name: elem})
+            
+            # Create result with new axis
+            result = Reference(
+                axes=[create_axis],
+                shape=(len(annotated_elements),),
+                initial_value=None,
+                skip_value=self.skip_value
+            )._replace_data(annotated_elements)
+        
+        else:
+            # Legacy behavior: cross_product + annotate + collapse
+            shared_axes = self.find_share_axes(references)
+            sliced_refs = [ref.slice(*shared_axes) for ref in references]
 
-        result = cross_product(sliced_refs)
-        result = self.annotate_element(result, annotation_list)
+            result = cross_product(sliced_refs)
+            result = self.annotate_element(result, annotation_list)
 
-        if by_axes is not None:
-            preserve_axes = [axis for axis in result.axes if axis not in by_axes]
-            result = result.slice(*preserve_axes)
+            if by_axes is not None:
+                preserve_axes = [axis for axis in result.axes if axis not in by_axes]
+                result = result.slice(*preserve_axes)
 
         if template:
             element_actuation = self.create_unified_element_actuation(template, annotation_list)

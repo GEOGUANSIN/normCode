@@ -1,0 +1,99 @@
+{
+  "_description": "Provision manifest mapping NormCode steps to actual resources",
+  "_convention": {
+    "h_input": "Horizontal inputs - data files perceived at runtime (MVP)",
+    "v_input": "Vertical inputs - resources for paradigm configuration (MFP)"
+  },
+  
+  "provisions": {
+    "1.1": {
+      "step": "[price data]",
+      "h_input": {
+        "file_location": "provision/data/price_data.json"
+      }
+    },
+    "1.2": {
+      "step": "[news data]",
+      "h_input": {
+        "file_location": "provision/data/news_data.json"
+      }
+    },
+    "1.3": {
+      "step": "{theoretical framework}",
+      "h_input": {
+        "file_location": "provision/data/theoretical_framework.json"
+      }
+    },
+    "1.4": {
+      "step": "{investor risk profile}",
+      "h_input": {
+        "file_location": "provision/data/investor_risk_profile.json"
+      }
+    },
+    "1.5.1": {
+      "step": "{quantitative signals}",
+      "v_input": {
+        "script_location": "provision/scripts/technical_analysis.py"
+      },
+      "h_input": "in-memory (from 1.1)"
+    },
+    "1.5.2": {
+      "step": "{narrative signals}",
+      "v_input": {
+        "prompt_location": "provision/prompts/sentiment_extraction.md"
+      },
+      "h_input": "in-memory (from 1.2, 1.3)"
+    },
+    "1.6": {
+      "step": "<signals surpass theoretical expectations>",
+      "v_input": {
+        "prompt_location": "provision/prompts/bullish_evaluation.md"
+      },
+      "h_input": "in-memory (from 1.5, 1.3)"
+    },
+    "1.7": {
+      "step": "<signals deviate from theoretical expectations>",
+      "v_input": {
+        "prompt_location": "provision/prompts/bearish_evaluation.md"
+      },
+      "h_input": "in-memory (from 1.5, 1.3)"
+    },
+    "1.8": {
+      "step": "<signals are neutral>",
+      "v_input": null,
+      "h_input": "in-memory (from 1.6, 1.7)",
+      "note": "Pure assertion, no paradigm needed"
+    },
+    "1.9": {
+      "step": "{investment decision}",
+      "v_input": {
+        "prompt_location": "provision/prompts/final_synthesis.md"
+      },
+      "h_input": "in-memory (from 1.9.1, 1.4)"
+    },
+    "1.9.1.1": {
+      "step": "{bullish recommendation}",
+      "v_input": {
+        "prompt_location": "provision/prompts/buy_recommendation.md",
+        "script_location": "provision/scripts/position_sizing.py"
+      },
+      "h_input": "in-memory (from 1.5, 1.4)"
+    },
+    "1.9.1.2": {
+      "step": "{bearish recommendation}",
+      "v_input": {
+        "prompt_location": "provision/prompts/sell_recommendation.md",
+        "script_location": "provision/scripts/position_sizing.py"
+      },
+      "h_input": "in-memory (from 1.5, 1.4)"
+    },
+    "1.9.1.3": {
+      "step": "{neutral recommendation}",
+      "v_input": {
+        "prompt_location": "provision/prompts/hold_recommendation.md"
+      },
+      "h_input": "in-memory (from 1.5)"
+    }
+  }
+}
+

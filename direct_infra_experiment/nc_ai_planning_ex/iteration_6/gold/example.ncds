@@ -1,0 +1,61 @@
+# Gold Investment Decision - With Full NormCode Structure
+
+:<: result
+    <= Get the investment decision
+
+    <- price data | relation
+        <= get price data from market
+    <- news data | relation
+        <= get news data from sources
+    <- theoretical framework | object
+        <= get theoretical framework from experts
+    <- investor risk profile | object
+        <= collect investor constraints: risk tolerance, max position size, stop-loss rules, investment horizon
+
+    <- validated signal bundle
+        <= collect all signals together for validation
+        <- quantitative signals
+            <= compute price-based indicators from market data
+            <- price data
+        <- narrative signals
+            <= extract sentiment and themes from text sources
+            <- news data
+        <- theoretical framework
+
+    <- signals surpass theoretical expectations? | proposition
+        <= determine if technical signals exceed what theory predicts (bullish case)
+        <- validated signal bundle
+        <- theoretical framework
+
+    <- signals deviate from theoretical expectations? | proposition
+        <= determine if technical signals fall below what theory predicts (bearish case)
+        <- validated signal bundle
+        <- theoretical framework
+
+    <- signals are neutral? | proposition
+        <= determine if signals neither surpass nor deviate from expectations
+        <- signals surpass theoretical expectations?
+        <- signals deviate from theoretical expectations?
+
+    <- investment decision
+        <= make final investment decision based on all recommendations
+        <- investor risk profile
+        <- all recommendations | relation
+            <= combine all recommendations
+            <- bullish recommendation
+                <= generate buy recommendation with position sizing
+                    <= if signals surpass theoretical expectations
+                    <* signals surpass theoretical expectations?
+                <- validated signal bundle
+                <- investor risk profile
+            <- bearish recommendation
+                <= generate sell recommendation with position sizing
+                    <= if signals deviate from theoretical expectations
+                    <* signals deviate from theoretical expectations?
+                <- validated signal bundle
+                <- investor risk profile
+            <- neutral recommendation
+                <= generate hold recommendation
+                    <= if signals are neutral
+                    <* signals are neutral?
+                <- validated signal bundle

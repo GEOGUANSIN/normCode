@@ -41,12 +41,24 @@ def grouping_references(states: States) -> States:
     result_ref = None
 
     if states.syntax.marker == "in":
-        logging.debug(f"Performing 'and_in' grouping, removing by_axes: {legacy_by_axes}")
-        result_ref = grouper.and_in(
-            value_refs,
-            value_concept_names,
-            by_axes=legacy_by_axes,
-        )
+        # Determine by_axes (backward compatible)
+        if per_ref_by_axes is not None:
+            # New format: per-reference axes from syntax
+            logging.debug(f"Performing 'and_in' grouping with per-ref by_axes: {by_axes_for_grouper}")
+            result_ref = grouper.and_in(
+                value_refs,
+                value_concept_names,
+                by_axes=by_axes_for_grouper,
+                create_axis=create_axis,
+            )
+        else:
+            # Legacy format: derive from context concepts
+            logging.debug(f"Performing 'and_in' grouping (legacy), removing by_axes: {legacy_by_axes}")
+            result_ref = grouper.and_in(
+                value_refs,
+                value_concept_names,
+                by_axes=legacy_by_axes,
+            )
     elif states.syntax.marker == "across":
         logging.debug(f"Performing 'or_across' grouping")
         result_ref = grouper.or_across(

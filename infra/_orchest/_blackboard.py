@@ -16,6 +16,66 @@ class Blackboard:
     item_completion_details: Dict[str, str] = field(default_factory=dict) # flow_index -> 'success' or 'skipped'
     completed_concept_timestamps: Dict[str, float] = field(default_factory=dict)  # concept_name -> timestamp
     concept_to_flow_index: Dict[str, str] = field(default_factory=dict) # concept_name -> flow_index
+    # Truth masks from judgement inferences for filtering
+    # concept_name -> {'tensor': [...], 'axes': [...], 'filter_axis': str}
+    concept_truth_masks: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # Concept aliases for identity ($=) - maps alias_name -> canonical_name
+    # When two concepts are merged via $=, both names resolve to the same canonical concept
+    concept_aliases: Dict[str, str] = field(default_factory=dict)
+
+    def resolve_concept_name(self, concept_name: str) -> str:
+        """
+        Resolves a concept name through the alias chain to its canonical name.
+        Used for identity ($=) operations that merge two concepts into one.
+        """
+        # Follow alias chain (handles transitive aliases: A→B→C)
+        visited = set()
+        current = concept_name
+        while current in self.concept_aliases and current not in visited:
+            visited.add(current)
+            current = self.concept_aliases[current]
+        return current
+
+    def register_identity(self, concept_a: str, concept_b: str):
+        """
+        Registers an identity relationship: concept_a and concept_b are the SAME concept.
+        Both names will resolve to a single canonical name.
+        
+        This is bidirectional - after registration, looking up either name
+        will resolve to the same underlying concept.
+        """
+        # Resolve both to their current canonical forms
+        canonical_a = self.resolve_concept_name(concept_a)
+        canonical_b = self.resolve_concept_name(concept_b)
+        
+        if canonical_a == canonical_b:
+            logging.debug(f"Identity: '{concept_a}' and '{concept_b}' already resolve to '{canonical_a}'")
+            return
+        
+        # Choose canonical: prefer the one that already has status/data
+        # If both have status, prefer the one that's 'complete'
+        status_a = self.concept_statuses.get(canonical_a, "empty")
+        status_b = self.concept_statuses.get(canonical_b, "empty")
+        
+        if status_b == "complete" and status_a != "complete":
+            # B is more complete, make A point to B
+            canonical, alias = canonical_b, canonical_a
+        else:
+            # Default: A is canonical, B points to A
+            canonical, alias = canonical_a, canonical_b
+        
+        # Register the alias
+        self.concept_aliases[alias] = canonical
+        
+        # Merge statuses: if either is complete, both are complete
+        if status_a == "complete" or status_b == "complete":
+            self.concept_statuses[canonical] = "complete"
+        
+        # Copy flow_index mapping if alias had one
+        if alias in self.concept_to_flow_index and canonical not in self.concept_to_flow_index:
+            self.concept_to_flow_index[canonical] = self.concept_to_flow_index[alias]
+        
+        logging.info(f"Identity registered: '{alias}' → '{canonical}' (both names now resolve to same concept)")
 
     def initialize_states(self, concepts: List[Any], items: List[Any]):
         """Sets the initial state for all concepts and items."""
@@ -38,14 +98,16 @@ class Blackboard:
                 logging.info(f"Blackboard: Initial ground concept '{concept.concept_name}' set to 'complete'.")
 
     def get_concept_status(self, concept_name: str) -> str:
-        return self.concept_statuses.get(concept_name, "empty")
+        canonical = self.resolve_concept_name(concept_name)
+        return self.concept_statuses.get(canonical, "empty")
 
     def set_concept_status(self, concept_name: str, status: str):
-        self.concept_statuses[concept_name] = status
+        canonical = self.resolve_concept_name(concept_name)
+        self.concept_statuses[canonical] = status
         if status == 'complete':
-            if concept_name not in self.completed_concept_timestamps:
-                self.completed_concept_timestamps[concept_name] = time.time()
-                logging.info(f"  -> Blackboard: Recorded completion of '{concept_name}'.")
+            if canonical not in self.completed_concept_timestamps:
+                self.completed_concept_timestamps[canonical] = time.time()
+                logging.info(f"  -> Blackboard: Recorded completion of '{canonical}'.")
 
     def get_item_status(self, flow_index: str) -> str:
         return self.item_statuses.get(flow_index, "pending")
@@ -94,9 +156,41 @@ class Blackboard:
         return None
 
     def check_progress_condition(self, concept_name: str) -> bool:
-        """Checks if a concept's status is 'complete'."""
-        logging.info(f"Completed concepts for condition check '{concept_name}': {self.get_completed_concepts()}")
-        return self.get_concept_status(concept_name) == 'complete'
+        """Checks if a concept's status is 'complete'. Resolves aliases automatically."""
+        canonical = self.resolve_concept_name(concept_name)
+        logging.info(f"Completed concepts for condition check '{concept_name}' (canonical: '{canonical}'): {self.get_completed_concepts()}")
+        return self.get_concept_status(canonical) == 'complete'
+
+    # --- Truth mask methods for filter injection ---
+
+    def set_truth_mask(self, concept_name: str, truth_mask_data: Dict[str, Any]):
+        """
+        Store a truth mask from a judgement inference for use in filter injection.
+        
+        Args:
+            concept_name: The judgement concept name (e.g., '<doc is relevant>')
+            truth_mask_data: Dict containing:
+                - 'tensor': The truth mask data (list of '%{truth value}(true/false)')
+                - 'axes': List of axis names
+                - 'filter_axis': The primary filter axis name (from for-each quantifier)
+        """
+        self.concept_truth_masks[concept_name] = truth_mask_data
+        logging.info(f"Blackboard: Stored truth mask for '{concept_name}' with filter_axis='{truth_mask_data.get('filter_axis')}'")
+
+    def get_truth_mask(self, concept_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a truth mask for a judgement concept.
+        
+        Returns:
+            Truth mask data dict or None if not found.
+        """
+        return self.concept_truth_masks.get(concept_name)
+
+    def clear_truth_mask(self, concept_name: str):
+        """Remove a truth mask (e.g., when concept is reset in a loop)."""
+        if concept_name in self.concept_truth_masks:
+            del self.concept_truth_masks[concept_name]
+            logging.debug(f"Blackboard: Cleared truth mask for '{concept_name}'")
 
     # --- Serialization helpers for checkpointing ---
 
@@ -111,6 +205,11 @@ class Blackboard:
             "completed_concept_timestamps": self.completed_concept_timestamps.copy(),
             # concept_to_flow_index is derivable, but keeping it makes restoration trivial.
             "concept_to_flow_index": self.concept_to_flow_index.copy(),
+            # Truth masks for filter injection
+            "concept_truth_masks": {k: v.copy() if isinstance(v, dict) else v 
+                                    for k, v in self.concept_truth_masks.items()},
+            # Concept aliases for identity ($=) merging
+            "concept_aliases": self.concept_aliases.copy(),
         }
 
     def load_from_dict(self, data: Dict[str, Any]):
@@ -124,4 +223,6 @@ class Blackboard:
         self.item_completion_details.update(data.get("item_completion_details", {}))
         self.completed_concept_timestamps.update(data.get("completed_concept_timestamps", {}))
         self.concept_to_flow_index.update(data.get("concept_to_flow_index", {}))
+        self.concept_truth_masks.update(data.get("concept_truth_masks", {}))
+        self.concept_aliases.update(data.get("concept_aliases", {}))
         logging.info("Blackboard state loaded from dictionary.")
