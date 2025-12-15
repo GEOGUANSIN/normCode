@@ -19,6 +19,13 @@ A minimal Streamlit app for editing `.ncd` and `.ncn` files with inline editing 
    - Visibility controls: Hide comments, collapse sections
    - Live preview of all formats
 
+3. **`update_format.py`** - Format conversion and validation tool
+   - Convert between all NormCode formats
+   - Batch process multiple files
+   - Validate format consistency
+   - Generate companion files automatically
+   - Command-line interface for automation
+
 ## Quick Start
 
 ### 1. Run the Demo
@@ -259,7 +266,7 @@ The app follows a clear **Edit → Preview → Export** workflow:
 
 ```
 demo_editor.py
-├── Load files (.ncd, .ncn, or .nc.json)
+├── Load files (.ncd, .ncn, .ncdn, .nc.json, or .nci.json)
 ├── Parse with unified_parser.py
 ├── Display as inline editable fields
 ├── Track modifications
@@ -270,8 +277,26 @@ unified_parser.py
 │   └── Calculate hierarchical indices
 ├── parse()
 │   └── Combine .ncd and .ncn
-└── serialize()
-    └── Generate .ncd and .ncn from JSON
+├── serialize()
+│   └── Generate .ncd and .ncn from JSON
+├── serialize_ncdn()
+│   └── Generate .ncdn format
+├── parse_ncdn()
+│   └── Parse .ncdn format
+├── to_nci()
+│   └── Convert to inference format
+└── from_nci()
+    └── Convert from inference format
+
+update_format.py (CLI Tool)
+├── convert_file()
+│   └── Convert between formats
+├── validate_files()
+│   └── Check format consistency
+├── batch_convert()
+│   └── Process multiple files
+└── generate_companions()
+    └── Create companion files
 ```
 
 ## Tips
@@ -297,12 +322,99 @@ unified_parser.py
 - Create visual tree view
 - Add validation and error checking
 
+## Format Conversion Tool
+
+The `update_format.py` script provides powerful command-line tools for batch processing and format management.
+
+### Convert Single File
+
+```bash
+# Convert .ncd to .ncdn format
+python update_format.py convert example.ncd --to ncdn
+
+# Convert to .nci.json (inference format)
+python update_format.py convert example.ncd --to nci.json
+
+# Specify custom output path
+python update_format.py convert input.ncd --to ncdn --output custom_output.ncdn
+```
+
+### Validate Files
+
+```bash
+# Validate a single .ncd file
+python update_format.py validate example.ncd
+
+# Validate .ncd with companion .ncn
+python update_format.py validate example.ncd example.ncn
+```
+
+Validation checks:
+- Required field presence
+- Flow index consistency
+- Depth level validation
+- Round-trip conversion integrity
+
+### Batch Convert Directory
+
+```bash
+# Convert all .ncd files in directory to .ncdn
+python update_format.py batch-convert ./files --from ncd --to ncdn
+
+# Recursive conversion (includes subdirectories)
+python update_format.py batch-convert ./project --from ncd --to ncdn --recursive
+
+# Convert .ncdn back to .nc.json
+python update_format.py batch-convert ./files --from ncdn --to nc.json
+```
+
+### Generate Companion Files
+
+```bash
+# Generate all companion formats
+python update_format.py generate example.ncd --all
+
+# Generate specific formats
+python update_format.py generate example.ncd --ncn --json
+python update_format.py generate example.ncd --ncdn --nci
+```
+
+Supported formats:
+- `--ncn` - Natural language format
+- `--json` - JSON structure (.nc.json)
+- `--ncdn` - Hybrid format with inline annotations
+- `--nci` - Inference format (.nci.json)
+- `--all` - All of the above
+
+### Use Cases
+
+**Workflow 1: Project Migration**
+```bash
+# Convert entire project to .ncdn format for easier editing
+python update_format.py batch-convert ./normcode_project --from ncd --to ncdn --recursive
+```
+
+**Workflow 2: Format Validation**
+```bash
+# Validate all .ncd files before committing
+for file in *.ncd; do
+    python update_format.py validate "$file"
+done
+```
+
+**Workflow 3: Generate Missing Companions**
+```bash
+# You have .ncd files but missing .ncn
+python update_format.py generate example.ncd --ncn
+```
+
 ## Troubleshooting
 
 **Files not loading:**
 - Check file paths are correct
 - Ensure files exist in the specified location
 - Try absolute paths if relative paths fail
+- Use `update_format.py validate` to check format issues
 
 **Changes not saving:**
 - Check you have write permissions
@@ -313,4 +425,11 @@ unified_parser.py
 - Flow indices are auto-calculated
 - They depend on indentation depth
 - Check your depth values are correct
+- Use validation tool to identify issues
+
+**Format conversion errors:**
+- Run `python update_format.py validate` first
+- Check that input file is not corrupted
+- Ensure all required fields are present
+- Look for encoding issues (use UTF-8)
 

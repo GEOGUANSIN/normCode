@@ -62,6 +62,7 @@ chmod +x launch_demo.sh
 
 - `demo_editor.py` - Main Streamlit app
 - `unified_parser.py` - Parser/serializer
+- `update_format.py` - Format conversion and validation tool
 - `launch_demo.py` - Python launcher
 - `launch_demo.bat` - Windows launcher
 - `launch_demo.sh` - Unix/Linux/Mac launcher
@@ -80,6 +81,26 @@ Make sure you're in the `streamlit_app/examples` directory when running.
 
 **Can't find files?**
 The example files should be in the same directory as the launcher.
+
+## Quick Format Conversion
+
+Need to convert or validate files? Use the command-line tool:
+
+```bash
+# Convert a file
+python update_format.py convert example.ncd --to ncdn
+
+# Validate files
+python update_format.py validate example.ncd example.ncn
+
+# Generate all companion formats
+python update_format.py generate example.ncd --all
+```
+
+See help for more options:
+```bash
+python update_format.py --help
+```
 
 ## Next Steps
 
