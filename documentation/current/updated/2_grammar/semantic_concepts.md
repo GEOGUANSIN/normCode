@@ -140,6 +140,13 @@ These wrappers define the "boundary roles" of a concept within the plan:
 
 These concepts represent the "verbs"—operations that transform data or evaluate states. They invoke **Agent Sequences** to do the work.
 
+**The Role of Norms**: Functional concepts are unique because their Reference holds a **norm**—a paradigm or execution strategy that acts as the bridge between the Subject (agent with tools) and the Object (data). The norm specifies *how* the Subject should process the functional input. For example:
+- `sequence: imperative` → Use the imperative agent sequence
+- `paradigm: python_script` → Execute as Python code
+- `paradigm: Composition` → Use LLM with a prompt template
+
+This norm is what makes functional concepts "functional"—they don't just hold data; they configure an execution strategy.
+
 ### Imperative `({})`
 
 **Symbol**: `({_concept_name_})` or `::(_concept_name_)`  
@@ -164,13 +171,21 @@ These concepts represent the "verbs"—operations that transform data or evaluat
 
 **Structure (Full Form)**:
 ```
-:_Subject_:{_paradigm_}(_functional_input_with_value_placements_)
+:_Subject_:{_norm_}(_functional_input_with_value_placements_)
 ```
 
 - **Subject**: The entity performing the action (holds tools/sequences)
-- **Paradigm**: Execution strategy (e.g., `sequence: imperative`, `paradigm: python_script`)
-- **Functional input**: The instruction or script
-- **Value placements**: Variables mapped into the operation (`{1}`, `{2}`, etc.)
+- **Norm**: The **paradigm** or execution strategy (e.g., `sequence: imperative`, `paradigm: python_script`) stored in the functional reference. This is the key directive that configures how the Subject processes the functional input.
+- **Functional input**: The instruction or script (the "vertical input")
+- **Value placements**: Variables mapped into the operation (`{1}`, `{2}`, etc.) (the "horizontal inputs")
+
+**The Norm Concept**:
+The **norm** is the bridge between Subject and Object—it specifies *how* the Subject should process the functional input to produce the result. Examples:
+- `sequence: imperative` → Use the imperative agent sequence
+- `paradigm: python_script` → Execute as a Python script
+- `paradigm: Composition` → Use LLM composition with a prompt template
+
+This norm is stored in the **Functional Reference** and acts as a normative directive that configures the agent's behavior for this specific operation.
 
 ---
 
@@ -197,12 +212,15 @@ These concepts represent the "verbs"—operations that transform data or evaluat
 
 **Structure (Full Form)**:
 ```
-:_Subject_:{_paradigm_}(_functional_input_with_value_placements_) <_truth_asserting_>
+:_Subject_:{_norm_}(_functional_input_with_value_placements_) <_truth_asserting_>
 ```
 
 Extends imperative format with:
+- **Norm**: The paradigm specifying how to perform the evaluation
 - **Truth asserting**: Quantifier + condition (e.g., `ALL True`, `ANY 0`, `EXISTS`)
 - **Collapses**: Reference tensor values into a single boolean-like value
+
+Like imperatives, judgements use the **norm** to specify the evaluation strategy, then apply a truth assertion to collapse the result into a boolean state suitable for timing operators like `@:'` (conditional execution).
 
 ---
 
@@ -216,8 +234,10 @@ Understanding what each concept's Reference holds:
 | **Proposition (`<>`)** | Boolean state | Condition indicator |
 | **Relation (`[]`)** | Collection (List/Dict) | Group container |
 | **Subject (`:S:`)** | Body + tools | Agent/executor |
-| **Imperative (`({})`)** | Paradigm + instruction | Operation definition |
-| **Judgement (`<{}>`)** | Paradigm + truth assertion | Evaluation definition |
+| **Imperative (`({})`)** | **Norm** (paradigm) + instruction | Operation definition |
+| **Judgement (`<{}>`)** | **Norm** (paradigm) + truth assertion | Evaluation definition |
+
+**Critical distinction**: Functional concepts (imperative, judgement) store a **norm** in their reference, which acts as the joining point between the Subject (agent/tools) and the Object (data). The norm specifies the execution strategy or paradigm that configures how the Subject processes the functional input to produce the result.
 
 ---
 
@@ -277,13 +297,19 @@ The system must identify whether two occurrences refer to the **same entity** or
 The system must extract the core meaning, including:
 - Concept type (object, proposition, etc.)
 - Sequence to invoke (imperative, judgement, etc.)
+- **Norm** (paradigm or execution strategy)
 - Parameters (value order, selectors, etc.)
 
 **Defaults**: In simple cases like `::(Calculate Sum)`:
 - **Sequence**: `imperative`
 - **Mode**: Default agent mode (composition)
-- **Paradigm**: Default paradigm
+- **Norm/Paradigm**: Default paradigm (stored in functional reference)
 - **Value Order**: Same as provision order in the plan
+
+**Explicit Form**: In formal `.ncd`, the norm is explicitly stated:
+- `:Subject:{norm}(functional_input)` → Full specification
+- The **norm** configures how the Subject processes inputs
+- Examples: `{sequence: imperative}`, `{paradigm: python_script}`, `{paradigm: Composition}`
 
 **Explicit Auxiliaries**: In complex cases, markers like `{1}`, `{2}`, `<:{1}>` define:
 - Non-default behavior
@@ -310,11 +336,13 @@ The **Instance Marker** (`Y<$(_X_)%>`) explicitly links concrete to abstract:
 
 These alter the standard sequential flow:
 
-| Concept | Symbol | Purpose | Status |
-|---------|--------|---------|--------|
-| **NormCode Subject** | `:_:` | Bounded process requests/method definitions | Not implemented |
-| **Nominalization** | `$::` | Transform process into noun | Not implemented |
-| **Method** | `@by` | Specify execution method | Not implemented |
+| Concept | Symbol | Purpose | Example | Status |
+|---------|--------|---------|---------|--------|
+| **NormCode Subject** | `:_:` | Call to run a NormCode plan | `:_:{method}(inputs)` | Not implemented |
+| **Nominalization** | `$::` | Transform process into noun | `$::(process)` | Not implemented |
+| **Method** | `@by` | Specify execution method | `@by(method)` | Not implemented |
+
+**Note on NormCode Subject (`:_:`)**: Uses the structure `:_:{method}(functional input)` where the **norm** position holds `{method}` (a NormCode plan itself). This represents a call to run that NormCode plan with specific inputs—essentially composing plans together.
 
 > **Warning**: These are meta-instructions that restructure logic rather than executing direct steps. They are typically "translated away" during compilation.
 
@@ -401,12 +429,20 @@ These alter the standard sequential flow:
 <{}>   Judgement (evaluation/check)
 ```
 
+### Functional Concept Structure
+```
+:Subject:{norm}(functional_input with value placements)
+         └─ The norm (paradigm) configures execution strategy
+```
+
 ### Special Markers
 ```
 :>:    Input marker (external data)
 :<:    Output marker (final result)
-:_:    NormCode subject (not implemented)
+:_:    NormCode subject - :_:{method}(inputs) (not implemented)
 ```
+
+**Note**: `:_:` uses `{method}` (a NormCode plan) in the norm position.
 
 ### Extraction Hints
 ```
@@ -416,6 +452,9 @@ Plurals        → []   Relations
 Action verbs   → ({}) Imperatives
 Questions      → <{}> Judgements
 ```
+
+### Key Concept: The Norm
+The **norm** is the essential element in functional concepts that specifies the paradigm or execution strategy. It bridges the Subject (agent/tools) and Object (data), configuring how operations are performed.
 
 ---
 

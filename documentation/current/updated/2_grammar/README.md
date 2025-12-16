@@ -143,8 +143,10 @@ Learn about:
 | `{}` | Object | `{document}`, `{result}` |
 | `<>` | Proposition | `<is valid>`, `<ready>` |
 | `[]` | Relation | `[files]`, `[numbers]` |
-| `({})` | Imperative | `::(calculate sum)` |
-| `<{}>` | Judgement | `<{is complete}>` |
+| `({})` | Imperative | `::(calculate sum)` (holds **norm**) |
+| `<{}>` | Judgement | `<{is complete}>` (holds **norm**) |
+
+**Note**: Functional concepts (imperative, judgement) contain a **norm**—a paradigm that specifies the execution strategy.
 
 ### Syntactic Operator Families
 

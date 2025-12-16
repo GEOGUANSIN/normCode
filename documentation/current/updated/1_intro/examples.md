@@ -50,7 +50,7 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- user sentiment
-    <= determine if the user is satisfied with their experience
+    <= determine sentiment level (high, medium, low) based on the user's experience
     <- support ticket
     <- conversation history
 ```
@@ -90,20 +90,29 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- final output
-    <= return the final result
-        <= if draft needs review
-        <* draft needs review?
+    <= select reviewed output if available otherwise use draft output
+    <- draft needs review?
+        <= check if draft requires review
+        <- draft output
     <- reviewed output
         <= perform human review and corrections
+            <= if draft needs review
+            <* draft needs review?
         <- draft output
+    <- draft output
 ```
 
 **Execution**:
-1. Check if `draft needs review?` is true
-2. If true: run review → `reviewed output`
-3. Return final result
+1. Generate `draft output`
+2. Check if `draft needs review?` is true
+3. If true: run review → `reviewed output`
+4. Select appropriate output (syntactic) → `final output`
 
-**LLM calls**: 1-2 (depending on condition)
+**LLM calls**: 1-2 (check + optional review)
+
+**Structure notes**:
+- Timer `<= if draft needs review` is on the review operation, not the selection
+- Selection is syntactic (no LLM call), just picks available output
 
 ---
 
@@ -111,19 +120,25 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- validated result
-    <= use the result if valid, otherwise use fallback
+    <= select valid result
+        <= if primary analysis failed
+        <* primary analysis failed?
+    <- primary analysis failed?
+        <= check if primary result is valid
+        <- primary result
     <- primary result
         <= attempt primary analysis
         <- input data
     <- fallback result
-        <= if primary analysis failed
-        <* primary analysis failed?
+        <= use simple approach as fallback
+        <- input data
 ```
 
 **Execution**:
-1. Try primary analysis
-2. If failed: use fallback
-3. Return validated result
+1. Try primary analysis → `primary result`
+2. Check if failed → `primary analysis failed?`
+3. Select: if failed use `fallback result`, else use `primary result`
+4. Return `validated result`
 
 ---
 
@@ -133,19 +148,26 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- all summaries
-    <= for every document in the list
-    <- document summary
-        <= summarize this document
-        <- document
-    <* documents to process
+    <= for every document in the list return the document summary
+        <= select document summary to return
+        <- document summary
+            <= summarize this document
+            <- document to process now
+    <- documents
+    <* document to process now
 ```
 
 **Execution**:
-1. For each document in `documents to process`
-2. Summarize → collect results
-3. Return `all summaries`
+1. For each `document to process now` in `documents`
+2. Summarize → `document summary`
+3. Collect all results → `all summaries`
 
 **LLM calls**: N (one per document)
+
+**Structure notes**:
+- `<- documents`: Base collection (value concept)
+- `<* document to process now`: Current element in iteration (context concept)
+- `<= select document summary to return`: Specification selecting output per iteration
 
 ---
 
@@ -153,17 +175,19 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- extracted features
-    <= gather results from each document
-    <- feature from doc
-        <= extract key features and themes
-        <- document
-    <* document collection
+    <= for each document in collection return the feature from doc
+        <= select feature from doc
+        <- feature from doc
+            <= extract key features and themes
+            <- current document
+    <- document collection
+    <* current document
 ```
 
 **Execution**:
-1. For each in `document collection`
-2. Extract features
-3. Gather all results
+1. For each `current document` in `document collection`
+2. Extract features → `feature from doc`
+3. Gather all results → `extracted features`
 
 **LLM calls**: N (one per document)
 
@@ -175,7 +199,7 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- all inputs
-    <= collect these items together
+    <= collect these items together as one group
     <- user query
     <- system context
     <- retrieved documents
@@ -192,7 +216,7 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- analysis results
-    <= gather results from all analyses
+    <= gather results from all analyses as one info unit
     <- sentiment analysis
         <= analyze sentiment
         <- text
@@ -246,18 +270,20 @@ Simple, self-contained example plans showing common patterns.
     <- major themes
         <= identify common themes
         <- all findings
-            <= for every paper
-            <- key findings
-                <= extract main findings
-                <- paper
-            <* research papers
+            <= for every paper return the key findings
+                <= select key findings
+                <- key findings
+                    <= extract main findings
+                    <- current paper
+            <- research papers
+            <* current paper
 ```
 
 **Execution**:
-1. For each paper: extract findings
-2. Collect all findings
-3. Identify themes
-4. Synthesize
+1. For each `current paper` in `research papers`: extract findings
+2. Collect `all findings`
+3. Identify `major themes`
+4. Synthesize → `final synthesis`
 
 **LLM calls**: N + 2 (N papers + theme identification + synthesis)
 
@@ -270,19 +296,24 @@ Simple, self-contained example plans showing common patterns.
 ```ncds
 <- final answer
     <= select the first valid result
+    <- complex reasoning failed?
+        <= check if primary answer is valid
+        <- primary answer
+    <- fallback answer
+        <= use simple approach
+            <= if complex reasoning failed
+            <* complex reasoning failed?
+        <- question
     <- primary answer
         <= attempt complex reasoning
-        <- question
-    <- fallback answer
-        <= if complex reasoning failed, use simple approach
-        <* complex reasoning failed?
         <- question
 ```
 
 **Execution**:
-1. Try complex reasoning
-2. If failed: try simple approach
-3. Select first valid result
+1. Try complex reasoning → `primary answer`
+2. Check validity → `complex reasoning failed?`
+3. If failed: use `fallback answer`
+4. Select first valid → `final answer`
 
 ---
 
@@ -290,11 +321,16 @@ Simple, self-contained example plans showing common patterns.
 
 ```ncds
 <- validated output
-    <= validate and correct if needed
+    <= select the first available as output
+    <= corrected output
+        <= correct 
+            <= if validation result is not ok
+            <* validation result?
+        <- generated output
     <- generated output
         <= generate initial output
         <- input
-    <- validation result
+    <- validation result?
         <= check if output meets requirements
         <- generated output
         <- requirements
@@ -311,15 +347,22 @@ Simple, self-contained example plans showing common patterns.
 
 ### Pattern 1: Clean → Process → Validate
 
+
 ```ncds
-<- final result
-    <= validate the output meets standards
-    <- processed data
-        <= perform main analysis
-        <- clean data
-            <= clean and normalize input
-            <- raw data
-    <- quality standards
+<- validated output
+    <= select the first available as output
+    <= corrected output
+        <= correct 
+            <= if validation result is not ok
+            <* validation result?
+        <- generated output
+    <- generated output
+        <= generate initial output
+        <- input
+    <- validation result?
+        <= check if output meets requirements
+        <- generated output
+        <- requirements
 ```
 
 Common for production workflows.
@@ -350,14 +393,18 @@ Common for decision support systems.
     <- aggregated results
         <= combine all individual results
         <- individual result
-            <= for every item
-            <- processed item
-                <= process this item
-                <- item
-            <* items to process
+            <= for every item return the processed item
+                <= select processed item
+                <- processed item
+                    <= process this item
+                    <- current item
+            <- items to process
+            <* current item
 ```
 
 Common for batch processing.
+
+**Structure**: Loop over `items to process`, for each `current item` process it, collect `individual result`, aggregate, then summarize.
 
 ---
 
@@ -443,7 +490,7 @@ Group free syntactic operations, isolate costly semantic ones.
 <- final result
     <= expensive LLM analysis        # Semantic (costs tokens)
     <- all inputs
-        <= collect items together     # Syntactic (free)
+        <= collect items together as a group    # Syntactic (free)
         <- input A
         <- input B
         <- input C

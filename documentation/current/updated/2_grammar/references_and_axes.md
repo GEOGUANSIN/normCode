@@ -84,14 +84,16 @@ For **Proposition concepts (`<>`)**, elements represent boolean states:
 
 Used by the `Timer` for branching (`@if`).
 
-#### C. Functional Reference Elements (Vertical Inputs)
+#### C. Functional Reference Elements (The Norm)
 
-For **Functional concepts (`({})`, `<{}>`)**, the Reference holds the operation definition:
-- **Direct Prompts**: `%{prompt}...` — Raw text of a prompt
+For **Functional concepts (`({})`, `<{}>`)**, the Reference holds the **norm**—the paradigm or execution strategy that configures how the operation is performed:
+- **Direct Prompts**: `%{prompt}...` — Raw text of a prompt (norm: composition)
 - **Prompt Locations**: `%{prompt_location}...` — Pointer to a template file
-- **Script Locations**: `%{script_location}...` — Pointer to a Python script
+- **Script Locations**: `%{script_location}...` — Pointer to a Python script (norm: python_script)
 
-Read during the **MFP** (Model Function Perception) step.
+**Key insight**: The **norm** is what makes functional concepts "functional"—it specifies the paradigm (e.g., `sequence: imperative`, `paradigm: python_script`) that bridges the Subject (agent/tools) and Object (data).
+
+Read during the **MFP** (Model Function Perception) step, the norm configures how the agent will process the functional input.
 
 #### D. Subject Reference Elements (Agents)
 

@@ -34,9 +34,11 @@ The `.ncd` format provides just enough structure to be unambiguous and executabl
 
 The fundamental unit of a NormCode plan is the **inference**. An inference is a self-contained logical operation defined by:
 
-1. **Functional Concept (`<=`)**: Defines the core operation and invokes an agent sequence
+1. **Functional Concept (`<=`)**: Defines the core operation and invokes an agent sequence. Usually contains a **norm** that specifies the execution strategy.
 2. **Value Concept (`<-`)**: Provides the input/output data
 3. **Context Concept (`<*`)**: Optional in-loop state or carried data
+
+**The Norm**: The functional concept's reference holds a **norm**—a paradigm or execution strategy (e.g., `sequence: imperative`, `paradigm: python_script`, `method: NormCode_ncd`) that configures how the agent processes the operation.
 
 ### Concept Markers
 
