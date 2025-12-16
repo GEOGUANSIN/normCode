@@ -117,12 +117,12 @@ Flow indices (e.g., `1.1.2`) serve as unique addresses for each step in the plan
 ```ncd
 :<:{result} | ?{flow_index}: 1
     <= ::(compute) | ?{flow_index}: 1.1
-    <- {input A} | ?{flow_index}: 1.1.1
-        <= ::(process A) | ?{flow_index}: 1.1.1.1
-        <- {raw A} | ?{flow_index}: 1.1.1.1.1
-    <- {input B} | ?{flow_index}: 1.1.2
-        <= ::(process B) | ?{flow_index}: 1.1.2.1
-        <- {raw B} | ?{flow_index}: 1.1.2.1.1
+    <- {input A} | ?{flow_index}: 1.2
+        <= ::(process A) | ?{flow_index}: 1.2.1
+        <- {raw A} | ?{flow_index}: 1.2.1.1
+    <- {input B} | ?{flow_index}: 1.3
+        <= ::(process B) | ?{flow_index}: 1.3.1
+        <- {raw B} | ?{flow_index}: 1.3.1.1
 ```
 
 **Example (Deprecated - Old Versions)**:
@@ -155,7 +155,7 @@ _concept_definition_ | _comment_
 
 ### Comment Types
 
-#### 1. Syntactical Comments (`?{...}:`)
+#### 1. Syntactical Comments (`?{_comment_norm_}:`)
 
 Relate to the structure and flow of the NormCode:
 
@@ -165,7 +165,7 @@ Relate to the structure and flow of the NormCode:
 | `?{flow_index}:` | Step identifier | `?{flow_index}: 1.1.2` |
 | `?{natural_language}:` | Natural language description | `?{natural_language}: Extract main content` |
 
-#### 2. Referential Comments (`%{...}:`)
+#### 2. Referential Comments (`%{_comment_norm_}:`)
 
 Comment on the reference or type of data:
 
@@ -174,7 +174,7 @@ Comment on the reference or type of data:
 | `%{paradigm}:` | Execution paradigm | `%{paradigm}: python_script` |
 | `%{location_string}:` | File location | `%{location_string}: data/input.txt` |
 
-#### 3. Translation Comments
+#### 3. Derivation Comments
 
 Used during compilation to document the transformation process:
 
@@ -184,7 +184,7 @@ Used during compilation to document the transformation process:
 | `?:` or `\|?:` | Question guiding decomposition | `?: What operation is being performed?` |
 | `/:` or `\|/:` | Description of result | `/: This computes the final total` |
 
-**Note**: Translation comments mark concepts as "un-decomposed" (`...:`) or "complete" (`/:`).
+**Note**: Derivation comments mark concepts as "un-decomposed" (`...:`) or "complete" (`/:`).
 
 ---
 
@@ -193,23 +193,22 @@ Used during compilation to document the transformation process:
 Here's a real inference from an addition algorithm:
 
 ```ncd
-<- {digit sum} | ?{flow_index}: 1.1.2 | ?{sequence}: imperative
-    <= ::(sum {1}<$([all {unit place value} of numbers])%_> and {2}<$({carry-over number}*1)%_> to get {3}?<$({sum})%_>)
-    <- [all {unit place value} of numbers]<:{1}>
-    <- {carry-over number}*1<:{2}>
-    <- {sum}?<:{3}>
+<- {digit sum} | ?{flow_index}: 1.2
+    <= ::(sum {1}<$([all {unit place value} of numbers])%> and {2}<$({carry-over number}*1)%> to get {3}<$({sum})%>) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
+    <- [all {unit place value} of numbers]<:{1}> | ?{flow_index}: 1.2.2
+    <- {carry-over number}*1<:{2}> | ?{flow_index}: 1.2.3
+    <- {sum}<:{3}> | ?{flow_index}: 1.2.4
 ```
 
 **Breaking it down**:
-- **Goal**: Produce a `{digit sum}`
+- **Goal**: Produce a `{digit sum}` (flow_index: 1.2)
+- **Functional Concept** (1.2.1): Sum operation with positional bindings using instance markers `<$()%>`
+- **Value Concepts** (1.2.2-1.2.4): Three inputs with explicit position markers (`<:{1}>`, `<:{2}>`, `<:{3}>`)
 - **Sequence**: `imperative` (calls an LLM or tool)
-- **Functional Concept**: Sum two numbers with positional bindings
-- **Value Concepts**: Three inputs with explicit position markers (`<:{1}>`, `<:{2}>`, `<:{3}>`)
-- **Metadata**: Flow index `1.1.2` indicates this is the second substep of the first substep
 
 ---
 
-## Three-Format Ecosystem
+## Three Formats for Human Review
 
 NormCode uses three formats for different purposes:
 
@@ -236,10 +235,10 @@ The formal syntax exists because natural language is ambiguous:
 | Ambiguity in `.ncds` | How `.ncd` Resolves It |
 |----------------------|------------------------|
 | "Add A and B" — which is first? | Value bindings (`<:{1}>`, `<:{2}>`) fix positions |
-| "The result" — which result? | Identity markers (`<$={1}>`) distinguish instances |
-| "Process the data" — LLM or code? | Operation markers (`::()` vs `&in`) are explicit |
+| "The result" — which result? | Identification markers (`<$({condition})=>`) distinguish instances |
+| "Process the data" — LLM or code? | Operation markers (`::()` vs `&[{}]`) are explicit |
 | "After step 3" — which step 3? | Flow indices (`1.2.3`) are unambiguous |
-| "A number" — what type exactly? | Type annotations (`<$({number})%>`) enforce structure |
+| "A number" — what type exactly? | Instance markers (`<$({number})%>`) enforce structure |
 
 ### When You'll Read `.ncd`
 
@@ -266,18 +265,18 @@ You don't write `.ncd` by hand, but you'll interact with it when:
 
 ### Compiler generates (`.ncd`):
 ```ncd
-:<:({result files})
-    <= &across
-    <- {Phase 1 output}
-        <= :%(Composition):{paradigm}({prompt}<$({PromptTemplate})%>; {1}<$({Input})%>)
-        <- {analysis prompt}<:{prompt}>
-        <- {input files}<:{1}>
+:<:([all {phase 1 output}]) | ?{flow_index}: 1
+    <= &[#] %>({Phase 1 output}) %: ({Phase 1 output})| ?{flow_index}: 1.1 | ?{sequence}: grouping
+    <- {Phase 1 output} | ?{flow_index}: 1.2
+        <= ::{paradigm}({prompt}<$({PromptTemplate})%>; {1}<$({Input})%>) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
+        <- {analysis prompt}<:{prompt}> | ?{flow_index}: 1.2.2
+        <- {input files}<:{1}> | ?{flow_index}: 1.2.3
 ```
 
 ### Reviewers see (`.ncn`):
 ```ncn
-(OUTPUT) the result files to be outputted
-    (ACTION) are obtained across the following
+(OUTPUT) all phase 1 outputs to be outputted
+    (ACTION) are obtained by collecting across the following
     (VALUE) Phase 1 output
         (ACTION) is obtained by running a model paradigm with a prompt template
         (VALUE) where the given prompt is the analysis prompt
@@ -302,7 +301,7 @@ The `.ncd` syntax is dense by design, but this comes with real costs:
 **Why accept these costs?**
 
 1. **Progressive Formalization**: Start loose (`.ncds`), tighten to production-ready (`.ncd`)
-2. **Auditability**: For high-stakes workflows, you *need* to prove what each step saw
+2. **Auditability**: For high-stakes workflows, you *need* to prove what each step saw with auxillary format like (`.ncn`)
 3. **Tooling Absorbs Complexity**: You don't write `.ncd` by hand—tools handle it
 
 **The honest tradeoff**: NormCode's formalism is overkill for quick prototypes but essential for reliable, auditable, multi-step AI workflows.
@@ -333,16 +332,21 @@ The `.ncd` syntax is dense by design, but this comes with real costs:
 ```
 |?{sequence}: imperative     # Syntactical (structure)
 |%{paradigm}: python_script  # Referential (data type)
-|/: This computes X          # Translation (description)
+|/: This computes X          # Derivation (description)
 ```
 
 ### Flow Index Example
+Flow indices provide unique addresses for each step:
+
 ```ncd
-| ?{flow_index}: 1       Root concept
-| ?{flow_index}: 1.1     First child
-| ?{flow_index}: 1.1.1   First grandchild
-| ?{flow_index}: 1.1.2   Second grandchild
-| ?{flow_index}: 1.2     Second child
+<- _concept_to_infer_ | ?{flow_index}: (NN).1           /:Root concept (depth 0)
+    <= _functional_concept_1_ | ?{flow_index}: (NN).1.1         /:First child (depth 1)
+    <- _input_value_1_ | ?{flow_index}: (NN).1.2                /:Second child (depth 1)
+        <= _functional_concept_2_ | ?{flow_index}: (NN).1.2.1       /:First grandchild (depth 2)
+        <- _nested_input_1_ | ?{flow_index}: (NN).1.2.1.1           /:First great-grandchild (depth 3)
+        <- _nested_input_2_ | ?{flow_index}: (NN).1.2.1.2           /:Second great-grandchild (depth 3)
+    <- _input_value_2_ | ?{flow_index}: (NN).1.3                /:Third child (depth 1)
+    <* _context_value_ | ?{flow_index}: (NN).1.4                /:Fourth child (depth 1)
 ```
 
 ---

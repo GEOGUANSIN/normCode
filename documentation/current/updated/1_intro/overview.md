@@ -143,19 +143,21 @@ NormCode occupies a deliberate position between natural language and formal spec
 
 NormCode uses multiple formats for different purposes:
 
-### Primary Formats: Three Views of the Same Plan
+### Four Major Formats
 
 | Format | Purpose | What You See |
 |--------|---------|--------------|
-| **`.ncds`** | Draft/authoring format | Rough logic and concept environment—easiest to write |
-| **`.ncd`** | Formal syntax | Structured with operators: `<= extract clauses related to liability` |
-| **`.ncn`** | Natural language | Readable narrative: "Extract the liability-related clauses from the contract" |
+| **`.ncds`** | Draft/authoring | Rough logic and concept environment—easiest to write |
+| **`.ncd`** | Formal executable syntax | Structured with operators|
+| **`.nci.json`** | Inference structure | Clear flow structure showing inferences and their relationships |
+| **`.concept.json` + `.inference.json`** | Executable repositories | Separated concept and inference repositories for orchestrator |
 
-**Additional formats**: `.ncdn` (hybrid editor format), `.nc.json` and `.nci.json` (used by tooling for validation and execution)
+**Companion formats**: `.ncn` (natural language companion to `.ncd`), `.ncdn` (hybrid editor format showing both)  
+**Auxiliary formats**: `.nc.json` (JSON structure of `.ncd`)
 
-### Why Multiple Views?
+### Why Multiple Formats?
 
-These aren't just different file formats—they're different perspectives on the same plan:
+These aren't just different file formats—they're different representations for different stages and audiences:
 
 **`.ncds` (Draft/Authoring)**:
 - First draft format—start here when creating new plans
@@ -167,27 +169,35 @@ These aren't just different file formats—they're different perspectives on the
 - Unambiguous syntax for the compiler and orchestrator
 - Machine-parsable, directly executable
 - Contains all technical details (types, operators, references)
+- Comes with `.ncn` companion for natural language view
 
-**`.ncn` (Natural Language)**:
-- Human-readable descriptions
-- Explains intent in plain language
-- Perfect for non-technical stakeholders to review
-- Generated automatically from `.ncd`
+**`.nci.json` (Inference Structure)**:
+- JSON format showing clear inference flow structure
+- Each inference explicitly shows: concept to infer, function concept, value concepts
+- Intermediate format in the compilation pipeline
+- Perfect for flow analysis and debugging before activation
 
-**`.ncdn` (Hybrid Editor Format)**:
-- Shows both `.ncd` and `.ncn` side-by-side
-- Used by the visual editor
-- Lets you edit formal structure while seeing natural language
+**`.concept.json` + `.inference.json` (Executable Repositories)**:
+- **`.concept.json`**: Repository of all concepts (values, functions, contexts)
+- **`.inference.json`**: Repository of all inferences with working interpretations
+- Separated repositories loaded by the orchestrator for execution
+- Contains all syntax details and paradigm configurations
+
+**Supporting Formats**:
+- **`.ncn`**: Natural language companion to `.ncd` (not standalone—always paired)
+- **`.ncdn`**: Hybrid editor format showing both `.ncd` and `.ncn` together
+- **`.nc.json`**: JSON structure of `.ncd`
 
 ### Typical Workflow
 
 1. **Author**: Write your plan in `.ncds` (draft format)
-2. **Formalize**: Compiler transforms `.ncds` → `.ncd` (adds types, operators)
-3. **Review**: Generate `.ncn` for stakeholder review (natural language)
-4. **Edit**: Use `.ncdn` format in the visual editor when you want both views
-5. **Execute**: Compiler activates `.ncd` → JSON repositories for orchestrator
+2. **Formalize**: Compiler transforms `.ncds` → `.ncd` + `.ncn` companion (adds types, operators)
+3. **Review**: Use `.ncn` for stakeholder review (natural language) or `.ncdn` in the editor (hybrid view)
+4. **Structure**: Compiler transforms `.ncd` → `.nci.json` (inference structure)
+5. **Activate**: Compiler separates `.nci.json` → `.concept.json` + `.inference.json` (executable repositories)
+6. **Execute**: Orchestrator loads the repositories and executes the plan
 
-The tooling handles most transformations automatically. You focus on writing clear plans.
+The compiler handles most transformations automatically. You focus on writing clear plans.
 
 | Approach | Pros | Cons | Example |
 |----------|------|------|---------|
@@ -265,13 +275,13 @@ NormCode plans go through a compilation process from draft to execution:
 **What happens in each phase**:
 1. **Authoring**: You write the plan in `.ncds` (draft format)—easy and flexible
 2. **Derivation**: Natural language descriptions → structured concepts
-3. **Formalization**: Add semantic types, operators, and formal structure → `.ncd` format
-4. **Post-formalization**: Add execution paradigms and resource configurations
-5. **Activation**: Generate executable repositories (`concept_repo.json` + `inference_repo.json`)
+3. **Formalization**: Add semantic types, operators, and formal structure → `.ncd` + `.ncn` formats
+4. **Post-formalization**: Add execution paradigms and resource configurations → `.nci.json`
+5. **Activation**: Generate executable JSON repositories for orchestrator. Seperate concepts  `.concept.json` from inference 
+`.inference.json` and add working interpretations (syntax details) to the inference repository.
+The orchestrator then loads the inference structure and executes your plan step-by-step.
 
-The orchestrator then loads these repositories and executes your plan step-by-step.
-
-> For most users, phases 2-5 are automatic. You write `.ncds`, run the compiler, and get executable plans.
+> For most users, phases 2-5 are automatic. You write `.ncds`, run the compiler, and get `.concept.json` and `.inference.json` for execution.
 
 ---
 
@@ -292,10 +302,10 @@ Every intermediate state is explicit and independently inspectable. Perfect for 
 Know exactly which steps call LLMs (expensive, non-deterministic) vs. which are free (deterministic).
 
 **5. Progressive Development**  
-Start with a rough draft with simple NormCode, then build up complexity in future versions to increase reliability.
+Start with a rough draft in `.ncds`, then incrementally refine and formalize to increase reliability.
 
-**6. Reusable Execution**  
-Built-in checkpointing and forking, allowing the chaining of multiple plans easily.
+**6. Resumable Execution**  
+Built-in checkpointing and forking, allowing plans to pause, resume, and chain easily.
 
 ---
 

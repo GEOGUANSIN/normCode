@@ -139,11 +139,13 @@ This documentation follows these principles:
 
 | Format | Purpose | Audience |
 |--------|---------|----------|
-| `.ncd` | Formal syntax | Orchestrator, compiler |
-| `.ncn` | Natural language | Human reviewers |
-| `.ncdn` | Hybrid (NCD + NCN) | Editor users |
+| `.ncds` | Draft/authoring | Plan writers (start here) |
+| `.ncd` | Formal syntax | Compiler (intermediate) |
+| `.concept.json` + `.inference.json` | Executable repositories | Orchestrator (runtime) |
 
-**Auxiliary formats**: `.nc.json`, `.nci.json`, `.ncds` (tooling and variants)
+**Companion formats**: `.ncn` (natural language view of `.ncd`), `.ncdn` (hybrid editor format)  
+**Intermediate formats**: `.nci.json` (inference structure for post-formalization)  
+**Auxiliary formats**: `.nc.json` (JSON structure for tooling)
 
 ---
 
@@ -162,10 +164,10 @@ Every intermediate state is explicit and independently inspectable. Perfect for 
 Know exactly which steps call LLMs (expensive, non-deterministic) vs. which are free (deterministic).
 
 **5. Progressive Development**  
-Start with a rough draft with simple NormCode, then build up complexity in future versions to increase reliability.
+Start with a rough draft in `.ncds`, then incrementally refine and formalize to increase reliability.
 
-**6. Reusable Execution**  
-Built-in checkpointing and forking, allowing the chaining of multiple plans easily.
+**6. Resumable Execution**  
+Built-in checkpointing and forking, allowing plans to pause, resume, and chain easily.
 
 ---
 
@@ -199,8 +201,8 @@ A: Start with [Quickstart](1_intro/quickstart.md), then see [Examples](1_intro/e
 **Q: How do I run a plan?**  
 A: See [Tools](5_tools/README.md) (coming soon) or [legacy StreamlitAPP_README](../StreamlitAPP_README.md)
 
-**Q: What's the difference between `.ncd`, `.ncn`, and `.ncdn`?**  
-A: `.ncd` is formal syntax, `.ncn` is natural language, `.ncdn` is a hybrid editor format showing both. See [Overview](1_intro/overview.md#multiple-formats-one-system)
+**Q: What's the difference between `.ncds`, `.ncd`, `.nci.json`, and the `.json` repositories?**  
+A: `.ncds` is draft format (start here), `.ncd` is formal syntax, `.nci.json` is intermediate inference structure, and `.concept.json` + `.inference.json` are the final executable repositories loaded by the orchestrator. `.ncn` is an optional companion showing natural language. See [Overview](1_intro/overview.md#multiple-formats-one-system)
 
 **Q: Is this for me?**  
 A: If you have complex multi-step LLM workflows (5+ steps) and need debuggability/auditability, yes. For simple tasks, no.

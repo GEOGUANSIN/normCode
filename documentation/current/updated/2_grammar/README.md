@@ -166,6 +166,7 @@ Learn about:
 | `%:` | Axis (dimension) | `%:({axis_name})` |
 | `%^` | Carry (state) | `%^({state}*-1)` |
 | `%@` | Index (position) | `%@(1)` |
+| `%+` | Create (new axis) | `%+(axis_name)` |
 
 ---
 
@@ -276,10 +277,10 @@ A: Check flow indices, verify operator syntax, trace data flow through reference
 **`.ncd` (what compiler generates)**:
 ```ncd
 :<:{document summary} | ?{flow_index}: 1
-    <= ::(summarize this text) | ?{sequence}: imperative
-    <- {clean text} | ?{flow_index}: 1.1
-        <= ::(extract main content) | ?{sequence}: imperative
-        <- {raw document} | ?{flow_index}: 1.1.1
+    <= ::(summarize this text) | ?{flow_index}: 1.1 | ?{sequence}: imperative
+    <- {clean text} | ?{flow_index}: 1.2
+        <= ::(extract main content) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
+        <- {raw document} | ?{flow_index}: 1.2.1.1
 ```
 
 ---
@@ -299,11 +300,12 @@ A: Check flow indices, verify operator syntax, trace data flow through reference
 **`.ncd` (what compiler generates)**:
 ```ncd
 :<:{all summaries} | ?{flow_index}: 1
-    <= *. %>({documents}*1) %<({summary}) %:({document}) %@(1) | ?{sequence}: looping
-    <- {summary} | ?{flow_index}: 1.1
-        <= ::(summarize this document) | ?{sequence}: imperative
-        <- {document}*1 | ?{flow_index}: 1.1.1
-    <* {documents} | ?{flow_index}: 1.2
+    <= *. %>({documents}) %<({summary}) %:({document}) %@(1) | ?{flow_index}: 1.1 | ?{sequence}: looping
+    <- {summary} | ?{flow_index}: 1.2
+        <= ::(summarize this document) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
+        <- {document}*1 | ?{flow_index}: 1.2.1.1
+    <- {documents} | ?{flow_index}: 1.3
+    <* {document}<$({documents})*> | ?{flow_index}: 1.4
 ```
 
 ---

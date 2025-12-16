@@ -10,9 +10,9 @@ We'll write a simple document summarization plan in `.ncd` format.
 
 ### Step 1: Write the Plan
 
-Create a file called `summarize.ncd`:
+Create a file called `summarize.ncds`:
 
-> **Note**: You can also write in `.ncds` (draft format—easier to start with), or use the `.ncdn` editor format to see both formal and natural language together.
+> **Note**: Start with `.ncds` (draft format). The compiler will formalize it to `.ncd` (with `.ncn` companion), structure it to `.nci.json`, and activate it to `.concept.json` + `.inference.json` for execution. You can also use `.ncdn` in the editor to see both formal and natural language together.
 
 ```ncds
 <- document summary
@@ -71,9 +71,9 @@ Plans execute **dependency-driven**:
 ```ncds
 <- quarterly report
     <= compile findings into executive summary
-    <- analyzed data                   # Need this first!
+    <- analyzed data                   /: Need this first!
         <= identify trends and anomalies
-        <- raw metrics                 # And this before that!
+        <- raw metrics                 /: And this before that!
 ```
 
 **Execution order**:
@@ -92,7 +92,7 @@ This is **illegal**:
 ```ncds
 <- output
     <= do step 1
-    <= do step 2  # ❌ ILLEGAL: two actions
+    <= do step 2  /: ❌ ILLEGAL: two actions
 ```
 
 If you need multiple steps, **nest them**:
@@ -166,16 +166,18 @@ No LLM call. Just data structuring.
 
 ```ncds
 <- all summaries
-    <= for every document in the list
-    <- document summary
-        <= summarize this document
-        <- document
-    <* documents to process
+    <= for every document in the list return the document summary
+        <= select document summary to return
+        <- document summary
+            <= summarize this document
+            <- document to process now
+    <- documents
+    <* document to process now
 ```
 
 "For every document" → compiler recognizes a **loop**.
 
-It will iterate through `documents to process`, produce a summary for each, then collect results.
+It will iterate through `documents`, produce a summary for each `document to process now`, then collect results into `all summaries`.
 
 ---
 
@@ -183,15 +185,19 @@ It will iterate through `documents to process`, produce a summary for each, then
 
 ```ncds
 <- final output
-    <= return the result
-        <= if draft needs review
-        <* draft needs review?
+    <= select reviewed output if available otherwise use draft output
+    <- draft needs review?
+        <= check if draft requires review
+        <- draft output
     <- reviewed output
         <= perform human review
+            <= if draft needs review
+            <* draft needs review?
         <- draft output
+    <- draft output
 ```
 
-The review step only runs if the condition is true.
+The review step only runs if `draft needs review?` is true. The timer `<= if draft needs review` and context `<* draft needs review?` are attached to the review action, not the selection.
 
 ---
 
@@ -253,9 +259,10 @@ Result:
 To actually execute a plan, you need:
 
 1. **Author** your plan in `.ncds` (draft format)
-2. **Compile** `.ncds` → `.ncd` (formalization adds types and operators)
-3. **Activate** `.ncd` → JSON repositories (executable format)
-4. **Execute** with the orchestrator
+2. **Formalize** `.ncds` → `.ncd` + `.ncn` (adds types and operators)
+3. **Structure** `.ncd` → `.nci.json` (inference structure)
+4. **Activate** `.nci.json` → `.concept.json` + `.inference.json` (executable repositories)
+5. **Execute** orchestrator loads the repositories and runs your plan
 
 Most of this is automated by the tooling.
 
@@ -276,7 +283,7 @@ See the [Tools section](../5_tools/README.md) for:
 ## Common Questions
 
 **Q: Do I have to write `.ncd` by hand?**  
-A: No. Start with `.ncds` (draft format), and the compiler formalizes it to `.ncd`. Or use the `.ncdn` editor format to work with both views simultaneously.
+A: No. Start with `.ncds` (draft format), and the compiler formalizes it to `.ncd` + `.ncn`, structures to `.nci.json`, then activates to `.concept.json` + `.inference.json`. Or use the `.ncdn` editor format to work with both views simultaneously.
 
 **Q: How do I debug a failing step?**  
 A: Inspect the step's inputs in the orchestrator. Every step has an explicit input list.

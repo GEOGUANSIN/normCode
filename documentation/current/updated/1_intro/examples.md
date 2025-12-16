@@ -351,7 +351,7 @@ Simple, self-contained example plans showing common patterns.
 ```ncds
 <- validated output
     <= select the first available as output
-    <= corrected output
+    <- corrected output
         <= correct 
             <= if validation result is not ok
             <* validation result?
@@ -392,7 +392,7 @@ Common for decision support systems.
     <= create high-level summary
     <- aggregated results
         <= combine all individual results
-        <- individual result
+        <- individual results
             <= for every item return the processed item
                 <= select processed item
                 <- processed item
@@ -404,7 +404,7 @@ Common for decision support systems.
 
 Common for batch processing.
 
-**Structure**: Loop over `items to process`, for each `current item` process it, collect `individual result`, aggregate, then summarize.
+**Structure**: Loop over `items to process`, for each `current item` process it, collect `individual results`, aggregate, then summarize.
 
 ---
 
@@ -415,12 +415,12 @@ Common for batch processing.
 Begin with a linear flow. Add complexity only when needed.
 
 ```ncds
-# Good: Start here
+/: Good: Start here
 <- output
     <= process
     <- input
 
-# Then evolve to:
+/: Then evolve to:
 <- output
     <= process
     <- intermediate
@@ -433,12 +433,12 @@ Begin with a linear flow. Add complexity only when needed.
 Each inference has exactly one `<=` line.
 
 ```ncds
-# Wrong
+/: Wrong
 <- output
     <= step 1
-    <= step 2  # ❌ Two actions
+    <= step 2  /: ❌ Two actions
 
-# Right
+/: Right
 <- output
     <= step 2
     <- result
@@ -451,13 +451,13 @@ Each inference has exactly one `<=` line.
 Make data flow obvious.
 
 ```ncds
-# Unclear
+/: Unclear
 <- output
     <= process all the data
     <- data A
     <- data B
 
-# Clear
+/: Clear
 <- output
     <= combine A and B results
     <- processed A
@@ -471,12 +471,12 @@ Make data flow obvious.
 ### 4. Use Descriptive Names
 
 ```ncds
-# Weak
+/: Weak
 <- result
     <= do it
     <- x
 
-# Strong
+/: Strong
 <- risk assessment
     <= evaluate legal exposure
     <- relevant clauses
@@ -488,9 +488,9 @@ Group free syntactic operations, isolate costly semantic ones.
 
 ```ncds
 <- final result
-    <= expensive LLM analysis        # Semantic (costs tokens)
+    <= expensive LLM analysis        /: Semantic (costs tokens)
     <- all inputs
-        <= collect items together as a group    # Syntactic (free)
+        <= collect items together as a group    /: Syntactic (free)
         <- input A
         <- input B
         <- input C
@@ -549,10 +549,15 @@ Group free syntactic operations, isolate costly semantic ones.
 
 All examples above show NormCode's core syntax, which works across formats:
 
+**Four Major Formats:**
 - **`.ncds`** - Start here when authoring new plans (draft format)
-- **`.ncd`** - Formal syntax after compilation (executable format)
-- **`.ncn`** - Natural language view (review format)
-- **`.ncdn`** - Hybrid format showing both formal and natural language together
+- **`.ncd`** - Formal syntax after compilation (with `.ncn` companion for natural language view)
+- **`.nci.json`** - Inference structure (intermediate format, shows clear flow)
+- **`.concept.json` + `.inference.json`** - Executable repositories for orchestrator runtime
+
+**Supporting Formats:**
+- **`.ncdn`** - Hybrid editor format showing both `.ncd` and `.ncn` together
+- **`.nc.json`** - JSON structure for tooling
 
 The **visual editor** supports all formats, and **format tools** (`update_format.py`) convert between them automatically.
 

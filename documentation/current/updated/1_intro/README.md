@@ -102,18 +102,19 @@ NormCode balances structure with readability:
 | Format | Purpose | You Interact With |
 |--------|---------|-------------------|
 | `.ncds` | Draft/authoring | ✅ Start here |
-| `.ncd` | Formal syntax | After compilation |
-| `.ncn` | Natural language | For review |
-| `.ncdn` | Hybrid (both together) | Editor shows this |
+| `.ncd` | Formal syntax | After formalization |
+| `.nci.json` | Inference structure | Intermediate format |
+| `.concept.json` + `.inference.json` | Executable repositories | Orchestrator loads these |
 
-**Auxiliary formats**: `.nc.json`, `.nci.json` (used by tooling)
+**Companion formats**: `.ncn` (natural language view of `.ncd`), `.ncdn` (hybrid editor format)  
+**Auxiliary formats**: `.nc.json` (JSON structure for tooling)
 
 ---
 
 ## Common Questions
 
 **Q: Do I need to learn formal syntax?**  
-A: No. Start writing in `.ncds` (draft format). The compiler handles formalization to `.ncd`.
+A: No. Start writing in `.ncds` (draft format). The compiler handles formalization to `.ncd` + `.ncn`, then structuring to `.nci.json`, and finally activation to `.concept.json` + `.inference.json`.
 
 **Q: How is this different from LangChain?**  
 A: NormCode enforces explicit data isolation. Each step's inputs are declared, not implicit.

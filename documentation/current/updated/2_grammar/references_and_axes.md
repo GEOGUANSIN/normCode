@@ -26,6 +26,7 @@ A **Reference** is the container where information for a concept is kept. Specif
 | **Named Axes** | Each dimension has a name (e.g., `student`, `assignment`), not just an index |
 | **Shape** | The size of each dimension defines the `shape` (e.g., `(3, 4)` for 3 students × 4 assignments) |
 | **Skip Values** | Missing or invalid data is represented by a special skip value (`@#SKIP#@`) |
+| **Empty Axis** | An axis that is interpreted as purely a list without any axis name is `_none_axis` |
 
 **In short**: A `Concept` gives information its meaning within the plan, while a `Reference` provides the structure to hold and organize that information.
 
@@ -516,13 +517,13 @@ students: [
 
 ```ncd
 <- {students and parents for each nationality}
-    <= &[{}] %>[{student}, {parent}] %:[{student}<$!={nationality}>]
+    <= &[{}] %>[{student}, {parent}] %:({student}<$!{nationality}>)
     <- {student}
     <- {parent}
     <* {nationality}
 ```
 
-**Effect**: The `{student}` axis is collapsed, but `{nationality}` is **protected** (kept):
+**Effect**: The `{student}` axis is collapsed, but `{nationality}` is **protected** with `<$!{...}>` (kept):
 
 ```python
 axes: [nationality]  ← only nationality preserved
@@ -748,8 +749,9 @@ Understanding how References flow through the system:
 | **Dependent axes** | Inherited from context/inputs |
 | **`_none_axis`** | Degenerate axis for certain (singular) values |
 | **Axis accumulation** | Axes compound through inference chains |
-| **`%:[{axis}]`** | Collapse this axis (remove from output) |
-| **`<$!={axis}>`** | Protect this axis (keep even when collapsing) |
+| **`%:({axis})`** | Collapse this axis (remove from output) |
+| **`%+({axis})`** | Create new axis (recommended for grouping) |
+| **`<$!{axis}>`** | Protect this axis (keep even when collapsing) |
 
 The Reference system enables NormCode's core promise: **data isolation with explicit flow**. Each inference receives precisely the References it needs, transforms them through well-defined operations, and produces new References for downstream consumers.
 
@@ -776,8 +778,9 @@ _none_axis:       Degenerate (singular) axis
 
 ### Axis Operations
 ```
-%:[{axis}]        Collapse this axis
-<$!={axis}>       Protect this axis
+%:({axis})        Collapse this axis
+%+({axis})        Create new axis 
+<$!{axis}>        Protect this axis
 ```
 
 ### Reference Operations

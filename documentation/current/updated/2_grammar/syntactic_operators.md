@@ -463,21 +463,27 @@ Think of looping as **walking through a list**. At each step, you:
 ```
 
 **Components**:
-- `%>({base}<$({current})*>)` - Source collection, with current iteration marker
-- `%<({result})` - Concept to infer (output of each iteration)
+- `%>({collection})` - Source collection to iterate over
+- `%<({result})` - Concept to infer (output of each iteration) [Optional]
 - `%:({axis})` - Axis to iterate over
-- `%^({carried}<$({carried})*-1>)` - Carried state from previous iteration
-- `%@({index})` - Quantifier index (1 for outermost loop, 2 for nested, etc.)
+- `%^({carried}<$({carried})*-1>)` - Carried state from previous 
+iteration [Optional]
+- `%@({index})` - Quantifier index (1 for outermost loop, 2 for nested, 
+etc.) [Optional]
+**Associated Concepts**:
+- `<- {collection}` - Base collection (value concept)
+- `<* {item}<$({collection})*>` - Current element marker (context concept)
+- `{item}*N` - Reference to item in loop `@(N)` (used in loop body)
 
 **Example**:
 ```ncd
 {all summaries}
-    <= *. %>({documents}<$({document})*1>) %<({summary}) %:({document}) %^() %@(1)
+    <= *. %>({documents}) %<({summary}) %:({document}) %@(1)
     <- {summary}
         <= ::(summarize this document)
         <- {document}*1
-    <* {documents}
-    <* {document}*1<*{documents}>
+    <- {documents}
+    <* {document}<$({documents})*>
 ```
 
 **Iteration version markers**:
@@ -593,15 +599,20 @@ This separation is what makes NormCode plans **auditable**: every structural tra
 
 ```ncd
 {all summaries}
-    <= *. %>({documents}<$({document})*1>) %<({summary}) %:({document}) %@(1)
+    <= *. %>({documents}) %<({summary}) %:({document}) %@(1)
     <- {summary}
         <= ::(summarize this document)
         <- {document}*1
-    <* {documents}
-    <* {document}*1<*{documents}>
+    <- {documents}
+    <* {document}<$({documents})*>
 ```
 
 **Effect**: Loops through each document, generates a summary, collects all summaries.
+
+**Key components**:
+- `<- {documents}`: The base collection (value concept)
+- `<* {document}<$({documents})*>`: Current element marker (context concept)
+- `{document}*1`: Reference to current document in loop `@(1)`
 
 ---
 
