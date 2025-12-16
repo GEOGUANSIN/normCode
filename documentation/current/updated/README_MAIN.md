@@ -25,15 +25,15 @@ Get started quickly with the core concepts, your first plan, and practical examp
 
 ---
 
-### [2. Grammar](2_grammar/README.md) *(Coming Soon)*
+### [2. Grammar](2_grammar/README.md) ✅
 **The `.ncd` format and syntax specification**
 
 Complete reference for writing NormCode plans:
-- `.ncd` file format
-- Semantic concepts (`{}`, `<>`, `[]`, etc.)
-- Syntactic operators (`$`, `&`, `@`, `*`)
-- References and axes
-- Complete formal grammar
+- [NCD file format](2_grammar/ncd_format.md) - File structure and flow
+- [Semantic concepts](2_grammar/semantic_concepts.md) - `{}`, `<>`, `[]`, `:S:`, `({})`, `<{}>`
+- [Syntactic operators](2_grammar/syntactic_operators.md) - `$`, `&`, `@`, `*`
+- [References and axes](2_grammar/references_and_axes.md) - Tensor data structures
+- [Complete syntax reference](2_grammar/complete_syntax_reference.md) - Full grammar
 
 **Start here if**: You're writing plans and need syntax details.
 
@@ -175,7 +175,7 @@ Built-in checkpointing and forking, allowing the chaining of multiple plans easi
 documentation/
 ├── current/updated/          # New documentation (you are here)
 │   ├── 1_intro/             # ✅ Complete
-│   ├── 2_grammar/           # 🚧 Coming soon
+│   ├── 2_grammar/           # ✅ Complete
 │   ├── 3_execution/         # 🚧 Coming soon
 │   ├── 4_compilation/       # 🚧 Coming soon
 │   └── 5_tools/             # 🚧 Coming soon
@@ -215,7 +215,7 @@ A: NormCode is in active development. The core execution model is stable; syntax
 | Section | Status | Notes |
 |---------|--------|-------|
 | **1. Introduction** | ✅ Complete | Overview, quickstart, examples |
-| **2. Grammar** | 🚧 Planned | Extracting from existing docs |
+| **2. Grammar** | ✅ Complete | Format, concepts, operators, references |
 | **3. Execution** | 🚧 Planned | Extracting from existing docs |
 | **4. Compilation** | 🚧 Planned | Extracting from existing docs |
 | **5. Tools** | 🚧 Planned | Extracting from existing docs |
