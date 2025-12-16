@@ -99,6 +99,23 @@ Learn about:
 
 ---
 
+### 6. [NCN Translation](ncn_translation.md)
+**Translating `.ncd` to natural language narratives (`.ncn`)**
+
+Learn about:
+- Translation principles (grammar, redundancy, context)
+- Concept markers → narrative tags
+- Semantic concepts → action descriptions
+- Syntactic operators → plain English
+- Binding and annotation translations
+- Complete examples with step-by-step breakdowns
+
+**Start here if**: You need to generate readable narratives from formal `.ncd` files for stakeholder review.
+
+**Time**: 20 minutes
+
+---
+
 ## 🗺️ Reading Paths
 
 ### For New Users
@@ -123,6 +140,11 @@ Learn about:
 2. [Complete Syntax Reference](complete_syntax_reference.md) - Quick lookup
 3. [Syntactic Operators](syntactic_operators.md) - Operator details
 4. [References and Axes](references_and_axes.md) - Data flow
+
+### For Stakeholder Review
+1. [NCD Format](ncd_format.md) - Understand the structure
+2. [NCN Translation](ncn_translation.md) - Generate readable narratives
+3. Review the `.ncn` output with non-technical reviewers
 
 ---
 
@@ -222,6 +244,9 @@ A: They specify roles in operations (`%>` = source/input, `%<` = target/output, 
 
 **Q: How do I debug a `.ncd` file?**  
 A: Check flow indices, verify operator syntax, trace data flow through references.
+
+**Q: What is `.ncn` and how do I get it?**  
+A: `.ncn` is a natural language narrative of your `.ncd` plan. The compiler generates it automatically for stakeholder review.
 
 ---
 
@@ -328,6 +353,7 @@ A: Check flow indices, verify operator syntax, trace data flow through reference
 | **Syntactic Operators** | ✅ Complete | All operators, unified modifier system |
 | **References and Axes** | ✅ Complete | Reference system, axes, operations |
 | **Complete Syntax Reference** | ✅ Complete | Full grammar, patterns, quick reference |
+| **NCN Translation** | ✅ Complete | Translation rules, formatting, examples |
 
 ---
 
