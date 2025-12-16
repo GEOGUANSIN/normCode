@@ -143,38 +143,51 @@ NormCode occupies a deliberate position between natural language and formal spec
 
 NormCode uses multiple formats for different purposes:
 
-### The Three Views
+### Primary Formats: Three Views of the Same Plan
 
 | Format | Purpose | What You See |
 |--------|---------|--------------|
-| **`.ncds`** | The authoring view | Shows rough logic and concept environment |
-| **`.ncd`** | Formal syntax with operators | `<= extract clauses related to liability` |
-| **`.ncn`** | Natural language narrative | `Extract the liability-related clauses from the contract` |
+| **`.ncds`** | Draft/authoring format | Rough logic and concept environment—easiest to write |
+| **`.ncd`** | Formal syntax | Structured with operators: `<= extract clauses related to liability` |
+| **`.ncn`** | Natural language | Readable narrative: "Extract the liability-related clauses from the contract" |
 
-**Additional formats** (`.ncdn`, `.nc.json`, `.nci.json`, `.ncds`) support tooling, validation, and variants.
+**Additional formats**: `.ncdn` (hybrid editor format), `.nc.json` and `.nci.json` (used by tooling for validation and execution)
 
-### Why Three Views?
+### Why Multiple Views?
 
 These aren't just different file formats—they're different perspectives on the same plan:
 
+**`.ncds` (Draft/Authoring)**:
+- First draft format—start here when creating new plans
+- Rough logic and concept structure
+- Easy for humans and LLMs to author
+- Gets formalized into `.ncd` by the compiler
 
-**`.ncds` (Authoring View)**:
-- First Draft
-- Rough Logic and Concept
-- Easy to derive and author
+**`.ncd` (Formal/Executable)**:
+- Unambiguous syntax for the compiler and orchestrator
+- Machine-parsable, directly executable
+- Contains all technical details (types, operators, references)
 
-**`.ncd` (Formal View)**:
-- Unambiguous syntax for the compiler
-- Machine-parsable, executable
-- Contains all technical details
-
-**`.ncn` (Natural View)**:
+**`.ncn` (Natural Language)**:
 - Human-readable descriptions
 - Explains intent in plain language
 - Perfect for non-technical stakeholders to review
-  ```
+- Generated automatically from `.ncd`
 
-**Workflow**: You typically write in `.ncds`, formalized into the `.ncd`, generate `.ncn` for review, and use the `.ncdn` editor when you want to see both at once. The tooling uses additional formats (`.nc.json`, `.nci.json`) for validation and processing. The compiler can handle the formalization and activation steps.
+**`.ncdn` (Hybrid Editor Format)**:
+- Shows both `.ncd` and `.ncn` side-by-side
+- Used by the visual editor
+- Lets you edit formal structure while seeing natural language
+
+### Typical Workflow
+
+1. **Author**: Write your plan in `.ncds` (draft format)
+2. **Formalize**: Compiler transforms `.ncds` → `.ncd` (adds types, operators)
+3. **Review**: Generate `.ncn` for stakeholder review (natural language)
+4. **Edit**: Use `.ncdn` format in the visual editor when you want both views
+5. **Execute**: Compiler activates `.ncd` → JSON repositories for orchestrator
+
+The tooling handles most transformations automatically. You focus on writing clear plans.
 
 | Approach | Pros | Cons | Example |
 |----------|------|------|---------|
@@ -233,32 +246,32 @@ NormCode adds structure. Structure has costs. Be honest about the tradeoff:
 
 ## How It Works: The Pipeline
 
-NormCode plans go through a 5-phase compilation process:
+NormCode plans go through a compilation process from draft to execution:
 
 ```
-1. Author (.ncd format)
+1. Author (.ncds draft format)
        ↓
-2. Derivation (NL → Structure)
+2. Derivation (Natural language → Structure)
        ↓
-3. Formalization (Add types)
+3. Formalization (Add types and operators)
        ↓
-4. Post-formalization (Add paradigms, resources)
+4. Post-formalization (Add paradigms and resources)
        ↓
-5. Activation (→ executable JSON repositories)
+5. Activation (Generate executable JSON repositories)
        ↓
    Orchestrator Executes
 ```
 
 **What happens in each phase**:
-1. **Authoring**: You write the plan in `.ncd` format (or use the `.ncdn` editor)
+1. **Authoring**: You write the plan in `.ncds` (draft format)—easy and flexible
 2. **Derivation**: Natural language descriptions → structured concepts
-3. **Formalization**: Add semantic types and formal structure
+3. **Formalization**: Add semantic types, operators, and formal structure → `.ncd` format
 4. **Post-formalization**: Add execution paradigms and resource configurations
 5. **Activation**: Generate executable repositories (`concept_repo.json` + `inference_repo.json`)
 
 The orchestrator then loads these repositories and executes your plan step-by-step.
 
-> For most users, phases 2-5 are automatic. You write `.ncd`, run the compiler, and get executable plans.
+> For most users, phases 2-5 are automatic. You write `.ncds`, run the compiler, and get executable plans.
 
 ---
 
@@ -269,19 +282,19 @@ Bringing it all together, NormCode provides:
 **1. Data Isolation by Construction**  
 Each step only sees explicitly passed inputs. No accidental context leakage.
 
-**2. Full Auditability**  
-Every intermediate state is explicit and independently inspectable. Perfect for high-stakes domains.
-
-**3. Cost/Reliability Tracing**  
-Know exactly which steps call LLMs (expensive, non-deterministic) vs. which are free (deterministic).
-
-**4. Progressive Development**  
-Start with a rough draft with simple NormCode, then refine it incrementally.
-
-**5. Semi-Formal Balance**  
+**2. Semi-Formal Balance**  
 Structured enough for reliable execution, readable enough for human review.
 
-**6. Resumable Execution**  
+**3. Full Auditability**  
+Every intermediate state is explicit and independently inspectable. Perfect for high-stakes domains.
+
+**4. Cost/Reliability Tracing**  
+Know exactly which steps call LLMs (expensive, non-deterministic) vs. which are free (deterministic).
+
+**5. Progressive Development**  
+Start with a rough draft with simple NormCode, then build up complexity in future versions to increase reliability.
+
+**6. Reusable Execution**  
 Built-in checkpointing and forking, allowing the chaining of multiple plans easily.
 
 ---

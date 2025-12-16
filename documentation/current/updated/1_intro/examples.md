@@ -2,9 +2,9 @@
 
 Simple, self-contained example plans showing common patterns.
 
-> **Note on Format**: Examples use `.ncd` syntax. You can also:
-> - Write these in `.ncdn` format (hybrid with natural language annotations)
-> - Use the visual editor which supports all formats
+> **Note on Format**: These examples show NormCode's core syntax (usable in `.ncds`, `.ncd`, or `.ncdn` formats). You can also:
+> - Start with `.ncds` format (draft/authoring) when creating new plans
+> - Use `.ncdn` format in the editor to see both formal and natural language
 > - Convert between formats using `update_format.py` tool
 > 
 > See [Editor Guide](../../Editor_README.md) for format details.
@@ -500,18 +500,20 @@ Group free syntactic operations, isolate costly semantic ones.
 
 ## Format Notes
 
-All examples above are in `.ncd` format, but in practice:
+All examples above show NormCode's core syntax, which works across formats:
 
-- **`.ncdn` format** lets you edit both technical and natural language together
-- **Editor** supports all formats (`.ncd`, `.ncn`, `.ncdn`, `.nc.json`)
-- **Format tools** (`update_format.py`) convert between formats
-- **Validation** ensures consistency across formats
+- **`.ncds`** - Start here when authoring new plans (draft format)
+- **`.ncd`** - Formal syntax after compilation (executable format)
+- **`.ncn`** - Natural language view (review format)
+- **`.ncdn`** - Hybrid format showing both formal and natural language together
+
+The **visual editor** supports all formats, and **format tools** (`update_format.py`) convert between them automatically.
 
 See the [Editor README](../../Editor_README.md) for:
-- Format specifications
+- Detailed format specifications
 - Conversion examples
-- Batch processing
-- Validation workflow
+- Batch processing workflows
+- Validation procedures
 
 ---
 

@@ -12,7 +12,7 @@ We'll write a simple document summarization plan in `.ncd` format.
 
 Create a file called `summarize.ncd`:
 
-> **Note**: You can also write in `.ncds` (draft straightforward) for more natural language, or use the `.ncdn` editor format to see both formal and natural language together.
+> **Note**: You can also write in `.ncds` (draft format—easier to start with), or use the `.ncdn` editor format to see both formal and natural language together.
 
 ```ncds
 <- document summary
@@ -252,9 +252,12 @@ Result:
 
 To actually execute a plan, you need:
 
-1. **Compile** `.ncds` → `.ncd` (formalization)
-2. **Activate** `.ncd` → JSON repos (executable format)
-3. **Execute** with the orchestrator
+1. **Author** your plan in `.ncds` (draft format)
+2. **Compile** `.ncds` → `.ncd` (formalization adds types and operators)
+3. **Activate** `.ncd` → JSON repositories (executable format)
+4. **Execute** with the orchestrator
+
+Most of this is automated by the tooling.
 
 See the [Tools section](../5_tools/README.md) for:
 - CLI commands
@@ -273,7 +276,7 @@ See the [Tools section](../5_tools/README.md) for:
 ## Common Questions
 
 **Q: Do I have to write `.ncd` by hand?**  
-A: You can write `.ncd` directly, or use the `.ncdn` editor format to work with both technical and natural language simultaneously.
+A: No. Start with `.ncds` (draft format), and the compiler formalizes it to `.ncd`. Or use the `.ncdn` editor format to work with both views simultaneously.
 
 **Q: How do I debug a failing step?**  
 A: Inspect the step's inputs in the orchestrator. Every step has an explicit input list.
