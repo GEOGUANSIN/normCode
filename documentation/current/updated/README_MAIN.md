@@ -39,41 +39,42 @@ Complete reference for writing NormCode plans:
 
 ---
 
-### [3. Execution](3_execution/README.md) *(Coming Soon)*
+### [3. Execution](3_execution/README.md) ✅
 **How plans run at runtime**
 
 Understanding the execution model:
-- Execution overview
-- Reference system
-- Agent sequences (assigning, grouping, timing, looping, imperative, judgement)
-- Orchestrator and checkpointing
+- [Execution overview](3_execution/overview.md) - Bottom-up dependency model and execution flow
+- [Reference system](3_execution/reference_system.md) - Multi-dimensional tensors and data storage
+- [Agent sequences](3_execution/agent_sequences.md) - Semantic and syntactic sequence pipelines
+- [Orchestrator](3_execution/orchestrator.md) - Flow control, checkpointing, and resumption
 
 **Start here if**: You're debugging plans or optimizing performance.
 
 ---
 
-### [4. Compilation](4_compilation/README.md) *(Coming Soon)*
+### [4. Compilation](4_compilation/README.md) ✅
 **The 5-phase compilation pipeline**
 
 From natural language to executable code:
-- Pipeline overview
-- Derivation (NL → Structure)
-- Formalization (Adding rigor)
-- Post-formalization (Context & config)
-- Activation (`.ncd` → JSON repositories)
+- [Pipeline overview](4_compilation/overview.md) - The big picture
+- [Derivation](4_compilation/derivation.md) - Phase 1: NL → Structure
+- [Formalization](4_compilation/formalization.md) - Phase 2: Adding rigor
+- [Post-formalization](4_compilation/post_formalization.md) - Phase 3: Context & config
+- [Activation](4_compilation/activation.md) - Phase 4: `.ncd` → JSON repositories
+- [Editor and Tools](4_compilation/editor.md) - Using the editor and format tools
 
 **Start here if**: You're extending the compiler or need deep understanding.
 
 ---
 
-### [5. Tools](5_tools/README.md) *(Coming Soon)*
+### [5. Tools](5_tools/README.md) 🚧
 **User-facing tools and APIs**
 
-Using NormCode tools:
-- CLI commands
-- Visual editor
-- Streamlit executor
-- Python API reference
+The Graph Canvas Tool—a unified visual interface for NormCode:
+- [Implementation Plan](5_tools/implementation_plan.md) - High-level architecture and roadmap
+- Graph visualization with function and value nodes
+- Interactive execution control and debugging
+- Reference inspection and logging
 
 **Start here if**: You're integrating NormCode or using the tools.
 
@@ -178,9 +179,9 @@ documentation/
 ├── current/updated/          # New documentation (you are here)
 │   ├── 1_intro/             # ✅ Complete
 │   ├── 2_grammar/           # ✅ Complete
-│   ├── 3_execution/         # 🚧 Coming soon
-│   ├── 4_compilation/       # 🚧 Coming soon
-│   └── 5_tools/             # 🚧 Coming soon
+│   ├── 3_execution/         # ✅ Complete
+│   ├── 4_compilation/       # ✅ Complete
+│   └── 5_tools/             # 🚧 In Progress (implementation plan ready)
 │
 └── current/                 # Legacy documentation (being restructured)
     ├── shared---*.md        # Original docs
@@ -218,9 +219,9 @@ A: NormCode is in active development. The core execution model is stable; syntax
 |---------|--------|-------|
 | **1. Introduction** | ✅ Complete | Overview, quickstart, examples |
 | **2. Grammar** | ✅ Complete | Format, concepts, operators, references |
-| **3. Execution** | 🚧 Planned | Extracting from existing docs |
-| **4. Compilation** | 🚧 Planned | Extracting from existing docs |
-| **5. Tools** | 🚧 Planned | Extracting from existing docs |
+| **3. Execution** | ✅ Complete | Overview, reference system, sequences, orchestrator |
+| **4. Compilation** | ✅ Complete | Overview, derivation, formalization, post-formalization, activation, editor |
+| **5. Tools** | 🚧 In Progress | Implementation plan complete, tool development planned |
 
 ---
 
