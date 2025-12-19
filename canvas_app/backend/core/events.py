@@ -11,7 +11,6 @@ class EventEmitter:
     
     def __init__(self):
         self._listeners: Set[Callable] = set()
-        self._queue: asyncio.Queue = asyncio.Queue()
     
     def add_listener(self, callback: Callable):
         """Add a listener callback."""

@@ -6,6 +6,23 @@ import type { WebSocketEvent } from '../types/execution';
 
 type EventHandler = (event: WebSocketEvent) => void;
 
+/**
+ * Get WebSocket URL.
+ * In development, we connect directly to the backend (127.0.0.1:8000).
+ * In production, this would use the same host as the frontend.
+ */
+function getWebSocketUrl(): string {
+  // In development, connect directly to FastAPI backend
+  // Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues on Windows
+  if (import.meta.env.DEV) {
+    return 'ws://127.0.0.1:8000/ws/events';
+  }
+  // In production, use same host
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  return `${protocol}//${host}/ws/events`;
+}
+
 class WebSocketClient {
   private ws: WebSocket | null = null;
   private handlers: Set<EventHandler> = new Set();
@@ -14,16 +31,22 @@ class WebSocketClient {
   private reconnectDelay = 1000;
   private url: string;
 
-  constructor(url: string = 'ws://localhost:8000/ws/events') {
-    this.url = url;
+  constructor(url?: string) {
+    this.url = url || getWebSocketUrl();
   }
 
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
+    
+    // Don't create new connection if one is connecting
+    if (this.ws?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
 
     try {
+      console.log('Connecting to WebSocket:', this.url);
       this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {

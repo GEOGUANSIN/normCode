@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     # CORS settings
     cors_origins: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     
+    # API Keys
+    dashscope_api_key: str | None = None
+    
     # Paths - relative to project root
     @property
     def project_root(self) -> Path:
@@ -32,6 +35,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore extra fields from environment
 
 
 settings = Settings()

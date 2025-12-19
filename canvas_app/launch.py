@@ -26,7 +26,7 @@ def main():
         # Start backend
         print("\n[1/2] Starting FastAPI backend on http://localhost:8000")
         backend_process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--port", "8000"],
+            [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"],
             cwd=BACKEND_DIR,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
         )
