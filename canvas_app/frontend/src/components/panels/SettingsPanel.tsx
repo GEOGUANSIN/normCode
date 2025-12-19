@@ -2,11 +2,12 @@
  * Settings Panel for execution configuration
  */
 
-import { useEffect, useState } from 'react';
-import { Settings, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
+import { Settings, ChevronDown, ChevronUp, RefreshCw, Save } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { executionApi } from '../../services/api';
+import { executionApi, projectApi } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
+import { useProjectStore } from '../../stores/projectStore';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     setDefaults,
     setLoaded,
   } = useConfigStore();
+
+  const { currentProject, setCurrentProject, projectPath } = useProjectStore();
 
   // Fetch config options from API
   const { data: configData, isLoading, refetch } = useQuery({
@@ -67,6 +70,36 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     setParadigmDir('');
   };
 
+  // Save settings to project
+  const handleSaveToProject = async () => {
+    if (!currentProject) return;
+    
+    try {
+      const response = await projectApi.save({
+        execution: {
+          llm_model: llmModel,
+          max_cycles: maxCycles,
+          db_path: dbPath,
+          base_dir: baseDir || undefined,
+          paradigm_dir: paradigmDir || undefined,
+        },
+      });
+      // Update project in store
+      setCurrentProject(response.config, projectPath);
+    } catch (err) {
+      console.error('Failed to save settings to project:', err);
+    }
+  };
+
+  // Check if settings differ from project
+  const hasUnsavedChanges = currentProject && (
+    llmModel !== currentProject.execution.llm_model ||
+    maxCycles !== currentProject.execution.max_cycles ||
+    dbPath !== currentProject.execution.db_path ||
+    baseDir !== (currentProject.execution.base_dir || '') ||
+    paradigmDir !== (currentProject.execution.paradigm_dir || '')
+  );
+
   if (!isOpen) {
     return (
       <div className="border-b border-slate-200 bg-white">
@@ -93,6 +126,16 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <span>Execution Settings</span>
         </div>
         <div className="flex items-center gap-2">
+          {currentProject && hasUnsavedChanges && (
+            <button
+              onClick={handleSaveToProject}
+              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"
+              title="Save settings to project"
+            >
+              <Save size={12} />
+              Save
+            </button>
+          )}
           <button
             onClick={handleReset}
             className="p-1 text-slate-400 hover:text-slate-600 transition-colors"

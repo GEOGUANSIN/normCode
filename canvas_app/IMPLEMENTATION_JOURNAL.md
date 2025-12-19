@@ -1,8 +1,8 @@
 # NormCode Canvas Tool - Implementation Journal
 
 **Project Start**: December 18, 2024  
-**Current Phase**: Phase 3 - Debugging Features  
-**Status**: 🚧 Phase 3 In Progress (Phase 1 ✅ Phase 2 ✅ Complete, Tensor Inspection ✅)
+**Current Phase**: Phase 3 - Debugging Features + Project-Based Architecture  
+**Status**: 🚧 Phase 3 In Progress (Phase 1 ✅ Phase 2 ✅ Complete, Tensor Inspection ✅, Project System ✅)
 
 ---
 
@@ -15,6 +15,199 @@ This journal tracks the implementation progress of the NormCode Graph Canvas Too
 ---
 
 ## Implementation Timeline
+
+### December 19, 2024 - Project-Based Canvas Architecture
+
+#### What Was Implemented
+
+**Project-Based Architecture (NEW)**
+The canvas app now operates like an IDE (PyCharm/VS Code) - you open a project, and all configuration is stored and restored automatically.
+
+**Project Configuration File (`normcode-canvas.json`)**
+- [x] Stored in project directory
+- [x] Contains:
+  - Project metadata (name, description, created/updated timestamps)
+  - Repository paths (concepts.json, inferences.json, inputs.json)
+  - Execution settings (LLM model, max cycles, db path, paradigm dir)
+  - Saved breakpoints
+  - UI preferences
+
+**Backend Project Service (`project_service.py`)**
+- [x] `ProjectService` class for project CRUD operations
+- [x] Recent projects tracking (stored in `~/.normcode-canvas/recent-projects.json`)
+- [x] Auto-validation of project existence
+- [x] Absolute path resolution for repository files
+
+**Backend Project Router (`/api/project/`)**
+- [x] `GET /current` - Get currently open project
+- [x] `POST /open` - Open existing project by path
+- [x] `POST /create` - Create new project
+- [x] `POST /save` - Save current project state
+- [x] `POST /close` - Close current project
+- [x] `GET /recent` - Get recent projects list
+- [x] `DELETE /recent` - Clear recent projects
+- [x] `POST /load-repositories` - Load repos from project config
+- [x] `GET /paths` - Get absolute repository paths
+- [x] `PUT /settings` - Update execution settings
+
+**Frontend Project Store (`projectStore.ts`)**
+- [x] Zustand store for project state
+- [x] `currentProject`, `projectPath`, `isLoaded`, `repositoriesExist` state
+- [x] `recentProjects` list
+- [x] Async actions: `openProject`, `createProject`, `saveProject`, `closeProject`
+- [x] Auto-load graph data after loading repositories
+
+**Frontend ProjectPanel Component**
+- [x] **Welcome Screen**: Shown when no project is open
+  - Recent projects list with one-click open
+  - "Open Project" and "New Project" buttons
+- [x] **Project Modal**: Tabbed interface for open/create/recent
+  - Open tab: Enter project directory path
+  - Create tab: Full project configuration form
+  - Recent tab: List of recent projects
+- [x] **Project Header Bar**: Shown when project is open
+  - Project name and path display
+  - Repository status (loaded/missing)
+  - Quick "Load Repositories" button
+  - Settings and close buttons
+
+**App Integration**
+- [x] Project state checked on startup
+- [x] Welcome screen shown if no project open
+- [x] Project header bar shown when project is open
+- [x] "Load Different" button for loading alternative repositories
+- [x] Settings persisted with project
+
+#### Files Created
+
+**Backend**:
+- `canvas_app/backend/schemas/project_schemas.py` - Project Pydantic models
+- `canvas_app/backend/services/project_service.py` - Project CRUD service
+- `canvas_app/backend/routers/project_router.py` - Project API endpoints
+
+**Frontend**:
+- `canvas_app/frontend/src/types/project.ts` - Project TypeScript types
+- `canvas_app/frontend/src/stores/projectStore.ts` - Project Zustand store
+- `canvas_app/frontend/src/components/panels/ProjectPanel.tsx` - Project UI
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/main.py` - Added project router
+- `canvas_app/backend/routers/__init__.py` - Added project_router export
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts` - Added projectApi methods
+- `canvas_app/frontend/src/App.tsx` - Integrated ProjectPanel and project-based flow
+
+#### Project File Example
+
+```json
+{
+  "name": "Gold Investment Analysis",
+  "description": "NormCode plan for analyzing gold investment decisions",
+  "created_at": "2024-12-19T10:30:00",
+  "updated_at": "2024-12-19T15:45:00",
+  "repositories": {
+    "concepts": "concepts.json",
+    "inferences": "inferences.json",
+    "inputs": "inputs.json"
+  },
+  "execution": {
+    "llm_model": "qwen-plus",
+    "max_cycles": 100,
+    "db_path": "orchestration.db",
+    "paradigm_dir": "provision/paradigm"
+  },
+  "breakpoints": ["1.1", "2.3.1"],
+  "ui_preferences": {}
+}
+```
+
+#### Usage
+
+1. **First Launch**: Welcome screen with recent projects
+2. **Create Project**: Click "New Project", enter path and name
+3. **Open Project**: Click "Open Project", enter path to existing project
+4. **Work with Project**: Load repositories, execute, set breakpoints
+5. **Save/Close**: Settings auto-save, or click close to return to welcome
+
+---
+
+### December 19, 2024 - Phase 3: Debugging Features (Part 2 - Restart & Breakpoint Fixes)
+
+#### What Was Implemented
+
+**Restart/Reset Functionality (NEW)**
+- [x] **POST /execution/restart**: New API endpoint to reset execution state
+  - Resets all node statuses to PENDING
+  - Clears completed count and cycle count
+  - Resets orchestrator's blackboard
+  - Allows re-execution after completion
+- [x] **ExecutionController.restart()**: Backend method for resetting execution
+  - Stops any running execution first
+  - Resets all tracking state
+  - Emits `execution:reset` event via WebSocket
+- [x] **executionApi.restart()**: Frontend API method
+- [x] **Reset button enhanced**: ControlPanel reset button now:
+  - Calls restart API instead of just stop
+  - Shows orange color when execution is completed/failed (indicating "can restart")
+  - Properly resets frontend state via WebSocket event
+
+**WebSocket Event Handling**
+- [x] **execution:reset event**: New event type for resetting execution
+  - Updates node statuses from backend
+  - Resets progress counters
+  - Logs reset action
+
+**Breakpoint Button Fix**
+- [x] **Improved error logging**: Added console warning when breakpoint cannot be set (no flow_index)
+- [x] **Better async handling**: Ensured breakpoint toggle updates local store after API call succeeds
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `restart()` async method to ExecutionController
+  - Resets node_statuses, completed_count, cycle_count
+  - Attempts to reset orchestrator blackboard
+  - Emits `execution:reset` WebSocket event
+- `canvas_app/backend/routers/execution_router.py`:
+  - Added `POST /execution/restart` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `restart()` method to executionApi
+- `canvas_app/frontend/src/components/panels/ControlPanel.tsx`:
+  - Added `handleRestart()` function
+  - Updated reset button to call restart API
+  - Added visual feedback (orange color) when restart is available
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`:
+  - Added handler for `execution:reset` event
+  - Added `setNodeStatuses` and `reset` to store access
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx`:
+  - Added warning log when breakpoint cannot be set
+
+#### Technical Notes
+
+**Restart Flow**:
+```
+User clicks Reset button (after completion)
+    ↓ handleRestart()
+executionApi.restart()
+    ↓ POST /execution/restart
+execution_controller.restart()
+    ↓
+Reset node_statuses, counts, blackboard
+    ↓ emit("execution:reset", {...})
+WebSocket → useWebSocket hook
+    ↓ setNodeStatuses(), setProgress(0, total)
+UI updates: all nodes show "pending"
+    ↓
+User can click Run to start fresh execution
+```
+
+---
 
 ### December 19, 2024 - Phase 3: Debugging Features (Part 1)
 
@@ -507,6 +700,10 @@ API endpoints verified:
 | **Tensor inspection** | ✅ Working | N-D tensor viewer with axis selection and slicing |
 | **Reference data API** | ✅ Working | Fetch live reference data from orchestrator |
 | **Per-node log filtering** | ✅ Working | Filter logs by selected node |
+| **Restart after completion** | ✅ Working | Reset button allows re-running after completion |
+| **Project-based canvas** | ✅ Working | IDE-like project management with config persistence |
+| **Recent projects** | ✅ Working | Quick access to recently opened projects |
+| **Project welcome screen** | ✅ Working | Launch screen for opening/creating projects |
 
 ### What's Not Yet Working
 
@@ -656,6 +853,42 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.4.0 (December 19, 2024) - Project-Based Canvas Architecture
+- **Project Management**:
+  - IDE-like project system (similar to PyCharm/VS Code)
+  - `normcode-canvas.json` configuration file per project
+  - Recent projects list with quick access
+  - Welcome screen on startup for project selection
+- **Project Configuration**:
+  - Repository paths (concepts, inferences, inputs)
+  - Execution settings (LLM model, max cycles, db path, paradigm dir)
+  - Breakpoint persistence across sessions
+  - UI preferences storage
+- **New API Endpoints**:
+  - `GET/POST /api/project/*` - Full project CRUD operations
+  - Recent projects tracking in `~/.normcode-canvas/`
+- **New Frontend Components**:
+  - `ProjectPanel` - Welcome screen and project management modal
+  - `projectStore` - Zustand store for project state
+  - Project header bar with status and quick actions
+- **Workflow Improvement**:
+  - Open project → Load repositories → Execute
+  - Settings automatically saved with project
+  - Breakpoints preserved between sessions
+
+### v0.3.1 (December 19, 2024) - Restart & Breakpoint Fixes
+- **Restart Functionality**:
+  - New `/execution/restart` API endpoint to reset execution state
+  - Reset button in ControlPanel now allows re-running after completion
+  - Orange visual indicator when restart is available (completed/failed state)
+  - Properly resets node statuses, counters, and orchestrator blackboard
+- **WebSocket Event Handling**:
+  - New `execution:reset` event type for syncing reset state
+  - Improved breakpoint event handling
+- **Breakpoint Improvements**:
+  - Better error logging when breakpoint cannot be set (missing flow_index)
+  - Improved async handling for breakpoint toggle
 
 ### v0.3.0 (December 19, 2024) - Phase 3: Debugging Features
 - **Tensor Inspection**:

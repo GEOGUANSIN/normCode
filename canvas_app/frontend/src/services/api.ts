@@ -11,6 +11,14 @@ import type {
   RepositoryExample,
   ExecutionConfig,
 } from '../types/execution';
+import type {
+  ProjectResponse,
+  RecentProjectsResponse,
+  OpenProjectRequest,
+  CreateProjectRequest,
+  SaveProjectRequest,
+  ExecutionSettings,
+} from '../types/project';
 
 const API_BASE = '/api';
 
@@ -85,6 +93,9 @@ export const executionApi = {
   stop: (): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/stop`, { method: 'POST' }),
   
+  restart: (): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/restart`, { method: 'POST' }),
+  
   setBreakpoint: (flowIndex: string, enabled: boolean = true): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/breakpoints`, {
       method: 'POST',
@@ -117,5 +128,50 @@ export interface ReferenceData {
   axes: string[];
   shape: number[];
 }
+
+// Project endpoints
+export const projectApi = {
+  getCurrent: (): Promise<ProjectResponse | null> =>
+    fetchJson(`${API_BASE}/project/current`),
+  
+  open: (request: OpenProjectRequest): Promise<ProjectResponse> =>
+    fetchJson(`${API_BASE}/project/open`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  create: (request: CreateProjectRequest): Promise<ProjectResponse> =>
+    fetchJson(`${API_BASE}/project/create`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  save: (request: SaveProjectRequest): Promise<ProjectResponse> =>
+    fetchJson(`${API_BASE}/project/save`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  close: (): Promise<{ status: string }> =>
+    fetchJson(`${API_BASE}/project/close`, { method: 'POST' }),
+  
+  getRecent: (): Promise<RecentProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/recent`),
+  
+  clearRecent: (): Promise<{ status: string }> =>
+    fetchJson(`${API_BASE}/project/recent`, { method: 'DELETE' }),
+  
+  loadRepositories: (): Promise<{ status: string; concepts_path: string; inferences_path: string; breakpoints_restored: number }> =>
+    fetchJson(`${API_BASE}/project/load-repositories`, { method: 'POST' }),
+  
+  getPaths: (): Promise<{ concepts: string; inferences: string; inputs?: string; base_dir: string }> =>
+    fetchJson(`${API_BASE}/project/paths`),
+  
+  updateSettings: (settings: ExecutionSettings): Promise<ProjectResponse> =>
+    fetchJson(`${API_BASE}/project/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+};
 
 export { ApiError };

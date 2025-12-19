@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from services.execution_service import execution_controller
+from services.project_service import project_service
 from schemas.execution_schemas import (
     ExecutionState, BreakpointRequest, LogsResponse, LogEntry,
     ExecutionConfig, LLM_MODELS, DEFAULT_MAX_CYCLES, DEFAULT_DB_PATH
@@ -79,15 +80,37 @@ async def stop_execution():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/restart", response_model=CommandResponse)
+async def restart_execution():
+    """Restart execution from the beginning.
+    
+    Resets all node statuses and allows re-running the plan.
+    """
+    try:
+        await execution_controller.restart()
+        return CommandResponse(success=True, message="Execution reset - ready to run")
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/breakpoints", response_model=CommandResponse)
 async def set_breakpoint(request: BreakpointRequest):
     """Set or clear a breakpoint."""
     try:
         if request.enabled:
             execution_controller.set_breakpoint(request.flow_index)
-            return CommandResponse(success=True, message=f"Breakpoint set at {request.flow_index}")
         else:
             execution_controller.clear_breakpoint(request.flow_index)
+        
+        # Sync breakpoints to project if one is open
+        if project_service.is_project_open:
+            project_service.save_project(breakpoints=list(execution_controller.breakpoints))
+        
+        if request.enabled:
+            return CommandResponse(success=True, message=f"Breakpoint set at {request.flow_index}")
+        else:
             return CommandResponse(success=True, message=f"Breakpoint cleared at {request.flow_index}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,6 +121,11 @@ async def clear_breakpoint(flow_index: str):
     """Clear a breakpoint."""
     try:
         execution_controller.clear_breakpoint(flow_index)
+        
+        # Sync breakpoints to project if one is open
+        if project_service.is_project_open:
+            project_service.save_project(breakpoints=list(execution_controller.breakpoints))
+        
         return CommandResponse(success=True, message=f"Breakpoint cleared at {flow_index}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

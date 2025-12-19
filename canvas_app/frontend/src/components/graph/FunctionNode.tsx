@@ -171,10 +171,12 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
         title={status}
       />
 
-      {/* Breakpoint indicator */}
+      {/* Breakpoint indicator - position adjusted based on whether node has children (collapse button) */}
       {hasBreakpoint && (
         <div
-          className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-red-500 border-2 border-white"
+          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-red-500 border-2 border-white z-20 ${
+            hasChildren ? '-left-5' : '-left-1'
+          }`}
           title="Breakpoint"
         />
       )}
