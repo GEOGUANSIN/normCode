@@ -17,6 +17,8 @@ export function useWebSocket() {
   const addBreakpoint = useExecutionStore((s) => s.addBreakpoint);
   const removeBreakpoint = useExecutionStore((s) => s.removeBreakpoint);
   const setRunId = useExecutionStore((s) => s.setRunId);
+  const setNodeStatuses = useExecutionStore((s) => s.setNodeStatuses);
+  const reset = useExecutionStore((s) => s.reset);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -71,6 +73,22 @@ export function useWebSocket() {
         case 'execution:stopped':
           setStatus('idle');
           setCurrentInference(null);
+          break;
+
+        case 'execution:reset':
+          setStatus('idle');
+          setCurrentInference(null);
+          if (data.node_statuses) {
+            setNodeStatuses(data.node_statuses as Record<string, NodeStatus>);
+          }
+          if (data.completed_count !== undefined && data.total_count !== undefined) {
+            setProgress(data.completed_count as number, data.total_count as number);
+          }
+          addLog({
+            flowIndex: '',
+            level: 'info',
+            message: 'Execution reset - ready to run again',
+          });
           break;
 
         case 'execution:stepping':
@@ -163,7 +181,7 @@ export function useWebSocket() {
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset]
   );
 
   const [isConnected, setIsConnected] = useState(false);

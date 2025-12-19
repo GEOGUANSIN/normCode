@@ -1,8 +1,8 @@
 # NormCode Canvas Tool - Implementation Journal
 
 **Project Start**: December 18, 2024  
-**Current Phase**: Phase 3 - Debugging Features + Project-Based Architecture  
-**Status**: 🚧 Phase 3 In Progress (Phase 1 ✅ Phase 2 ✅ Complete, Tensor Inspection ✅, Project System ✅)
+**Current Phase**: Phase 4 - Modification & Re-run  
+**Status**: ✅ Phase 3 Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 🔄 In Progress)
 
 ---
 
@@ -15,6 +15,163 @@ This journal tracks the implementation progress of the NormCode Graph Canvas Too
 ---
 
 ## Implementation Timeline
+
+### December 19, 2024 - Phase 4: Editor Panel (NEW)
+
+#### What Was Implemented
+
+**NormCode Editor Panel**
+A new integrated editor panel for editing `.ncd`, `.ncn`, `.ncdn`, and JSON files directly within the canvas app.
+
+- [x] **View Mode Switcher**: Tab-based toggle between "Canvas" and "Editor" views
+  - Canvas view: Graph visualization and execution (existing functionality)
+  - Editor view: File browser and code editing
+- [x] **Backend Editor Router (`/api/editor/`)**:
+  - `GET /file` - Read file content
+  - `POST /file` - Save file content
+  - `POST /list` - List files in directory (non-recursive)
+  - `POST /list-recursive` - List files recursively
+  - `GET /validate` - Basic syntax validation
+- [x] **EditorPanel Component**:
+  - File browser sidebar with directory input
+  - Search/filter files
+  - Recursive directory scanning option
+  - Format-specific icons (NCD, NCN, NCDN, JSON)
+  - Code editor with monospace font
+  - Save with Ctrl+S keyboard shortcut
+  - Modification tracking (unsaved changes indicator)
+  - Basic validation display
+  - Line/character count status bar
+
+#### Files Created
+
+**Backend**:
+- `canvas_app/backend/routers/editor_router.py` - Editor API endpoints
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/EditorPanel.tsx` - Editor UI component
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/main.py` - Added editor router
+- `canvas_app/backend/routers/__init__.py` - Added editor_router export
+
+**Frontend**:
+- `canvas_app/frontend/src/App.tsx`:
+  - Added `viewMode` state ('canvas' | 'editor')
+  - Added view mode tabs in header
+  - Conditional rendering of EditorPanel vs Canvas
+  - Panel toggles only shown in canvas mode
+
+#### UI Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Header: [Logo] [Project] | [Canvas] [Editor] | [Panels] [Settings] │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Canvas Mode:        │  Editor Mode:                                 │
+│  ┌─────────────────┐ │  ┌──────────┬────────────────────────────┐   │
+│  │   Graph Canvas  │ │  │ File     │  Code Editor               │   │
+│  │                 │ │  │ Browser  │                            │   │
+│  │  [Nodes/Edges]  │ │  │          │  [File Content]            │   │
+│  │                 │ │  │  .ncd    │                            │   │
+│  ├─────────────────┤ │  │  .ncn    │  ─────────────────────     │   │
+│  │   Log Panel     │ │  │  .ncdn   │  Status: Lines | Chars     │   │
+│  └─────────────────┘ │  └──────────┴────────────────────────────┘   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Usage
+
+1. Open a project in the canvas app
+2. Click "Editor" tab in the header to switch to editor view
+3. Enter a directory path in the file browser sidebar
+4. Click "Load" to list NormCode files
+5. Select a file to open it in the editor
+6. Edit the file content
+7. Press Ctrl+S or click "Save" to save changes
+8. Switch back to "Canvas" tab to continue execution/debugging
+
+---
+
+### December 19, 2024 - Phase 3 Complete: Run To & Node Expansion
+
+#### What Was Implemented
+
+**"Run To" Feature (NEW)**
+Run execution until a specific node is reached, then automatically pause. Perfect for debugging - run to a specific point and inspect state.
+
+- [x] **Backend `run_to(flow_index)` method**: ExecutionController method that:
+  - Validates target flow_index exists and is pending
+  - Sets `_run_to_target` tracking field
+  - Starts execution and auto-pauses when target is completed
+  - Emits `execution:paused` event with `reason: "run_to_target_reached"`
+- [x] **POST `/execution/run-to/{flow_index}` endpoint**: API endpoint for triggering run-to
+- [x] **Frontend `executionApi.runTo()`**: API client method
+- [x] **Run To button in DetailPanel**: 
+  - Shows for pending nodes when not running
+  - Loading state while executing
+  - Calls API and updates UI
+
+**Enhanced Node Expansion (NEW)**
+Function nodes now show detailed working interpretation information with color-coded sections.
+
+- [x] **Paradigm Display**: Purple box showing paradigm name (e.g., `h_Data-c_PassThrough-o_Normal`)
+- [x] **Value Order Display**: Blue box showing input value mapping with concept names and positions
+- [x] **Prompt Location Display**: Green box showing prompt file path when applicable
+- [x] **Output Type Display**: Orange box showing expected output type
+- [x] **Other Properties**: Collapsible section for any additional working interpretation fields
+- [x] **Value Node Details**: Simplified view showing axes for value nodes
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `_run_to_target` field to ExecutionController
+  - Added `run_to(flow_index)` async method
+  - Updated `_run_cycle_with_events()` to check and pause at run-to target
+  - Updated `restart()` to clear run-to target
+- `canvas_app/backend/routers/execution_router.py`:
+  - Added `POST /execution/run-to/{flow_index}` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `runTo(flowIndex)` method to executionApi
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx`:
+  - Wired up Run To button with loading state
+  - Added enhanced Function Details section with parsed working interpretation
+  - Added color-coded displays for paradigm, value_order, prompt_location, output_type
+  - Added collapsible "Other Properties" section
+
+#### Technical Notes
+
+**Run To Flow**:
+```
+User clicks "Run To" on a pending node
+    ↓ handleRunTo()
+executionApi.runTo(flow_index)
+    ↓ POST /execution/run-to/{flow_index}
+execution_controller.run_to(flow_index)
+    ↓ Sets _run_to_target, starts execution
+_run_loop() → _run_cycle_with_events()
+    ↓ Executes inferences one by one
+When flow_index == _run_to_target after completion:
+    ↓ Auto-pause, emit execution:paused
+UI receives event, updates to paused state
+```
+
+**Working Interpretation Display**:
+The working_interpretation object typically contains:
+- `paradigm`: The execution paradigm (e.g., `h_PromptTemplate-c_GenerateJson-o_List`)
+- `value_order`: Mapping of input concept names to their position indices
+- `prompt_location`: Path to prompt template file
+- `output_type`: Expected output type (e.g., `list[dict]`, `str`)
+- Additional fields specific to the paradigm
+
+---
 
 ### December 19, 2024 - Project-Based Canvas Architecture
 
@@ -704,16 +861,18 @@ API endpoints verified:
 | **Project-based canvas** | ✅ Working | IDE-like project management with config persistence |
 | **Recent projects** | ✅ Working | Quick access to recently opened projects |
 | **Project welcome screen** | ✅ Working | Launch screen for opening/creating projects |
+| **"Run to" feature** | ✅ Working | Run until specific node, then pause |
+| **Node expansion (detailed view)** | ✅ Working | Enhanced function node details with working interpretation |
+| **Editor panel** | ✅ Working | Integrated file editor for .ncd/.ncn/.ncdn files |
+| **View mode switcher** | ✅ Working | Tab-based toggle between Canvas and Editor views |
 
 ### What's Not Yet Working
 
 | Feature | Status | Phase |
-|---------|--------|-------|
-| "Run to" feature | ❌ Not started | Phase 3 |
-| Node expansion (detailed view) | ❌ Not started | Phase 3 |
 | Value override | ❌ Not started | Phase 4 |
 | Function modification | ❌ Not started | Phase 4 |
 | Selective re-run | ❌ Not started | Phase 4 |
+| Run comparison | ❌ Not started | Phase 4 |
 
 ---
 
@@ -731,13 +890,14 @@ API endpoints verified:
 - [x] Real-time status updates on nodes
 - [x] Log streaming
 
-### Phase 3: Debugging Features 🚧 IN PROGRESS
+### Phase 3: Debugging Features ✅ COMPLETE
 
 **Goals**:
 1. ✅ Tensor data inspection in detail panel
 2. ✅ Per-node log filtering in log panel
-3. Node expansion with detailed execution info
+3. ✅ Node expansion with detailed execution info
 4. ✅ Reference data viewer
+5. ✅ "Run to" feature
 
 **Completed Tasks**:
 - [x] Add `TensorInspector` component for multi-dimensional data viewing
@@ -745,12 +905,9 @@ API endpoints verified:
 - [x] Add log filtering by selected node
 - [x] Add reference data API endpoints
 - [x] Integrate TensorInspector into DetailPanel
-
-**Remaining Tasks**:
-- [ ] Add "Run to" feature (run until specific node)
-- [ ] Add expanded node view with working interpretation details
-
-**Estimated Effort**: ~1 more day for remaining tasks
+- [x] Add "Run to" feature (run until specific node)
+- [x] Add expanded node view with working interpretation details
+- [x] Enhanced function node display with paradigm, value_order, prompt_location
 
 ### Phase 4: Modification & Re-run
 
@@ -853,6 +1010,60 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.6.1 (December 19, 2024) - Editor Parsing & Preview
+- **Parser Integration**:
+  - Integrated unified_parser from streamlit_app/editor_subapp
+  - Backend ParserService wrapping the parser
+  - Auto-loads files from project directory on mount
+- **View Mode Toggle** (Raw/Parsed/Preview):
+  - Raw: Standard text editing
+  - Parsed: Structured view with flow indices table
+  - Preview: Multi-format preview tabs (NCD, NCN, NCDN, JSON, NCI)
+- **New API Endpoints**:
+  - `POST /api/editor/parse` - Parse content to structured JSON
+  - `POST /api/editor/convert` - Convert between formats
+  - `POST /api/editor/preview` - Get all format previews
+  - `GET /api/editor/parser-status` - Check parser availability
+- **New Files**:
+  - `backend/services/parser_service.py` - Parser service wrapper
+
+### v0.6.0 (December 19, 2024) - Phase 4: Editor Panel
+- **Integrated Editor View**:
+  - New "Editor" tab alongside "Canvas" in the header
+  - View mode switcher with persistent state
+  - Full file browser with directory scanning
+  - Recursive file search option
+  - Format-specific icons for NCD, NCN, NCDN, JSON files
+- **Editor Features**:
+  - Load and edit NormCode files directly
+  - Save with Ctrl+S keyboard shortcut
+  - Modification tracking (unsaved changes indicator)
+  - Basic syntax validation
+  - Line/character count in status bar
+  - Search/filter files in browser
+- **New API Endpoints**:
+  - `GET /api/editor/file` - Read file content
+  - `POST /api/editor/file` - Save file content
+  - `POST /api/editor/list` - List files in directory
+  - `POST /api/editor/list-recursive` - List files recursively
+  - `GET /api/editor/validate` - Basic file validation
+- **New Files**:
+  - `backend/routers/editor_router.py` - Editor API
+  - `frontend/src/components/panels/EditorPanel.tsx` - Editor UI
+
+### v0.5.0 (December 19, 2024) - Phase 3 Complete: Run To & Node Expansion
+- **"Run To" Feature**:
+  - Run execution until a specific node is reached, then auto-pause
+  - `POST /execution/run-to/{flow_index}` API endpoint
+  - Run To button in DetailPanel for pending nodes
+  - Emits `execution:paused` with `reason: "run_to_target_reached"`
+- **Enhanced Node Expansion**:
+  - Function nodes now show detailed working interpretation
+  - Color-coded sections: Paradigm (purple), Value Order (blue), Prompt Location (green), Output Type (orange)
+  - Collapsible "Other Properties" for additional fields
+  - Cleaner Value Node details view
+- **Phase 3 Complete**: All debugging features now implemented
 
 ### v0.4.0 (December 19, 2024) - Project-Based Canvas Architecture
 - **Project Management**:

@@ -14,6 +14,7 @@ export function ControlPanel() {
   const currentInference = useExecutionStore((s) => s.currentInference);
   const breakpointsCount = useExecutionStore((s) => s.breakpoints.size);
   const setStatus = useExecutionStore((s) => s.setStatus);
+  const reset = useExecutionStore((s) => s.reset);
 
   const isRunning = status === 'running';
   const isPaused = status === 'paused';
@@ -65,6 +66,16 @@ export function ControlPanel() {
       setStatus('idle');
     } catch (e) {
       console.error('Failed to stop:', e);
+    }
+  };
+
+  const handleRestart = async () => {
+    try {
+      await executionApi.restart();
+      // Reset local state as well - the WebSocket will also send updates
+      reset();
+    } catch (e) {
+      console.error('Failed to restart:', e);
     }
   };
 
@@ -123,11 +134,18 @@ export function ControlPanel() {
             <SkipForward size={18} />
           </button>
 
-          {/* Reset button */}
+          {/* Reset/Restart button - available after completion or when not idle */}
           <button
-            onClick={handleStop}
-            className="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
-            title="Reset"
+            onClick={handleRestart}
+            disabled={isIdle && !isCompleted && !isFailed}
+            className={`p-2 rounded-lg transition-colors ${
+              (isCompleted || isFailed)
+                ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                : isIdle
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+            }`}
+            title={isCompleted || isFailed ? "Reset & Run Again" : "Reset"}
           >
             <RotateCcw size={18} />
           </button>

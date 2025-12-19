@@ -95,6 +95,28 @@ async def restart_execution():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/run-to/{flow_index}", response_model=CommandResponse)
+async def run_to_node(flow_index: str):
+    """Run execution until a specific node is reached, then pause.
+    
+    This runs the execution from the current state until the specified
+    flow_index is executed, then automatically pauses. Useful for
+    debugging - run to a specific point and inspect the state.
+    
+    Args:
+        flow_index: The flow_index of the node to run to
+    """
+    try:
+        await execution_controller.run_to(flow_index)
+        return CommandResponse(success=True, message=f"Running to {flow_index}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/breakpoints", response_model=CommandResponse)
 async def set_breakpoint(request: BreakpointRequest):
     """Set or clear a breakpoint."""
@@ -172,14 +194,18 @@ async def get_reference_data(concept_name: str):
     - axes: Axis names
     - shape: Tensor shape
     
-    Returns 404 if concept not found or has no reference.
+    Returns empty response if concept not found or has no reference.
     """
     ref_data = execution_controller.get_reference_data(concept_name)
     if ref_data is None:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"No reference data found for concept: {concept_name}"
-        )
+        # Return empty response instead of 404 to avoid console noise
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": []
+        }
     return ref_data
 
 

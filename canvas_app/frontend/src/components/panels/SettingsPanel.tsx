@@ -3,7 +3,7 @@
  */
 
 import { useEffect } from 'react';
-import { Settings, ChevronDown, ChevronUp, RefreshCw, Save } from 'lucide-react';
+import { Settings, RefreshCw, Save, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { executionApi, projectApi } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
@@ -100,21 +100,9 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     paradigmDir !== (currentProject.execution.paradigm_dir || '')
   );
 
+  // Don't render anything when closed - header button handles toggle
   if (!isOpen) {
-    return (
-      <div className="border-b border-slate-200 bg-white">
-        <button
-          onClick={onToggle}
-          className="w-full px-4 py-2 flex items-center justify-between text-sm text-slate-600 hover:bg-slate-50"
-        >
-          <div className="flex items-center gap-2">
-            <Settings size={14} />
-            <span>Settings</span>
-          </div>
-          <ChevronDown size={14} />
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -146,9 +134,9 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <button
             onClick={onToggle}
             className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
-            title="Collapse"
+            title="Close settings"
           >
-            <ChevronUp size={14} />
+            <X size={14} />
           </button>
         </div>
       </div>

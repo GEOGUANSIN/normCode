@@ -18,13 +18,17 @@ export function DetailPanel() {
   const getEdgesForNode = useGraphStore((s) => s.getEdgesForNode);
   const nodeStatuses = useExecutionStore((s) => s.nodeStatuses);
   const breakpoints = useExecutionStore((s) => s.breakpoints);
-  const toggleBreakpoint = useExecutionStore((s) => s.toggleBreakpoint);
+  const addBreakpoint = useExecutionStore((s) => s.addBreakpoint);
+  const removeBreakpoint = useExecutionStore((s) => s.removeBreakpoint);
   const status = useExecutionStore((s) => s.status);
 
   // Reference data state
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null);
   const [isLoadingRef, setIsLoadingRef] = useState(false);
   const [refError, setRefError] = useState<string | null>(null);
+  
+  // Run-to state
+  const [isRunningTo, setIsRunningTo] = useState(false);
 
   // Fetch reference data when node changes
   useEffect(() => {
@@ -47,12 +51,14 @@ export function DetailPanel() {
       setRefError(null);
       try {
         const data = await executionApi.getReference(conceptName);
-        setReferenceData(data);
-      } catch (e) {
-        // 404 is expected for concepts without references
-        if ((e as { status?: number }).status !== 404) {
-          setRefError('Failed to load reference data');
+        // Check if reference data exists (has_reference: true)
+        if (data && data.has_reference) {
+          setReferenceData(data);
+        } else {
+          setReferenceData(null);
         }
+      } catch (e) {
+        setRefError('Failed to load reference data');
         setReferenceData(null);
       } finally {
         setIsLoadingRef(false);
@@ -72,14 +78,17 @@ export function DetailPanel() {
     if (!conceptName) return;
 
     setIsLoadingRef(true);
+    setRefError(null);
     try {
       const data = await executionApi.getReference(conceptName);
-      setReferenceData(data);
-      setRefError(null);
-    } catch (e) {
-      if ((e as { status?: number }).status !== 404) {
-        setRefError('Failed to load reference data');
+      // Check if reference data exists (has_reference: true)
+      if (data && data.has_reference) {
+        setReferenceData(data);
+      } else {
+        setReferenceData(null);
       }
+    } catch (e) {
+      setRefError('Failed to load reference data');
       setReferenceData(null);
     } finally {
       setIsLoadingRef(false);
@@ -108,24 +117,46 @@ export function DetailPanel() {
   const hasBreakpoint = node.flow_index ? breakpoints.has(node.flow_index) : false;
 
   const handleToggleBreakpoint = async () => {
-    if (!node.flow_index) return;
+    if (!node.flow_index) {
+      console.warn('Cannot set breakpoint: node has no flow_index');
+      return;
+    }
+    
+    // Capture the current state BEFORE the async call
+    const shouldRemove = hasBreakpoint;
     
     try {
-      if (hasBreakpoint) {
+      if (shouldRemove) {
+        // Optimistically update local store first for responsive UI
+        removeBreakpoint(node.flow_index);
         await executionApi.clearBreakpoint(node.flow_index);
       } else {
+        // Optimistically update local store first for responsive UI
+        addBreakpoint(node.flow_index);
         await executionApi.setBreakpoint(node.flow_index, true);
       }
-      toggleBreakpoint(node.flow_index);
+      // WebSocket event will also update but that's okay (idempotent)
     } catch (e) {
       console.error('Failed to toggle breakpoint:', e);
+      // Revert on error
+      if (shouldRemove) {
+        addBreakpoint(node.flow_index);
+      } else {
+        removeBreakpoint(node.flow_index);
+      }
     }
   };
 
   const handleRunTo = async () => {
     if (!node.flow_index) return;
-    // TODO: Implement run-to functionality
-    console.log('Run to:', node.flow_index);
+    setIsRunningTo(true);
+    try {
+      await executionApi.runTo(node.flow_index);
+    } catch (e) {
+      console.error('Failed to run to node:', e);
+    } finally {
+      setIsRunningTo(false);
+    }
   };
 
   const categoryLabels: Record<string, string> = {
@@ -228,10 +259,11 @@ export function DetailPanel() {
               {status !== 'running' && nodeStatus === 'pending' && (
                 <button
                   onClick={handleRunTo}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                  disabled={isRunningTo}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
                 >
-                  <Play size={10} />
-                  Run To
+                  <Play size={10} className={isRunningTo ? 'animate-pulse' : ''} />
+                  {isRunningTo ? 'Running...' : 'Run To'}
                 </button>
               )}
             </div>
@@ -280,34 +312,113 @@ export function DetailPanel() {
           </section>
         )}
 
-        {/* Data Section */}
-        <section>
-          <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
-            <Layers size={12} /> Metadata
-          </h4>
-          <div className="space-y-2">
-            {node.data.axes && node.data.axes.length > 0 && (
-              <div>
-                <label className="text-xs text-slate-500">Axes</label>
-                <p className="font-mono text-sm text-slate-800">[{node.data.axes.join(', ')}]</p>
-              </div>
-            )}
-            {node.data.sequence && (
-              <div>
-                <label className="text-xs text-slate-500">Sequence</label>
-                <p className="text-sm text-slate-800">{node.data.sequence}</p>
-              </div>
-            )}
-            {node.data.working_interpretation && (
-              <div>
-                <label className="text-xs text-slate-500">Working Interpretation</label>
-                <pre className="text-xs bg-slate-50 p-2 rounded overflow-x-auto max-h-32">
-                  {JSON.stringify(node.data.working_interpretation, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        </section>
+        {/* Data Section - Value Nodes */}
+        {node.node_type === 'value' && (
+          <section>
+            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
+              <Layers size={12} /> Value Details
+            </h4>
+            <div className="space-y-2">
+              {node.data.axes && node.data.axes.length > 0 && (
+                <div>
+                  <label className="text-xs text-slate-500">Axes</label>
+                  <p className="font-mono text-sm text-slate-800">[{node.data.axes.join(', ')}]</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Function Details Section - Function Nodes */}
+        {node.node_type === 'function' && (
+          <section>
+            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
+              <FileJson size={12} /> Function Details
+            </h4>
+            <div className="space-y-3">
+              {/* Sequence Type */}
+              {node.data.sequence && (
+                <div>
+                  <label className="text-xs text-slate-500">Sequence Type</label>
+                  <p className="text-sm text-slate-800 font-medium">{node.data.sequence}</p>
+                </div>
+              )}
+
+              {/* Working Interpretation - Parsed View */}
+              {node.data.working_interpretation && (
+                <div className="space-y-2">
+                  <label className="text-xs text-slate-500">Working Interpretation</label>
+                  
+                  {/* Paradigm */}
+                  {node.data.working_interpretation.paradigm && (
+                    <div className="bg-purple-50 p-2 rounded border border-purple-200">
+                      <label className="text-xs text-purple-600 font-medium">Paradigm</label>
+                      <p className="font-mono text-xs text-purple-800 break-all">
+                        {node.data.working_interpretation.paradigm}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Value Order */}
+                  {node.data.working_interpretation.value_order && (
+                    <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                      <label className="text-xs text-blue-600 font-medium">Value Order</label>
+                      <div className="mt-1 space-y-1">
+                        {Object.entries(node.data.working_interpretation.value_order).map(([key, val]) => (
+                          <div key={key} className="flex justify-between text-xs">
+                            <span className="font-mono text-blue-700 truncate max-w-[180px]" title={key}>{key}</span>
+                            <span className="text-blue-900 font-medium">:{String(val)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Prompt Location */}
+                  {node.data.working_interpretation.prompt_location && (
+                    <div className="bg-green-50 p-2 rounded border border-green-200">
+                      <label className="text-xs text-green-600 font-medium">Prompt Location</label>
+                      <p className="font-mono text-xs text-green-800 break-all">
+                        {node.data.working_interpretation.prompt_location}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Output Type */}
+                  {node.data.working_interpretation.output_type && (
+                    <div className="bg-orange-50 p-2 rounded border border-orange-200">
+                      <label className="text-xs text-orange-600 font-medium">Output Type</label>
+                      <p className="font-mono text-xs text-orange-800">
+                        {node.data.working_interpretation.output_type}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Other fields as collapsible JSON */}
+                  {(() => {
+                    const knownKeys = ['paradigm', 'value_order', 'prompt_location', 'output_type'];
+                    const otherFields = Object.entries(node.data.working_interpretation)
+                      .filter(([key]) => !knownKeys.includes(key));
+                    
+                    if (otherFields.length > 0) {
+                      return (
+                        <details className="bg-slate-50 p-2 rounded border border-slate-200">
+                          <summary className="text-xs text-slate-600 font-medium cursor-pointer">
+                            Other Properties ({otherFields.length})
+                          </summary>
+                          <pre className="text-xs text-slate-700 mt-2 overflow-x-auto">
+                            {JSON.stringify(Object.fromEntries(otherFields), null, 2)}
+                          </pre>
+                        </details>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Connections Section */}
         <section>

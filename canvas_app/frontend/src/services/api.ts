@@ -96,6 +96,9 @@ export const executionApi = {
   restart: (): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/restart`, { method: 'POST' }),
   
+  runTo: (flowIndex: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/run-to/${encodeURIComponent(flowIndex)}`, { method: 'POST' }),
+  
   setBreakpoint: (flowIndex: string, enabled: boolean = true): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/breakpoints`, {
       method: 'POST',

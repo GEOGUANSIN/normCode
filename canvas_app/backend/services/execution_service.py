@@ -20,6 +20,56 @@ sys.path.insert(0, str(project_root))
 logger = logging.getLogger(__name__)
 
 
+class OrchestratorLogHandler(logging.Handler):
+    """
+    Custom logging handler that captures logs from orchestrator/infra modules
+    and forwards them to the ExecutionController's log system.
+    
+    This enables rich orchestrator logs (step execution, tensor data, etc.)
+    to appear in the frontend's Log Panel.
+    """
+    
+    def __init__(self, execution_controller: 'ExecutionController'):
+        super().__init__()
+        self.execution_controller = execution_controller
+        # Set formatter to capture just the message
+        self.setFormatter(logging.Formatter('%(message)s'))
+    
+    def emit(self, record: logging.LogRecord):
+        """Forward log record to execution controller."""
+        try:
+            # Map Python log levels to our log levels
+            level_map = {
+                logging.DEBUG: 'debug',
+                logging.INFO: 'info',
+                logging.WARNING: 'warning',
+                logging.ERROR: 'error',
+                logging.CRITICAL: 'error',
+            }
+            level = level_map.get(record.levelno, 'info')
+            
+            # Extract flow_index from the log message if present
+            # The orchestrator logs often include flow_index in context
+            flow_index = ''
+            if hasattr(record, 'flow_index'):
+                flow_index = record.flow_index
+            
+            # Format the message with logger name for context
+            logger_short = record.name.replace('infra.', '')
+            message = self.format(record)
+            
+            # Add source prefix for clarity
+            if record.name.startswith('infra.'):
+                message = f"[{logger_short}] {message}"
+            
+            # Add to execution logs (this will also emit WebSocket event)
+            self.execution_controller._add_log(level, flow_index, message)
+            
+        except Exception:
+            # Don't let logging errors break execution
+            self.handleError(record)
+
+
 class CustomParadigmTool:
     """
     Custom paradigm tool that loads paradigms from a specified directory
@@ -127,9 +177,64 @@ class ExecutionController:
     _stop_requested: bool = False
     _run_task: Optional[asyncio.Task] = None
     _retries: List[Any] = field(default_factory=list)  # WaitlistItem retries
+    _run_to_target: Optional[str] = None  # Target flow_index for "run to" mode
+    _log_handler: Optional[OrchestratorLogHandler] = None  # Handler for capturing infra logs
+    _attached_loggers: List[str] = field(default_factory=list)  # Track which loggers we attached to
     
     def __post_init__(self):
         self._pause_event.set()  # Not paused by default
+        self._attached_loggers = []
+    
+    def _attach_infra_log_handlers(self):
+        """Attach our log handler to infra loggers to capture orchestrator logs."""
+        if self._log_handler is not None:
+            return  # Already attached
+        
+        self._log_handler = OrchestratorLogHandler(self)
+        self._log_handler.setLevel(logging.INFO)  # Capture INFO and above
+        
+        # List of infra logger names to capture
+        infra_loggers = [
+            'infra',
+            'infra._orchest',
+            'infra._orchest._orchestrator',
+            'infra._core',
+            'infra._core._inference',
+            'infra._agent',
+            'infra._agent._sequences',
+            'infra._agent._sequences.imperative',
+            'infra._agent._sequences.grouping',
+            'infra._agent._sequences.assigning',
+            'infra._loggers',
+            'infra._loggers.utils',
+        ]
+        
+        self._attached_loggers = []
+        for logger_name in infra_loggers:
+            try:
+                infra_logger = logging.getLogger(logger_name)
+                infra_logger.addHandler(self._log_handler)
+                self._attached_loggers.append(logger_name)
+            except Exception as e:
+                logger.warning(f"Failed to attach log handler to {logger_name}: {e}")
+        
+        logger.info(f"Attached log handler to {len(self._attached_loggers)} infra loggers")
+    
+    def _detach_infra_log_handlers(self):
+        """Detach our log handler from infra loggers."""
+        if self._log_handler is None:
+            return
+        
+        for logger_name in self._attached_loggers:
+            try:
+                infra_logger = logging.getLogger(logger_name)
+                infra_logger.removeHandler(self._log_handler)
+            except Exception:
+                pass
+        
+        self._attached_loggers = []
+        self._log_handler = None
+        logger.info("Detached log handlers from infra loggers")
     
     async def load_repositories(
         self,
@@ -278,15 +383,18 @@ class ExecutionController:
         """Start or resume execution."""
         if self.orchestrator is None:
             raise RuntimeError("No repositories loaded. Call load_repositories first.")
-        
+
         if self.status == ExecutionStatus.PAUSED:
             await self.resume()
             return
-        
+
+        # Attach log handlers to capture infra/orchestrator logs
+        self._attach_infra_log_handlers()
+
         self.status = ExecutionStatus.RUNNING
         self._stop_requested = False
         self._pause_event.set()
-        
+
         await self._emit("execution:started", {})
         self._add_log("info", "", "Execution started")
         
@@ -325,17 +433,104 @@ class ExecutionController:
         """Stop execution."""
         self._stop_requested = True
         self._pause_event.set()  # Unblock if paused
-        
+
         if self._run_task and not self._run_task.done():
             self._run_task.cancel()
             try:
                 await self._run_task
             except asyncio.CancelledError:
                 pass
-        
+
+        # Detach log handlers
+        self._detach_infra_log_handlers()
+
         self.status = ExecutionStatus.IDLE
         await self._emit("execution:stopped", {})
         self._add_log("info", "", "Execution stopped")
+    
+    async def restart(self):
+        """Restart execution from the beginning.
+        
+        This resets all node statuses, clears the orchestrator's blackboard,
+        and allows re-execution of the plan from scratch.
+        """
+        if self.orchestrator is None:
+            raise RuntimeError("No repositories loaded. Call load_repositories first.")
+        
+        # Stop any running execution first
+        await self.stop()
+        
+        # Reset node statuses to pending
+        for flow_index in self.node_statuses:
+            self.node_statuses[flow_index] = NodeStatus.PENDING
+        
+        # Reset counters
+        self.completed_count = 0
+        self.cycle_count = 0
+        self.current_inference = None
+        self._retries = []
+        self._run_to_target = None
+        
+        # Reset the orchestrator's blackboard
+        try:
+            await asyncio.to_thread(self.orchestrator.blackboard.reset)
+        except AttributeError:
+            # Blackboard might not have reset method - reset manually
+            try:
+                # Mark all items as pending again
+                for item in self.orchestrator.waitlist.items:
+                    flow_index = item.inference_entry.flow_info['flow_index']
+                    await asyncio.to_thread(
+                        self.orchestrator.blackboard.record_pending,
+                        flow_index
+                    )
+            except Exception as e:
+                self._add_log("warning", "", f"Could not fully reset blackboard: {e}")
+        
+        self.status = ExecutionStatus.IDLE
+        
+        # Emit reset event with updated statuses
+        await self._emit("execution:reset", {
+            "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
+            "completed_count": 0,
+            "total_count": self.total_count,
+        })
+        self._add_log("info", "", "Execution reset - ready to run again")
+    
+    async def run_to(self, target_flow_index: str):
+        """Run execution until a specific flow_index is reached, then pause.
+        
+        This is useful for debugging - run all the way to a specific node
+        and then stop so you can inspect the state.
+        
+        Args:
+            target_flow_index: The flow_index to run to (will pause AFTER executing this)
+        """
+        if self.orchestrator is None:
+            raise RuntimeError("No repositories loaded. Call load_repositories first.")
+        
+        # Validate that the target exists
+        if target_flow_index not in self.node_statuses:
+            raise ValueError(f"Unknown flow_index: {target_flow_index}")
+        
+        # Check if already completed
+        if self.node_statuses.get(target_flow_index) == NodeStatus.COMPLETED:
+            raise ValueError(f"Target node {target_flow_index} is already completed")
+        
+        # Attach log handlers to capture infra/orchestrator logs
+        self._attach_infra_log_handlers()
+
+        # Set up run-to mode
+        self._run_to_target = target_flow_index
+        self.status = ExecutionStatus.RUNNING
+        self._stop_requested = False
+        self._pause_event.set()
+        
+        await self._emit("execution:started", {"run_to": target_flow_index})
+        self._add_log("info", "", f"Running to {target_flow_index}")
+        
+        # Start execution in background task
+        self._run_task = asyncio.create_task(self._run_loop())
     
     def set_breakpoint(self, flow_index: str):
         """Add breakpoint at flow_index."""
@@ -526,16 +721,20 @@ class ExecutionController:
             
             if not self._stop_requested and self.status != ExecutionStatus.PAUSED:
                 self.status = ExecutionStatus.COMPLETED
+                # Detach log handlers on completion
+                self._detach_infra_log_handlers()
                 await self._emit("execution:completed", {
                     "completed_count": self.completed_count,
                     "total_count": self.total_count
                 })
                 self._add_log("info", "", "Execution completed")
-            
+
         except asyncio.CancelledError:
             logger.info("Execution cancelled")
+            self._detach_infra_log_handlers()
         except Exception as e:
             self.status = ExecutionStatus.FAILED
+            self._detach_infra_log_handlers()
             await self._emit("execution:error", {"error": str(e)})
             self._add_log("error", "", f"Execution failed: {str(e)}")
             logger.exception("Execution failed")
@@ -623,6 +822,18 @@ class ExecutionController:
                         "duration": duration
                     })
                     self._add_log("info", flow_index, f"Completed in {duration:.2f}s")
+                    
+                    # Check if we've hit the "run to" target
+                    if self._run_to_target and flow_index == self._run_to_target:
+                        self._run_to_target = None  # Clear the target
+                        self.status = ExecutionStatus.PAUSED
+                        self._pause_event.clear()
+                        await self._emit("execution:paused", {
+                            "inference": flow_index,
+                            "reason": "run_to_target_reached"
+                        })
+                        self._add_log("info", flow_index, "Run-to target reached - execution paused")
+                        break
                 else:
                     # Retry needed
                     self.node_statuses[flow_index] = NodeStatus.PENDING

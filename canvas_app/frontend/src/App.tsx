@@ -15,7 +15,9 @@ import {
   PanelBottomClose,
   Folder,
   RefreshCw,
-  X
+  X,
+  GitGraph,
+  FileCode,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -24,16 +26,21 @@ import { LoadPanel } from './components/panels/LoadPanel';
 import { LogPanel } from './components/panels/LogPanel';
 import { SettingsPanel } from './components/panels/SettingsPanel';
 import { ProjectPanel } from './components/panels/ProjectPanel';
+import { EditorPanel } from './components/panels/EditorPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
 import { useProjectStore } from './stores/projectStore';
+
+// View modes for the main content area
+type ViewMode = 'canvas' | 'editor';
 
 function App() {
   const [showLoadPanel, setShowLoadPanel] = useState(false);
   const [showDetailPanel, setShowDetailPanel] = useState(true);
   const [showLogPanel, setShowLogPanel] = useState(true);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
@@ -71,23 +78,25 @@ function App() {
         {/* Left side: Logo + Project Info */}
         <div className="flex items-center gap-4">
           {/* App Logo */}
-          <div className="flex items-center gap-2">
-            <Cpu className="w-6 h-6 text-purple-500" />
-            <h1 className="text-lg font-semibold text-slate-800">NormCode Canvas</h1>
-          </div>
-          
-          {/* Divider */}
-          <div className="w-px h-6 bg-slate-200" />
+          <Cpu className="w-5 h-5 text-purple-500" />
           
           {/* Project Info */}
           <div className="flex items-center gap-2">
-            <Folder className="w-4 h-4 text-slate-400" />
             <span className="font-medium text-slate-700">{currentProject.name}</span>
             {isLoaded ? (
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                Loaded
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                  Loaded
+                </span>
+                <button
+                  onClick={() => setShowLoadPanel(true)}
+                  className="text-xs text-slate-400 hover:text-slate-600 hover:underline transition-colors"
+                  title="Load different repositories"
+                >
+                  (change)
+                </button>
+              </div>
             ) : repositoriesExist ? (
               <button
                 onClick={loadProjectRepositories}
@@ -112,23 +121,39 @@ function App() {
           <span className="text-xs text-slate-400">
             {currentProject.execution.llm_model} • {currentProject.execution.max_cycles} cycles
           </span>
+          
+          {/* View Mode Tabs */}
+          <div className="w-px h-6 bg-slate-200 mx-2" />
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('canvas')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-sm rounded-md transition-all ${
+                viewMode === 'canvas'
+                  ? 'bg-white text-blue-600 shadow-sm font-medium'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <GitGraph size={14} />
+              Canvas
+            </button>
+            <button
+              onClick={() => setViewMode('editor')}
+              className={`flex items-center gap-1.5 px-3 py-1 text-sm rounded-md transition-all ${
+                viewMode === 'editor'
+                  ? 'bg-white text-blue-600 shadow-sm font-medium'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <FileCode size={14} />
+              Editor
+            </button>
+          </div>
         </div>
         
         {/* Right side: Actions */}
         <div className="flex items-center gap-1">
-          {/* Load Different button */}
-          {isLoaded && (
-            <button
-              onClick={() => setShowLoadPanel(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <FolderOpen size={16} />
-              Load Different
-            </button>
-          )}
-          
-          {/* Panel toggles */}
-          {graphData && (
+          {/* Panel toggles - only show in canvas mode */}
+          {graphData && viewMode === 'canvas' && (
             <>
               <div className="w-px h-6 bg-slate-200 mx-1" />
               <button
@@ -205,13 +230,16 @@ function App() {
         onToggle={() => setShowSettingsPanel(!showSettingsPanel)} 
       />
 
-      {/* Control Panel */}
-      {graphData && <ControlPanel />}
+      {/* Control Panel - only show in canvas mode when graph is loaded */}
+      {graphData && viewMode === 'canvas' && <ControlPanel />}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative z-0">
-        {!isLoaded ? (
-          // Show message when repositories not loaded yet
+        {viewMode === 'editor' ? (
+          // Editor View
+          <EditorPanel />
+        ) : !isLoaded ? (
+          // Show message when repositories not loaded yet (Canvas mode)
           <div className="flex-1 flex items-center justify-center bg-white">
             <div className="text-center p-8">
               <Folder className="w-16 h-16 text-slate-300 mx-auto mb-4" />
@@ -239,6 +267,7 @@ function App() {
             </div>
           </div>
         ) : (
+          // Canvas View
           <>
             <div className="flex-1 flex overflow-hidden">
               {/* Graph Canvas */}
