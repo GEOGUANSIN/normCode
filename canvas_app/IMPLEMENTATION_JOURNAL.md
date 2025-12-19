@@ -1,8 +1,8 @@
 # NormCode Canvas Tool - Implementation Journal
 
 **Project Start**: December 18, 2024  
-**Current Phase**: Phase 2 - Execution Integration  
-**Status**: 🚧 Phase 2 In Progress (Phase 1 ✅ Complete)
+**Current Phase**: Phase 3 - Debugging Features  
+**Status**: 🚧 Phase 3 Ready to Start (Phase 1 ✅ Phase 2 ✅ Complete, Execution Environment ✅)
 
 ---
 
@@ -15,6 +15,82 @@ This journal tracks the implementation progress of the NormCode Graph Canvas Too
 ---
 
 ## Implementation Timeline
+
+### December 19, 2024 - Execution Environment Enhancement
+
+#### What Was Implemented
+
+**Custom Paradigm Directory Support**
+- [x] **Paradigm Directory field**: Added to Settings Panel for specifying custom paradigm locations
+- [x] **CustomParadigmTool class**: Created in `execution_service.py` to load paradigms from non-default directories
+- [x] **Relative path support**: Paradigm directory can be relative to base_dir (e.g., `provision/paradigm`)
+- [x] **Logging integration**: Custom paradigm usage logged to execution logs
+
+**Execution Configuration (Phase 2 Enhancement)**
+- [x] **LLM Model selection**: Dropdown populated from `settings.yaml` via backend API
+- [x] **Max Cycles configuration**: Configurable execution cycle limit (1-1000)
+- [x] **Database Path**: SQLite checkpoint database path configuration
+- [x] **Base Directory**: Override base directory for file operations
+- [x] **Paradigm Directory**: Custom paradigm directory for project-specific paradigms
+
+**New Components**
+- [x] **SettingsPanel (`SettingsPanel.tsx`)**: Collapsible panel for all execution configuration
+- [x] **ConfigStore (`configStore.ts`)**: Zustand store for execution settings state
+
+**Backend API Enhancements**
+- [x] **GET /execution/config**: Returns available LLM models and default config values
+- [x] **Dynamic model loading**: Reads models from `settings.yaml` using `infra._constants.PROJECT_ROOT`
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/schemas/execution_schemas.py`:
+  - Added `paradigm_dir` to `LoadRepositoryRequest` and `ExecutionConfig`
+  - Added `get_available_llm_models()` for dynamic model loading
+  - Added `DEFAULT_MAX_CYCLES`, `DEFAULT_DB_PATH` constants
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `CustomParadigmTool` class
+  - Updated `load_repositories()` to accept and use `paradigm_dir`
+  - Body instantiation with optional custom paradigm tool
+- `canvas_app/backend/routers/repository_router.py`: Pass `paradigm_dir` to controller
+- `canvas_app/backend/routers/execution_router.py`: Added `/execution/config` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/types/execution.ts`: Added `paradigm_dir` to types
+- `canvas_app/frontend/src/stores/configStore.ts`: NEW - Config state management
+- `canvas_app/frontend/src/services/api.ts`: Added `getConfig()` method
+- `canvas_app/frontend/src/components/panels/SettingsPanel.tsx`: NEW - Settings UI
+- `canvas_app/frontend/src/components/panels/LoadPanel.tsx`: Integrated config store
+- `canvas_app/frontend/src/App.tsx`: Integrated SettingsPanel
+
+#### Technical Notes
+
+**CustomParadigmTool Pattern**:
+Based on the pattern from `direct_infra_experiment/nc_ai_planning_ex/iteration_6/gold/_executor.py`:
+1. CustomParadigmTool loads paradigms from a specified directory
+2. Falls back to infra Paradigm class with custom directory
+3. Injected into Body constructor as `paradigm_tool` parameter
+
+**Configuration Flow**:
+```
+Frontend (SettingsPanel)
+    ↓ useConfigStore
+LoadPanel → API request with config
+    ↓
+repository_router → execution_service.load_repositories()
+    ↓
+CustomParadigmTool created if paradigm_dir specified
+    ↓
+Body(paradigm_tool=custom_paradigm_tool)
+```
+
+**Usage Example**:
+For the gold investment example:
+- Base Directory: `C:\...\direct_infra_experiment\nc_ai_planning_ex\iteration_6\gold`
+- Paradigm Directory: `provision/paradigm`
+- This loads paradigms from `gold/provision/paradigm/` including `h_Data-c_PassThrough-o_Normal.json`
+
+---
 
 ### December 18, 2024 - Phase 2: Execution Integration
 
@@ -319,6 +395,9 @@ API endpoints verified:
 | **Progress tracking** | ✅ Working | Completed/total count, cycle count |
 | **Breakpoint support** | ✅ Working | Set breakpoints, pause on hit |
 | **Step execution** | ✅ Working | Execute one inference then pause |
+| **Settings Panel** | ✅ Working | LLM, max cycles, db path, base dir, paradigm dir |
+| **Custom paradigm dir** | ✅ Working | Load paradigms from project-specific directories |
+| **LLM model selection** | ✅ Working | Dynamic loading from settings.yaml |
 
 ### What's Not Yet Working
 
@@ -465,6 +544,27 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.2.1 (December 19, 2024) - Execution Environment Enhancement
+- **Execution Configuration**:
+  - New Settings Panel for all execution configuration options
+  - LLM model selection with dynamic loading from settings.yaml
+  - Max cycles configuration (1-1000)
+  - Database path for checkpointing
+  - Base directory override
+  - Custom paradigm directory support
+- **Custom Paradigm Tool**:
+  - CustomParadigmTool class for loading paradigms from project-specific directories
+  - Relative path support (e.g., `provision/paradigm` relative to base_dir)
+  - Automatic paradigm directory validation
+- **Frontend**:
+  - New configStore (Zustand) for execution settings state
+  - SettingsPanel component with all config fields
+  - LoadPanel integration with config store
+  - Config summary in Load Repository modal
+- **Backend API**:
+  - GET /execution/config endpoint for available models and defaults
+  - Dynamic LLM model discovery from settings.yaml
 
 ### v0.2.0 (December 18, 2024) - Phase 2 Complete
 - **Execution Integration**:

@@ -59,6 +59,9 @@ async def load_repositories(request: LoadRepositoryRequest):
             inputs_path=request.inputs_path,
             llm_model=request.llm_model,
             base_dir=request.base_dir,
+            max_cycles=request.max_cycles,
+            db_path=request.db_path,
+            paradigm_dir=request.paradigm_dir,
         )
         
         return LoadResponse(

@@ -9,6 +9,7 @@ import { ControlPanel } from './components/panels/ControlPanel';
 import { DetailPanel } from './components/panels/DetailPanel';
 import { LoadPanel } from './components/panels/LoadPanel';
 import { LogPanel } from './components/panels/LogPanel';
+import { SettingsPanel } from './components/panels/SettingsPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
@@ -17,6 +18,7 @@ function App() {
   const [showLoadPanel, setShowLoadPanel] = useState(false);
   const [showDetailPanel, setShowDetailPanel] = useState(true);
   const [showLogPanel, setShowLogPanel] = useState(true);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
   const wsConnected = useWebSocket();
@@ -71,7 +73,12 @@ function App() {
           )}
           
           <button
-            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+            className={`p-2 rounded-lg transition-colors ${
+              showSettingsPanel
+                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
             title="Settings"
           >
             <Settings size={18} />
@@ -85,11 +92,17 @@ function App() {
         </div>
       </header>
 
+      {/* Settings Panel */}
+      <SettingsPanel 
+        isOpen={showSettingsPanel} 
+        onToggle={() => setShowSettingsPanel(!showSettingsPanel)} 
+      />
+
       {/* Control Panel */}
       {graphData && <ControlPanel />}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden relative z-0">
         <div className="flex-1 flex overflow-hidden">
           {/* Graph Canvas */}
           <div className="flex-1 overflow-hidden">
@@ -106,7 +119,10 @@ function App() {
 
       {/* Load Panel Modal */}
       {showLoadPanel && (
-        <LoadPanel onClose={() => setShowLoadPanel(false)} />
+        <LoadPanel 
+          onClose={() => setShowLoadPanel(false)} 
+          onOpenSettings={() => setShowSettingsPanel(true)}
+        />
       )}
 
       {/* Status Bar */}

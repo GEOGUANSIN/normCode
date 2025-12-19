@@ -20,6 +20,20 @@ export interface LoadRepositoryRequest {
   inputs_path?: string;
   llm_model?: string;
   base_dir?: string;
+  max_cycles?: number;
+  db_path?: string;
+  paradigm_dir?: string;
+}
+
+export interface ExecutionConfig {
+  llm_model: string;
+  max_cycles: number;
+  db_path: string | null;
+  base_dir: string | null;
+  paradigm_dir: string | null;
+  available_models: string[];
+  default_max_cycles: number;
+  default_db_path: string;
 }
 
 export interface LoadResponse {

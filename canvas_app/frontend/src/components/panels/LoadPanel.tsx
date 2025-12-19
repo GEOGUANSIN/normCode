@@ -3,22 +3,26 @@
  */
 
 import { useState } from 'react';
-import { FolderOpen, Play, AlertCircle, CheckCircle } from 'lucide-react';
+import { FolderOpen, AlertCircle, CheckCircle, Settings } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { repositoryApi, graphApi } from '../../services/api';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
+import { useConfigStore } from '../../stores/configStore';
 import type { LoadRepositoryRequest } from '../../types/execution';
 
 interface LoadPanelProps {
   onClose: () => void;
+  onOpenSettings?: () => void;
 }
 
-export function LoadPanel({ onClose }: LoadPanelProps) {
+export function LoadPanel({ onClose, onOpenSettings }: LoadPanelProps) {
   const [conceptsPath, setConceptsPath] = useState('');
   const [inferencesPath, setInferencesPath] = useState('');
   const [inputsPath, setInputsPath] = useState('');
-  const [llmModel, setLlmModel] = useState('demo');
+
+  // Get config from store
+  const { llmModel, maxCycles, dbPath, baseDir, paradigmDir } = useConfigStore();
 
   const setGraphData = useGraphStore((s) => s.setGraphData);
   const setProgress = useExecutionStore((s) => s.setProgress);
@@ -60,6 +64,10 @@ export function LoadPanel({ onClose }: LoadPanelProps) {
       inferences_path: inferencesPath,
       inputs_path: inputsPath || undefined,
       llm_model: llmModel,
+      max_cycles: maxCycles,
+      db_path: dbPath || undefined,
+      base_dir: baseDir || undefined,
+      paradigm_dir: paradigmDir || undefined,
     });
   };
 
@@ -139,20 +147,39 @@ export function LoadPanel({ onClose }: LoadPanelProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              LLM Model
-            </label>
-            <select
-              value={llmModel}
-              onChange={(e) => setLlmModel(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-              <option value="demo">Demo (No LLM)</option>
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              <option value="claude-3-opus">Claude 3 Opus</option>
-            </select>
+          {/* Current config summary */}
+          <div className="p-3 bg-slate-50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">Execution Config</span>
+              {onOpenSettings && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenSettings();
+                  }}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                >
+                  <Settings size={12} />
+                  Edit Settings
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+              <div>
+                <span className="text-slate-400">Model:</span> {llmModel === 'demo' ? 'Demo (No LLM)' : llmModel}
+              </div>
+              <div>
+                <span className="text-slate-400">Max Cycles:</span> {maxCycles}
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-400">Database:</span> {dbPath || 'orchestration.db'}
+              </div>
+              {paradigmDir && (
+                <div className="col-span-2">
+                  <span className="text-slate-400">Paradigms:</span> {paradigmDir}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Error message */}

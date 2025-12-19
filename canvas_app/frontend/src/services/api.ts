@@ -9,6 +9,7 @@ import type {
   LoadResponse, 
   CommandResponse,
   RepositoryExample,
+  ExecutionConfig,
 } from '../types/execution';
 
 const API_BASE = '/api';
@@ -97,6 +98,9 @@ export const executionApi = {
   
   getBreakpoints: (): Promise<{ breakpoints: string[] }> =>
     fetchJson(`${API_BASE}/execution/breakpoints`),
+  
+  getConfig: (): Promise<ExecutionConfig> =>
+    fetchJson(`${API_BASE}/execution/config`),
 };
 
 export { ApiError };

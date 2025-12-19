@@ -4,7 +4,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 from services.execution_service import execution_controller
-from schemas.execution_schemas import ExecutionState, BreakpointRequest, LogsResponse, LogEntry
+from schemas.execution_schemas import (
+    ExecutionState, BreakpointRequest, LogsResponse, LogEntry,
+    ExecutionConfig, LLM_MODELS, DEFAULT_MAX_CYCLES, DEFAULT_DB_PATH
+)
 
 router = APIRouter()
 
@@ -116,4 +119,17 @@ async def get_logs(
     return LogsResponse(
         logs=[LogEntry(**log) for log in logs],
         total_count=len(execution_controller.logs)
+    )
+
+
+@router.get("/config", response_model=ExecutionConfig)
+async def get_config():
+    """Get execution configuration options and defaults.
+    
+    Returns available LLM models, default values, and current config if loaded.
+    """
+    return ExecutionConfig(
+        available_models=LLM_MODELS,
+        default_max_cycles=DEFAULT_MAX_CYCLES,
+        default_db_path=DEFAULT_DB_PATH,
     )

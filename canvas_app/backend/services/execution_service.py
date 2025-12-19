@@ -3,6 +3,9 @@ import asyncio
 import logging
 import sys
 import time
+import os
+import json
+import importlib.util
 from pathlib import Path
 from typing import Optional, Dict, Any, Set, List
 from dataclasses import dataclass, field
@@ -15,6 +18,85 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 logger = logging.getLogger(__name__)
+
+
+class CustomParadigmTool:
+    """
+    Custom paradigm tool that loads paradigms from a specified directory
+    instead of the default infra/_agent/_models/_paradigms location.
+    
+    This allows projects to define their own paradigms locally.
+    Based on the pattern from direct_infra_experiment executors.
+    """
+    
+    def __init__(self, paradigm_dir: Path):
+        self.paradigm_dir = Path(paradigm_dir)
+        self._Paradigm = None
+        
+        # Try to load the Paradigm class from the local paradigm directory
+        local_paradigm_py = self.paradigm_dir / "_paradigm.py"
+        if local_paradigm_py.exists():
+            # Load from local _paradigm.py (allows full customization)
+            spec = importlib.util.spec_from_file_location("_paradigm", local_paradigm_py)
+            paradigm_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(paradigm_module)
+            self._Paradigm = paradigm_module.Paradigm
+            # Override PARADIGMS_DIR in the module to point to our custom dir
+            paradigm_module.PARADIGMS_DIR = self.paradigm_dir
+            logger.info(f"Loaded custom Paradigm class from {local_paradigm_py}")
+        else:
+            # Fallback: Import from infra but override the directory
+            try:
+                from infra._agent._models._paradigms._paradigm import Paradigm
+                # Create a wrapper that loads from custom directory
+                class LocalParadigm:
+                    """Wrapper to load paradigms from custom directory."""
+                    @classmethod
+                    def load(cls, paradigm_name: str):
+                        paradigm_file = paradigm_dir / f"{paradigm_name}.json"
+                        if not paradigm_file.exists():
+                            raise FileNotFoundError(
+                                f"Paradigm '{paradigm_name}' not found at {paradigm_file}"
+                            )
+                        with open(paradigm_file, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        # Create Paradigm instance with loaded data
+                        paradigm = Paradigm.__new__(Paradigm)
+                        paradigm.name = paradigm_name
+                        paradigm.data = data
+                        paradigm.metadata = data.get('metadata', {})
+                        paradigm.env_spec = data.get('env_spec', {})
+                        paradigm.sequence_spec = data.get('sequence_spec', {})
+                        return paradigm
+                self._Paradigm = LocalParadigm
+                logger.info(f"Using infra Paradigm with custom directory: {paradigm_dir}")
+            except ImportError as e:
+                logger.error(f"Failed to import Paradigm from infra: {e}")
+                raise
+    
+    def load(self, paradigm_name: str):
+        """Load a paradigm from the custom directory."""
+        return self._Paradigm.load(paradigm_name)
+    
+    def list_manifest(self) -> str:
+        """List all available paradigms in the custom directory."""
+        manifest = []
+        for filename in os.listdir(self.paradigm_dir):
+            if filename.endswith(".json"):
+                name = filename[:-5]  # Remove .json extension
+                try:
+                    with open(self.paradigm_dir / filename, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        metadata = data.get('metadata', {})
+                        desc = metadata.get('description', 'No description provided.')
+                        manifest.append(
+                            f"<paradigm name=\"{name}\">\n"
+                            f"    <description>{desc}</description>\n"
+                            f"</paradigm>"
+                        )
+                except Exception as e:
+                    manifest.append(f"<error paradigm=\"{name}\">{str(e)}</error>")
+        return "\n\n".join(manifest)
 
 
 @dataclass
@@ -55,10 +137,24 @@ class ExecutionController:
         inferences_path: str,
         inputs_path: Optional[str] = None,
         llm_model: str = "demo",
-        base_dir: Optional[str] = None
+        base_dir: Optional[str] = None,
+        max_cycles: int = 50,
+        db_path: Optional[str] = None,
+        paradigm_dir: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Load repositories and create orchestrator."""
-        import json
+        """Load repositories and create orchestrator.
+        
+        Args:
+            concepts_path: Path to concepts.json file
+            inferences_path: Path to inferences.json file
+            inputs_path: Optional path to inputs.json file
+            llm_model: LLM model name (e.g., "demo", "qwen-plus", "gpt-4o")
+            base_dir: Base directory for file operations
+            max_cycles: Maximum execution cycles (default: 50)
+            db_path: Path to checkpoint database (default: base_dir/orchestration.db)
+            paradigm_dir: Custom paradigm directory (e.g., provision/paradigm)
+        """
+        import json as json_module
         
         try:
             from infra._orchest._repo import ConceptRepo, InferenceRepo
@@ -70,9 +166,9 @@ class ExecutionController:
         
         # Load repository files
         with open(concepts_path, 'r', encoding='utf-8') as f:
-            concepts_data = json.load(f)
+            concepts_data = json_module.load(f)
         with open(inferences_path, 'r', encoding='utf-8') as f:
-            inferences_data = json.load(f)
+            inferences_data = json_module.load(f)
         
         # Create repositories
         self.concept_repo = ConceptRepo.from_json_list(concepts_data)
@@ -81,7 +177,7 @@ class ExecutionController:
         # Load inputs if provided
         if inputs_path:
             with open(inputs_path, 'r', encoding='utf-8') as f:
-                inputs_data = json.load(f)
+                inputs_data = json_module.load(f)
             for name, value in inputs_data.items():
                 if isinstance(value, dict) and 'data' in value:
                     self.concept_repo.add_reference(
@@ -96,15 +192,43 @@ class ExecutionController:
         if base_dir is None:
             base_dir = str(Path(concepts_path).parent)
         
-        self.body = Body(llm_name=llm_model, base_dir=base_dir)
+        # Create custom paradigm tool if paradigm_dir is specified
+        custom_paradigm_tool = None
+        if paradigm_dir:
+            paradigm_path = Path(paradigm_dir)
+            # If relative path, resolve relative to base_dir
+            if not paradigm_path.is_absolute():
+                paradigm_path = Path(base_dir) / paradigm_dir
+            
+            if paradigm_path.exists() and paradigm_path.is_dir():
+                custom_paradigm_tool = CustomParadigmTool(paradigm_path)
+                logger.info(f"Using custom paradigm directory: {paradigm_path}")
+                self._add_log("info", "", f"Using custom paradigms from: {paradigm_path}")
+            else:
+                logger.warning(f"Paradigm directory not found: {paradigm_path}")
+                self._add_log("warning", "", f"Paradigm directory not found: {paradigm_path}")
         
-        # Create orchestrator
+        # Create Body with optional custom paradigm tool
+        self.body = Body(
+            llm_name=llm_model, 
+            base_dir=base_dir,
+            paradigm_tool=custom_paradigm_tool
+        )
+        
+        # Determine database path for checkpointing
+        if db_path is None:
+            db_path = str(Path(base_dir) / "orchestration.db")
+        
+        logger.info(f"Creating orchestrator with max_cycles={max_cycles}, db_path={db_path}")
+        
+        # Create orchestrator with full configuration
         self.orchestrator = await asyncio.to_thread(
             Orchestrator,
             concept_repo=self.concept_repo,
             inference_repo=self.inference_repo,
             body=self.body,
-            max_cycles=100
+            max_cycles=max_cycles,
+            db_path=db_path
         )
         
         # Initialize node statuses from inference repository
@@ -136,11 +260,18 @@ class ExecutionController:
         })
         
         self._add_log("info", "", f"Loaded {len(concepts_data)} concepts and {self.total_count} inferences")
+        self._add_log("info", "", f"Config: model={llm_model}, max_cycles={max_cycles}, db={db_path}")
         
         return {
             "run_id": getattr(self.orchestrator, 'run_id', 'unknown'),
             "total_inferences": self.total_count,
             "concepts_count": len(concepts_data),
+            "config": {
+                "llm_model": llm_model,
+                "max_cycles": max_cycles,
+                "db_path": db_path,
+                "base_dir": base_dir,
+            }
         }
     
     async def start(self):

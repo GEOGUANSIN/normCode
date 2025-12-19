@@ -69,7 +69,7 @@ export function ControlPanel() {
   };
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 py-2">
+    <div className="bg-white border-b border-slate-200 px-4 py-2 relative z-10">
       <div className="flex items-center gap-4">
         {/* Execution controls */}
         <div className="flex items-center gap-1">
