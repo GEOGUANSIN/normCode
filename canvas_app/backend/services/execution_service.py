@@ -382,8 +382,13 @@ class ExecutionController:
             return None
         
         try:
-            # Get the concept from the repository
-            concept = self.concept_repo.get(concept_name)
+            # Get the concept entry from the repository
+            concept_entry = self.concept_repo.get_concept(concept_name)
+            if concept_entry is None:
+                return None
+            
+            # Get the actual Concept object from the entry
+            concept = concept_entry.concept if hasattr(concept_entry, 'concept') else None
             if concept is None:
                 return None
             
@@ -445,7 +450,8 @@ class ExecutionController:
         result = {}
         try:
             # Iterate through all concepts in the repo
-            for concept_name in self.concept_repo.keys():
+            for concept_entry in self.concept_repo.get_all_concepts():
+                concept_name = concept_entry.concept_name
                 ref_data = self.get_reference_data(concept_name)
                 if ref_data and ref_data.get("has_reference"):
                     result[concept_name] = ref_data
