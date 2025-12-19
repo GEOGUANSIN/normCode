@@ -368,6 +368,92 @@ class ExecutionController:
             logs = [l for l in logs if l.get('flow_index') == flow_index or l.get('flow_index') == '']
         return logs[-limit:]
     
+    def get_reference_data(self, concept_name: str) -> Optional[Dict[str, Any]]:
+        """Get reference data for a concept from the concept repository.
+        
+        Returns the current reference data (tensor) for a concept, including:
+        - data: The tensor data (nested lists)
+        - axes: The axis names
+        - shape: The tensor shape
+        
+        Returns None if concept not found or has no reference data.
+        """
+        if self.concept_repo is None:
+            return None
+        
+        try:
+            # Get the concept from the repository
+            concept = self.concept_repo.get(concept_name)
+            if concept is None:
+                return None
+            
+            # Check if concept has a reference
+            if not hasattr(concept, 'reference') or concept.reference is None:
+                return None
+            
+            ref = concept.reference
+            
+            # Extract reference data
+            result = {
+                "concept_name": concept_name,
+                "has_reference": True,
+            }
+            
+            # Get tensor data
+            if hasattr(ref, 'tensor'):
+                result["data"] = ref.tensor
+            elif hasattr(ref, 'data'):
+                result["data"] = ref.data
+            else:
+                result["data"] = None
+            
+            # Get axis names
+            if hasattr(ref, 'axes') and ref.axes:
+                result["axes"] = [axis.name if hasattr(axis, 'name') else str(axis) for axis in ref.axes]
+            else:
+                result["axes"] = []
+            
+            # Calculate shape from tensor
+            if result["data"] is not None:
+                shape = []
+                current = result["data"]
+                while isinstance(current, list):
+                    shape.append(len(current))
+                    if len(current) > 0:
+                        current = current[0]
+                    else:
+                        break
+                result["shape"] = shape
+            else:
+                result["shape"] = []
+            
+            return result
+            
+        except Exception as e:
+            logger.warning(f"Error getting reference for {concept_name}: {e}")
+            return None
+    
+    def get_all_reference_data(self) -> Dict[str, Dict[str, Any]]:
+        """Get reference data for all concepts that have references.
+        
+        Returns a dict mapping concept_name -> reference_data for concepts
+        that have been computed or are ground concepts.
+        """
+        if self.concept_repo is None:
+            return {}
+        
+        result = {}
+        try:
+            # Iterate through all concepts in the repo
+            for concept_name in self.concept_repo.keys():
+                ref_data = self.get_reference_data(concept_name)
+                if ref_data and ref_data.get("has_reference"):
+                    result[concept_name] = ref_data
+        except Exception as e:
+            logger.warning(f"Error getting all references: {e}")
+        
+        return result
+    
     def _add_log(self, level: str, flow_index: str, message: str):
         """Add a log entry."""
         log_entry = {

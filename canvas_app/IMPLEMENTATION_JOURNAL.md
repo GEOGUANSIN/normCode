@@ -2,7 +2,7 @@
 
 **Project Start**: December 18, 2024  
 **Current Phase**: Phase 3 - Debugging Features  
-**Status**: 🚧 Phase 3 Ready to Start (Phase 1 ✅ Phase 2 ✅ Complete, Execution Environment ✅)
+**Status**: 🚧 Phase 3 In Progress (Phase 1 ✅ Phase 2 ✅ Complete, Tensor Inspection ✅)
 
 ---
 
@@ -15,6 +15,112 @@ This journal tracks the implementation progress of the NormCode Graph Canvas Too
 ---
 
 ## Implementation Timeline
+
+### December 19, 2024 - Phase 3: Debugging Features (Part 1)
+
+#### What Was Implemented
+
+**TensorInspector Component (NEW)**
+- [x] **tensorUtils.ts**: Ported tensor utilities from Streamlit Python to TypeScript
+  - `getTensorShape()`: Calculate shape of nested arrays
+  - `sliceTensor()`: Extract 2D slices from N-D tensors
+  - `formatCellValue()`: Format values for display (handles `%(...)` syntax)
+  - `getSliceDescription()`: Human-readable slice descriptions
+  - `detectElementType()`: Detect tensor element types
+- [x] **TensorInspector.tsx**: React component for N-D tensor viewing
+  - Scalar view: Single value display
+  - 1D view: Horizontal cards or vertical list
+  - 2D view: Table with row/column headers
+  - N-D view: Axis selection + slice sliders + view modes (Table/List/JSON)
+  - Collapsible mode for compact display
+
+**Reference Data API (NEW)**
+- [x] **GET /execution/reference/{concept_name}**: Get reference data for a specific concept
+  - Returns tensor data, axes, shape from orchestrator's concept repo
+  - Works for both ground concepts and computed values
+- [x] **GET /execution/references**: Get all reference data in batch
+  - Returns dict of concept_name → reference_data
+- [x] **get_reference_data()** method in ExecutionController
+  - Extracts tensor data from concept.reference
+  - Handles axis name extraction
+
+**Enhanced DetailPanel**
+- [x] **Reference Data Section**: Shows tensor data for value nodes
+  - Fetches reference data when node is selected
+  - Integrates TensorInspector for visualization
+  - Refresh button to reload data during execution
+  - Handles loading states and errors gracefully
+- [x] **Context Badge**: Shows "Context" label for context nodes
+- [x] **Run To Button**: Placeholder for run-to functionality
+
+**Per-Node Log Filtering**
+- [x] **Node Filter Toggle**: Filter logs by selected node's flow_index
+  - Shows only logs for selected node + global logs
+  - Purple highlight for matching log entries
+  - Disabled when no node selected
+- [x] **Filter Indicator**: Shows active node filter in collapsed header
+
+#### Files Created
+
+- `canvas_app/frontend/src/utils/tensorUtils.ts` - Tensor utility functions
+- `canvas_app/frontend/src/components/panels/TensorInspector.tsx` - Tensor viewer component
+
+#### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `get_reference_data()` method
+  - Added `get_all_reference_data()` method
+- `canvas_app/backend/routers/execution_router.py`:
+  - Added `/execution/reference/{concept_name}` endpoint
+  - Added `/execution/references` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `getReference()` method
+  - Added `getAllReferences()` method
+  - Added `ReferenceData` type
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx`:
+  - Integrated TensorInspector component
+  - Added reference data fetching on node selection
+  - Added refresh functionality
+  - Added context and run-to UI elements
+- `canvas_app/frontend/src/components/panels/LogPanel.tsx`:
+  - Added node filter toggle
+  - Integrated with selection store
+  - Added visual highlighting for selected node logs
+
+#### Technical Notes
+
+**Tensor Slicing Algorithm**:
+```typescript
+// For N-D tensors (N > 2), user selects:
+// - displayAxes: [rowAxis, colAxis] - which 2 axes to show
+// - sliceIndices: {axisN: index} - fixed indices for other axes
+
+function sliceTensor(data, displayAxes, sliceIndices, totalDims) {
+  // Recursively navigate tensor
+  // Keep dimensions in displayAxes (map over all elements)
+  // Slice dimensions not in displayAxes (take single index)
+}
+```
+
+**Reference Data Flow**:
+```
+DetailPanel (select node)
+    ↓ useEffect
+executionApi.getReference(conceptName)
+    ↓ 
+execution_router.py → execution_controller.get_reference_data()
+    ↓
+concept_repo.get(name) → concept.reference.tensor
+    ↓
+Return {data, axes, shape}
+    ↓
+TensorInspector renders the data
+```
+
+---
 
 ### December 19, 2024 - Execution Environment Enhancement
 
@@ -398,13 +504,15 @@ API endpoints verified:
 | **Settings Panel** | ✅ Working | LLM, max cycles, db path, base dir, paradigm dir |
 | **Custom paradigm dir** | ✅ Working | Load paradigms from project-specific directories |
 | **LLM model selection** | ✅ Working | Dynamic loading from settings.yaml |
+| **Tensor inspection** | ✅ Working | N-D tensor viewer with axis selection and slicing |
+| **Reference data API** | ✅ Working | Fetch live reference data from orchestrator |
+| **Per-node log filtering** | ✅ Working | Filter logs by selected node |
 
 ### What's Not Yet Working
 
 | Feature | Status | Phase |
 |---------|--------|-------|
-| Tensor data inspection | ❌ Not started | Phase 3 |
-| Per-node log filtering | ❌ Not started | Phase 3 |
+| "Run to" feature | ❌ Not started | Phase 3 |
 | Node expansion (detailed view) | ❌ Not started | Phase 3 |
 | Value override | ❌ Not started | Phase 4 |
 | Function modification | ❌ Not started | Phase 4 |
@@ -426,22 +534,26 @@ API endpoints verified:
 - [x] Real-time status updates on nodes
 - [x] Log streaming
 
-### Phase 3: Debugging Features (Recommended Next)
+### Phase 3: Debugging Features 🚧 IN PROGRESS
 
 **Goals**:
-1. Tensor data inspection in detail panel
-2. Per-node log filtering in log panel
+1. ✅ Tensor data inspection in detail panel
+2. ✅ Per-node log filtering in log panel
 3. Node expansion with detailed execution info
-4. Reference data viewer
+4. ✅ Reference data viewer
 
-**Key Tasks**:
-- [ ] Add `TensorInspector` component for multi-dimensional data viewing
-- [ ] Port tensor slicing utilities from Streamlit app
-- [ ] Add log filtering by selected node
-- [ ] Add expanded node view with working interpretation details
+**Completed Tasks**:
+- [x] Add `TensorInspector` component for multi-dimensional data viewing
+- [x] Port tensor slicing utilities from Streamlit app (tensorUtils.ts)
+- [x] Add log filtering by selected node
+- [x] Add reference data API endpoints
+- [x] Integrate TensorInspector into DetailPanel
+
+**Remaining Tasks**:
 - [ ] Add "Run to" feature (run until specific node)
+- [ ] Add expanded node view with working interpretation details
 
-**Estimated Effort**: 3-4 days
+**Estimated Effort**: ~1 more day for remaining tasks
 
 ### Phase 4: Modification & Re-run
 
@@ -544,6 +656,32 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.3.0 (December 19, 2024) - Phase 3: Debugging Features
+- **Tensor Inspection**:
+  - New `TensorInspector` component for viewing N-D tensor data
+  - Supports scalar, 1D, 2D, and higher-dimensional tensors
+  - Axis selection for N-D tensors (choose row/column axes)
+  - Slice sliders for non-displayed axes
+  - Multiple view modes: Table, List, JSON
+  - Collapsible compact mode
+- **Reference Data API**:
+  - GET `/execution/reference/{concept_name}` - fetch reference data for a concept
+  - GET `/execution/references` - batch fetch all reference data
+  - Returns tensor data, axes, and shape
+- **Enhanced Detail Panel**:
+  - Reference data section with TensorInspector integration
+  - Auto-fetch reference data when node is selected
+  - Refresh button to reload during execution
+  - Context badge for context nodes
+  - "Run To" button placeholder
+- **Per-Node Log Filtering**:
+  - Toggle to filter logs by selected node's flow_index
+  - Visual highlighting for matching log entries
+  - Filter indicator in collapsed header
+- **New Files**:
+  - `frontend/src/utils/tensorUtils.ts` - Tensor utility functions
+  - `frontend/src/components/panels/TensorInspector.tsx` - Tensor viewer component
 
 ### v0.2.1 (December 19, 2024) - Execution Environment Enhancement
 - **Execution Configuration**:

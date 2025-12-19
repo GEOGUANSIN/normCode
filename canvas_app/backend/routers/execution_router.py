@@ -133,3 +133,33 @@ async def get_config():
         default_max_cycles=DEFAULT_MAX_CYCLES,
         default_db_path=DEFAULT_DB_PATH,
     )
+
+
+@router.get("/reference/{concept_name}")
+async def get_reference_data(concept_name: str):
+    """Get reference data for a concept.
+    
+    Returns the current tensor data for a concept including:
+    - data: The tensor data
+    - axes: Axis names
+    - shape: Tensor shape
+    
+    Returns 404 if concept not found or has no reference.
+    """
+    ref_data = execution_controller.get_reference_data(concept_name)
+    if ref_data is None:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No reference data found for concept: {concept_name}"
+        )
+    return ref_data
+
+
+@router.get("/references")
+async def get_all_references():
+    """Get reference data for all concepts that have references.
+    
+    Returns a dict mapping concept_name -> reference_data.
+    Useful for batch fetching all computed values.
+    """
+    return execution_controller.get_all_reference_data()

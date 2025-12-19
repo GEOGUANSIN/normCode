@@ -101,6 +101,21 @@ export const executionApi = {
   
   getConfig: (): Promise<ExecutionConfig> =>
     fetchJson(`${API_BASE}/execution/config`),
+  
+  getReference: (conceptName: string): Promise<ReferenceData> =>
+    fetchJson(`${API_BASE}/execution/reference/${encodeURIComponent(conceptName)}`),
+  
+  getAllReferences: (): Promise<Record<string, ReferenceData>> =>
+    fetchJson(`${API_BASE}/execution/references`),
 };
+
+// Reference data type
+export interface ReferenceData {
+  concept_name: string;
+  has_reference: boolean;
+  data: unknown;
+  axes: string[];
+  shape: number[];
+}
 
 export { ApiError };

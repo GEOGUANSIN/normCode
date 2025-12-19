@@ -1,12 +1,16 @@
 /**
  * Log Panel for execution logs
+ * Enhanced with per-node filtering based on selection
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Terminal, Filter, Trash2, ChevronDown, ChevronUp, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { Terminal, Filter, Trash2, ChevronDown, ChevronUp, AlertCircle, Info, AlertTriangle, Target } from 'lucide-react';
 import { useExecutionStore } from '../../stores/executionStore';
+import { useSelectionStore } from '../../stores/selectionStore';
+import { useGraphStore } from '../../stores/graphStore';
 
 type LogLevel = 'all' | 'info' | 'warning' | 'error';
+type NodeFilter = 'all' | 'selected';
 
 const levelIcons = {
   info: Info,
@@ -23,10 +27,18 @@ const levelColors = {
 export function LogPanel() {
   const logs = useExecutionStore((s) => s.logs);
   const clearLogs = useExecutionStore((s) => s.clearLogs);
+  const selectedNodeId = useSelectionStore((s) => s.selectedNodeId);
+  const getNode = useGraphStore((s) => s.getNode);
+  
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [filter, setFilter] = useState<LogLevel>('all');
+  const [levelFilter, setLevelFilter] = useState<LogLevel>('all');
+  const [nodeFilter, setNodeFilter] = useState<NodeFilter>('all');
   const [autoScroll, setAutoScroll] = useState(true);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  // Get selected node's flow_index for filtering
+  const selectedNode = selectedNodeId ? getNode(selectedNodeId) : null;
+  const selectedFlowIndex = selectedNode?.flow_index || null;
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -35,10 +47,23 @@ export function LogPanel() {
     }
   }, [logs, autoScroll]);
 
-  // Filter logs
-  const filteredLogs = filter === 'all' 
-    ? logs 
-    : logs.filter((log) => log.level === filter);
+  // Filter logs by level and node
+  const filteredLogs = logs.filter((log) => {
+    // Level filter
+    if (levelFilter !== 'all' && log.level !== levelFilter) {
+      return false;
+    }
+    
+    // Node filter
+    if (nodeFilter === 'selected' && selectedFlowIndex) {
+      // Include logs for the selected node OR global logs (empty flowIndex)
+      if (log.flowIndex !== selectedFlowIndex && log.flowIndex !== '') {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
@@ -59,6 +84,11 @@ export function LogPanel() {
           <div className="flex items-center gap-2">
             <Terminal size={14} />
             <span>Logs ({logs.length})</span>
+            {nodeFilter === 'selected' && selectedFlowIndex && (
+              <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                Node: {selectedFlowIndex}
+              </span>
+            )}
           </div>
           <ChevronUp size={14} />
         </button>
@@ -77,20 +107,41 @@ export function LogPanel() {
             <span className="text-slate-400">({filteredLogs.length})</span>
           </div>
 
-          {/* Filter dropdown */}
+          {/* Level filter dropdown */}
           <div className="flex items-center gap-1">
             <Filter size={12} className="text-slate-400" />
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as LogLevel)}
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value as LogLevel)}
               className="text-xs border border-slate-200 rounded px-1 py-0.5 text-slate-600"
             >
-              <option value="all">All</option>
+              <option value="all">All Levels</option>
               <option value="info">Info</option>
               <option value="warning">Warning</option>
               <option value="error">Error</option>
             </select>
           </div>
+
+          {/* Node filter toggle */}
+          <button
+            onClick={() => setNodeFilter(nodeFilter === 'all' ? 'selected' : 'all')}
+            disabled={!selectedFlowIndex}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
+              nodeFilter === 'selected' && selectedFlowIndex
+                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+            } ${!selectedFlowIndex ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={selectedFlowIndex 
+              ? `Filter logs for node ${selectedFlowIndex}` 
+              : 'Select a node to filter logs'
+            }
+          >
+            <Target size={12} />
+            {nodeFilter === 'selected' && selectedFlowIndex
+              ? `Node: ${selectedFlowIndex}`
+              : 'Filter by Node'
+            }
+          </button>
 
           {/* Auto-scroll toggle */}
           <label className="flex items-center gap-1 text-xs text-slate-500">
@@ -126,25 +177,35 @@ export function LogPanel() {
       <div className="flex-1 overflow-y-auto font-mono text-xs bg-slate-50">
         {filteredLogs.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-400">
-            No logs yet
+            {logs.length === 0 
+              ? 'No logs yet' 
+              : `No logs matching current filters`
+            }
           </div>
         ) : (
           <div className="p-2 space-y-0.5">
             {filteredLogs.map((log, index) => {
               const Icon = levelIcons[log.level as keyof typeof levelIcons] || Info;
               const colorClass = levelColors[log.level as keyof typeof levelColors] || 'text-slate-600';
+              const isSelectedNode = selectedFlowIndex && log.flowIndex === selectedFlowIndex;
               
               return (
                 <div
                   key={index}
-                  className="flex items-start gap-2 py-0.5 px-1 hover:bg-white rounded"
+                  className={`flex items-start gap-2 py-0.5 px-1 rounded ${
+                    isSelectedNode 
+                      ? 'bg-purple-50 hover:bg-purple-100' 
+                      : 'hover:bg-white'
+                  }`}
                 >
                   <span className="text-slate-400 shrink-0">
                     {formatTime(log.timestamp)}
                   </span>
                   <Icon size={12} className={`${colorClass} shrink-0 mt-0.5`} />
                   {log.flowIndex && (
-                    <span className="text-purple-600 shrink-0">
+                    <span className={`shrink-0 ${
+                      isSelectedNode ? 'text-purple-700 font-medium' : 'text-purple-600'
+                    }`}>
                       [{log.flowIndex}]
                     </span>
                   )}
@@ -159,4 +220,3 @@ export function LogPanel() {
     </div>
   );
 }
-
