@@ -149,7 +149,7 @@ This norm is what makes functional concepts "functional"—they don't just hold 
 
 ### Imperative `({})`
 
-**Symbol**: `({_concept_name_})` or `::(_concept_name_)`  
+**Symbol**: `::(_concept_name_)`  
 **Associated Sequence**: `imperative`  
 **Reference Type**: Holds the *Paradigm* (the logic/code to execute)
 
@@ -200,8 +200,8 @@ This norm is stored in the **Functional Reference** and acts as a normative dire
 **Natural Language Extraction**:
 - **Questions**: "Is the file empty?", "Does the value match?"
 - **Evaluations**: "Check validity", "Verify format"
-- *Example*: "**Is** the carry-over 0?" → `<{carry-over is 0}>`
-- *Example*: "**Check if** finished." → `<{is finished}>`
+- *Example*: "**Is** the carry-over 0?" → `({carry-over} is 0)<ALL True>`
+- *Example*: "**Check if** finished." → `(is finished)<ALL True>`
 
 **In Plans**:
 ```ncd
@@ -263,12 +263,12 @@ Understanding what each concept's Reference holds:
 - `{sum}` - Object (the result)
 - `[numbers]` - Relation (the collection)
 - `::(calculate the sum)` - Imperative (the action)
-- `<{sum exceeds 100}>` - Judgement (the evaluation)
+- `::(sum exceeds 100)<ALL True>` - Judgement (the evaluation)
 
 **Complete Plan**:
 ```ncd
 :<:{final decision}
-    <= <{sum exceeds 100}>
+    <= ::(sum exceeds 100)<ALL True>
     <- {sum}
         <= ::(calculate sum of all numbers)
         <- [numbers]

@@ -1,0 +1,514 @@
+# NormCode Canvas Tool - Implementation Journal
+
+**Project Start**: December 18, 2024  
+**Current Phase**: Phase 2 - Execution Integration  
+**Status**: 🚧 Phase 2 In Progress (Phase 1 ✅ Complete)
+
+---
+
+## Overview
+
+This journal tracks the implementation progress of the NormCode Graph Canvas Tool - a visual, interactive environment for executing, debugging, and auditing NormCode plans.
+
+**Reference**: See `documentation/current/updated/5_tools/implementation_plan.md` for the full implementation plan.
+
+---
+
+## Implementation Timeline
+
+### December 18, 2024 - Phase 2: Execution Integration
+
+#### What Was Implemented
+
+**Backend Execution Service (`execution_service.py`)**
+- [x] **Inference-by-inference execution control**: Rewrote `_run_loop` and `_run_cycle_with_events` to process inferences one at a time
+- [x] **Real-time WebSocket events**: Emits events for:
+  - `execution:loaded`, `execution:started`, `execution:paused`, `execution:resumed`, `execution:stopped`, `execution:completed`, `execution:error`
+  - `inference:started`, `inference:completed`, `inference:failed`, `inference:retry`
+  - `execution:progress` with completed_count/total_count
+  - `log:entry` for real-time log streaming
+- [x] **Breakpoint support**: Check for breakpoints before each inference execution
+- [x] **Stepping mode**: Execute one inference then pause
+- [x] **Log management**: Track execution logs with timestamp, level, flow_index, message
+
+**Updated Schemas (`execution_schemas.py`)**
+- [x] Added `cycle_count` to `ExecutionState`
+- [x] Added `LogEntry` model for structured log entries
+- [x] Added `LogsResponse` model for log retrieval
+
+**Updated Execution Router (`execution_router.py`)**
+- [x] Added `GET /execution/logs` endpoint with filtering by flow_index
+
+**Frontend Execution Store (`executionStore.ts`)**
+- [x] Added `cycleCount` state
+- [x] Updated `setProgress` to accept optional cycle parameter
+- [x] Updated `reset` to clear all new fields
+
+**Frontend WebSocket Hook (`useWebSocket.ts`)**
+- [x] Handle `execution:loaded` event with run_id and total_inferences
+- [x] Handle `execution:progress` event with completed/total counts
+- [x] Handle `inference:retry` event
+- [x] Return connection status for UI display
+- [x] Added reactive connection state tracking
+
+**Control Panel (`ControlPanel.tsx`)**
+- [x] Display current inference being executed
+- [x] Display cycle count
+- [x] Animated spinner during execution
+
+**Log Panel (`LogPanel.tsx`) - NEW COMPONENT**
+- [x] Real-time log display with auto-scroll
+- [x] Log level filtering (all, info, warning, error)
+- [x] Color-coded log levels with icons
+- [x] Flow index highlighting
+- [x] Clear logs button
+- [x] Collapsible panel
+
+**App Layout (`App.tsx`)**
+- [x] Integrated LogPanel into main layout
+- [x] WebSocket connection status indicator
+- [x] Execution status indicator with color coding
+
+#### Files Modified
+
+- `canvas_app/backend/services/execution_service.py`: Full rewrite for Phase 2
+- `canvas_app/backend/schemas/execution_schemas.py`: Added LogEntry, LogsResponse
+- `canvas_app/backend/routers/execution_router.py`: Added logs endpoint
+- `canvas_app/frontend/src/stores/executionStore.ts`: Added cycleCount
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`: New events + connection state
+- `canvas_app/frontend/src/components/panels/ControlPanel.tsx`: Current inference display
+- `canvas_app/frontend/src/components/panels/LogPanel.tsx`: NEW FILE
+- `canvas_app/frontend/src/App.tsx`: LogPanel integration, status bar
+
+#### Technical Notes
+
+**Execution Flow**:
+1. `ExecutionController.start()` creates background `_run_loop` task
+2. `_run_loop` runs cycles until completion or max_cycles
+3. `_run_cycle_with_events` processes each inference with:
+   - Pause/resume check via `asyncio.Event`
+   - Breakpoint check before execution
+   - WebSocket events for start/complete/fail
+   - Stepping support (pause after one inference)
+4. All execution uses `asyncio.to_thread` to run blocking Orchestrator methods
+
+**Event Flow**:
+```
+Orchestrator._execute_item() 
+    ↓
+ExecutionController._run_cycle_with_events()
+    ↓ emit("inference:started")
+await asyncio.to_thread(orchestrator._execute_item)
+    ↓ emit("inference:completed") or emit("inference:failed")
+    ↓ emit("execution:progress")
+```
+
+---
+
+### December 18, 2024 - Graph Layout Improvements
+
+#### What Was Implemented
+
+**Graph Layout & Flow Index Alignment**
+- [x] **Right-to-left data flow**: Reversed graph layout so children/inputs are on the LEFT and parents/outputs are on the RIGHT
+  - Updated `_calculate_positions()` in `graph_service.py` to reverse x-coordinates
+  - Children (deeper flow indices) positioned at x=0 (left)
+  - Root/output concepts positioned at x=max (right)
+  
+- [x] **Proper flow index assignment**: All concepts now get explicit flow indices following NormCode pattern
+  - `concept_to_infer` gets base flow_index (e.g., "1")
+  - `function_concept` gets base + ".1" (e.g., "1.1")
+  - `value_concepts[0]` gets base + ".2" (e.g., "1.2")
+  - `value_concepts[1]` gets base + ".3" (e.g., "1.3")
+  - Continues for context_concepts
+  
+- [x] **Hierarchical sorting**: Nodes at same level sorted by full flow_index tuple
+  - Ensures `1.1.3` appears above `1.2.1` (because parent `1.1` < `1.2`)
+  - Children of earlier parents always positioned before children of later parents
+  - Matches NormCode document structure exactly
+  
+- [x] **Duplicate node handling**: When same concept appears at multiple flow indices
+  - Creates separate node instances (e.g., `node@1.2` and `node@2.3`)
+  - Connects duplicates with "alias" edges (dashed gray lines)
+  - Uses equivalence symbol "≡" as edge label
+  
+- [x] **Node ID refactoring**: Changed from `{concept_name}@{level}` to `node@{flow_index}`
+  - Enables unique identification of same concept at different positions
+  - Better aligns with NormCode's flow_index addressing scheme
+  
+- [x] **Handle position correction**: Swapped React Flow handle positions
+  - Source handle (arrow start) on RIGHT side of child nodes
+  - Target handle (arrow end) on LEFT side of parent nodes
+  - Arrows now flow correctly: Child → Parent (LEFT to RIGHT)
+
+**Edge Type Enhancement**
+- [x] Added "alias" edge type in `CustomEdge.tsx`
+  - Dashed line styling (`strokeDasharray: '5,5'`)
+  - Gray color (`#9ca3af`)
+  - Lower opacity (0.5)
+  - Italic label styling
+
+#### Visual Result
+
+**Before**: 
+```
+[Root/Output] ──→ [Processing] ──→ [Ground/Input]
+    (LEFT)                            (RIGHT)
+```
+
+**After**:
+```
+[Ground/Input] ──→ [Processing] ──→ [Root/Output]
+    (LEFT)                             (RIGHT)
+```
+
+**Flow Index Hierarchy** (example):
+```
+Level 0: node@1              (x=600, rightmost)
+Level 1: node@1.1            (x=300)
+         node@1.2            (x=300)
+Level 2: node@1.1.1          (x=0, leftmost)
+         node@1.1.2          (x=0)
+         node@1.2.1          (x=0)  ← Below all 1.1.x nodes
+```
+
+#### Files Modified
+
+- `canvas_app/backend/services/graph_service.py`:
+  - Rewrote `_calculate_positions()` for hierarchical left-to-right layout
+  - Refactored `build_graph_from_repositories()` to assign proper flow indices
+  - Added `register_concept_flow_index()` tracking function
+  - Added alias edge creation for duplicate concepts
+
+- `canvas_app/frontend/src/components/graph/ValueNode.tsx`:
+  - Changed target handle from Left → Right (arrow entry)
+  - Changed source handle from Right → Left → Right (arrow exit)
+  
+- `canvas_app/frontend/src/components/graph/FunctionNode.tsx`:
+  - Changed target handle from Left → Right (arrow entry)
+  - Changed source handle from Right → Left → Right (arrow exit)
+  
+- `canvas_app/frontend/src/components/graph/CustomEdge.tsx`:
+  - Added "alias" to edge type union
+  - Added dashed styling for alias edges
+  - Added gray color and italic label styling
+
+#### Technical Notes
+
+**Layout Algorithm**:
+- Groups nodes by level (depth in flow_index tree)
+- Sorts each level by lexicographic flow_index order: `(1,1,3) < (1,2,1)`
+- Assigns sequential y-positions within each level
+- Calculates x-position as `(max_level - current_level) * h_spacing`
+
+**Flow Index Benefits**:
+- Every node has explicit position in execution DAG
+- Easy to identify parent-child relationships
+- Supports duplicate concepts (same concept at different execution points)
+- Matches NormCode document format exactly
+
+---
+
+### December 18, 2024 - Phase 1 Complete
+
+#### What Was Implemented
+
+**Backend (FastAPI)**
+- [x] Project structure created (`canvas_app/backend/`)
+- [x] Main FastAPI application (`main.py`)
+- [x] CORS configuration for frontend at `localhost:5173`
+- [x] Core modules:
+  - `core/config.py` - Application settings with pydantic-settings
+  - `core/events.py` - Event emitter for WebSocket broadcasting
+- [x] Schema definitions:
+  - `schemas/graph_schemas.py` - GraphNode, GraphEdge, GraphData
+  - `schemas/execution_schemas.py` - ExecutionStatus, NodeStatus, LoadRepositoryRequest
+- [x] Services:
+  - `services/graph_service.py` - Graph construction from repositories
+  - `services/execution_service.py` - Orchestrator wrapper with debugging support
+- [x] API Routers:
+  - `routers/repository_router.py` - Load/list repositories
+  - `routers/graph_router.py` - Get graph data and node details
+  - `routers/execution_router.py` - Run/pause/step/stop commands
+  - `routers/websocket_router.py` - Real-time event streaming
+
+**Frontend (React + Vite)**
+- [x] Project structure created (`canvas_app/frontend/`)
+- [x] Vite configuration with proxy for API/WebSocket
+- [x] TailwindCSS setup with custom theme colors
+- [x] TypeScript types:
+  - `types/graph.ts` - GraphNode, GraphEdge, NodeCategory
+  - `types/execution.ts` - ExecutionStatus, NodeStatus, WebSocketEvent
+- [x] Zustand stores:
+  - `stores/graphStore.ts` - Graph data and loading state
+  - `stores/executionStore.ts` - Execution status, node statuses, breakpoints
+  - `stores/selectionStore.ts` - Selected node/edge tracking
+- [x] Services:
+  - `services/api.ts` - REST API client
+  - `services/websocket.ts` - WebSocket client with reconnection
+- [x] Hooks:
+  - `hooks/useWebSocket.ts` - WebSocket connection and event handling
+- [x] Components:
+  - `components/graph/ValueNode.tsx` - Custom React Flow node for values
+  - `components/graph/FunctionNode.tsx` - Custom React Flow node for functions
+  - `components/graph/CustomEdge.tsx` - Styled edges by type
+  - `components/graph/GraphCanvas.tsx` - Main React Flow canvas
+  - `components/panels/ControlPanel.tsx` - Run/pause/step controls
+  - `components/panels/DetailPanel.tsx` - Node inspection panel
+  - `components/panels/LoadPanel.tsx` - Repository loading modal
+- [x] Main App component with layout
+
+**Launchers**
+- [x] `launch.py` - Python combined launcher
+- [x] `launch.ps1` - PowerShell launcher
+- [x] `README.md` - Usage documentation
+
+#### Issues Encountered & Resolved
+
+1. **Issue**: `ConceptRepo.from_json` not found
+   - **Cause**: The actual method in `infra/_orchest/_repo.py` is `from_json_list`
+   - **Fix**: Updated `execution_service.py` to use correct method:
+     ```python
+     self.concept_repo = ConceptRepo.from_json_list(concepts_data)
+     self.inference_repo = InferenceRepo.from_json_list(inferences_data, self.concept_repo)
+     ```
+
+2. **Issue**: Server reload not picking up changes
+   - **Fix**: Manually restarted uvicorn server
+
+#### Testing Results
+
+Successfully tested with example repository `add`:
+- **75 nodes** loaded (54 value, 21 function)
+- **77 edges** loaded (22 function, 45 value, 10 context)
+- **25 ground concepts**, **1 final concept**
+- Category distribution: 53 semantic-value, 14 syntactic-function, 8 semantic-function
+
+API endpoints verified:
+- `GET /` - Returns API info ✅
+- `GET /api/repositories/examples` - Lists examples ✅
+- `POST /api/repositories/load` - Loads repositories ✅
+- `GET /api/graph` - Returns graph data ✅
+- `GET /api/graph/stats` - Returns statistics ✅
+
+---
+
+## Current State
+
+### What's Working
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Backend API | ✅ Working | All endpoints responding |
+| Graph loading | ✅ Working | Parses concept/inference repos |
+| Graph visualization | ✅ Working | React Flow with custom nodes |
+| Node styling | ✅ Working | Color-coded by category |
+| Flow index assignment | ✅ Working | All concepts get proper flow indices |
+| Hierarchical layout | ✅ Working | Left-to-right flow, sorted by flow_index |
+| Duplicate node handling | ✅ Working | Alias edges connect same concept at different positions |
+| Status indicators | ✅ Working | Pending/running/complete dots |
+| Ground/output markers | ✅ Working | Double border, red ring |
+| Selection | ✅ Working | Click node to select |
+| Detail panel | ✅ Working | Shows node info |
+| WebSocket connection | ✅ Working | Connects and reconnects |
+| Control bar UI | ✅ Working | Run/Pause/Step/Stop buttons |
+| Load repository modal | ✅ Working | File path input |
+| **Execution start/stop** | ✅ Working | Orchestrator integration |
+| **Real-time node updates** | ✅ Working | WebSocket events for inference status |
+| **Log panel** | ✅ Working | Real-time log streaming with filtering |
+| **Progress tracking** | ✅ Working | Completed/total count, cycle count |
+| **Breakpoint support** | ✅ Working | Set breakpoints, pause on hit |
+| **Step execution** | ✅ Working | Execute one inference then pause |
+
+### What's Not Yet Working
+
+| Feature | Status | Phase |
+|---------|--------|-------|
+| Tensor data inspection | ❌ Not started | Phase 3 |
+| Per-node log filtering | ❌ Not started | Phase 3 |
+| Node expansion (detailed view) | ❌ Not started | Phase 3 |
+| Value override | ❌ Not started | Phase 4 |
+| Function modification | ❌ Not started | Phase 4 |
+| Selective re-run | ❌ Not started | Phase 4 |
+
+---
+
+## Next Steps
+
+### Phase 2: Execution Integration ✅ COMPLETE
+
+**Completed**:
+- [x] Hook Orchestrator to emit events on inference start/complete
+- [x] Update graph nodes in real-time based on WebSocket events
+- [x] Implement actual Run/Pause/Stop functionality
+- [x] Add progress tracking
+- [x] Emit WebSocket events during execution
+- [x] Update `useWebSocket` hook to handle all event types
+- [x] Real-time status updates on nodes
+- [x] Log streaming
+
+### Phase 3: Debugging Features (Recommended Next)
+
+**Goals**:
+1. Tensor data inspection in detail panel
+2. Per-node log filtering in log panel
+3. Node expansion with detailed execution info
+4. Reference data viewer
+
+**Key Tasks**:
+- [ ] Add `TensorInspector` component for multi-dimensional data viewing
+- [ ] Port tensor slicing utilities from Streamlit app
+- [ ] Add log filtering by selected node
+- [ ] Add expanded node view with working interpretation details
+- [ ] Add "Run to" feature (run until specific node)
+
+**Estimated Effort**: 3-4 days
+
+### Phase 4: Modification & Re-run
+
+**Goals**:
+1. Value override capability
+2. Function modification (paradigm, prompt)
+3. Selective re-run from any node
+4. Run comparison
+
+**Key Tasks**:
+- [ ] Value editor dialog for ground concepts
+- [ ] Working interpretation editor
+- [ ] Re-run dependency analysis
+- [ ] Checkpoint/restore state management
+
+**Estimated Effort**: 3-4 days
+
+---
+
+## Technical Notes
+
+### Key Design Decisions
+
+1. **Standalone App**: Created new `canvas_app` instead of extending existing `editor_app` or `streamlit_app` to have clean architecture purpose-built for graph debugging.
+
+2. **React Flow**: Chose React Flow over raw SVG for better pan/zoom/interaction support and custom node capabilities.
+
+3. **Zustand**: Used Zustand for state management - simpler than Redux with great TypeScript support.
+
+4. **WebSocket for real-time**: Using WebSocket instead of polling for real-time execution updates.
+
+5. **Flow index-based layout**: Graph layout based on complete flow_index hierarchy, preserving parent-child relationships from NormCode structure.
+   - Left-to-right flow (inputs → outputs)
+   - Hierarchical vertical sorting (children of earlier parents come first)
+   - Duplicate nodes with alias edges for concepts appearing at multiple positions
+
+6. **Node identification**: Using `node@{flow_index}` as node IDs instead of `{concept_name}@{level}` to support:
+   - Same concept appearing at different flow indices
+   - Direct mapping to NormCode's addressing scheme
+   - Easier debugging and tracing
+
+### File Locations
+
+| Component | Path |
+|-----------|------|
+| Backend entry | `canvas_app/backend/main.py` |
+| Graph service | `canvas_app/backend/services/graph_service.py` |
+| Execution service | `canvas_app/backend/services/execution_service.py` |
+| Frontend entry | `canvas_app/frontend/src/main.tsx` |
+| Graph canvas | `canvas_app/frontend/src/components/graph/GraphCanvas.tsx` |
+| Custom nodes | `canvas_app/frontend/src/components/graph/ValueNode.tsx` |
+
+### Dependencies
+
+**Backend** (`requirements.txt`):
+- fastapi>=0.109.0
+- uvicorn[standard]>=0.27.0
+- websockets>=12.0
+- pydantic>=2.5.0
+- pydantic-settings>=2.1.0
+- python-multipart>=0.0.6
+
+**Frontend** (`package.json`):
+- react: ^18.2.0
+- reactflow: ^11.10.0
+- zustand: ^4.4.7
+- @tanstack/react-query: ^5.17.0
+- tailwindcss: ^3.4.0
+- lucide-react: ^0.303.0
+
+---
+
+## Running the App
+
+### Quick Start
+
+```powershell
+# Terminal 1: Backend
+cd c:\Users\ProgU\PycharmProjects\normCode\canvas_app\backend
+python -m uvicorn main:app --reload --port 8000
+
+# Terminal 2: Frontend
+cd c:\Users\ProgU\PycharmProjects\normCode\canvas_app\frontend
+npm run dev
+```
+
+### URLs
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000/docs
+- WebSocket: ws://localhost:8000/ws/events
+
+### Test Repository
+
+```
+Concepts: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_repositories/add/concepts.json
+Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_repositories/add/inferences.json
+```
+
+---
+
+## Changelog
+
+### v0.2.0 (December 18, 2024) - Phase 2 Complete
+- **Execution Integration**:
+  - Full Orchestrator integration with inference-by-inference control
+  - Real-time WebSocket events for all execution states
+  - Breakpoint support with pause-on-hit
+  - Stepping mode (execute one inference then pause)
+  - Progress tracking (completed/total count, cycle count)
+- **Log Panel**: New component for real-time log viewing
+  - Auto-scroll, level filtering, flow_index highlighting
+  - Collapsible panel, clear logs
+- **UI Enhancements**:
+  - Current inference indicator in control bar
+  - WebSocket connection status in status bar
+  - Execution status colors
+
+### v0.1.1 (December 18, 2024)
+- **Graph Layout Improvements**:
+  - Reversed flow direction: left-to-right (inputs → outputs)
+  - Hierarchical vertical sorting by complete flow_index
+  - Proper flow_index assignment for all concepts in each inference
+  - Duplicate node support with alias edges for concepts appearing multiple times
+  - Refactored node IDs from `{name}@{level}` to `node@{flow_index}`
+- **Edge Enhancements**:
+  - Added "alias" edge type with dashed styling
+  - Fixed handle positions for correct arrow direction
+- **Documentation**: Updated IMPLEMENTATION_JOURNAL.md with detailed layout changes
+
+### v0.1.0 (December 18, 2024)
+- Initial Phase 1 implementation
+- Graph visualization with React Flow
+- Custom nodes with status indicators
+- WebSocket connection infrastructure
+- Repository loading
+- Detail panel for node inspection
+- Control bar UI (buttons only, not wired to execution)
+
+---
+
+## References
+
+- Implementation Plan: `documentation/current/updated/5_tools/implementation_plan.md`
+- NormCode Documentation: `documentation/current/updated/README_MAIN.md`
+- Existing Streamlit App: `streamlit_app/`
+- Existing Editor App: `editor_app/`
+- Orchestrator: `infra/_orchest/_orchestrator.py`
+- Repository Classes: `infra/_orchest/_repo.py`

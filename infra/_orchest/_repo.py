@@ -21,6 +21,7 @@ class ConceptEntry:
     is_invariant: bool = False  # New attribute: prevents reference reset during quantifying loops
     reference_data: Optional[Any] = None
     reference_axis_names: Optional[List[str]] = None
+    flow_indices: Optional[List[str]] = None  # Optional flow indices (e.g., ["1.6", "1.7.2", "1.8.2"]) - concept may appear multiple times in flow
     concept: Optional[Concept] = field(default=None, repr=False)
     
     def to_concept(self) -> 'Concept':
@@ -57,7 +58,8 @@ class ConceptEntry:
             "axis_name": self.axis_name,
             "natural_name": self.natural_name,
             "is_ground_concept": self.is_ground_concept,
-            "is_invariant": self.is_invariant
+            "is_invariant": self.is_invariant,
+            "flow_indices": self.flow_indices
         }
         # Serialize to JSON string for hashing (sorted keys for determinism)
         signature_str = json.dumps(signature_data, sort_keys=True)
@@ -175,7 +177,8 @@ class ConceptRepo:
                 is_final_concept=item.get('is_final_concept', False),
                 is_invariant=item.get('is_invariant', False),
                 reference_data=item.get('reference_data'),
-                reference_axis_names=item.get('reference_axis_names')
+                reference_axis_names=item.get('reference_axis_names'),
+                flow_indices=item.get('flow_indices')
             )
             concept_entries.append(entry)
         return cls(concept_entries)
