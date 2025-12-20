@@ -33,8 +33,9 @@ def _value_matches_condition(value: Any, condition: Any) -> bool:
     """
     Check if a value matches a condition.
     
-    Handles wrapped values like '%b1a(%{truth value}(false))' by checking
-    if the condition is contained within the value string.
+    Handles wrapped values like '%b1a(%{truth value}(false))' or '%xyz(True)' 
+    by checking if the condition (or its boolean equivalent) is contained 
+    within the value string.
     
     Args:
         value: The value to check (may be wrapped)
@@ -48,8 +49,20 @@ def _value_matches_condition(value: Any, condition: Any) -> bool:
     
     # Check if condition is contained in a wrapped value
     if isinstance(value, str) and isinstance(condition, str):
+        # Direct containment check
         if condition in value:
             return True
+        
+        # Handle case variations for boolean markers
+        # Condition might be "%{truth value}(true)" but value has "True" or "true"
+        if condition == TRUE_MARKER:
+            # Check for various true representations in wrapped values
+            if "(True)" in value or "(true)" in value or "true)" in value:
+                return True
+        elif condition == FALSE_MARKER:
+            # Check for various false representations in wrapped values
+            if "(False)" in value or "(false)" in value or "false)" in value:
+                return True
     
     return False
 

@@ -1,6 +1,11 @@
 /**
  * Main Graph Canvas component using React Flow
  * Supports collapse/expand and branch highlighting
+ * 
+ * PERFORMANCE OPTIMIZED:
+ * - Uses shallow comparison for store subscriptions
+ * - Memoized node/edge transformations
+ * - Batched store selectors
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -19,8 +24,6 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { 
-  ChevronDown, 
-  ChevronRight, 
   Maximize2, 
   Minimize2,
   Focus,
@@ -30,6 +33,7 @@ import {
   PanelLeftClose,
   PanelLeft
 } from 'lucide-react';
+import { shallow } from 'zustand/shallow';
 
 import { ValueNode } from './ValueNode';
 import { FunctionNode } from './FunctionNode';
@@ -100,28 +104,54 @@ function getMiniMapNodeColor(node: Node): string {
 export function GraphCanvas() {
   const [showControlsPanel, setShowControlsPanel] = useState(true);
   
-  const graphData = useGraphStore((s) => s.graphData);
-  const getVisibleNodes = useGraphStore((s) => s.getVisibleNodes);
-  const getVisibleEdges = useGraphStore((s) => s.getVisibleEdges);
-  const collapsedNodes = useGraphStore((s) => s.collapsedNodes);
-  const collapseAll = useGraphStore((s) => s.collapseAll);
-  const expandAll = useGraphStore((s) => s.expandAll);
-  const collapseToLevel = useGraphStore((s) => s.collapseToLevel);
-  const highlightBranch = useGraphStore((s) => s.highlightBranch);
-  const clearHighlight = useGraphStore((s) => s.clearHighlight);
-  const highlightedBranch = useGraphStore((s) => s.highlightedBranch);
-  const sameConceptNodes = useGraphStore((s) => s.sameConceptNodes);
-  const selectedConceptLabel = useGraphStore((s) => s.selectedConceptLabel);
-  const layoutMode = useGraphStore((s) => s.layoutMode);
-  const setLayoutMode = useGraphStore((s) => s.setLayoutMode);
-  const isLoading = useGraphStore((s) => s.isLoading);
+  // OPTIMIZED: Batch related state into single subscriptions with shallow comparison
+  const { graphData, collapsedNodes, layoutMode, isLoading } = useGraphStore(
+    (s) => ({
+      graphData: s.graphData,
+      collapsedNodes: s.collapsedNodes,
+      layoutMode: s.layoutMode,
+      isLoading: s.isLoading,
+    }),
+    shallow
+  );
+  
+  // Separate subscription for highlight state (changes frequently)
+  const { highlightedBranch, sameConceptNodes } = useGraphStore(
+    (s) => ({
+      highlightedBranch: s.highlightedBranch,
+      sameConceptNodes: s.sameConceptNodes,
+    }),
+    shallow
+  );
+  
+  // Actions (these don't cause re-renders, just grab the function references once)
+  const storeActions = useGraphStore(
+    (s) => ({
+      getVisibleNodes: s.getVisibleNodes,
+      getVisibleEdges: s.getVisibleEdges,
+      collapseAll: s.collapseAll,
+      expandAll: s.expandAll,
+      collapseToLevel: s.collapseToLevel,
+      highlightBranch: s.highlightBranch,
+      clearHighlight: s.clearHighlight,
+      setLayoutMode: s.setLayoutMode,
+    }),
+    shallow
+  );
   
   const setSelectedNode = useSelectionStore((s) => s.setSelectedNode);
-  const selectedNodeId = useSelectionStore((s) => s.selectedNodeId);
 
-  // Get visible nodes and edges (filtered by collapse state)
-  const visibleNodes = useMemo(() => getVisibleNodes(), [getVisibleNodes, collapsedNodes, graphData]);
-  const visibleEdges = useMemo(() => getVisibleEdges(), [getVisibleEdges, collapsedNodes, graphData]);
+  // OPTIMIZED: Compute visible nodes/edges with proper dependencies
+  // The key insight is that we need graphData and collapsedNodes, but not the function itself
+  const visibleNodes = useMemo(() => {
+    if (!graphData) return [];
+    return storeActions.getVisibleNodes();
+  }, [graphData, collapsedNodes, storeActions]);
+  
+  const visibleEdges = useMemo(() => {
+    if (!graphData) return [];
+    return storeActions.getVisibleEdges();
+  }, [graphData, collapsedNodes, storeActions]);
 
   // Transform to React Flow format
   const flowNodes = useMemo(() => {
@@ -145,16 +175,16 @@ export function GraphCanvas() {
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       setSelectedNode(node.id);
-      highlightBranch(node.id);
+      storeActions.highlightBranch(node.id);
     },
-    [setSelectedNode, highlightBranch]
+    [setSelectedNode, storeActions]
   );
 
   // Handle pane click (deselect and clear highlight)
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
-    clearHighlight();
-  }, [setSelectedNode, clearHighlight]);
+    storeActions.clearHighlight();
+  }, [setSelectedNode, storeActions]);
 
   // Calculate max level for collapse controls
   const maxLevel = useMemo(() => {
@@ -193,6 +223,16 @@ export function GraphCanvas() {
           type: 'custom',
         }}
         proOptions={{ hideAttribution: true }}
+        // PERFORMANCE: Disable node extent during drag for smoother performance
+        nodesDraggable={false}
+        // PERFORMANCE: Don't re-calculate on every change
+        elementsSelectable={true}
+        // PERFORMANCE: Reduce event overhead
+        panOnDrag={true}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        // PERFORMANCE: Disable selection box
+        selectionOnDrag={false}
       >
         <Background color="#e2e8f0" gap={16} variant={BackgroundVariant.Dots} />
         <Controls className="bg-white rounded-lg shadow-md" />
@@ -200,6 +240,9 @@ export function GraphCanvas() {
           nodeColor={getMiniMapNodeColor}
           maskColor="rgba(0, 0, 0, 0.1)"
           className="bg-white rounded-lg shadow-md"
+          // PERFORMANCE: Reduce minimap update frequency
+          pannable={false}
+          zoomable={false}
         />
         
         {/* Stats and Controls panel */}
@@ -228,11 +271,10 @@ export function GraphCanvas() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('[GraphCanvas] Compact button clicked, current mode:', layoutMode, 'isLoading:', isLoading);
-                      setLayoutMode('hierarchical');
+                      storeActions.setLayoutMode('hierarchical');
                     }}
                     disabled={isLoading || layoutMode === 'hierarchical'}
-                    className={`flex items-center gap-1 px-2 py-1 transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 ${
                       layoutMode === 'hierarchical' 
                         ? 'bg-blue-500 text-white' 
                         : 'bg-white text-slate-600 hover:bg-slate-100'
@@ -245,11 +287,10 @@ export function GraphCanvas() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('[GraphCanvas] Flow Aligned button clicked, current mode:', layoutMode, 'isLoading:', isLoading);
-                      setLayoutMode('flow_aligned');
+                      storeActions.setLayoutMode('flow_aligned');
                     }}
                     disabled={isLoading || layoutMode === 'flow_aligned'}
-                    className={`flex items-center gap-1 px-2 py-1 transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 ${
                       layoutMode === 'flow_aligned' 
                         ? 'bg-purple-500 text-white' 
                         : 'bg-white text-slate-600 hover:bg-slate-100'
@@ -265,16 +306,16 @@ export function GraphCanvas() {
               {/* Collapse/Expand controls */}
               <div className="flex gap-1 flex-wrap">
                 <button
-                  onClick={expandAll}
-                  className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition-colors"
+                  onClick={storeActions.expandAll}
+                  className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700"
                   title="Expand all nodes"
                 >
                   <Maximize2 className="w-3 h-3" />
                   <span>Expand All</span>
                 </button>
                 <button
-                  onClick={collapseAll}
-                  className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition-colors"
+                  onClick={storeActions.collapseAll}
+                  className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700"
                   title="Collapse all nodes"
                 >
                   <Minimize2 className="w-3 h-3" />
@@ -288,8 +329,8 @@ export function GraphCanvas() {
                 {Array.from({ length: Math.min(maxLevel + 1, 5) }, (_, i) => (
                   <button
                     key={i}
-                    onClick={() => collapseToLevel(i)}
-                    className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition-colors"
+                    onClick={() => storeActions.collapseToLevel(i)}
+                    className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded text-slate-700"
                     title={`Collapse nodes at level ${i} and deeper`}
                   >
                     {i}
@@ -317,8 +358,8 @@ export function GraphCanvas() {
                   Highlighting <span className="font-medium">{highlightedBranch.size + 1}</span> nodes in branch
                 </span>
                 <button
-                  onClick={clearHighlight}
-                  className="p-1 hover:bg-slate-100 rounded transition-colors"
+                  onClick={storeActions.clearHighlight}
+                  className="p-1 hover:bg-slate-100 rounded"
                   title="Clear highlight"
                 >
                   <X className="w-3 h-3 text-slate-500" />

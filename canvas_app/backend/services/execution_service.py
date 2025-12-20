@@ -303,11 +303,15 @@ class ExecutionController:
     # Cache for inference metadata
     _inference_metadata: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     
+    # Store load configuration for restart functionality
+    _load_config: Optional[Dict[str, Any]] = None
+    
     def __post_init__(self):
         self._pause_event.set()  # Not paused by default
         self._attached_loggers = []
         self._inference_metadata = {}
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None  # Store main event loop for thread-safe calls
+        self._load_config = None  # Will be set in load_repositories
     
     def _attach_infra_log_handlers(self):
         """Attach our log handler to infra loggers to capture orchestrator logs."""
@@ -485,6 +489,18 @@ class ExecutionController:
         self.cycle_count = 0
         self.logs = []
         
+        # Store configuration for restart functionality
+        self._load_config = {
+            "concepts_path": concepts_path,
+            "inferences_path": inferences_path,
+            "inputs_path": inputs_path,
+            "llm_model": llm_model,
+            "base_dir": base_dir,
+            "max_cycles": max_cycles,
+            "db_path": db_path,
+            "paradigm_dir": paradigm_dir,
+        }
+        
         await self._emit("execution:loaded", {
             "run_id": getattr(self.orchestrator, 'run_id', 'unknown'),
             "total_inferences": self.total_count,
@@ -584,51 +600,48 @@ class ExecutionController:
         self._add_log("info", "", "Execution stopped")
     
     async def restart(self):
-        """Restart execution from the beginning.
+        """Restart execution from the beginning with a fresh orchestrator.
         
-        This resets all node statuses, clears the orchestrator's blackboard,
-        and allows re-execution of the plan from scratch.
+        This creates a completely new orchestrator instance with a new run_id,
+        ensuring a clean slate for re-execution. This is more reliable than
+        trying to reset the internal state of the existing orchestrator.
         """
-        if self.orchestrator is None:
+        if self._load_config is None:
             raise RuntimeError("No repositories loaded. Call load_repositories first.")
         
         # Stop any running execution first
         await self.stop()
         
-        # Reset node statuses to pending
-        for flow_index in self.node_statuses:
-            self.node_statuses[flow_index] = NodeStatus.PENDING
+        # Store breakpoints before reload (they should persist)
+        saved_breakpoints = self.breakpoints.copy()
         
-        # Reset counters
-        self.completed_count = 0
-        self.cycle_count = 0
-        self.current_inference = None
-        self._retries = []
-        self._run_to_target = None
+        self._add_log("info", "", "Restarting with fresh orchestrator...")
         
-        # Reset the orchestrator's blackboard
-        try:
-            await asyncio.to_thread(self.orchestrator.blackboard.reset)
-        except AttributeError:
-            # Blackboard might not have reset method - reset manually
-            try:
-                # Mark all items as pending again
-                for item in self.orchestrator.waitlist.items:
-                    flow_index = item.inference_entry.flow_info['flow_index']
-                    await asyncio.to_thread(
-                        self.orchestrator.blackboard.record_pending,
-                        flow_index
-                    )
-            except Exception as e:
-                self._add_log("warning", "", f"Could not fully reset blackboard: {e}")
+        # Reload repositories completely - this creates a NEW orchestrator with new run_id
+        config = self._load_config
+        result = await self.load_repositories(
+            concepts_path=config["concepts_path"],
+            inferences_path=config["inferences_path"],
+            inputs_path=config.get("inputs_path"),
+            llm_model=config.get("llm_model", "demo"),
+            base_dir=config.get("base_dir"),
+            max_cycles=config.get("max_cycles", 50),
+            db_path=config.get("db_path"),
+            paradigm_dir=config.get("paradigm_dir"),
+        )
         
-        self.status = ExecutionStatus.IDLE
+        # Restore breakpoints
+        self.breakpoints = saved_breakpoints
+        
+        new_run_id = result.get("run_id", "unknown")
+        self._add_log("info", "", f"Fresh orchestrator created with new run_id: {new_run_id}")
         
         # Emit reset event with updated statuses
         await self._emit("execution:reset", {
             "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
             "completed_count": 0,
             "total_count": self.total_count,
+            "run_id": new_run_id,
         })
         self._add_log("info", "", "Execution reset - ready to run again")
     

@@ -4,7 +4,7 @@
 
 export type NodeCategory = 'semantic-function' | 'semantic-value' | 'syntactic-function';
 export type NodeType = 'value' | 'function';
-export type EdgeType = 'function' | 'value' | 'context';
+export type EdgeType = 'function' | 'value' | 'context' | 'alias';
 
 export interface GraphNode {
   id: string;
@@ -22,6 +22,8 @@ export interface GraphNode {
     sequence?: string;
     working_interpretation?: Record<string, unknown>;
     reference_data?: unknown;
+    natural_name?: string;  // Human-readable name from concept repo
+    concept_name?: string;  // Technical concept name
   };
 }
 

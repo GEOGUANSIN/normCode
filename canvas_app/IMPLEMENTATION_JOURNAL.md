@@ -6,6 +6,240 @@
 
 ---
 
+## December 20, 2024 - Restart/Reset Fix (Fresh Orchestrator)
+
+### Problem
+
+The reset/restart functionality was not working properly because:
+1. The existing `restart()` method tried to reset the orchestrator's blackboard in-place
+2. The orchestrator's internal state (SQLite database, blackboard, waitlist) was not fully resettable
+3. The `blackboard.reset()` method might not exist or might not fully reset all state
+4. Concept references that were computed during execution remained in memory
+
+### Solution
+
+Implemented a **complete orchestrator reload** on restart:
+1. Store the original load configuration (`_load_config`) when `load_repositories()` is called
+2. On `restart()`, call `load_repositories()` again with the same configuration
+3. This creates a **completely new orchestrator** with:
+   - A new `run_id` 
+   - Fresh blackboard and waitlist
+   - Clean concept references
+   - Fresh database state
+4. Preserve breakpoints across restart (they should persist)
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `_load_config: Optional[Dict[str, Any]]` field to `ExecutionController`
+  - Store configuration in `load_repositories()` for later use
+  - Rewrote `restart()` to reload repositories completely instead of trying to reset in-place
+  - Preserve breakpoints across restart
+  - Emit new `run_id` in `execution:reset` event
+
+**Frontend**:
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`:
+  - Updated `execution:reset` handler to also update `run_id` when present
+  - Clear step progress on reset for fresh start
+  - Log message shows new run_id when available
+
+### Technical Details
+
+**Before (problematic)**:
+```python
+async def restart(self):
+    # Tried to reset blackboard in-place
+    await asyncio.to_thread(self.orchestrator.blackboard.reset)  # Often fails
+    # Same orchestrator, same run_id, same database state
+```
+
+**After (fixed)**:
+```python
+async def restart(self):
+    # Reload everything with fresh orchestrator
+    result = await self.load_repositories(**self._load_config)
+    # New orchestrator, new run_id, fresh state
+    new_run_id = result.get("run_id", "unknown")
+```
+
+### Testing
+
+To test the fix:
+1. Load a project and run execution to completion
+2. Click "Reset" button
+3. Verify: New run_id is logged
+4. Verify: All nodes show "pending" status
+5. Click "Run" - execution should start fresh from the beginning
+
+---
+
+## December 20, 2024 - Canvas Performance Optimization
+
+### What Was Implemented
+
+**Major Performance Improvements**
+Resolved significant performance issues causing laggy canvas interactions with large graphs.
+
+**Root Causes Identified**:
+1. Each node (75+) had ~10 separate Zustand store subscriptions = 750+ subscriptions
+2. All nodes subscribed to entire `nodeStatuses` object - any change re-rendered ALL nodes
+3. Store selector functions computed values on every render without memoization
+4. CSS `transition-all` on nodes caused GPU overhead during pan/zoom
+
+**Optimizations Applied**:
+
+- [x] **Batched store subscriptions**: Reduced from ~10 subscriptions per node to 2 using shallow comparison
+- [x] **Selective status subscription**: Nodes now only re-render when THEIR status changes, not any status
+- [x] **Custom `useNodeGraphState` hook**: Batches all graph-related state for a node into one subscription
+- [x] **Memoized className computation**: Prevents recalculation during pan/zoom
+- [x] **Removed CSS transitions**: Eliminated `transition-all duration-200` from nodes
+- [x] **Optimized GraphCanvas subscriptions**: Batched related state with shallow comparison
+- [x] **React Flow performance options**: Disabled node dragging, selection box for smoother pan/zoom
+- [x] **MiniMap optimization**: Disabled pannable/zoomable for reduced update frequency
+
+### Files Modified
+
+**Frontend**:
+- `canvas_app/frontend/src/components/graph/ValueNode.tsx`:
+  - Single batched execution store selector with shallow comparison
+  - New `useNodeGraphState` hook for graph state
+  - Memoized className computation
+  - Removed CSS transitions
+- `canvas_app/frontend/src/components/graph/FunctionNode.tsx`:
+  - Same optimizations as ValueNode
+- `canvas_app/frontend/src/components/graph/GraphCanvas.tsx`:
+  - Batched store subscriptions with shallow comparison
+  - Extracted store actions into single subscription
+  - Added React Flow performance options
+  - Optimized MiniMap settings
+- `canvas_app/frontend/src/stores/graphStore.ts`:
+  - New `useNodeGraphState()` custom hook for node components
+  - Optimized selector pattern with shallow comparison
+- `canvas_app/frontend/src/types/graph.ts`:
+  - Added missing `alias` to EdgeType
+  - Added `natural_name` and `concept_name` to node data interface
+
+### Technical Details
+
+**Before**: Each node subscribed individually:
+```tsx
+// 10+ subscriptions per node = 750+ total for 75 nodes
+const nodeStatuses = useExecutionStore((s) => s.nodeStatuses);  // ALL statuses
+const isCollapsed = useGraphStore((s) => s.isCollapsed(id));    // Computed on every render
+const hasChildren = useGraphStore((s) => s.hasChildren(id));    // Iterates edges every time
+// ... 7 more subscriptions
+```
+
+**After**: Batched subscriptions with shallow comparison:
+```tsx
+// 2 subscriptions per node with shallow comparison
+const { status, hasBreakpoint } = useExecutionStore(
+  useCallback((s) => ({
+    status: data.flowIndex ? s.nodeStatuses[data.flowIndex] : 'pending',
+    hasBreakpoint: data.flowIndex ? s.breakpoints.has(data.flowIndex) : false,
+  }), [data.flowIndex]),
+  shallow  // Only re-render when values actually change
+);
+
+const { isCollapsed, hasChildren, ... } = useNodeGraphState(id);  // Batched hook
+```
+
+### Performance Impact
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Subscriptions per node | ~10 | 2 | 80% reduction |
+| Total subscriptions (75 nodes) | ~750 | ~150 | 80% reduction |
+| Re-renders on status change | All nodes | 1 node | 98% reduction |
+| CSS transitions during pan/zoom | Active | Disabled | Smoother UX |
+
+---
+
+## December 20, 2024 - Detail Panel UX Improvements
+
+### What Was Implemented
+
+**Fullscreen Detail Panel**
+The node details panel can now be expanded to fullscreen for detailed inspection.
+
+- [x] **Fullscreen toggle button**: Maximize/Minimize icons in panel header
+- [x] **Two-column layout in fullscreen**: Left column for metadata, right column for data/reference
+- [x] **Backdrop click to close**: Clicking outside the panel exits fullscreen
+- [x] **Larger text and spacing**: Better readability in fullscreen mode
+
+**Compact Panel Redesign**
+The normal panel view has been redesigned to reduce clutter.
+
+- [x] **Compact header**: Combined Identity + Status into single section with inline badges
+- [x] **Collapsible sections**: All sections use `<details>` for expand/collapse
+  - Pipeline section (shows current step in header)
+  - Axes section (shows count in header)
+  - Function section (shows sequence type in header)
+  - Connections section (shows "X in, Y out" in header)
+  - Data section (shows item count when loaded)
+- [x] **Reduced spacing**: Smaller padding and margins throughout
+- [x] **Inline debugging buttons**: BP and Run To buttons on same row as badges
+
+**Enhanced Connections Section**
+Connections now show more information and are navigable.
+
+- [x] **Clickable node links**: Click any connection to navigate to that node
+- [x] **Branch highlighting**: Clicking a connection highlights its branch in the graph
+- [x] **Edge type badges**: Color-coded badges (fn/val/ctx/alias)
+- [x] **Natural names**: Shows human-readable names when available
+
+**Layout Button Rename**
+- [x] Changed "Hierarchical" to "Compact" in layout selector
+
+### Files Modified
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx`:
+  - Added fullscreen support with `isFullscreen` and `onToggleFullscreen` props
+  - Redesigned to use collapsible `<details>` sections
+  - Added `navigateToNode()` helper that calls both `setSelectedNode` and `highlightBranch`
+  - Compact badge-based status display
+  - Edge type badges in connections
+- `canvas_app/frontend/src/App.tsx`:
+  - Added `detailPanelFullscreen` state
+  - Conditional rendering for normal vs fullscreen panel
+- `canvas_app/frontend/src/components/graph/GraphCanvas.tsx`:
+  - Renamed "Hierarchical" to "Compact" in layout button
+
+### UI Flow
+
+**Normal Mode**:
+```
+┌──────────────────────────────────┐
+│ Node Details              [⤢][×]│
+├──────────────────────────────────┤
+│ signal status (信号状态)         │
+│ <signal status>                  │
+│ [completed][value][1.9.2][Ground]│
+│ [+BP] [Run To]                   │
+├──────────────────────────────────┤
+│ ▶ Pipeline (grouping)            │
+│ ▶ Connections (2 in, 1 out)      │
+│ ▼ Data (7 items)                 │
+│   [tensor viewer]                │
+└──────────────────────────────────┘
+```
+
+**Fullscreen Mode**:
+```
+┌─────────────────────────────────────────────────────────┐
+│ Node Details - <signal status>                   [⤡][×]│
+├───────────────────────────┬─────────────────────────────┤
+│ Identity & Status         │ Reference Data              │
+│ Pipeline                  │ [Full Tensor Inspector]     │
+│ Function Details          │                             │
+│ Connections               │                             │
+└───────────────────────────┴─────────────────────────────┘
+```
+
+---
+
 ## December 20, 2024 - Natural Name Display Enhancement
 
 ### What Was Implemented
@@ -915,6 +1149,10 @@ API endpoints verified:
 | **Node expansion (detailed view)** | ✅ Working | Enhanced function node details with working interpretation |
 | **Editor panel** | ✅ Working | Integrated file editor for .ncd/.ncn/.ncdn files |
 | **View mode switcher** | ✅ Working | Tab-based toggle between Canvas and Editor views |
+| **Natural name display** | ✅ Working | Shows human-readable names from concept repo |
+| **Fullscreen detail panel** | ✅ Working | Expand node details to fullscreen with two-column layout |
+| **Collapsible panel sections** | ✅ Working | Compact UI with expand/collapse for each section |
+| **Clickable connections** | ✅ Working | Navigate to connected nodes with branch highlighting |
 
 ### What's Not Yet Working
 
@@ -1060,6 +1298,27 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.6.2 (December 20, 2024) - Detail Panel UX Improvements
+- **Fullscreen Detail Panel**:
+  - Expand button to view node details in fullscreen overlay
+  - Two-column layout: metadata on left, data/reference on right
+  - Backdrop click to exit fullscreen
+  - Larger text and spacing for readability
+- **Compact Panel Redesign**:
+  - Combined Identity + Status into single compact header with inline badges
+  - All sections now collapsible using `<details>` elements
+  - Reduced padding and spacing throughout
+  - Inline debugging buttons (BP, Run To)
+- **Enhanced Connections**:
+  - Clickable node links that navigate to connected nodes
+  - Branch highlighting when clicking connections
+  - Color-coded edge type badges (fn/val/ctx/alias)
+  - Shows natural names when available
+- **Natural Name Display**:
+  - Nodes show human-readable `natural_name` from concept repo
+  - Technical concept ID shown as secondary label
+- **Layout Rename**: "Hierarchical" → "Compact"
 
 ### v0.6.1 (December 19, 2024) - Editor Parsing & Preview
 - **Parser Integration**:

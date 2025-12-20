@@ -220,6 +220,7 @@ class Grouper:
         if is_per_ref_mode:
             # Per-reference collapse + concatenate mode
             all_elements = []
+            preserved_axes_for_result = None  # Track preserved axes for stack mode
             
             for i, ref in enumerate(references):
                 # Get axes to collapse for this reference
@@ -228,23 +229,45 @@ class Grouper:
                 # Determine which axes to PRESERVE (not collapse)
                 preserve_axes = [ax for ax in ref.axes if ax not in axes_to_collapse]
                 
-                if preserve_axes:
+                if not axes_to_collapse and preserve_axes:
+                    # STACK MODE: No collapsing - keep tensor structure intact
+                    # Each ref's tensor becomes one element along create_axis
+                    all_elements.append(ref.tensor)
+                    if preserved_axes_for_result is None:
+                        preserved_axes_for_result = preserve_axes
+                elif preserve_axes:
                     # Partial collapse: slice to preserve axes, then extract leaves
                     sliced = ref.slice(*preserve_axes)
                     elements = list(sliced._get_leaves())
+                    all_elements.extend(elements)
                 else:
                     # Full collapse: extract all leaves directly
                     elements = list(ref._get_leaves())
-                
-                all_elements.extend(elements)
+                    all_elements.extend(elements)
             
-            # Create result with new axis
-            result = Reference(
-                axes=[create_axis],
-                shape=(len(all_elements),),
-                initial_value=None,
-                skip_value=self.skip_value
-            )._replace_data(all_elements)
+            # Create result with appropriate axes
+            if preserved_axes_for_result:
+                # Stack mode: result has [create_axis] + preserved_axes
+                result_axes = [create_axis] + preserved_axes_for_result
+                # Shape: (num_refs, *original_shape)
+                result_shape = (len(all_elements),) + tuple(
+                    len(all_elements[0]) if isinstance(all_elements[0], list) else 1
+                    for _ in preserved_axes_for_result
+                ) if all_elements else (0,)
+                result = Reference(
+                    axes=result_axes,
+                    shape=result_shape,
+                    initial_value=None,
+                    skip_value=self.skip_value
+                )._replace_data(all_elements)
+            else:
+                # Original behavior: 1D result
+                result = Reference(
+                    axes=[create_axis],
+                    shape=(len(all_elements),),
+                    initial_value=None,
+                    skip_value=self.skip_value
+                )._replace_data(all_elements)
         
         else:
             # Legacy behavior: cross_product + flatten

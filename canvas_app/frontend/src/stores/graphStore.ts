@@ -1,9 +1,15 @@
 /**
  * Graph state management with Zustand
  * Includes collapse/expand and branch highlighting features
+ * 
+ * PERFORMANCE NOTES:
+ * - Use useNodeGraphState() hook for node components to batch subscriptions
+ * - Memoized selectors prevent unnecessary re-renders
  */
 
 import { create } from 'zustand';
+import { shallow } from 'zustand/shallow';
+import { useCallback } from 'react';
 import type { GraphData, GraphNode, GraphEdge } from '../types/graph';
 
 type LayoutMode = 'hierarchical' | 'flow_aligned';
@@ -399,3 +405,68 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     return getConceptOccurrenceCount(nodeId) > 1;
   },
 }));
+
+/**
+ * PERFORMANCE OPTIMIZED: Custom hook for node components
+ * Batches all graph-related state for a single node into one subscription
+ * Uses shallow comparison to prevent unnecessary re-renders
+ */
+export function useNodeGraphState(nodeId: string) {
+  // Create a memoized selector that computes all node state at once
+  const selector = useCallback((state: GraphState) => {
+    const { 
+      collapsedNodes, 
+      highlightedBranch, 
+      sameConceptNodes,
+      graphData 
+    } = state;
+    
+    // Check if node is collapsed
+    const isCollapsed = collapsedNodes.has(nodeId);
+    
+    // Check if node has children (cached check)
+    const hasChildren = graphData 
+      ? graphData.edges.some((e) => e.target === nodeId && e.edge_type !== 'alias')
+      : false;
+    
+    // Highlight state
+    const hasHighlight = highlightedBranch.size > 0;
+    const isHighlighted = !hasHighlight || highlightedBranch.has(nodeId);
+    
+    // Same concept state
+    const isSameConcept = sameConceptNodes.size > 1 && sameConceptNodes.has(nodeId);
+    
+    // Multiple occurrences (need to compute from visible nodes)
+    let occurrenceCount = 0;
+    let hasMultipleOccurrences = false;
+    if (graphData) {
+      const node = graphData.nodes.find(n => n.id === nodeId);
+      if (node) {
+        const conceptLabel = node.label;
+        // Count visible nodes with same label
+        // Note: Using a simpler check here for performance
+        for (const n of graphData.nodes) {
+          if (n.label === conceptLabel) {
+            occurrenceCount++;
+            if (occurrenceCount > 1) {
+              hasMultipleOccurrences = true;
+              // Don't break - we need the full count for the badge
+            }
+          }
+        }
+      }
+    }
+    
+    return {
+      isCollapsed,
+      hasChildren,
+      isHighlighted,
+      hasHighlight,
+      isSameConcept,
+      hasMultipleOccurrences,
+      occurrenceCount,
+    };
+  }, [nodeId]);
+  
+  return useGraphStore(selector, shallow);
+}

@@ -81,16 +81,24 @@ export function useWebSocket() {
         case 'execution:reset':
           setStatus('idle');
           setCurrentInference(null);
+          // Update run_id if a new orchestrator was created
+          if (data.run_id) {
+            setRunId(data.run_id as string);
+          }
           if (data.node_statuses) {
             setNodeStatuses(data.node_statuses as Record<string, NodeStatus>);
           }
           if (data.completed_count !== undefined && data.total_count !== undefined) {
             setProgress(data.completed_count as number, data.total_count as number);
           }
+          // Clear step progress for fresh start
+          clearStepProgress();
           addLog({
             flowIndex: '',
             level: 'info',
-            message: 'Execution reset - ready to run again',
+            message: data.run_id 
+              ? `Execution reset with new run: ${data.run_id}` 
+              : 'Execution reset - ready to run again',
           });
           break;
 

@@ -1,14 +1,20 @@
 /**
  * Custom React Flow node for Function concepts
  * Supports collapse/expand and branch highlighting
+ * 
+ * PERFORMANCE OPTIMIZED:
+ * - Single selector for execution state (status + breakpoint)
+ * - Single selector for graph state (collapsed, highlight, etc.)
+ * - Shallow comparison via Zustand's built-in equality check
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useExecutionStore } from '../../stores/executionStore';
-import { useGraphStore } from '../../stores/graphStore';
+import { useGraphStore, useNodeGraphState } from '../../stores/graphStore';
 import type { NodeCategory } from '../../types/graph';
+import { shallow } from 'zustand/shallow';
 
 interface FunctionNodeData {
   label: string;
@@ -54,28 +60,27 @@ const statusIndicators = {
 };
 
 export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNodeData>) => {
-  const nodeStatuses = useExecutionStore((s) => s.nodeStatuses);
-  const breakpoints = useExecutionStore((s) => s.breakpoints);
+  // OPTIMIZED: Single selector for execution state - only re-renders when THIS node's status changes
+  const { status, hasBreakpoint } = useExecutionStore(
+    useCallback((s) => ({
+      status: data.flowIndex ? s.nodeStatuses[data.flowIndex] || 'pending' : 'pending',
+      hasBreakpoint: data.flowIndex ? s.breakpoints.has(data.flowIndex) : false,
+    }), [data.flowIndex]),
+    shallow
+  );
   
-  // Collapse/expand state
-  const isCollapsed = useGraphStore((s) => s.isCollapsed(id));
-  const hasChildren = useGraphStore((s) => s.hasChildren(id));
+  // OPTIMIZED: Use custom hook that batches all graph state for this node
+  const { 
+    isCollapsed, 
+    hasChildren, 
+    isHighlighted, 
+    hasHighlight, 
+    isSameConcept,
+    hasMultipleOccurrences,
+    occurrenceCount 
+  } = useNodeGraphState(id);
+  
   const toggleCollapse = useGraphStore((s) => s.toggleCollapse);
-  
-  // Highlight state
-  const isHighlighted = useGraphStore((s) => s.isHighlighted(id));
-  const highlightedBranch = useGraphStore((s) => s.highlightedBranch);
-  const hasHighlight = highlightedBranch.size > 0;
-  
-  // Same concept highlighting (for nodes with identical concept names)
-  const isSameConcept = useGraphStore((s) => s.isSameConcept(id));
-  
-  // Persistent indicator for concepts with multiple occurrences
-  const hasMultipleOccurrences = useGraphStore((s) => s.hasMultipleOccurrences(id));
-  const occurrenceCount = useGraphStore((s) => s.getConceptOccurrenceCount(id));
-  
-  const status = data.flowIndex ? nodeStatuses[data.flowIndex] || 'pending' : 'pending';
-  const hasBreakpoint = data.flowIndex ? breakpoints.has(data.flowIndex) : false;
   
   const style = categoryStyles[data.category] || categoryStyles['syntactic-function'];
 
@@ -101,26 +106,29 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
   // Don't dim nodes that are highlighted as "same concept"
   const opacity = hasHighlight && !isHighlighted && !isSameConcept ? 'opacity-30' : '';
 
+  // Memoize className to avoid recalculation during pan/zoom
+  const nodeClassName = useMemo(() => {
+    const classes = [
+      'relative px-3 py-2 min-w-[120px] max-w-[220px] shadow-sm border-2 rounded-md',
+      style.bg, style.border, style.text,
+    ];
+    if (selected) classes.push('ring-2 ring-offset-2 ring-indigo-500 shadow-md');
+    if (status === 'running') classes.push('ring-2 ring-blue-400 animate-pulse');
+    else if (status === 'completed') classes.push('ring-1 ring-green-400');
+    else if (status === 'failed') classes.push('ring-2 ring-red-500');
+    else if (status === 'skipped') classes.push('opacity-50');
+    if (isSameConcept && !selected) classes.push('ring-2 ring-amber-400 ring-offset-1 shadow-amber-200 shadow-md');
+    if (opacity) classes.push(opacity);
+    return classes.join(' ');
+  }, [style, selected, status, isSameConcept, opacity]);
+
+  // Memoize the clip-path style object
+  const clipPathStyle = useMemo(() => ({
+    clipPath: 'polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%)',
+  }), []);
+
   return (
-    <div
-      className={`
-        relative px-3 py-2 min-w-[120px] max-w-[220px]
-        shadow-sm transition-all duration-200
-        ${style.bg} ${style.border} ${style.text}
-        border-2 rounded-md
-        ${selected ? 'ring-2 ring-offset-2 ring-indigo-500 shadow-md' : ''}
-        ${status === 'running' ? 'ring-2 ring-blue-400 animate-pulse' : ''}
-        ${status === 'completed' ? 'ring-1 ring-green-400' : ''}
-        ${status === 'failed' ? 'ring-2 ring-red-500' : ''}
-        ${status === 'skipped' ? 'opacity-50' : ''}
-        ${isSameConcept && !selected ? 'ring-2 ring-amber-400 ring-offset-1 shadow-amber-200 shadow-md' : ''}
-        ${opacity}
-        hover:shadow-md
-      `}
-      style={{
-        clipPath: 'polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%)',
-      }}
-    >
+    <div className={nodeClassName} style={clipPathStyle}>
       {/* Input handle (left) - receives data from children on the left */}
       <Handle
         type="target"

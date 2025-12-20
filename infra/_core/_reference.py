@@ -55,6 +55,103 @@ class Reference:
         new_ref.data = copy.deepcopy(self.data)
         return new_ref
 
+    def transpose(self, new_axis_order: List[str]) -> 'Reference':
+        """
+        Reorder axes and underlying data to match a new axis order.
+        
+        Args:
+            new_axis_order: List of axis names in the desired order.
+                            Must contain exactly the same axes as current.
+        
+        Returns:
+            Reference: A new Reference with reordered axes and data.
+        
+        Example:
+            ref with axes ['status_type', 'signal'] and shape (2, 2)
+            ref.transpose(['signal', 'status_type']) 
+            -> new ref with axes ['signal', 'status_type'] and shape (2, 2)
+        """
+        # Validate new_axis_order
+        if set(new_axis_order) != set(self.axes):
+            raise ValueError(
+                f"new_axis_order {new_axis_order} must contain exactly the same axes as {self.axes}"
+            )
+        if len(new_axis_order) != len(self.axes):
+            raise ValueError(
+                f"new_axis_order must have same length as current axes"
+            )
+        
+        # If order is the same, just return a copy
+        if new_axis_order == self.axes:
+            return self.copy()
+        
+        # Compute the permutation: perm[i] = index in old axes for new axis i
+        perm = [self.axes.index(ax) for ax in new_axis_order]
+        
+        # Compute new shape
+        new_shape = tuple(self.shape[p] for p in perm)
+        
+        # Create new reference
+        new_ref = Reference(
+            axes=list(new_axis_order),
+            shape=new_shape,
+            initial_value=None,
+            skip_value=self.skip_value
+        )
+        
+        # Transpose the data
+        new_ref.data = self._transpose_data(self.data, perm, self.shape)
+        return new_ref
+    
+    def _transpose_data(self, data: Any, perm: List[int], old_shape: tuple) -> Any:
+        """
+        Recursively transpose nested list data according to permutation.
+        
+        Uses an iterative approach: collect all elements with their indices,
+        then rebuild in new order.
+        """
+        if not old_shape:
+            return data
+        
+        # Collect all leaf elements with their indices
+        def collect_elements(d, indices, depth):
+            if depth == len(old_shape):
+                yield indices, d
+            elif isinstance(d, list):
+                for i, item in enumerate(d):
+                    yield from collect_elements(item, indices + (i,), depth + 1)
+            else:
+                yield indices, d
+        
+        elements = list(collect_elements(data, (), 0))
+        
+        # Compute new shape
+        new_shape = tuple(old_shape[p] for p in perm)
+        
+        # Create empty nested structure for new shape
+        def create_nested(shape):
+            if not shape:
+                return None
+            return [create_nested(shape[1:]) for _ in range(shape[0])]
+        
+        new_data = create_nested(new_shape)
+        
+        # Place elements at transposed indices
+        for old_indices, value in elements:
+            # Compute new indices by permuting
+            new_indices = tuple(old_indices[perm[i]] for i in range(len(perm)))
+            
+            # Navigate to location and set value
+            target = new_data
+            for i, idx in enumerate(new_indices[:-1]):
+                target = target[idx]
+            if new_indices:
+                target[new_indices[-1]] = value
+            else:
+                new_data = value
+        
+        return new_data
+
     @classmethod
     def from_data(cls, data, axis_names=None, skip_value="@#SKIP#@"):
         """

@@ -177,6 +177,7 @@
         "axis_name": "signal",
         "description": "Grouped truth markers (surpass + deviate) for neutral evaluation",
         "reference_axis_names": [
+            "status_type",
             "signal"
         ],
         "natural_name": "signal status (信号状态)"
