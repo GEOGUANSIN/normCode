@@ -225,12 +225,15 @@ def build_graph_from_repositories(
             return fallback_flow_index
         
         # Find a flow_index that matches the parent pattern
-        # For child concepts, look for indices starting with parent_flow_index + "."
+        # For child concepts (function/value/context), look for indices starting with parent_flow_index + "."
+        # NOTE: We do NOT match fi == parent_flow_index because the child's flow_index
+        # should always be a sub-index of the parent (e.g., "1.2" under parent "1")
+        # Matching the parent exactly would conflate the child with the parent node!
         parent_prefix = f"{parent_flow_index}." if parent_flow_index else ""
         
         matching_indices = [
             fi for fi in repo_indices 
-            if fi.startswith(parent_prefix) or fi == parent_flow_index
+            if parent_prefix and fi.startswith(parent_prefix)
         ]
         
         if matching_indices:
@@ -279,31 +282,44 @@ def build_graph_from_repositories(
         child_idx = 1
         
         # Create target node (the concept being inferred)
-        # Uses the base flow_index - prioritize concept_repo if available
-        parent_of_base = _get_parent_flow_index(base_flow_index) or ""
-        target_flow_index = get_flow_index_for_concept(target_name, base_flow_index, parent_of_base)
+        # IMPORTANT: The target (concept_to_infer) MUST use the inference's base_flow_index
+        # This is the defining node for this inference - we don't look it up from concept_repo
+        # because the inference's flow_index IS the authoritative source for where it's inferred.
+        target_flow_index = base_flow_index
         target_id = f"node@{target_flow_index}"
         
-        if target_id not in nodes and target_name:
-            attrs = concept_attrs.get(target_name, {})
-            nodes[target_id] = GraphNode(
-                id=target_id,
-                label=target_name,
-                category=get_concept_category(target_name),
-                node_type="value",
-                flow_index=target_flow_index,
-                level=base_level,
-                position={"x": 0, "y": 0},
-                data={
-                    "is_ground": attrs.get('is_ground_concept', False),
-                    "is_final": attrs.get('is_final_concept', False),
-                    "axes": attrs.get('reference_axis_names', []),
-                    "reference_data": attrs.get('reference_data'),
-                    "concept_name": target_name,
-                    "flow_indices_from_repo": attrs.get('flow_indices', []),
-                }
-            )
-            register_concept_flow_index(target_name, target_flow_index)
+        if target_name:
+            if target_id not in nodes:
+                attrs = concept_attrs.get(target_name, {})
+                nodes[target_id] = GraphNode(
+                    id=target_id,
+                    label=target_name,
+                    category=get_concept_category(target_name),
+                    node_type="value",
+                    flow_index=target_flow_index,
+                    level=base_level,
+                    position={"x": 0, "y": 0},
+                    data={
+                        "is_ground": attrs.get('is_ground_concept', False),
+                        "is_final": attrs.get('is_final_concept', False),
+                        "axes": attrs.get('reference_axis_names', []),
+                        "reference_data": attrs.get('reference_data'),
+                        "concept_name": target_name,
+                        "flow_indices_from_repo": attrs.get('flow_indices', []),
+                    }
+                )
+                register_concept_flow_index(target_name, target_flow_index)
+            elif nodes[target_id].label != target_name:
+                # COLLISION: Node ID exists but has different concept name!
+                # This indicates a bug in flow_index assignment or inference data.
+                # Log a warning and skip this inference to avoid corrupting the graph.
+                import logging
+                logging.warning(
+                    f"Node ID collision: {target_id} already exists with label "
+                    f"'{nodes[target_id].label}', but trying to create with '{target_name}'. "
+                    f"Skipping inference at flow_index {base_flow_index}."
+                )
+                continue
         
         input_level = base_level + 1
         
@@ -332,6 +348,32 @@ def build_graph_from_repositories(
                     }
                 )
                 register_concept_flow_index(func_name, func_flow_index)
+            elif nodes[func_id].label != func_name:
+                # COLLISION: Different concept at same flow_index!
+                # Generate a unique ID by appending ".func" suffix
+                import logging
+                logging.warning(
+                    f"Function node collision: {func_id} exists with '{nodes[func_id].label}', "
+                    f"wanted '{func_name}'. Using fallback ID."
+                )
+                func_id = f"node@{fallback_func_flow_index}"
+                if func_id not in nodes:
+                    func_attrs = concept_attrs.get(func_name, {})
+                    nodes[func_id] = GraphNode(
+                        id=func_id,
+                        label=func_name,
+                        category=get_concept_category(func_name),
+                        node_type="function",
+                        flow_index=fallback_func_flow_index,
+                        level=input_level,
+                        position={"x": 0, "y": 0},
+                        data={
+                            "sequence": sequence,
+                            "working_interpretation": working_interp,
+                            "concept_name": func_name,
+                        }
+                    )
+                    register_concept_flow_index(func_name, fallback_func_flow_index)
             
             # Edge from function to target (produces)
             edges.append(GraphEdge(
@@ -353,6 +395,16 @@ def build_graph_from_repositories(
             val_flow_index = get_flow_index_for_concept(val_name, fallback_val_flow_index, base_flow_index)
             child_idx += 1
             val_id = f"node@{val_flow_index}"
+            
+            # Check for collision: if node exists with different concept, use fallback
+            if val_id in nodes and nodes[val_id].label != val_name:
+                import logging
+                logging.warning(
+                    f"Value node collision: {val_id} exists with '{nodes[val_id].label}', "
+                    f"wanted '{val_name}'. Using fallback ID."
+                )
+                val_flow_index = fallback_val_flow_index
+                val_id = f"node@{val_flow_index}"
             
             if val_id not in nodes:
                 val_attrs = concept_attrs.get(val_name, {})
@@ -394,6 +446,16 @@ def build_graph_from_repositories(
             ctx_flow_index = get_flow_index_for_concept(ctx_name, fallback_ctx_flow_index, base_flow_index)
             child_idx += 1
             ctx_id = f"node@{ctx_flow_index}"
+            
+            # Check for collision: if node exists with different concept, use fallback
+            if ctx_id in nodes and nodes[ctx_id].label != ctx_name:
+                import logging
+                logging.warning(
+                    f"Context node collision: {ctx_id} exists with '{nodes[ctx_id].label}', "
+                    f"wanted '{ctx_name}'. Using fallback ID."
+                )
+                ctx_flow_index = fallback_ctx_flow_index
+                ctx_id = f"node@{ctx_flow_index}"
             
             if ctx_id not in nodes:
                 ctx_attrs = concept_attrs.get(ctx_name, {})

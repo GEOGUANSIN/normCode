@@ -19,6 +19,8 @@ interface GraphState {
   
   // Highlighting state
   highlightedBranch: Set<string>; // Set of node IDs in the highlighted branch
+  sameConceptNodes: Set<string>; // Set of node IDs with the same concept name as selected
+  selectedConceptLabel: string | null; // The label of the currently selected concept
 
   // Layout state
   layoutMode: LayoutMode;
@@ -53,10 +55,14 @@ interface GraphState {
   getBranch: (nodeId: string) => Set<string>; // Both ancestors and descendants
   getVisibleNodes: () => GraphNode[];
   getVisibleEdges: () => GraphEdge[];
+  getSameConceptNodeIds: (nodeId: string) => Set<string>; // Get all visible nodes with same label
+  getConceptOccurrenceCount: (nodeId: string) => number; // Get count of visible nodes with same label
   hasChildren: (nodeId: string) => boolean;
   isCollapsed: (nodeId: string) => boolean;
   isHidden: (nodeId: string) => boolean;
   isHighlighted: (nodeId: string) => boolean;
+  isSameConcept: (nodeId: string) => boolean; // Check if node has same concept as selected
+  hasMultipleOccurrences: (nodeId: string) => boolean; // Check if concept has multiple visible occurrences
 }
 
 export const useGraphStore = create<GraphState>((set, get) => ({
@@ -65,6 +71,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   error: null,
   collapsedNodes: new Set<string>(),
   highlightedBranch: new Set<string>(),
+  sameConceptNodes: new Set<string>(),
+  selectedConceptLabel: null,
   layoutMode: 'hierarchical',
 
   setGraphData: (data) => set({ 
@@ -72,6 +80,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     error: null,
     collapsedNodes: new Set<string>(),
     highlightedBranch: new Set<string>(),
+    sameConceptNodes: new Set<string>(),
+    selectedConceptLabel: null,
   }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error, isLoading: false }),
@@ -81,6 +91,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     error: null,
     collapsedNodes: new Set<string>(),
     highlightedBranch: new Set<string>(),
+    sameConceptNodes: new Set<string>(),
+    selectedConceptLabel: null,
     layoutMode: 'hierarchical',
   }),
 
@@ -141,14 +153,28 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   // Highlight actions
   highlightBranch: (nodeId) => {
-    const { getBranch } = get();
+    const { getBranch, getSameConceptNodeIds, getNode } = get();
     const branch = getBranch(nodeId);
     branch.add(nodeId); // Include the selected node itself
-    set({ highlightedBranch: branch });
+    
+    // Also find all visible nodes with the same concept name
+    const sameConceptNodes = getSameConceptNodeIds(nodeId);
+    const node = getNode(nodeId);
+    const selectedConceptLabel = node?.label || null;
+    
+    set({ 
+      highlightedBranch: branch,
+      sameConceptNodes,
+      selectedConceptLabel,
+    });
   },
 
   clearHighlight: () => {
-    set({ highlightedBranch: new Set<string>() });
+    set({ 
+      highlightedBranch: new Set<string>(),
+      sameConceptNodes: new Set<string>(),
+      selectedConceptLabel: null,
+    });
   },
 
   // Layout actions
@@ -210,6 +236,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   // Get all descendants (children, grandchildren, etc.) of a node
+  // IMPORTANT: Excludes alias edges to prevent cross-occurrence traversal
   getDescendants: (nodeId) => {
     const { graphData } = get();
     if (!graphData) return new Set<string>();
@@ -221,7 +248,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       const currentId = queue.shift()!;
       // Find edges where this node is the target (children are sources)
       // In our graph, edges go from child → parent, so children are sources of edges targeting this node
-      const childEdges = graphData.edges.filter((e) => e.target === currentId);
+      // EXCLUDE alias edges - they connect different occurrences of the same concept
+      // and should not be traversed for collapse/expand operations
+      const childEdges = graphData.edges.filter(
+        (e) => e.target === currentId && e.edge_type !== 'alias'
+      );
       
       for (const edge of childEdges) {
         if (!descendants.has(edge.source) && edge.source !== nodeId) {
@@ -235,6 +266,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   // Get all ancestors (parents, grandparents, etc.) of a node
+  // IMPORTANT: Excludes alias edges to prevent cross-occurrence traversal
   getAncestors: (nodeId) => {
     const { graphData } = get();
     if (!graphData) return new Set<string>();
@@ -245,7 +277,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     while (queue.length > 0) {
       const currentId = queue.shift()!;
       // Find edges where this node is the source (parents are targets)
-      const parentEdges = graphData.edges.filter((e) => e.source === currentId);
+      // EXCLUDE alias edges - they connect different occurrences of the same concept
+      const parentEdges = graphData.edges.filter(
+        (e) => e.source === currentId && e.edge_type !== 'alias'
+      );
       
       for (const edge of parentEdges) {
         if (!ancestors.has(edge.target) && edge.target !== nodeId) {
@@ -264,6 +299,32 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const ancestors = getAncestors(nodeId);
     const descendants = getDescendants(nodeId);
     return new Set([...ancestors, ...descendants]);
+  },
+
+  // Get all visible node IDs that have the same label (concept name) as the given node
+  getSameConceptNodeIds: (nodeId) => {
+    const { getVisibleNodes, getNode } = get();
+    const node = getNode(nodeId);
+    if (!node) return new Set<string>();
+    
+    const conceptLabel = node.label;
+    const visibleNodes = getVisibleNodes();
+    
+    // Find all visible nodes with the same label (including the original node)
+    const sameConceptIds = new Set<string>();
+    for (const n of visibleNodes) {
+      if (n.label === conceptLabel) {
+        sameConceptIds.add(n.id);
+      }
+    }
+    
+    return sameConceptIds;
+  },
+
+  // Get count of visible nodes with the same label as the given node
+  getConceptOccurrenceCount: (nodeId) => {
+    const { getSameConceptNodeIds } = get();
+    return getSameConceptNodeIds(nodeId).size;
   },
 
   // Get nodes that should be visible (not hidden by collapsed parents)
@@ -322,5 +383,19 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   isHighlighted: (nodeId) => {
     const { highlightedBranch } = get();
     return highlightedBranch.size === 0 || highlightedBranch.has(nodeId);
+  },
+
+  // Check if a node has the same concept name as the currently selected node
+  // Returns true only if there are multiple occurrences (more than 1 node with same label)
+  isSameConcept: (nodeId) => {
+    const { sameConceptNodes } = get();
+    // Only highlight as "same concept" if there are multiple occurrences
+    return sameConceptNodes.size > 1 && sameConceptNodes.has(nodeId);
+  },
+
+  // Check if a concept has multiple visible occurrences (for persistent badge display)
+  hasMultipleOccurrences: (nodeId) => {
+    const { getConceptOccurrenceCount } = get();
+    return getConceptOccurrenceCount(nodeId) > 1;
   },
 }));

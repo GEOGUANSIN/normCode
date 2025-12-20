@@ -66,6 +66,13 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
   const highlightedBranch = useGraphStore((s) => s.highlightedBranch);
   const hasHighlight = highlightedBranch.size > 0;
   
+  // Same concept highlighting (for nodes with identical concept names)
+  const isSameConcept = useGraphStore((s) => s.isSameConcept(id));
+  
+  // Persistent indicator for concepts with multiple occurrences
+  const hasMultipleOccurrences = useGraphStore((s) => s.hasMultipleOccurrences(id));
+  const occurrenceCount = useGraphStore((s) => s.getConceptOccurrenceCount(id));
+  
   const status = data.flowIndex ? nodeStatuses[data.flowIndex] || 'pending' : 'pending';
   const hasBreakpoint = data.flowIndex ? breakpoints.has(data.flowIndex) : false;
   
@@ -101,6 +108,7 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
         ${status === 'completed' ? 'ring-1 ring-green-400' : ''}
         ${status === 'failed' ? 'ring-2 ring-red-500' : ''}
         ${status === 'skipped' ? 'opacity-50' : ''}
+        ${isSameConcept && !selected ? 'ring-2 ring-amber-400 ring-offset-1 shadow-amber-200 shadow-md' : ''}
         ${opacity}
         hover:shadow-md
       `}
@@ -179,6 +187,23 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
           }`}
           title="Breakpoint"
         />
+      )}
+
+      {/* Same concept indicator - shows when node is part of highlighted same-concept group */}
+      {isSameConcept && !selected && (
+        <div className="absolute -top-2 -left-2 text-[8px] bg-amber-500 text-white px-1 rounded-full w-4 h-4 flex items-center justify-center font-bold z-20" title="Same concept - highlighted">
+          ≡
+        </div>
+      )}
+
+      {/* Multiple occurrences badge - always visible when concept appears multiple times */}
+      {hasMultipleOccurrences && !isSameConcept && !selected && (
+        <div 
+          className="absolute -top-2 -right-4 text-[9px] bg-slate-500 text-white px-1.5 py-0.5 rounded-full font-medium z-20 border border-white shadow-sm"
+          title={`This concept appears ${occurrenceCount} times in the visible graph`}
+        >
+          ×{occurrenceCount}
+        </div>
       )}
 
       {/* Output handle (right) - sends data to parent on the right */}

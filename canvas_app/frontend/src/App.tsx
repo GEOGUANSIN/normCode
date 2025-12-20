@@ -8,7 +8,6 @@ import {
   FolderOpen, 
   Settings, 
   HelpCircle, 
-  Cpu, 
   PanelRight, 
   PanelRightClose, 
   PanelBottom, 
@@ -78,7 +77,7 @@ function App() {
         {/* Left side: Logo + Project Info */}
         <div className="flex items-center gap-4">
           {/* App Logo */}
-          <Cpu className="w-5 h-5 text-purple-500" />
+          <img src="/logo.png" alt="NormCode Canvas" className="w-6 h-6 opacity-90" style={{ filter: 'brightness(1.1)' }} />
           
           {/* Project Info */}
           <div className="flex items-center gap-2">
