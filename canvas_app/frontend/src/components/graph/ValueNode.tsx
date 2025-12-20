@@ -17,6 +17,7 @@ interface ValueNodeData {
   isGround?: boolean;
   isFinal?: boolean;
   axes?: string[];
+  naturalName?: string;  // Human-readable name from concept repo
 }
 
 const categoryStyles: Record<NodeCategory, { bg: string; border: string; text: string }> = {
@@ -72,10 +73,13 @@ export const ValueNode = memo(({ data, id, selected }: NodeProps<ValueNodeData>)
   
   const style = categoryStyles[data.category] || categoryStyles['semantic-value'];
 
+  // Use natural_name if available, otherwise fall back to label (concept_name)
+  const primaryLabel = data.naturalName || data.label;
+  
   // Truncate long labels
-  const displayLabel = data.label.length > 30 
-    ? data.label.substring(0, 27) + '...' 
-    : data.label;
+  const displayLabel = primaryLabel.length > 30 
+    ? primaryLabel.substring(0, 27) + '...' 
+    : primaryLabel;
 
   // Handle collapse button click
   const handleCollapseClick = useCallback((e: React.MouseEvent) => {
@@ -84,7 +88,8 @@ export const ValueNode = memo(({ data, id, selected }: NodeProps<ValueNodeData>)
   }, [id, toggleCollapse]);
 
   // Determine opacity based on highlighting
-  const opacity = hasHighlight && !isHighlighted ? 'opacity-30' : '';
+  // Don't dim nodes that are highlighted as "same concept" 
+  const opacity = hasHighlight && !isHighlighted && !isSameConcept ? 'opacity-30' : '';
 
   return (
     <div
@@ -143,11 +148,18 @@ export const ValueNode = memo(({ data, id, selected }: NodeProps<ValueNodeData>)
       {/* Node content */}
       <div className="text-center">
         <div 
-          className="font-mono text-xs leading-tight break-words"
-          title={data.label}
+          className={`text-xs leading-tight break-words ${data.naturalName ? '' : 'font-mono'}`}
+          title={data.naturalName ? `${data.naturalName}\n(${data.label})` : data.label}
         >
           {displayLabel}
         </div>
+        
+        {/* Show concept name as secondary label when natural_name is used */}
+        {data.naturalName && (
+          <div className="font-mono text-[9px] opacity-50 mt-0.5 truncate" title={data.label}>
+            {data.label.length > 25 ? data.label.substring(0, 22) + '...' : data.label}
+          </div>
+        )}
         
         {/* Axes indicator */}
         {data.axes && data.axes.length > 0 && (

@@ -305,6 +305,7 @@ def build_graph_from_repositories(
                         "axes": attrs.get('reference_axis_names', []),
                         "reference_data": attrs.get('reference_data'),
                         "concept_name": target_name,
+                        "natural_name": attrs.get('natural_name'),
                         "flow_indices_from_repo": attrs.get('flow_indices', []),
                     }
                 )
@@ -344,6 +345,7 @@ def build_graph_from_repositories(
                         "sequence": sequence,
                         "working_interpretation": working_interp,
                         "concept_name": func_name,
+                        "natural_name": func_attrs.get('natural_name'),
                         "flow_indices_from_repo": func_attrs.get('flow_indices', []),
                     }
                 )
@@ -371,6 +373,7 @@ def build_graph_from_repositories(
                             "sequence": sequence,
                             "working_interpretation": working_interp,
                             "concept_name": func_name,
+                            "natural_name": func_attrs.get('natural_name'),
                         }
                     )
                     register_concept_flow_index(func_name, fallback_func_flow_index)
@@ -421,6 +424,7 @@ def build_graph_from_repositories(
                         "is_final": val_attrs.get('is_final_concept', False),
                         "axes": val_attrs.get('reference_axis_names', []),
                         "concept_name": val_name,
+                        "natural_name": val_attrs.get('natural_name'),
                         "flow_indices_from_repo": val_attrs.get('flow_indices', []),
                     }
                 )
@@ -471,6 +475,7 @@ def build_graph_from_repositories(
                         "is_context": True,
                         "axes": ctx_attrs.get('reference_axis_names', []),
                         "concept_name": ctx_name,
+                        "natural_name": ctx_attrs.get('natural_name'),
                         "flow_indices_from_repo": ctx_attrs.get('flow_indices', []),
                     }
                 )

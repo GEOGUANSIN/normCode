@@ -40,6 +40,7 @@ function App() {
   const [showLogPanel, setShowLogPanel] = useState(true);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
+  const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
@@ -275,7 +276,12 @@ function App() {
               </div>
 
               {/* Detail Panel */}
-              {graphData && showDetailPanel && <DetailPanel />}
+              {graphData && showDetailPanel && !detailPanelFullscreen && (
+                <DetailPanel 
+                  isFullscreen={false}
+                  onToggleFullscreen={() => setDetailPanelFullscreen(true)}
+                />
+              )}
             </div>
 
             {/* Log Panel */}
@@ -283,6 +289,14 @@ function App() {
           </>
         )}
       </main>
+
+      {/* Fullscreen Detail Panel */}
+      {graphData && detailPanelFullscreen && (
+        <DetailPanel 
+          isFullscreen={true}
+          onToggleFullscreen={() => setDetailPanelFullscreen(false)}
+        />
+      )}
 
       {/* Load Panel Modal (for loading different repositories) */}
       {showLoadPanel && (

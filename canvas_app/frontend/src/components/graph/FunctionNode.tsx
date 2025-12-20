@@ -15,6 +15,7 @@ interface FunctionNodeData {
   category: NodeCategory;
   flowIndex: string | null;
   sequence?: string;
+  naturalName?: string;  // Human-readable name from concept repo
 }
 
 const categoryStyles: Record<NodeCategory, { bg: string; border: string; text: string }> = {
@@ -82,10 +83,13 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
   const sequenceType = data.sequence?.split('_')[0] || data.sequence;
   const badgeColor = sequenceBadgeColors[sequenceType || ''] || 'bg-gray-200 text-gray-700';
 
+  // Use natural_name if available, otherwise fall back to label (concept_name)
+  const primaryLabel = data.naturalName || data.label;
+  
   // Truncate long labels
-  const displayLabel = data.label.length > 35 
-    ? data.label.substring(0, 32) + '...' 
-    : data.label;
+  const displayLabel = primaryLabel.length > 35 
+    ? primaryLabel.substring(0, 32) + '...' 
+    : primaryLabel;
 
   // Handle collapse button click
   const handleCollapseClick = useCallback((e: React.MouseEvent) => {
@@ -94,7 +98,8 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
   }, [id, toggleCollapse]);
 
   // Determine opacity based on highlighting
-  const opacity = hasHighlight && !isHighlighted ? 'opacity-30' : '';
+  // Don't dim nodes that are highlighted as "same concept"
+  const opacity = hasHighlight && !isHighlighted && !isSameConcept ? 'opacity-30' : '';
 
   return (
     <div
@@ -156,11 +161,18 @@ export const FunctionNode = memo(({ data, id, selected }: NodeProps<FunctionNode
       {/* Node content */}
       <div className="text-center px-2">
         <div 
-          className="font-mono text-xs leading-tight break-words"
-          title={data.label}
+          className={`text-xs leading-tight break-words ${data.naturalName ? '' : 'font-mono'}`}
+          title={data.naturalName ? `${data.naturalName}\n(${data.label})` : data.label}
         >
           {displayLabel}
         </div>
+        
+        {/* Show concept name as secondary label when natural_name is used */}
+        {data.naturalName && (
+          <div className="font-mono text-[8px] opacity-50 mt-0.5 truncate" title={data.label}>
+            {data.label.length > 28 ? data.label.substring(0, 25) + '...' : data.label}
+          </div>
+        )}
         
         {/* Sequence type badge */}
         {sequenceType && (

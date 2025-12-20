@@ -6,6 +6,56 @@
 
 ---
 
+## December 20, 2024 - Natural Name Display Enhancement
+
+### What Was Implemented
+
+**Natural Name Support**
+Nodes now display `natural_name` from the concept repository when available, providing human-readable labels instead of technical concept names.
+
+- [x] **Backend `graph_service.py`**: Added `natural_name` to node data for all node types (target, function, value, context)
+- [x] **Frontend `GraphCanvas.tsx`**: Passes `naturalName` to node components
+- [x] **Frontend `ValueNode.tsx`**:
+  - Prioritizes `natural_name` as the display label
+  - Shows concept name as secondary label when natural_name is used
+  - Uses regular font for natural name, monospace for concept ID
+  - Tooltip shows both names
+- [x] **Frontend `FunctionNode.tsx`**: Same display logic as ValueNode
+- [x] **Frontend `DetailPanel.tsx`**:
+  - Shows "Name" with natural_name when available
+  - Shows "Concept ID" with technical name as secondary
+  - Maintains backwards compatibility when natural_name is absent
+
+### Display Logic
+
+When `natural_name` exists:
+```
+┌─────────────────────────┐
+│  investment decision    │  ← natural_name (readable)
+│  {investment_decision}  │  ← concept_name (technical, smaller)
+└─────────────────────────┘
+```
+
+When only `concept_name` exists:
+```
+┌─────────────────────────┐
+│  {investment_decision}  │  ← concept_name (monospace)
+└─────────────────────────┘
+```
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/graph_service.py` - Added `natural_name` to all node data dicts
+
+**Frontend**:
+- `canvas_app/frontend/src/components/graph/GraphCanvas.tsx` - Pass naturalName in transform
+- `canvas_app/frontend/src/components/graph/ValueNode.tsx` - Display natural_name first
+- `canvas_app/frontend/src/components/graph/FunctionNode.tsx` - Display natural_name first
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx` - Show both names in identity section
+
+---
+
 ## Overview
 
 This journal tracks the implementation progress of the NormCode Graph Canvas Tool - a visual, interactive environment for executing, debugging, and auditing NormCode plans.

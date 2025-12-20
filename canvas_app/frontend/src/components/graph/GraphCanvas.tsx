@@ -63,6 +63,7 @@ function transformToReactFlowNodes(nodes: GraphNodeType[]): Node[] {
       isFinal: n.data.is_final,
       axes: n.data.axes,
       sequence: n.data.sequence,
+      naturalName: n.data.natural_name,
     },
   }));
 }
@@ -227,7 +228,7 @@ export function GraphCanvas() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('[GraphCanvas] Hierarchical button clicked, current mode:', layoutMode, 'isLoading:', isLoading);
+                      console.log('[GraphCanvas] Compact button clicked, current mode:', layoutMode, 'isLoading:', isLoading);
                       setLayoutMode('hierarchical');
                     }}
                     disabled={isLoading || layoutMode === 'hierarchical'}
@@ -236,10 +237,10 @@ export function GraphCanvas() {
                         ? 'bg-blue-500 text-white' 
                         : 'bg-white text-slate-600 hover:bg-slate-100'
                     } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title="Hierarchical layout - nodes grouped by level"
+                    title="Compact layout - nodes grouped by level"
                   >
                     <Network className="w-3 h-3" />
-                    <span>Hierarchical</span>
+                    <span>Compact</span>
                   </button>
                   <button
                     onClick={(e) => {
