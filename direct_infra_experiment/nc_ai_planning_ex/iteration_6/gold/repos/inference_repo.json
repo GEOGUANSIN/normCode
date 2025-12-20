@@ -184,8 +184,7 @@
       "value_selectors": {},
       "assertion_condition": {
         "quantifiers": {
-          "axis": "for-each",
-          "concept": "{validated signal}"
+          "signal": "for-each"
         },
         "condition": true
       }
@@ -212,8 +211,7 @@
       "value_selectors": {},
       "assertion_condition": {
         "quantifiers": {
-          "axis": "for-each",
-          "concept": "{validated signal}"
+          "signal": "for-each"
         },
         "condition": true
       }
@@ -238,10 +236,8 @@
       "value_selectors": {},
       "assertion_condition": {
         "quantifiers": {
-          "outer": "for-each",
-          "outer_concept": "{signal}",
-          "inner": "all",
-          "inner_concept": "{status_type}"
+          "signal": "for-each",
+          "status_type": "all"
         },
         "condition": false
       }
@@ -262,9 +258,8 @@
     "working_interpretation": {
       "syntax": {
         "marker": "across",
-        "protect_axes": [
-          "signal"
-        ]
+        "by_axes": [[], []],
+        "create_axis": "status_type"
       }
     }
   },

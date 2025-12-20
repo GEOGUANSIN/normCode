@@ -54,11 +54,11 @@ class CustomParadigmTool:
         return "\n\n".join(manifest)
 
 def create_repositories_from_files():
-    with open(SCRIPT_DIR / 'repos/concept_repo.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos/concept_repo.json', 'r', encoding='utf-8') as f:
         concept_data = json.load(f)
     concept_repo = ConceptRepo.from_json_list(concept_data)
 
-    with open(SCRIPT_DIR / 'repos/inference_repo.json', 'r') as f:
+    with open(SCRIPT_DIR / 'repos/inference_repo.json', 'r', encoding='utf-8') as f:
         inference_data = json.load(f)
     inference_repo = InferenceRepo.from_json_list(inference_data, concept_repo)
     

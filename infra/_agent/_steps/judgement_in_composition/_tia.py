@@ -1,6 +1,6 @@
 from infra._states._judgement_states import States
 from infra._core._reference import Reference
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -8,6 +8,50 @@ logger = logging.getLogger(__name__)
 # Truth value markers
 TRUE_MARKER = "%{truth value}(true)"
 FALSE_MARKER = "%{truth value}(false)"
+
+
+def _normalize_condition(condition: Any) -> Any:
+    """
+    Normalize a condition to match truth value markers.
+    
+    Converts Python booleans to their marker equivalents so comparisons work.
+    - True / "true" -> "%{truth value}(true)"
+    - False / "false" -> "%{truth value}(false)"
+    """
+    if condition is True or condition == "true":
+        return TRUE_MARKER
+    elif condition is False or condition == "false":
+        return FALSE_MARKER
+    elif condition == TRUE_MARKER or condition == FALSE_MARKER:
+        return condition
+    else:
+        # For non-boolean conditions, return as-is
+        return condition
+
+
+def _value_matches_condition(value: Any, condition: Any) -> bool:
+    """
+    Check if a value matches a condition.
+    
+    Handles wrapped values like '%b1a(%{truth value}(false))' by checking
+    if the condition is contained within the value string.
+    
+    Args:
+        value: The value to check (may be wrapped)
+        condition: The condition to match
+        
+    Returns:
+        True if the value matches the condition
+    """
+    if value == condition:
+        return True
+    
+    # Check if condition is contained in a wrapped value
+    if isinstance(value, str) and isinstance(condition, str):
+        if condition in value:
+            return True
+    
+    return False
 
 # Quantifier behaviors for edge cases
 QUANTIFIER_ON_EMPTY = {
@@ -40,13 +84,13 @@ def _apply_quantifier_to_slice(
         return QUANTIFIER_ON_EMPTY.get(quantifier, False)
     
     if not isinstance(slice_data, list):
-        # Leaf value
+        # Leaf value - use _value_matches_condition for wrapped value support
         if quantifier == "all":
-            return slice_data == condition
+            return _value_matches_condition(slice_data, condition)
         elif quantifier == "some":
-            return slice_data == condition
+            return _value_matches_condition(slice_data, condition)
         elif quantifier == "none":
-            return slice_data != condition
+            return not _value_matches_condition(slice_data, condition)
         elif quantifier == "exists":
             return slice_data != skip_value
         return False
@@ -76,7 +120,7 @@ def _transform_leaf_to_truth(value: Any, condition: Any, skip_value: str = "@#SK
     """Transform a single leaf value to a truth marker."""
     if value == skip_value:
         return skip_value
-    return TRUE_MARKER if value == condition else FALSE_MARKER
+    return TRUE_MARKER if _value_matches_condition(value, condition) else FALSE_MARKER
 
 
 def _hierarchical_collapse(
@@ -116,15 +160,18 @@ def _hierarchical_collapse(
     if current_depth == filter_axis_index:
         # We're at the filter axis - evaluate each element
         result = []
-        for element in tensor:
+        for i, element in enumerate(tensor):
             # For this element, apply criterion quantifiers to inner axes
             if criterion_quantifiers:
                 # Get the innermost criterion quantifier
                 inner_indices = sorted(criterion_quantifiers.keys())
                 inner_quantifier = criterion_quantifiers[inner_indices[0]]
                 
+                logger.debug(f"Filter axis element [{i}]: {element}, quantifier='{inner_quantifier}', condition={condition}")
+                
                 # Apply quantifier to this slice
                 passes = _apply_quantifier_to_slice(element, inner_quantifier, condition, skip_value)
+                logger.debug(f"  -> passes={passes}")
                 result.append(TRUE_MARKER if passes else FALSE_MARKER)
             else:
                 # No criterion - just transform to truth mask
@@ -257,10 +304,11 @@ def truth_inference_assertion(states: States) -> States:
         return states
     
     quantifiers = assertion.get("quantifiers", {})
-    condition = assertion.get("condition", True)
+    raw_condition = assertion.get("condition", True)
+    condition = _normalize_condition(raw_condition)  # Convert bool to marker format
     skip_value = tva_ref.skip_value if hasattr(tva_ref, 'skip_value') else "@#SKIP#@"
     
-    logger.debug(f"TIA assertion: quantifiers={quantifiers}, condition={condition}")
+    logger.debug(f"TIA assertion: quantifiers={quantifiers}, condition={raw_condition} -> {condition}")
     
     # Separate quantifiers into filter (for-each) and criterion (collapsing)
     filter_axes = {}   # axis_name -> axis_index (for-each axes)
@@ -323,26 +371,52 @@ def truth_inference_assertion(states: States) -> States:
     
     logger.debug(f"Primary filter axis: '{filter_axis_name}' at index {filter_axis_index}")
     
-    # Build criterion quantifiers dict indexed by axis position
-    criterion_by_index = {}
+    # Check if any criterion axes are OUTSIDE (before) the filter axis
+    # If so, we need to transpose to put the filter axis first
+    outer_criterion_axes = []
+    inner_criterion_axes = []
     for axis_name, quantifier in criterion_axes.items():
         if axis_name in tva_ref.axes:
             axis_idx = tva_ref.axes.index(axis_name)
-            # Only include criterion axes that are "inside" (higher index than) filter axis
-            if axis_idx > filter_axis_index:
-                criterion_by_index[axis_idx] = quantifier
-                logger.debug(f"Criterion axis '{axis_name}' (idx {axis_idx}): '{quantifier}'")
+            if axis_idx < filter_axis_index:
+                outer_criterion_axes.append((axis_name, quantifier, axis_idx))
+            else:
+                inner_criterion_axes.append((axis_name, quantifier, axis_idx))
+    
+    # If we have outer criterion axes, transpose the tensor so filter axis comes first
+    working_ref = tva_ref
+    working_filter_index = filter_axis_index
+    if outer_criterion_axes:
+        # Build new axis order: filter axis first, then all others
+        new_axis_order = [filter_axis_name] + [ax for ax in tva_ref.axes if ax != filter_axis_name]
+        logger.debug(f"Transposing tensor from {tva_ref.axes} to {new_axis_order} (filter axis '{filter_axis_name}' moved to front)")
+        working_ref = tva_ref.transpose(new_axis_order)
+        working_filter_index = 0  # Filter axis is now at index 0
+        
+        # Recalculate criterion indices in the transposed tensor
+        inner_criterion_axes = []
+        for axis_name, quantifier in criterion_axes.items():
+            if axis_name in working_ref.axes:
+                axis_idx = working_ref.axes.index(axis_name)
+                if axis_idx > working_filter_index:  # Now all criterion axes should be inner
+                    inner_criterion_axes.append((axis_name, quantifier, axis_idx))
+    
+    # Build criterion quantifiers dict indexed by axis position (in working_ref)
+    criterion_by_index = {}
+    for axis_name, quantifier, axis_idx in inner_criterion_axes:
+        criterion_by_index[axis_idx] = quantifier
+        logger.debug(f"Criterion axis '{axis_name}' (idx {axis_idx}): '{quantifier}'")
     
     # If no inner criterion axes, default to "some" for all inner axes
-    if not criterion_by_index and len(tva_ref.axes) > filter_axis_index + 1:
+    if not criterion_by_index and len(working_ref.axes) > working_filter_index + 1:
         # Default: treat as "some element in the slice matches"
         logger.debug("No inner criterion specified, defaulting to 'some' behavior")
     
     # Apply hierarchical collapse
     truth_mask = _hierarchical_collapse(
-        tensor,
-        tva_ref.axes,
-        filter_axis_index,
+        working_ref.tensor,
+        working_ref.axes,
+        working_filter_index,
         criterion_by_index,
         condition,
         skip_value
@@ -351,13 +425,13 @@ def truth_inference_assertion(states: States) -> States:
     # Create result reference
     # The shape along filter axis is preserved, inner axes are collapsed
     if criterion_by_index:
-        # Inner axes were collapsed - new shape
-        new_axes = tva_ref.axes[:filter_axis_index + 1]
-        new_shape = tva_ref.shape[:filter_axis_index + 1]
+        # Inner axes were collapsed - output is just the filter axis
+        new_axes = [filter_axis_name]  # Always use original filter axis name
+        new_shape = (working_ref.shape[working_filter_index],)
     else:
-        # No collapse - preserve full shape
-        new_axes = tva_ref.axes.copy()
-        new_shape = tva_ref.shape
+        # No collapse - preserve full shape (but use working_ref's structure)
+        new_axes = working_ref.axes.copy()
+        new_shape = working_ref.shape
     
     result_ref = Reference(
         axes=new_axes,
