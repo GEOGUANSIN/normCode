@@ -5,12 +5,16 @@ import sys
 import time
 import os
 import json
+import re
 import importlib.util
 from pathlib import Path
 from typing import Optional, Dict, Any, Set, List
 from dataclasses import dataclass, field
 
-from schemas.execution_schemas import ExecutionStatus, NodeStatus
+from schemas.execution_schemas import (
+    ExecutionStatus, NodeStatus, 
+    SEQUENCE_STEPS, STEP_FULL_NAMES
+)
 from core.events import event_emitter
 
 # Add project root to path for infra imports
@@ -27,17 +31,47 @@ class OrchestratorLogHandler(logging.Handler):
     
     This enables rich orchestrator logs (step execution, tensor data, etc.)
     to appear in the frontend's Log Panel.
+    
+    Enhanced to parse structured step events from sequence logs.
     """
     
-    def __init__(self, execution_controller: 'ExecutionController'):
+    # Regex patterns for parsing sequence logs
+    SEQUENCE_START_PATTERN = re.compile(r'=+EXECUTING\s+(\w+)\s+SEQUENCE=+', re.IGNORECASE)
+    SEQUENCE_END_PATTERN = re.compile(r'=+(\w+)\s+SEQUENCE\s+COMPLETED=+', re.IGNORECASE)
+    STEP_PATTERN = re.compile(r'---Step\s+(\d+):\s+([^(]+)\s*\(([^)]+)\)---', re.IGNORECASE)
+    STEP_SIMPLE_PATTERN = re.compile(r'---Step\s+(\d+):\s+(\w+)---', re.IGNORECASE)
+    
+    def __init__(self, execution_controller: 'ExecutionController', verbose: bool = False):
         super().__init__()
         self.execution_controller = execution_controller
+        self.verbose = verbose
         # Set formatter to capture just the message
         self.setFormatter(logging.Formatter('%(message)s'))
+        
+        # Track current sequence state for flow_index association
+        self._current_sequence_type: Optional[str] = None
+        self._current_step_index: int = 0
     
     def emit(self, record: logging.LogRecord):
-        """Forward log record to execution controller."""
+        """Forward log record to execution controller with structured event parsing."""
         try:
+            # Extract flow_index from the log message if present
+            flow_index = self.execution_controller.current_inference or ''
+            if hasattr(record, 'flow_index'):
+                flow_index = record.flow_index
+            
+            # Format the message
+            message = self.format(record)
+            
+            # Always parse for structured events (step/sequence progress)
+            # This allows UI to show step pipeline even in non-verbose mode
+            self._parse_structured_events(message, flow_index)
+            
+            # Only emit log messages to frontend if verbose mode is enabled
+            # In non-verbose mode, we only care about structured events (parsed above)
+            if not self.verbose:
+                return
+            
             # Map Python log levels to our log levels
             level_map = {
                 logging.DEBUG: 'debug',
@@ -48,15 +82,8 @@ class OrchestratorLogHandler(logging.Handler):
             }
             level = level_map.get(record.levelno, 'info')
             
-            # Extract flow_index from the log message if present
-            # The orchestrator logs often include flow_index in context
-            flow_index = ''
-            if hasattr(record, 'flow_index'):
-                flow_index = record.flow_index
-            
             # Format the message with logger name for context
             logger_short = record.name.replace('infra.', '')
-            message = self.format(record)
             
             # Add source prefix for clarity
             if record.name.startswith('infra.'):
@@ -68,6 +95,90 @@ class OrchestratorLogHandler(logging.Handler):
         except Exception:
             # Don't let logging errors break execution
             self.handleError(record)
+    
+    def _parse_structured_events(self, message: str, flow_index: str):
+        """Parse log messages for structured step/sequence events."""
+        
+        # Check for sequence start
+        match = self.SEQUENCE_START_PATTERN.search(message)
+        if match:
+            sequence_type = match.group(1).lower()
+            self._current_sequence_type = sequence_type
+            self._current_step_index = 0
+            
+            # Get steps for this sequence type
+            steps = SEQUENCE_STEPS.get(sequence_type, [])
+            
+            # Emit sequence started event (thread-safe)
+            self.execution_controller._emit_threadsafe("sequence:started", {
+                "flow_index": flow_index,
+                "sequence_type": sequence_type,
+                "total_steps": len(steps),
+                "steps": steps,
+            })
+            return
+        
+        # Check for sequence end
+        match = self.SEQUENCE_END_PATTERN.search(message)
+        if match:
+            sequence_type = match.group(1).lower()
+            
+            # Emit sequence completed event (thread-safe)
+            self.execution_controller._emit_threadsafe("sequence:completed", {
+                "flow_index": flow_index,
+                "sequence_type": sequence_type,
+            })
+            
+            self._current_sequence_type = None
+            self._current_step_index = 0
+            return
+        
+        # Check for step (with full name in parentheses)
+        match = self.STEP_PATTERN.search(message)
+        if match:
+            step_num = int(match.group(1))
+            step_full_name = match.group(2).strip()
+            step_abbrev = match.group(3).strip()
+            
+            self._emit_step_event(flow_index, step_abbrev, step_num)
+            return
+        
+        # Check for simple step format (just abbreviation)
+        match = self.STEP_SIMPLE_PATTERN.search(message)
+        if match:
+            step_num = int(match.group(1))
+            step_abbrev = match.group(2).strip()
+            
+            self._emit_step_event(flow_index, step_abbrev, step_num)
+            return
+    
+    def _emit_step_event(self, flow_index: str, step_abbrev: str, step_num: int):
+        """Emit a step started event. Thread-safe."""
+        self._current_step_index = step_num
+        
+        # Get total steps if we know the sequence type
+        total_steps = 0
+        steps = []
+        if self._current_sequence_type:
+            steps = SEQUENCE_STEPS.get(self._current_sequence_type, [])
+            total_steps = len(steps)
+        
+        # Get paradigm from current inference if available
+        paradigm = None
+        if self.execution_controller.current_inference:
+            paradigm = self.execution_controller._get_current_paradigm()
+        
+        # Emit step started event (thread-safe)
+        self.execution_controller._emit_threadsafe("step:started", {
+            "flow_index": flow_index,
+            "step_name": step_abbrev,
+            "step_full_name": STEP_FULL_NAMES.get(step_abbrev, step_abbrev),
+            "step_index": step_num - 1,  # 0-based
+            "total_steps": total_steps,
+            "sequence_type": self._current_sequence_type,
+            "paradigm": paradigm,
+            "steps": steps,
+        })
 
 
 class CustomParadigmTool:
@@ -173,6 +284,14 @@ class ExecutionController:
     total_count: int = 0
     cycle_count: int = 0
     
+    # Step tracking for current inference
+    current_step: Optional[str] = None
+    current_sequence_type: Optional[str] = None
+    step_progress: Dict[str, Dict[str, Any]] = field(default_factory=dict)  # flow_index -> step progress
+    
+    # Verbose logging mode (captures DEBUG level logs)
+    verbose_logging: bool = False
+    
     _pause_event: asyncio.Event = field(default_factory=asyncio.Event)
     _stop_requested: bool = False
     _run_task: Optional[asyncio.Task] = None
@@ -181,17 +300,24 @@ class ExecutionController:
     _log_handler: Optional[OrchestratorLogHandler] = None  # Handler for capturing infra logs
     _attached_loggers: List[str] = field(default_factory=list)  # Track which loggers we attached to
     
+    # Cache for inference metadata
+    _inference_metadata: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    
     def __post_init__(self):
         self._pause_event.set()  # Not paused by default
         self._attached_loggers = []
+        self._inference_metadata = {}
+        self._main_loop: Optional[asyncio.AbstractEventLoop] = None  # Store main event loop for thread-safe calls
     
     def _attach_infra_log_handlers(self):
         """Attach our log handler to infra loggers to capture orchestrator logs."""
         if self._log_handler is not None:
             return  # Already attached
         
-        self._log_handler = OrchestratorLogHandler(self)
-        self._log_handler.setLevel(logging.INFO)  # Capture INFO and above
+        self._log_handler = OrchestratorLogHandler(self, verbose=self.verbose_logging)
+        # Set level based on verbose mode
+        log_level = logging.DEBUG if self.verbose_logging else logging.INFO
+        self._log_handler.setLevel(log_level)
         
         # List of infra logger names to capture
         infra_loggers = [
@@ -388,6 +514,9 @@ class ExecutionController:
             await self.resume()
             return
 
+        # Capture the main event loop for thread-safe event emission
+        self._main_loop = asyncio.get_running_loop()
+
         # Attach log handlers to capture infra/orchestrator logs
         self._attach_infra_log_handlers()
 
@@ -419,6 +548,12 @@ class ExecutionController:
         """Execute single inference then pause."""
         if self.orchestrator is None:
             raise RuntimeError("No repositories loaded.")
+        
+        # Capture the main event loop for thread-safe event emission
+        self._main_loop = asyncio.get_running_loop()
+        
+        # Attach log handlers if not already attached
+        self._attach_infra_log_handlers()
         
         self.status = ExecutionStatus.STEPPING
         self._pause_event.set()
@@ -517,6 +652,9 @@ class ExecutionController:
         if self.node_statuses.get(target_flow_index) == NodeStatus.COMPLETED:
             raise ValueError(f"Target node {target_flow_index} is already completed")
         
+        # Capture the main event loop for thread-safe event emission
+        self._main_loop = asyncio.get_running_loop()
+        
         # Attach log handlers to capture infra/orchestrator logs
         self._attach_infra_log_handlers()
 
@@ -562,6 +700,74 @@ class ExecutionController:
         if flow_index:
             logs = [l for l in logs if l.get('flow_index') == flow_index or l.get('flow_index') == '']
         return logs[-limit:]
+    
+    def set_verbose_logging(self, enabled: bool):
+        """Enable or disable verbose (DEBUG level) logging."""
+        self.verbose_logging = enabled
+        if self._log_handler:
+            self._log_handler.verbose = enabled
+            log_level = logging.DEBUG if enabled else logging.INFO
+            self._log_handler.setLevel(log_level)
+        self._add_log("info", "", f"Verbose logging {'enabled' if enabled else 'disabled'}")
+    
+    def get_step_progress(self, flow_index: Optional[str] = None) -> Dict[str, Any]:
+        """Get step progress for a specific flow_index or current inference."""
+        target = flow_index or self.current_inference
+        if target and target in self.step_progress:
+            return self.step_progress[target]
+        return {}
+    
+    def _get_current_paradigm(self) -> Optional[str]:
+        """Get the paradigm name for the current inference from cached metadata."""
+        if not self.current_inference:
+            return None
+        
+        # Check cache first
+        if self.current_inference in self._inference_metadata:
+            return self._inference_metadata[self.current_inference].get('paradigm')
+        
+        # Try to extract from inference repository
+        if self.inference_repo:
+            try:
+                for inf_entry in self.inference_repo.inferences:
+                    flow_idx = inf_entry.flow_info.get('flow_index', '')
+                    if flow_idx == self.current_inference:
+                        # Get working interpretation paradigm
+                        wi = getattr(inf_entry, 'working_interpretation', None)
+                        if wi:
+                            paradigm = wi.get('paradigm') if isinstance(wi, dict) else getattr(wi, 'paradigm', None)
+                            # Cache it
+                            self._inference_metadata[self.current_inference] = {
+                                'paradigm': paradigm,
+                                'sequence': inf_entry.inference_sequence,
+                            }
+                            return paradigm
+                        break
+            except Exception as e:
+                logger.debug(f"Could not get paradigm for {self.current_inference}: {e}")
+        
+        return None
+    
+    def _update_step_progress(self, flow_index: str, step_name: str, step_index: int, 
+                              sequence_type: str, total_steps: int, steps: List[str]):
+        """Update step progress tracking for an inference."""
+        if flow_index not in self.step_progress:
+            self.step_progress[flow_index] = {
+                "flow_index": flow_index,
+                "sequence_type": sequence_type,
+                "current_step": step_name,
+                "current_step_index": step_index,
+                "total_steps": total_steps,
+                "steps": steps,
+                "completed_steps": [],
+            }
+        else:
+            progress = self.step_progress[flow_index]
+            # Mark previous step as completed
+            if progress.get("current_step") and progress["current_step"] not in progress["completed_steps"]:
+                progress["completed_steps"].append(progress["current_step"])
+            progress["current_step"] = step_name
+            progress["current_step_index"] = step_index
     
     def get_reference_data(self, concept_name: str) -> Optional[Dict[str, Any]]:
         """Get reference data for a concept from the concept repository.
@@ -656,7 +862,7 @@ class ExecutionController:
         return result
     
     def _add_log(self, level: str, flow_index: str, message: str):
-        """Add a log entry."""
+        """Add a log entry. Thread-safe - can be called from any thread."""
         log_entry = {
             "level": level,
             "flow_index": flow_index,
@@ -664,8 +870,27 @@ class ExecutionController:
             "timestamp": time.time()
         }
         self.logs.append(log_entry)
-        # Also emit as WebSocket event
-        asyncio.create_task(self._emit("log:entry", log_entry))
+        # Emit as WebSocket event - thread-safe
+        self._emit_threadsafe("log:entry", log_entry)
+    
+    def _emit_threadsafe(self, event_type: str, data: Dict[str, Any]):
+        """Emit an event in a thread-safe manner. Can be called from any thread."""
+        try:
+            # Try to get the running loop in current thread
+            loop = asyncio.get_running_loop()
+            # We're in an async context, use create_task directly
+            asyncio.create_task(self._emit(event_type, data))
+        except RuntimeError:
+            # No running loop in current thread, use the stored main loop
+            if self._main_loop and self._main_loop.is_running():
+                # Schedule the coroutine on the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    self._emit(event_type, data),
+                    self._main_loop
+                )
+            else:
+                # Fallback: just log without emitting (shouldn't happen often)
+                logger.debug(f"Could not emit event {event_type}: no event loop available")
     
     async def _run_loop(self):
         """Main execution loop with inference-by-inference control.

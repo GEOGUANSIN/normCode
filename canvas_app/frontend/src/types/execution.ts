@@ -59,3 +59,71 @@ export interface RepositoryExample {
   concepts_path: string;
   inferences_path: string;
 }
+
+// Step progress tracking
+export interface StepProgress {
+  flow_index: string;
+  sequence_type: string | null;
+  current_step: string | null;
+  current_step_index: number;
+  total_steps: number;
+  steps: string[];
+  completed_steps: string[];
+  paradigm?: string | null;
+}
+
+// Step event from WebSocket
+export interface StepEvent {
+  flow_index: string;
+  step_name: string;
+  step_full_name?: string;
+  step_index: number;
+  total_steps: number;
+  sequence_type: string | null;
+  paradigm: string | null;
+  steps: string[];
+}
+
+// Sequence event from WebSocket
+export interface SequenceEvent {
+  flow_index: string;
+  sequence_type: string;
+  total_steps?: number;
+  steps?: string[];
+}
+
+// Step full names for display
+export const STEP_FULL_NAMES: Record<string, string> = {
+  IWI: "Input Working Interpretation",
+  IR: "Input References",
+  MFP: "Model Function Perception",
+  MVP: "Memory Value Perception",
+  TVA: "Tool Value Actuation",
+  TIP: "Tool Inference Perception",
+  MIA: "Memory Inference Actuation",
+  OR: "Output Reference",
+  OWI: "Output Working Interpretation",
+  GR: "Grouping References",
+  AR: "Assigning References",
+  LR: "Looping References",
+  QR: "Quantifying References",
+  T: "Timing",
+};
+
+// Step descriptions for tooltips
+export const STEP_DESCRIPTIONS: Record<string, string> = {
+  IWI: "Parse working interpretation and configure execution",
+  IR: "Load input references from value concepts",
+  MFP: "Load function/paradigm configuration",
+  MVP: "Prepare memory values for execution",
+  TVA: "Execute the tool (e.g., LLM call)",
+  TIP: "Process tool output",
+  MIA: "Store inference result in memory",
+  OR: "Create output reference",
+  OWI: "Finalize working interpretation",
+  GR: "Group references together",
+  AR: "Assign/select references",
+  LR: "Process loop iteration",
+  QR: "Process quantifier iteration",
+  T: "Check timing conditions",
+};

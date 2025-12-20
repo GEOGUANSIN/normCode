@@ -121,7 +121,27 @@ export const executionApi = {
   
   getAllReferences: (): Promise<Record<string, ReferenceData>> =>
     fetchJson(`${API_BASE}/execution/references`),
+  
+  setVerboseLogging: (enabled: boolean): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/verbose-logging`, {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    }),
+  
+  getStepProgress: (flowIndex?: string): Promise<StepProgressResponse> =>
+    fetchJson(`${API_BASE}/execution/step-progress${flowIndex ? `?flow_index=${encodeURIComponent(flowIndex)}` : ''}`),
 };
+
+// Step progress response type
+export interface StepProgressResponse {
+  flow_index: string | null;
+  sequence_type: string | null;
+  current_step: string | null;
+  current_step_index: number;
+  total_steps: number;
+  steps: string[];
+  completed_steps: string[];
+}
 
 // Reference data type
 export interface ReferenceData {

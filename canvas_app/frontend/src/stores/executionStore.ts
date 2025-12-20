@@ -3,7 +3,7 @@
  */
 
 import { create } from 'zustand';
-import type { ExecutionStatus, NodeStatus } from '../types/execution';
+import type { ExecutionStatus, NodeStatus, StepProgress } from '../types/execution';
 
 interface LogEntry {
   flowIndex: string;
@@ -32,6 +32,12 @@ interface ExecutionState {
   // Run info
   runId: string | null;
 
+  // Step progress tracking (per flow_index)
+  stepProgress: Record<string, StepProgress>;
+  
+  // Verbose logging mode
+  verboseLogging: boolean;
+
   // Actions
   setStatus: (status: ExecutionStatus) => void;
   setCurrentInference: (flowIndex: string | null) => void;
@@ -44,6 +50,10 @@ interface ExecutionState {
   addLog: (log: Omit<LogEntry, 'timestamp'>) => void;
   clearLogs: () => void;
   setRunId: (runId: string | null) => void;
+  setStepProgress: (flowIndex: string, progress: StepProgress) => void;
+  updateStepProgress: (flowIndex: string, update: Partial<StepProgress>) => void;
+  clearStepProgress: (flowIndex?: string) => void;
+  setVerboseLogging: (enabled: boolean) => void;
   reset: () => void;
 }
 
@@ -57,6 +67,8 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   breakpoints: new Set(),
   logs: [],
   runId: null,
+  stepProgress: {},
+  verboseLogging: false,
 
   setStatus: (status) => set({ status }),
 
@@ -105,6 +117,41 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
 
   setRunId: (runId) => set({ runId }),
 
+  setStepProgress: (flowIndex, progress) =>
+    set((state) => ({
+      stepProgress: { ...state.stepProgress, [flowIndex]: progress },
+    })),
+
+  updateStepProgress: (flowIndex, update) =>
+    set((state) => {
+      const current = state.stepProgress[flowIndex] || {
+        flow_index: flowIndex,
+        sequence_type: null,
+        current_step: null,
+        current_step_index: 0,
+        total_steps: 0,
+        steps: [],
+        completed_steps: [],
+      };
+      return {
+        stepProgress: {
+          ...state.stepProgress,
+          [flowIndex]: { ...current, ...update },
+        },
+      };
+    }),
+
+  clearStepProgress: (flowIndex) =>
+    set((state) => {
+      if (flowIndex) {
+        const { [flowIndex]: _, ...rest } = state.stepProgress;
+        return { stepProgress: rest };
+      }
+      return { stepProgress: {} };
+    }),
+
+  setVerboseLogging: (enabled) => set({ verboseLogging: enabled }),
+
   reset: () =>
     set({
       status: 'idle',
@@ -115,5 +162,6 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
       nodeStatuses: {},
       logs: [],
       runId: null,
+      stepProgress: {},
     }),
 }));

@@ -4,12 +4,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play } from 'lucide-react';
+import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Workflow } from 'lucide-react';
 import { useSelectionStore } from '../../stores/selectionStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi, ReferenceData } from '../../services/api';
 import { TensorInspector } from './TensorInspector';
+import { StepPipeline } from './StepPipeline';
 
 export function DetailPanel() {
   const selectedNodeId = useSelectionStore((s) => s.selectedNodeId);
@@ -21,6 +22,7 @@ export function DetailPanel() {
   const addBreakpoint = useExecutionStore((s) => s.addBreakpoint);
   const removeBreakpoint = useExecutionStore((s) => s.removeBreakpoint);
   const status = useExecutionStore((s) => s.status);
+  const stepProgress = useExecutionStore((s) => s.stepProgress);
 
   // Reference data state
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null);
@@ -239,6 +241,19 @@ export function DetailPanel() {
             )}
           </div>
         </section>
+
+        {/* Step Progress Section - Show for running/completed function nodes */}
+        {node.flow_index && stepProgress[node.flow_index] && (
+          <section>
+            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1">
+              <Workflow size={12} /> Execution Pipeline
+            </h4>
+            <StepPipeline 
+              progress={stepProgress[node.flow_index]} 
+              compact={false}
+            />
+          </section>
+        )}
 
         {/* Debugging Section */}
         {node.flow_index && (

@@ -153,3 +153,63 @@ class StepRequest(BaseModel):
     """Request to step execution."""
     mode: str = "step"  # "step" | "step_over" | "run_to"
     target_flow_index: Optional[str] = None
+
+
+# Step names for different sequence types
+SEQUENCE_STEPS = {
+    "imperative": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "imperative_direct": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "imperative_input": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "imperative_python": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "imperative_python_indirect": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "judgement": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "judgement_direct": ["IWI", "IR", "MFP", "MVP", "TVA", "TIP", "MIA", "OR", "OWI"],
+    "grouping": ["IWI", "IR", "GR", "OR", "OWI"],
+    "assigning": ["IWI", "IR", "AR", "OR", "OWI"],
+    "looping": ["IWI", "IR", "GR", "LR", "OR", "OWI"],
+    "quantifying": ["IWI", "IR", "GR", "QR", "OR", "OWI"],
+    "timing": ["IWI", "T", "OWI"],
+    "simple": ["IWI", "IR", "OR", "OWI"],
+}
+
+# Full step names for display
+STEP_FULL_NAMES = {
+    "IWI": "Input Working Interpretation",
+    "IR": "Input References",
+    "MFP": "Model Function Perception",
+    "MVP": "Memory Value Perception",
+    "TVA": "Tool Value Actuation",
+    "TIP": "Tool Inference Perception",
+    "MIA": "Memory Inference Actuation",
+    "OR": "Output Reference",
+    "OWI": "Output Working Interpretation",
+    "GR": "Grouping References",
+    "AR": "Assigning References",
+    "LR": "Looping References",
+    "QR": "Quantifying References",
+    "T": "Timing",
+}
+
+
+class StepProgress(BaseModel):
+    """Progress through sequence steps for an inference."""
+    flow_index: str
+    sequence_type: str
+    current_step: Optional[str] = None  # e.g., "TVA"
+    current_step_index: int = 0
+    total_steps: int = 0
+    steps: List[str] = []  # All steps in sequence
+    completed_steps: List[str] = []  # Steps that have completed
+    paradigm: Optional[str] = None  # e.g., "h_PromptTemplate-c_GenerateJson-o_List"
+
+
+class StepEvent(BaseModel):
+    """Event for step-level progress."""
+    event_type: str  # "step:started" | "step:completed" | "sequence:started" | "sequence:completed"
+    flow_index: str
+    step_name: Optional[str] = None
+    sequence_type: Optional[str] = None
+    paradigm: Optional[str] = None
+    step_index: Optional[int] = None
+    total_steps: Optional[int] = None
+    message: Optional[str] = None

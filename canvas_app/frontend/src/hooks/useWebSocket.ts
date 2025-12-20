@@ -5,7 +5,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { wsClient } from '../services/websocket';
 import { useExecutionStore } from '../stores/executionStore';
-import type { WebSocketEvent } from '../types/execution';
+import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 
 export function useWebSocket() {
@@ -19,6 +19,9 @@ export function useWebSocket() {
   const setRunId = useExecutionStore((s) => s.setRunId);
   const setNodeStatuses = useExecutionStore((s) => s.setNodeStatuses);
   const reset = useExecutionStore((s) => s.reset);
+  const setStepProgress = useExecutionStore((s) => s.setStepProgress);
+  const updateStepProgress = useExecutionStore((s) => s.updateStepProgress);
+  const clearStepProgress = useExecutionStore((s) => s.clearStepProgress);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -177,11 +180,77 @@ export function useWebSocket() {
           });
           break;
 
+        // Step progress events
+        case 'step:started':
+          if (data.flow_index) {
+            const flowIndex = data.flow_index as string;
+            const stepProgress: StepProgress = {
+              flow_index: flowIndex,
+              sequence_type: (data.sequence_type as string) || null,
+              current_step: (data.step_name as string) || null,
+              current_step_index: (data.step_index as number) || 0,
+              total_steps: (data.total_steps as number) || 0,
+              steps: (data.steps as string[]) || [],
+              completed_steps: [], // Will be updated as steps complete
+              paradigm: (data.paradigm as string) || null,
+            };
+            
+            // Mark previous step as completed if updating existing progress
+            updateStepProgress(flowIndex, {
+              current_step: stepProgress.current_step,
+              current_step_index: stepProgress.current_step_index,
+              sequence_type: stepProgress.sequence_type,
+              total_steps: stepProgress.total_steps,
+              steps: stepProgress.steps,
+              paradigm: stepProgress.paradigm,
+            });
+          }
+          break;
+
+        case 'step:completed':
+          if (data.flow_index && data.step_name) {
+            const flowIndex = data.flow_index as string;
+            const stepName = data.step_name as string;
+            updateStepProgress(flowIndex, {
+              completed_steps: [...(useExecutionStore.getState().stepProgress[flowIndex]?.completed_steps || []), stepName],
+            });
+          }
+          break;
+
+        case 'sequence:started':
+          if (data.flow_index) {
+            const flowIndex = data.flow_index as string;
+            setStepProgress(flowIndex, {
+              flow_index: flowIndex,
+              sequence_type: (data.sequence_type as string) || null,
+              current_step: null,
+              current_step_index: 0,
+              total_steps: (data.total_steps as number) || 0,
+              steps: (data.steps as string[]) || [],
+              completed_steps: [],
+            });
+          }
+          break;
+
+        case 'sequence:completed':
+          if (data.flow_index) {
+            const flowIndex = data.flow_index as string;
+            // Mark all steps as completed
+            const progress = useExecutionStore.getState().stepProgress[flowIndex];
+            if (progress) {
+              updateStepProgress(flowIndex, {
+                current_step: null,
+                completed_steps: progress.steps,
+              });
+            }
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress]
   );
 
   const [isConnected, setIsConnected] = useState(false);

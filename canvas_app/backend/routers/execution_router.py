@@ -7,7 +7,8 @@ from services.execution_service import execution_controller
 from services.project_service import project_service
 from schemas.execution_schemas import (
     ExecutionState, BreakpointRequest, LogsResponse, LogEntry,
-    ExecutionConfig, LLM_MODELS, DEFAULT_MAX_CYCLES, DEFAULT_DB_PATH
+    ExecutionConfig, LLM_MODELS, DEFAULT_MAX_CYCLES, DEFAULT_DB_PATH,
+    SEQUENCE_STEPS, STEP_FULL_NAMES
 )
 
 router = APIRouter()
@@ -217,3 +218,51 @@ async def get_all_references():
     Useful for batch fetching all computed values.
     """
     return execution_controller.get_all_reference_data()
+
+
+class VerboseLoggingRequest(BaseModel):
+    """Request to toggle verbose logging."""
+    enabled: bool
+
+
+@router.post("/verbose-logging", response_model=CommandResponse)
+async def set_verbose_logging(request: VerboseLoggingRequest):
+    """Enable or disable verbose (DEBUG level) logging.
+    
+    When enabled, captures detailed step-level logs from the orchestrator
+    including step completions, state transitions, and debugging info.
+    """
+    try:
+        execution_controller.set_verbose_logging(request.enabled)
+        return CommandResponse(
+            success=True, 
+            message=f"Verbose logging {'enabled' if request.enabled else 'disabled'}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/step-progress")
+async def get_step_progress(flow_index: Optional[str] = Query(default=None)):
+    """Get step progress for a specific inference or current inference.
+    
+    Returns the current step progress including:
+    - sequence_type: The type of sequence being executed
+    - current_step: The current step abbreviation (e.g., "TVA")
+    - current_step_index: 0-based index of current step
+    - total_steps: Total steps in the sequence
+    - steps: List of all step abbreviations
+    - completed_steps: List of completed step abbreviations
+    """
+    progress = execution_controller.get_step_progress(flow_index)
+    if not progress:
+        return {
+            "flow_index": flow_index or execution_controller.current_inference,
+            "sequence_type": None,
+            "current_step": None,
+            "current_step_index": 0,
+            "total_steps": 0,
+            "steps": [],
+            "completed_steps": [],
+        }
+    return progress

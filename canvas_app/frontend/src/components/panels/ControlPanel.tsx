@@ -2,9 +2,11 @@
  * Control Panel for execution commands
  */
 
-import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug } from 'lucide-react';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi } from '../../services/api';
+import { STEP_FULL_NAMES } from '../../types/execution';
 
 export function ControlPanel() {
   const status = useExecutionStore((s) => s.status);
@@ -15,6 +17,14 @@ export function ControlPanel() {
   const breakpointsCount = useExecutionStore((s) => s.breakpoints.size);
   const setStatus = useExecutionStore((s) => s.setStatus);
   const reset = useExecutionStore((s) => s.reset);
+  const verboseLogging = useExecutionStore((s) => s.verboseLogging);
+  const setVerboseLogging = useExecutionStore((s) => s.setVerboseLogging);
+  const stepProgress = useExecutionStore((s) => s.stepProgress);
+  
+  const [isTogglingVerbose, setIsTogglingVerbose] = useState(false);
+  
+  // Get current step progress for the running inference
+  const currentStepProgress = currentInference ? stepProgress[currentInference] : null;
 
   const isRunning = status === 'running';
   const isPaused = status === 'paused';
@@ -76,6 +86,19 @@ export function ControlPanel() {
       reset();
     } catch (e) {
       console.error('Failed to restart:', e);
+    }
+  };
+
+  const handleToggleVerbose = async () => {
+    setIsTogglingVerbose(true);
+    try {
+      const newState = !verboseLogging;
+      await executionApi.setVerboseLogging(newState);
+      setVerboseLogging(newState);
+    } catch (e) {
+      console.error('Failed to toggle verbose logging:', e);
+    } finally {
+      setIsTogglingVerbose(false);
     }
   };
 
@@ -189,15 +212,29 @@ export function ControlPanel() {
           </span>
         </div>
 
-        {/* Current inference */}
+        {/* Current inference and step */}
         {currentInference && (
           <>
             <div className="w-px h-8 bg-slate-200" />
-            <div className="flex items-center gap-1 text-sm text-slate-600">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
               <RefreshCw size={12} className={isRunning ? 'animate-spin text-blue-500' : 'text-slate-400'} />
-              <span className="font-mono text-xs truncate max-w-[150px]" title={currentInference}>
+              <span className="font-mono text-xs truncate max-w-[100px]" title={currentInference}>
                 {currentInference}
               </span>
+              {/* Show current step if available */}
+              {currentStepProgress?.current_step && (
+                <span 
+                  className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-mono font-medium animate-pulse"
+                  title={STEP_FULL_NAMES[currentStepProgress.current_step] || currentStepProgress.current_step}
+                >
+                  {currentStepProgress.current_step}
+                  {currentStepProgress.total_steps > 0 && (
+                    <span className="text-blue-500 ml-1">
+                      {(currentStepProgress.current_step_index || 0) + 1}/{currentStepProgress.total_steps}
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
           </>
         )}
@@ -212,8 +249,23 @@ export function ControlPanel() {
         {/* Breakpoints count */}
         <div className="flex items-center gap-1 text-sm text-slate-600">
           <Circle size={12} className="text-red-500 fill-red-500" />
-          <span>{breakpointsCount} breakpoints</span>
+          <span>{breakpointsCount} BP</span>
         </div>
+
+        {/* Verbose logging toggle */}
+        <button
+          onClick={handleToggleVerbose}
+          disabled={isTogglingVerbose}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+            verboseLogging
+              ? 'bg-purple-100 text-purple-700 border border-purple-200'
+              : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+          } disabled:opacity-50`}
+          title={verboseLogging ? 'Verbose logging enabled (DEBUG level)' : 'Enable verbose logging'}
+        >
+          <Bug size={12} className={verboseLogging ? 'text-purple-500' : 'text-slate-400'} />
+          <span>Verbose</span>
+        </button>
       </div>
     </div>
   );
