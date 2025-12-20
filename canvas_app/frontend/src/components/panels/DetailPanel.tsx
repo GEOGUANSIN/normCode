@@ -21,8 +21,10 @@ interface DetailPanelProps {
 export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: DetailPanelProps) {
   const selectedNodeId = useSelectionStore((s) => s.selectedNodeId);
   const clearSelection = useSelectionStore((s) => s.clearSelection);
+  const setSelectedNode = useSelectionStore((s) => s.setSelectedNode);
   const getNode = useGraphStore((s) => s.getNode);
   const getEdgesForNode = useGraphStore((s) => s.getEdgesForNode);
+  const highlightBranch = useGraphStore((s) => s.highlightBranch);
   const nodeStatuses = useExecutionStore((s) => s.nodeStatuses);
   const breakpoints = useExecutionStore((s) => s.breakpoints);
   const addBreakpoint = useExecutionStore((s) => s.addBreakpoint);
@@ -37,6 +39,12 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
   
   // Run-to state
   const [isRunningTo, setIsRunningTo] = useState(false);
+
+  // Navigate to a node - selects it and highlights its branch
+  const navigateToNode = (nodeId: string) => {
+    setSelectedNode(nodeId);
+    highlightBranch(nodeId);
+  };
 
   // Fetch reference data when node changes
   useEffect(() => {
@@ -255,198 +263,170 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
       </div>
 
       {/* Content */}
-      <div className={`flex-1 overflow-y-auto p-4 ${isFullscreen ? 'p-6' : ''}`}>
+      <div className={`flex-1 overflow-y-auto ${isFullscreen ? 'p-6' : 'p-3'}`}>
         {/* Fullscreen: Two-column layout, Normal: Single column */}
-        <div className={isFullscreen ? 'grid grid-cols-2 gap-6 h-full' : 'space-y-4'}>
+        <div className={isFullscreen ? 'grid grid-cols-2 gap-6 h-full' : 'space-y-2'}>
           
           {/* Left Column (in fullscreen) / All content (in normal mode) */}
           <div className={isFullscreen ? 'space-y-4 overflow-y-auto' : 'contents'}>
-            {/* Identity Section */}
-            <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-              <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 ${isFullscreen ? 'text-sm' : ''}`}>Identity</h4>
-              <div className="space-y-2">
-                {/* Natural Name (human-readable) - prioritized display */}
-                {node.data.natural_name && (
-                  <div>
-                    <label className="text-xs text-slate-500">Name</label>
-                    <p className={`text-slate-800 break-words font-medium ${isFullscreen ? 'text-base' : 'text-sm'}`}>{node.data.natural_name}</p>
-                  </div>
-                )}
-                {/* Concept Name (technical) */}
-                <div>
-                  <label className="text-xs text-slate-500">{node.data.natural_name ? 'Concept ID' : 'Name'}</label>
+            
+            {/* Compact Header: Name + Status Badges */}
+            <div className={`${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pb-2 border-b border-slate-100'}`}>
+              {/* Name */}
+              <div className="mb-1">
+                {node.data.natural_name ? (
+                  <>
+                    <p className={`text-slate-800 font-medium ${isFullscreen ? 'text-base' : 'text-sm'}`}>{node.data.natural_name}</p>
+                    <p className="font-mono text-xs text-slate-500 truncate" title={node.label}>{node.label}</p>
+                  </>
+                ) : (
                   <p className={`font-mono text-slate-800 break-words ${isFullscreen ? 'text-sm' : 'text-sm'}`}>{node.label}</p>
-                </div>
-                <div className="flex gap-4">
-                  <div>
-                    <label className="text-xs text-slate-500">Type</label>
-                    <p className="text-sm text-slate-800 capitalize">{node.node_type}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500">Category</label>
-                    <p className="text-sm text-slate-800">{categoryLabels[node.category]}</p>
-                  </div>
-                </div>
-                {node.flow_index && (
-                  <div>
-                    <label className="text-xs text-slate-500">Flow Index</label>
-                    <p className="font-mono text-sm text-slate-800">{node.flow_index}</p>
-                  </div>
                 )}
               </div>
-            </section>
-
-            {/* Status Section */}
-            <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-              <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 ${isFullscreen ? 'text-sm' : ''}`}>Status</h4>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[nodeStatus]}`}>
+              
+              {/* Status Badges Row */}
+              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColors[nodeStatus]}`}>
                   {nodeStatus}
                 </span>
-                {node.data.is_ground && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                    Ground
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 capitalize">
+                  {node.node_type}
+                </span>
+                {node.flow_index && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
+                    {node.flow_index}
                   </span>
+                )}
+                {node.data.is_ground && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">Ground</span>
                 )}
                 {node.data.is_final && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
-                    Output
-                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700">Output</span>
                 )}
                 {node.data.is_context && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                    Context
-                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700">Context</span>
                 )}
               </div>
-            </section>
-
-            {/* Step Progress Section - Show for running/completed function nodes */}
-            {node.flow_index && stepProgress[node.flow_index] && (
-              <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-                <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1 ${isFullscreen ? 'text-sm' : ''}`}>
-                  <Workflow size={12} /> Execution Pipeline
-                </h4>
-                <StepPipeline 
-                  progress={stepProgress[node.flow_index]} 
-                  compact={false}
-                />
-              </section>
-            )}
-
-            {/* Debugging Section */}
-            {node.flow_index && (
-              <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-                <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 ${isFullscreen ? 'text-sm' : ''}`}>Debugging</h4>
-                <div className="flex gap-2 flex-wrap">
+              
+              {/* Debugging Buttons - inline */}
+              {node.flow_index && (
+                <div className="flex gap-1.5 mt-2">
                   <button
                     onClick={handleToggleBreakpoint}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors ${
                       hasBreakpoint
                         ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    <Circle size={10} className={hasBreakpoint ? 'fill-red-500 text-red-500' : ''} />
-                    {hasBreakpoint ? 'Remove BP' : 'Add BP'}
+                    <Circle size={8} className={hasBreakpoint ? 'fill-red-500 text-red-500' : ''} />
+                    {hasBreakpoint ? 'BP' : '+BP'}
                   </button>
                   {status !== 'running' && nodeStatus === 'pending' && (
                     <button
                       onClick={handleRunTo}
                       disabled={isRunningTo}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
                     >
-                      <Play size={10} className={isRunningTo ? 'animate-pulse' : ''} />
-                      {isRunningTo ? 'Running...' : 'Run To'}
+                      <Play size={8} className={isRunningTo ? 'animate-pulse' : ''} />
+                      {isRunningTo ? '...' : 'Run To'}
                     </button>
                   )}
                 </div>
-              </section>
-            )}
+              )}
+            </div>
 
-            {/* Data Section - Value Nodes */}
-            {node.node_type === 'value' && (
-              <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-                <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1 ${isFullscreen ? 'text-sm' : ''}`}>
-                  <Layers size={12} /> Value Details
-                </h4>
-                <div className="space-y-2">
-                  {node.data.axes && node.data.axes.length > 0 && (
-                    <div>
-                      <label className="text-xs text-slate-500">Axes</label>
-                      <p className="font-mono text-sm text-slate-800">[{node.data.axes.join(', ')}]</p>
-                    </div>
-                  )}
+            {/* Step Progress Section - Collapsible */}
+            {node.flow_index && stepProgress[node.flow_index] && (
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+                  <Workflow size={12} /> 
+                  <span>Pipeline</span>
+                  <span className="text-[10px] font-normal text-slate-400 ml-1">
+                    ({stepProgress[node.flow_index]?.current_step || 'ready'})
+                  </span>
+                </summary>
+                <div className="mt-2">
+                  <StepPipeline 
+                    progress={stepProgress[node.flow_index]} 
+                    compact={!isFullscreen}
+                  />
                 </div>
-              </section>
+              </details>
             )}
 
-            {/* Function Details Section - Function Nodes */}
-            {node.node_type === 'function' && (
-              <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-                <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1 ${isFullscreen ? 'text-sm' : ''}`}>
-                  <FileJson size={12} /> Function Details
-                </h4>
-                <div className="space-y-3">
-                  {/* Sequence Type */}
-                  {node.data.sequence && (
-                    <div>
-                      <label className="text-xs text-slate-500">Sequence Type</label>
-                      <p className="text-sm text-slate-800 font-medium">{node.data.sequence}</p>
-                    </div>
-                  )}
+            {/* Value Details - Collapsible */}
+            {node.node_type === 'value' && node.data.axes && node.data.axes.length > 0 && (
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`}>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+                  <Layers size={12} /> 
+                  <span>Axes</span>
+                  <span className="text-[10px] font-normal text-slate-400 ml-1">
+                    ({node.data.axes.length})
+                  </span>
+                </summary>
+                <div className="mt-1">
+                  <p className="font-mono text-xs text-slate-700">[{node.data.axes.join(', ')}]</p>
+                </div>
+              </details>
+            )}
 
-                  {/* Working Interpretation - Parsed View */}
+            {/* Function Details Section - Collapsible */}
+            {node.node_type === 'function' && (node.data.sequence || node.data.working_interpretation) && (
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open={isFullscreen}>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+                  <FileJson size={12} /> 
+                  <span>Function</span>
+                  {node.data.sequence && (
+                    <span className="text-[10px] font-normal text-slate-400 ml-1">({node.data.sequence})</span>
+                  )}
+                </summary>
+                <div className="mt-2 space-y-2">
+                  {/* Working Interpretation - Compact View */}
                   {node.data.working_interpretation && (
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500">Working Interpretation</label>
-                      
+                    <>
                       {/* Paradigm */}
                       {node.data.working_interpretation.paradigm && (
-                        <div className="bg-purple-50 p-2 rounded border border-purple-200">
-                          <label className="text-xs text-purple-600 font-medium">Paradigm</label>
-                          <p className="font-mono text-xs text-purple-800 break-all">
+                        <div className="bg-purple-50 px-2 py-1.5 rounded text-xs">
+                          <span className="text-purple-600 font-medium">Paradigm: </span>
+                          <span className="font-mono text-purple-800 break-all">
                             {node.data.working_interpretation.paradigm}
-                          </p>
+                          </span>
                         </div>
                       )}
                       
-                      {/* Value Order */}
+                      {/* Value Order - Compact */}
                       {node.data.working_interpretation.value_order && (
-                        <div className="bg-blue-50 p-2 rounded border border-blue-200">
-                          <label className="text-xs text-blue-600 font-medium">Value Order</label>
-                          <div className="mt-1 space-y-1">
+                        <details className="bg-blue-50 px-2 py-1.5 rounded text-xs">
+                          <summary className="text-blue-600 font-medium cursor-pointer">
+                            Value Order ({Object.keys(node.data.working_interpretation.value_order).length})
+                          </summary>
+                          <div className="mt-1 space-y-0.5">
                             {Object.entries(node.data.working_interpretation.value_order).map(([key, val]) => (
-                              <div key={key} className="flex justify-between text-xs">
-                                <span className={`font-mono text-blue-700 truncate ${isFullscreen ? 'max-w-none' : 'max-w-[180px]'}`} title={key}>{key}</span>
+                              <div key={key} className="flex justify-between">
+                                <span className="font-mono text-blue-700 truncate max-w-[160px]" title={key}>{key}</span>
                                 <span className="text-blue-900 font-medium">:{String(val)}</span>
                               </div>
                             ))}
                           </div>
-                        </div>
+                        </details>
                       )}
                       
-                      {/* Prompt Location */}
-                      {node.data.working_interpretation.prompt_location && (
-                        <div className="bg-green-50 p-2 rounded border border-green-200">
-                          <label className="text-xs text-green-600 font-medium">Prompt Location</label>
-                          <p className="font-mono text-xs text-green-800 break-all">
-                            {node.data.working_interpretation.prompt_location}
-                          </p>
-                        </div>
-                      )}
+                      {/* Prompt + Output in one line */}
+                      <div className="flex flex-wrap gap-1 text-[10px]">
+                        {node.data.working_interpretation.prompt_location && (
+                          <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-mono truncate max-w-full" title={node.data.working_interpretation.prompt_location}>
+                            📄 {node.data.working_interpretation.prompt_location.split('/').pop()}
+                          </span>
+                        )}
+                        {node.data.working_interpretation.output_type && (
+                          <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">
+                            → {node.data.working_interpretation.output_type}
+                          </span>
+                        )}
+                      </div>
 
-                      {/* Output Type */}
-                      {node.data.working_interpretation.output_type && (
-                        <div className="bg-orange-50 p-2 rounded border border-orange-200">
-                          <label className="text-xs text-orange-600 font-medium">Output Type</label>
-                          <p className="font-mono text-xs text-orange-800">
-                            {node.data.working_interpretation.output_type}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Other fields as collapsible JSON */}
+                      {/* Other fields */}
                       {(() => {
                         const knownKeys = ['paradigm', 'value_order', 'prompt_location', 'output_type'];
                         const otherFields = Object.entries(node.data.working_interpretation)
@@ -454,11 +434,11 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                         
                         if (otherFields.length > 0) {
                           return (
-                            <details className="bg-slate-50 p-2 rounded border border-slate-200" open={isFullscreen}>
-                              <summary className="text-xs text-slate-600 font-medium cursor-pointer">
-                                Other Properties ({otherFields.length})
+                            <details className="bg-slate-100 px-2 py-1 rounded text-[10px]">
+                              <summary className="text-slate-600 cursor-pointer">
+                                +{otherFields.length} more
                               </summary>
-                              <pre className={`text-xs text-slate-700 mt-2 overflow-x-auto ${isFullscreen ? 'max-h-none' : ''}`}>
+                              <pre className="text-slate-600 mt-1 overflow-x-auto text-[10px]">
                                 {JSON.stringify(Object.fromEntries(otherFields), null, 2)}
                               </pre>
                             </details>
@@ -466,52 +446,94 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                         }
                         return null;
                       })()}
-                    </div>
+                    </>
                   )}
                 </div>
-              </section>
+              </details>
             )}
 
-            {/* Connections Section */}
-            <section className={isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}>
-              <h4 className={`text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1 ${isFullscreen ? 'text-sm' : ''}`}>
-                <GitBranch size={12} /> Connections
-              </h4>
-              <div className={isFullscreen ? 'grid grid-cols-2 gap-4' : 'space-y-2'}>
+            {/* Connections Section - Collapsible */}
+            <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open>
+              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+                <GitBranch size={12} /> 
+                <span>Connections</span>
+                <span className="text-[10px] font-normal text-slate-400 ml-1">
+                  ({edges.incoming.length} in, {edges.outgoing.length} out)
+                </span>
+              </summary>
+              <div className={`mt-2 ${isFullscreen ? 'grid grid-cols-2 gap-4' : 'space-y-2'}`}>
                 <div>
-                  <label className="text-xs text-slate-500">
-                    Incoming ({edges.incoming.length})
-                  </label>
+                  <label className="text-xs text-slate-500">Incoming</label>
                   {edges.incoming.length > 0 ? (
-                    <ul className="text-sm text-slate-700 space-y-1">
-                      {edges.incoming.map((e) => (
-                        <li key={e.id} className={`font-mono text-xs ${isFullscreen ? '' : 'truncate'}`}>
-                          ← {e.source.split('@')[0]}
-                        </li>
-                      ))}
+                    <ul className="text-sm text-slate-700 space-y-1 mt-1">
+                      {edges.incoming.map((e) => {
+                        const sourceNode = getNode(e.source);
+                        const displayName = sourceNode?.data?.natural_name || e.source.split('@')[0];
+                        const edgeTypeColors: Record<string, string> = {
+                          function: 'bg-blue-100 text-blue-700',
+                          value: 'bg-purple-100 text-purple-700',
+                          context: 'bg-orange-100 text-orange-700',
+                          alias: 'bg-gray-100 text-gray-600',
+                        };
+                        const edgeColor = edgeTypeColors[e.edge_type] || 'bg-slate-100 text-slate-600';
+                        
+                        return (
+                          <li key={e.id} className="flex items-center gap-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${edgeColor}`}>
+                              {e.edge_type === 'function' ? 'fn' : e.edge_type === 'value' ? 'val' : e.edge_type === 'context' ? 'ctx' : e.edge_type}
+                            </span>
+                            <button
+                              onClick={() => navigateToNode(e.source)}
+                              className={`font-mono text-xs text-blue-600 hover:text-blue-800 hover:underline text-left ${isFullscreen ? '' : 'truncate max-w-[180px]'}`}
+                              title={`Click to select: ${e.source}\n${sourceNode?.label || ''}`}
+                            >
+                              ← {displayName}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-slate-400">None</p>
+                    <p className="text-xs text-slate-400 mt-1">None</p>
                   )}
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500">
-                    Outgoing ({edges.outgoing.length})
-                  </label>
+                  <label className="text-xs text-slate-500">Outgoing</label>
                   {edges.outgoing.length > 0 ? (
-                    <ul className="text-sm text-slate-700 space-y-1">
-                      {edges.outgoing.map((e) => (
-                        <li key={e.id} className={`font-mono text-xs ${isFullscreen ? '' : 'truncate'}`}>
-                          → {e.target.split('@')[0]}
-                        </li>
-                      ))}
+                    <ul className="text-sm text-slate-700 space-y-1 mt-1">
+                      {edges.outgoing.map((e) => {
+                        const targetNode = getNode(e.target);
+                        const displayName = targetNode?.data?.natural_name || e.target.split('@')[0];
+                        const edgeTypeColors: Record<string, string> = {
+                          function: 'bg-blue-100 text-blue-700',
+                          value: 'bg-purple-100 text-purple-700',
+                          context: 'bg-orange-100 text-orange-700',
+                          alias: 'bg-gray-100 text-gray-600',
+                        };
+                        const edgeColor = edgeTypeColors[e.edge_type] || 'bg-slate-100 text-slate-600';
+                        
+                        return (
+                          <li key={e.id} className="flex items-center gap-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${edgeColor}`}>
+                              {e.edge_type === 'function' ? 'fn' : e.edge_type === 'value' ? 'val' : e.edge_type === 'context' ? 'ctx' : e.edge_type}
+                            </span>
+                            <button
+                              onClick={() => navigateToNode(e.target)}
+                              className={`font-mono text-xs text-blue-600 hover:text-blue-800 hover:underline text-left ${isFullscreen ? '' : 'truncate max-w-[180px]'}`}
+                              title={`Click to select: ${e.target}\n${targetNode?.label || ''}`}
+                            >
+                              → {displayName}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
-                    <p className="text-xs text-slate-400">None</p>
+                    <p className="text-xs text-slate-400 mt-1">None</p>
                   )}
                 </div>
               </div>
-            </section>
+            </details>
           </div>
 
           {/* Right Column (only in fullscreen mode) - Reference Data */}
@@ -585,44 +607,49 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
           {/* Reference Data Section (for value nodes) - Normal mode only */}
           {!isFullscreen && node.node_type === 'value' && (
-            <section>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
-                  <Database size={12} /> Reference Data
-                </h4>
+            <details className="group" open={!!referenceData}>
+              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+                <Database size={12} /> 
+                <span>Data</span>
+                {referenceData && (
+                  <span className="text-[10px] font-normal text-slate-400 ml-1">
+                    ({Array.isArray(referenceData.data) ? referenceData.data.length + ' items' : 'loaded'})
+                  </span>
+                )}
                 <button
-                  onClick={refreshReference}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); refreshReference(); }}
                   disabled={isLoadingRef}
-                  className="p-1 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
-                  title="Refresh reference data"
+                  className="ml-auto p-0.5 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
+                  title="Refresh"
                 >
-                  <RefreshCw size={12} className={isLoadingRef ? 'animate-spin' : ''} />
+                  <RefreshCw size={10} className={isLoadingRef ? 'animate-spin' : ''} />
                 </button>
+              </summary>
+              <div className="mt-1">
+                {isLoadingRef ? (
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <RefreshCw size={10} className="animate-spin" />
+                    Loading...
+                  </div>
+                ) : refError ? (
+                  <div className="text-[10px] text-red-500">{refError}</div>
+                ) : referenceData ? (
+                  <TensorInspector
+                    data={referenceData.data}
+                    axes={referenceData.axes}
+                    conceptName={referenceData.concept_name}
+                    isGround={node.data.is_ground}
+                    isCompact={true}
+                  />
+                ) : (
+                  <div className="text-[10px] text-slate-400 bg-slate-50 p-1.5 rounded">
+                    {node.data.is_ground 
+                      ? 'Ground - load repos to see'
+                      : 'Run to compute'}
+                  </div>
+                )}
               </div>
-              
-              {isLoadingRef ? (
-                <div className="text-xs text-slate-400 flex items-center gap-2">
-                  <RefreshCw size={12} className="animate-spin" />
-                  Loading...
-                </div>
-              ) : refError ? (
-                <div className="text-xs text-red-500">{refError}</div>
-              ) : referenceData ? (
-                <TensorInspector
-                  data={referenceData.data}
-                  axes={referenceData.axes}
-                  conceptName={referenceData.concept_name}
-                  isGround={node.data.is_ground}
-                  isCompact={true}
-                />
-              ) : (
-                <div className="text-xs text-slate-400 bg-slate-50 p-2 rounded">
-                  {node.data.is_ground 
-                    ? 'Ground concept - load repositories to see data'
-                    : 'No reference data yet - execute to compute'}
-                </div>
-              )}
-            </section>
+            </details>
           )}
         </div>
       </div>
