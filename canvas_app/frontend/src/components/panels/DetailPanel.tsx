@@ -263,29 +263,29 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
       </div>
 
       {/* Content */}
-      <div className={`flex-1 overflow-y-auto ${isFullscreen ? 'p-6' : 'p-3'}`}>
+      <div className={`flex-1 overflow-y-auto ${isFullscreen ? 'p-6' : 'p-4'}`}>
         {/* Fullscreen: Two-column layout, Normal: Single column */}
-        <div className={isFullscreen ? 'grid grid-cols-2 gap-6 h-full' : 'space-y-2'}>
+        <div className={isFullscreen ? 'grid grid-cols-2 gap-6 h-full' : 'space-y-4'}>
           
           {/* Left Column (in fullscreen) / All content (in normal mode) */}
           <div className={isFullscreen ? 'space-y-4 overflow-y-auto' : 'contents'}>
             
             {/* Compact Header: Name + Status Badges */}
-            <div className={`${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pb-2 border-b border-slate-100'}`}>
+            <div className={`${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pb-3 border-b border-slate-100'}`}>
               {/* Name */}
-              <div className="mb-1">
+              <div className="mb-2">
                 {node.data.natural_name ? (
                   <>
-                    <p className={`text-slate-800 font-medium ${isFullscreen ? 'text-base' : 'text-sm'}`}>{node.data.natural_name}</p>
-                    <p className="font-mono text-xs text-slate-500 truncate" title={node.label}>{node.label}</p>
+                    <p className={`text-slate-800 font-medium ${isFullscreen ? 'text-base' : 'text-sm'} leading-relaxed`}>{node.data.natural_name}</p>
+                    <p className="font-mono text-xs text-slate-500 truncate mt-0.5" title={node.label}>{node.label}</p>
                   </>
                 ) : (
-                  <p className={`font-mono text-slate-800 break-words ${isFullscreen ? 'text-sm' : 'text-sm'}`}>{node.label}</p>
+                  <p className={`font-mono text-slate-800 break-words leading-relaxed ${isFullscreen ? 'text-sm' : 'text-sm'}`}>{node.label}</p>
                 )}
               </div>
               
               {/* Status Badges Row */}
-              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <div className="flex items-center gap-2 flex-wrap mt-2.5">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColors[nodeStatus]}`}>
                   {nodeStatus}
                 </span>
@@ -310,7 +310,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
               
               {/* Debugging Buttons - inline */}
               {node.flow_index && (
-                <div className="flex gap-1.5 mt-2">
+                <div className="flex gap-2 mt-3">
                   <button
                     onClick={handleToggleBreakpoint}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors ${
@@ -338,15 +338,15 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
             {/* Step Progress Section - Collapsible */}
             {node.flow_index && stepProgress[node.flow_index] && (
-              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open>
-                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pt-2'}`} open>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
                   <Workflow size={12} /> 
                   <span>Pipeline</span>
                   <span className="text-[10px] font-normal text-slate-400 ml-1">
                     ({stepProgress[node.flow_index]?.current_step || 'ready'})
                   </span>
                 </summary>
-                <div className="mt-2">
+                <div className="mt-3">
                   <StepPipeline 
                     progress={stepProgress[node.flow_index]} 
                     compact={!isFullscreen}
@@ -357,15 +357,15 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
             {/* Value Details - Collapsible */}
             {node.node_type === 'value' && node.data.axes && node.data.axes.length > 0 && (
-              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`}>
-                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pt-2'}`}>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
                   <Layers size={12} /> 
                   <span>Axes</span>
                   <span className="text-[10px] font-normal text-slate-400 ml-1">
                     ({node.data.axes.length})
                   </span>
                 </summary>
-                <div className="mt-1">
+                <div className="mt-2">
                   <p className="font-mono text-xs text-slate-700">[{node.data.axes.join(', ')}]</p>
                 </div>
               </details>
@@ -373,15 +373,15 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
             {/* Function Details Section - Collapsible */}
             {node.node_type === 'function' && (node.data.sequence || node.data.working_interpretation) && (
-              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open={isFullscreen}>
-                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+              <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pt-2'}`} open={isFullscreen}>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
                   <FileJson size={12} /> 
                   <span>Function</span>
                   {node.data.sequence && (
                     <span className="text-[10px] font-normal text-slate-400 ml-1">({node.data.sequence})</span>
                   )}
                 </summary>
-                <div className="mt-2 space-y-2">
+                <div className="mt-3 space-y-2.5">
                   {/* Working Interpretation - Compact View */}
                   {node.data.working_interpretation && (
                     <>
@@ -390,7 +390,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                         <div className="bg-purple-50 px-2 py-1.5 rounded text-xs">
                           <span className="text-purple-600 font-medium">Paradigm: </span>
                           <span className="font-mono text-purple-800 break-all">
-                            {node.data.working_interpretation.paradigm}
+                            {String(node.data.working_interpretation.paradigm)}
                           </span>
                         </div>
                       )}
@@ -414,14 +414,14 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                       
                       {/* Prompt + Output in one line */}
                       <div className="flex flex-wrap gap-1 text-[10px]">
-                        {node.data.working_interpretation.prompt_location && (
-                          <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-mono truncate max-w-full" title={node.data.working_interpretation.prompt_location}>
-                            📄 {node.data.working_interpretation.prompt_location.split('/').pop()}
+                        {!!node.data.working_interpretation.prompt_location && (
+                          <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-mono truncate max-w-full" title={String(node.data.working_interpretation.prompt_location)}>
+                            📄 {String(node.data.working_interpretation.prompt_location).split('/').pop()}
                           </span>
                         )}
-                        {node.data.working_interpretation.output_type && (
+                        {!!node.data.working_interpretation.output_type && (
                           <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded font-mono">
-                            → {node.data.working_interpretation.output_type}
+                            → {String(node.data.working_interpretation.output_type)}
                           </span>
                         )}
                       </div>
@@ -453,19 +453,19 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
             )}
 
             {/* Connections Section - Collapsible */}
-            <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : ''}`} open>
-              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+            <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pt-2'}`} open>
+              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
                 <GitBranch size={12} /> 
                 <span>Connections</span>
                 <span className="text-[10px] font-normal text-slate-400 ml-1">
                   ({edges.incoming.length} in, {edges.outgoing.length} out)
                 </span>
               </summary>
-              <div className={`mt-2 ${isFullscreen ? 'grid grid-cols-2 gap-4' : 'space-y-2'}`}>
+              <div className={`mt-3 ${isFullscreen ? 'grid grid-cols-2 gap-4' : 'space-y-3'}`}>
                 <div>
-                  <label className="text-xs text-slate-500">Incoming</label>
+                  <label className="text-xs text-slate-500 font-medium">Incoming</label>
                   {edges.incoming.length > 0 ? (
-                    <ul className="text-sm text-slate-700 space-y-1 mt-1">
+                    <ul className="text-sm text-slate-700 space-y-1.5 mt-1.5">
                       {edges.incoming.map((e) => {
                         const sourceNode = getNode(e.source);
                         const displayName = sourceNode?.data?.natural_name || e.source.split('@')[0];
@@ -498,9 +498,9 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   )}
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500">Outgoing</label>
+                  <label className="text-xs text-slate-500 font-medium">Outgoing</label>
                   {edges.outgoing.length > 0 ? (
-                    <ul className="text-sm text-slate-700 space-y-1 mt-1">
+                    <ul className="text-sm text-slate-700 space-y-1.5 mt-1.5">
                       {edges.outgoing.map((e) => {
                         const targetNode = getNode(e.target);
                         const displayName = targetNode?.data?.natural_name || e.target.split('@')[0];
@@ -568,6 +568,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                       <TensorInspector
                         data={referenceData.data}
                         axes={referenceData.axes}
+                        shape={referenceData.shape}
                         conceptName={referenceData.concept_name}
                         isGround={node.data.is_ground}
                         isCompact={false}
@@ -607,8 +608,8 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
           {/* Reference Data Section (for value nodes) - Normal mode only */}
           {!isFullscreen && node.node_type === 'value' && (
-            <details className="group" open={!!referenceData}>
-              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 cursor-pointer hover:text-slate-700 list-none">
+            <details className="group pt-2" open={!!referenceData}>
+              <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
                 <Database size={12} /> 
                 <span>Data</span>
                 {referenceData && (
@@ -619,13 +620,13 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); refreshReference(); }}
                   disabled={isLoadingRef}
-                  className="ml-auto p-0.5 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
+                  className="ml-auto p-1 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
                   title="Refresh"
                 >
                   <RefreshCw size={10} className={isLoadingRef ? 'animate-spin' : ''} />
                 </button>
               </summary>
-              <div className="mt-1">
+              <div className="mt-2">
                 {isLoadingRef ? (
                   <div className="text-[10px] text-slate-400 flex items-center gap-1">
                     <RefreshCw size={10} className="animate-spin" />
@@ -637,6 +638,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   <TensorInspector
                     data={referenceData.data}
                     axes={referenceData.axes}
+                    shape={referenceData.shape}
                     conceptName={referenceData.concept_name}
                     isGround={node.data.is_ground}
                     isCompact={true}

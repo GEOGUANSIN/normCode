@@ -22,6 +22,7 @@ import {
 interface TensorInspectorProps {
   data: TensorData;
   axes?: string[];
+  shape?: number[];  // Backend-provided shape (authoritative)
   conceptName?: string;
   isGround?: boolean;
   isCompact?: boolean;
@@ -30,12 +31,17 @@ interface TensorInspectorProps {
 export function TensorInspector({
   data,
   axes: providedAxes,
+  shape: providedShape,
   conceptName,
   isGround,
   isCompact = false,
 }: TensorInspectorProps) {
-  const shape = useMemo(() => getTensorShape(data), [data]);
+  // Use backend-provided shape if available, otherwise compute from data
+  // The backend shape is authoritative as it knows the logical tensor structure
+  const computedShape = useMemo(() => getTensorShape(data), [data]);
+  const shape = providedShape && providedShape.length > 0 ? providedShape : computedShape;
   const dims = shape.length;
+  // Use provided axes directly - the backend knows the correct axis count
   const axes = useMemo(() => ensureAxisNames(providedAxes, dims), [providedAxes, dims]);
   const elementType = useMemo(() => detectElementType(data), [data]);
   

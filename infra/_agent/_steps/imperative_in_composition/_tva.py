@@ -45,15 +45,53 @@ def tool_value_actuation(states: States) -> States:
 
             applied_ref = cross_action(wrapped_func_ref, values_ref, new_axis_name)
 
-            # If the new axis only has a single element, slice it off to simplify the structure.
+            # If the new axis only has a single element, collapse it to simplify the structure.
+            # We need to properly extract the single element, not just slice to fewer axes.
             final_ref = applied_ref
             try:
                 new_axis_index = applied_ref.axes.index(new_axis_name)
                 if applied_ref.shape[new_axis_index] == 1:
+                    # Properly collapse the singleton result axis by extracting element at index 0
+                    # This removes the extra nesting that would otherwise remain
                     axes_to_keep = [axis for axis in applied_ref.axes if axis != new_axis_name]
-                    final_ref = applied_ref.slice(*axes_to_keep)
+                    if axes_to_keep:
+                        # Slice to the remaining axes and collapse the result axis
+                        sliced_ref = applied_ref.slice(*axes_to_keep)
+                        # The sliced data still contains the result axis nesting - unwrap it
+                        def unwrap_singleton_axis(data, depth, target_depth):
+                            """Recursively unwrap the singleton result axis from data."""
+                            if depth >= target_depth:
+                                # At the result axis level - extract index 0
+                                if isinstance(data, list) and len(data) == 1:
+                                    return data[0]
+                                return data
+                            if isinstance(data, list):
+                                return [unwrap_singleton_axis(item, depth + 1, target_depth) for item in data]
+                            return data
+                        
+                        # The result axis was at new_axis_index, unwrap at that depth
+                        from infra._core import Reference
+                        unwrapped_data = unwrap_singleton_axis(sliced_ref.tensor, 0, len(axes_to_keep))
+                        final_ref = Reference(
+                            axes=sliced_ref.axes.copy(),
+                            shape=sliced_ref.shape,
+                            skip_value=sliced_ref.skip_value
+                        )
+                        final_ref._replace_data(unwrapped_data)
+                    else:
+                        # No other axes - extract the single scalar value
+                        from infra._core import Reference
+                        scalar_value = applied_ref.tensor
+                        while isinstance(scalar_value, list) and len(scalar_value) == 1:
+                            scalar_value = scalar_value[0]
+                        final_ref = Reference(
+                            axes=["_none_axis"],
+                            shape=(1,),
+                            skip_value=applied_ref.skip_value
+                        )
+                        final_ref._replace_data([scalar_value])
             except (ValueError, IndexError):
-                # If axis not found or shape is inconsistent, proceed without slicing.
+                # If axis not found or shape is inconsistent, proceed without collapsing.
                 pass
 
             states.set_reference("inference", "TVA", final_ref)
