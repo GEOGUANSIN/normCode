@@ -6,21 +6,128 @@ import json
 from schemas.graph_schemas import GraphNode, GraphEdge, GraphData
 
 
-def get_concept_category(concept_name: str) -> str:
-    """Categorize concept by name pattern.
+# Type classification constants (from infra/_core/_concept.py)
+TYPE_CLASS_SYNTACTICAL = "syntactical"
+TYPE_CLASS_SEMANTICAL = "semantical"
+TYPE_CLASS_INFERENTIAL = "inferential"
+
+# Concept type to category mapping
+# Based on CONCEPT_TYPES in infra/_core/_concept.py
+CONCEPT_TYPE_INFO = {
+    # Core inference operators (INFERENTIAL -> semantic-function behavior)
+    "<=": {"type_class": TYPE_CLASS_INFERENTIAL, "is_function": True},
+    "<-": {"type_class": TYPE_CLASS_INFERENTIAL, "is_function": False},
+    
+    # Assignment operators (SYNTACTICAL)
+    "$=": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "$::": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "$.": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "$%": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "$+": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "$-": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    
+    # Question markers (SYNTACTICAL)
+    "$what?": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},
+    "$how?": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},
+    "$when?": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},
+    
+    # Timing operators (SYNTACTICAL)
+    "@by": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@if": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@if!": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@onlyIf": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@ifOnlyIf": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@after": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@before": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@with": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@while": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@until": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@afterstep": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@:'": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@:!": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "@.": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    
+    # Grouping operators (SYNTACTICAL)
+    "&in": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "&across": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "&set": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "&pair": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "&[{}]": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "&[#]": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    
+    # Quantification/Looping operators (SYNTACTICAL)
+    "*every": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "*some": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "*count": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    "*.": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": True},
+    
+    # Object and concept types (SEMANTICAL)
+    "{}": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": False, "category": "semantic-value"},      # object
+    "::": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": True, "category": "semantic-function"},    # imperative
+    "<>": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": False, "category": "proposition"},         # proposition (value, not function!)
+    "<{}>": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": True, "category": "semantic-function"},  # functional_judgement
+    "({})": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": True, "category": "semantic-function"},  # functional_imperative
+    "::({})": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": True, "category": "semantic-function"},# functional_imperative alt
+    "[]": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": False, "category": "semantic-value"},      # relation
+    ":S:": {"type_class": TYPE_CLASS_SEMANTICAL, "is_function": False, "category": "semantic-value"},     # subject
+    
+    # Input/Output concepts (SYNTACTICAL)
+    ":>:": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},  # input
+    ":<:": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},  # output
+    
+    # Template and placeholder types (SYNTACTICAL)
+    "{}?": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},
+    "<:_>": {"type_class": TYPE_CLASS_SYNTACTICAL, "is_function": False},
+}
+
+
+def get_concept_category(concept_name: str, concept_type: str = None) -> str:
+    """Categorize concept using its type from the concept repo.
+    
+    Args:
+        concept_name: The concept name (used as fallback for pattern matching)
+        concept_type: The concept type from concept repo (e.g., "::", "{}", "<{}>")
+    
+    Returns:
+        Category string: "semantic-function", "semantic-value", "proposition", or "syntactic-function"
     
     Categories:
-    - semantic-function: ::() and :<> patterns (imperative and judgement)
-    - semantic-value: {}, <>, [] patterns (objects, attributes, collections)
-    - syntactic-function: $, &, @, * patterns (assigning, grouping, timing, looping)
+    - semantic-function: functional semantical (::, <{}>, ({})) - purple
+    - semantic-value: non-functional semantical ({}, [], :S:) - blue
+    - proposition: boolean state values (<>) - cyan/teal
+    - syntactic-function: syntactical operators ($, &, @, *) - gray
     """
-    if ':(' in concept_name or ':<' in concept_name or concept_name.startswith('::'):
+    # If we have a valid concept type, use it for accurate categorization
+    if concept_type and concept_type in CONCEPT_TYPE_INFO:
+        info = CONCEPT_TYPE_INFO[concept_type]
+        
+        # Check for explicit category override first
+        if "category" in info:
+            return info["category"]
+        
+        # Otherwise derive from type_class and is_function
+        type_class = info["type_class"]
+        is_function = info["is_function"]
+        
+        if type_class == TYPE_CLASS_SEMANTICAL or type_class == TYPE_CLASS_INFERENTIAL:
+            return "semantic-function" if is_function else "semantic-value"
+        else:  # syntactical
+            return "syntactic-function" if is_function else "semantic-value"
+    
+    # Fallback: Pattern matching on concept name (for backwards compatibility)
+    # This handles cases where type might not be provided
+    if (':(' in concept_name or 
+        ':<' in concept_name or 
+        concept_name.startswith('::') or
+        concept_name.startswith(':%')):  # Composition with perceptual sign
         return "semantic-function"
-    elif ((concept_name.startswith('{') and concept_name.rstrip('?').endswith('}')) or 
-          (concept_name.startswith('<') and concept_name.endswith('>')) or 
+    elif concept_name.startswith('<') and concept_name.endswith('>') and not concept_name.startswith('<{'):
+        # Proposition pattern: <...> but not <{...}> (which is functional judgement)
+        return "proposition"
+    elif ((concept_name.startswith('{') and concept_name.rstrip('?').endswith('}')) or
           (concept_name.startswith('[') and concept_name.endswith(']'))):
         return "semantic-value"
-    elif (concept_name.startswith('$') or concept_name.startswith('&') or 
+    elif (concept_name.startswith('$') or concept_name.startswith('&') or
           concept_name.startswith('@') or concept_name.startswith('*')):
         return "syntactic-function"
     else:
@@ -294,7 +401,7 @@ def build_graph_from_repositories(
                 nodes[target_id] = GraphNode(
                     id=target_id,
                     label=target_name,
-                    category=get_concept_category(target_name),
+                    category=get_concept_category(target_name, attrs.get('type')),
                     node_type="value",
                     flow_index=target_flow_index,
                     level=base_level,
@@ -336,7 +443,7 @@ def build_graph_from_repositories(
                 nodes[func_id] = GraphNode(
                     id=func_id,
                     label=func_name,
-                    category=get_concept_category(func_name),
+                    category=get_concept_category(func_name, func_attrs.get('type')),
                     node_type="function",
                     flow_index=func_flow_index,
                     level=input_level,
@@ -364,7 +471,7 @@ def build_graph_from_repositories(
                     nodes[func_id] = GraphNode(
                         id=func_id,
                         label=func_name,
-                        category=get_concept_category(func_name),
+                        category=get_concept_category(func_name, func_attrs.get('type')),
                         node_type="function",
                         flow_index=fallback_func_flow_index,
                         level=input_level,
@@ -414,7 +521,7 @@ def build_graph_from_repositories(
                 nodes[val_id] = GraphNode(
                     id=val_id,
                     label=val_name,
-                    category=get_concept_category(val_name),
+                    category=get_concept_category(val_name, val_attrs.get('type')),
                     node_type="value",
                     flow_index=val_flow_index,
                     level=input_level,
@@ -466,7 +573,7 @@ def build_graph_from_repositories(
                 nodes[ctx_id] = GraphNode(
                     id=ctx_id,
                     label=ctx_name,
-                    category=get_concept_category(ctx_name),
+                    category=get_concept_category(ctx_name, ctx_attrs.get('type')),
                     node_type="value",
                     flow_index=ctx_flow_index,
                     level=input_level,

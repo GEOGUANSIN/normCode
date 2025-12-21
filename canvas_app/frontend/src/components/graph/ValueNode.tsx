@@ -42,6 +42,11 @@ const categoryStyles: Record<NodeCategory, { bg: string; border: string; text: s
     border: 'border-slate-400',
     text: 'text-slate-900',
   },
+  'proposition': {
+    bg: 'bg-slate-100',
+    border: 'border-teal-700',
+    text: 'text-slate-700',
+  },
 };
 
 const statusIndicators = {

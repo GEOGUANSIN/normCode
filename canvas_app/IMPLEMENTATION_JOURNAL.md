@@ -1371,7 +1371,7 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 
 ## Changelog
 
-### v0.6.3 (December 21, 2024) - Tensor Shape Fix & Perceptual Sign Parsing
+### v0.6.3 (December 21, 2024) - Tensor Shape Fix, Perceptual Signs & Function References
 - **Fixed tensor dimension calculation**:
   - Shape now respects axes count from backend (authoritative)
   - Inner lists/arrays that are cell VALUES no longer counted as extra dimensions
@@ -1386,6 +1386,13 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
   - ExpandableItem displays parsed objects with key-value cards
   - ScalarView shows structured layout for single perceptual sign values
   - Purple badge indicates perceptual sign type
+- **2D Table View perceptual signs**:
+  - Cells with perceptual signs now clickable (purple tint)
+  - Modal shows parsed structured data with Structured/JSON toggle
+- **Function node reference data (Vertical Input)**:
+  - Function concepts can now display their reference data
+  - Shown as "Vertical Input" section in both normal and fullscreen modes
+  - Green-tinted section with refresh button
 - **Backend `get_reference_data()` fix**:
   - Shape calculation limited to axes count depth
 

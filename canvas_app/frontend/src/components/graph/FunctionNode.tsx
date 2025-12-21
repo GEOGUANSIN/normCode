@@ -40,6 +40,11 @@ const categoryStyles: Record<NodeCategory, { bg: string; border: string; text: s
     border: 'border-blue-400',
     text: 'text-blue-900',
   },
+  'proposition': {
+    bg: 'bg-slate-100',
+    border: 'border-teal-700',
+    text: 'text-slate-700',
+  },
 };
 
 const sequenceBadgeColors: Record<string, string> = {

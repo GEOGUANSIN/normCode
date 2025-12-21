@@ -357,8 +357,10 @@ interface ItemModalProps {
 
 function ItemModal({ index, axisName, item, onClose }: ItemModalProps) {
   const [copied, setCopied] = useState(false);
-  const isComplex = typeof item === 'object' && item !== null;
-  const content = isComplex ? JSON.stringify(item, null, 2) : String(item);
+  const [viewMode, setViewMode] = useState<'structured' | 'json'>('structured');
+  const isObject = typeof item === 'object' && item !== null && !Array.isArray(item);
+  const isArray = Array.isArray(item);
+  const content = (isObject || isArray) ? JSON.stringify(item, null, 2) : String(item);
   
   const handleCopy = async () => {
     try {
@@ -369,6 +371,17 @@ function ItemModal({ index, axisName, item, onClose }: ItemModalProps) {
       console.error('Failed to copy:', err);
     }
   };
+  
+  // Determine type label
+  let typeLabel: string;
+  if (isObject) {
+    const keys = Object.keys(item as object);
+    typeLabel = `Object (${keys.length} keys)`;
+  } else if (isArray) {
+    typeLabel = `Array (${(item as unknown[]).length} items)`;
+  } else {
+    typeLabel = typeof item;
+  }
   
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -381,10 +394,27 @@ function ItemModal({ index, axisName, item, onClose }: ItemModalProps) {
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm text-slate-600">{axisName}[{index}]</span>
             <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">
-              {isComplex ? (Array.isArray(item) ? 'Array' : 'Object') : typeof item}
+              {typeLabel}
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* View mode toggle for objects */}
+            {isObject && (
+              <div className="flex border border-slate-200 rounded overflow-hidden mr-2">
+                <button
+                  onClick={() => setViewMode('structured')}
+                  className={`px-2 py-1 text-xs ${viewMode === 'structured' ? 'bg-slate-200' : 'hover:bg-slate-100'}`}
+                >
+                  Structured
+                </button>
+                <button
+                  onClick={() => setViewMode('json')}
+                  className={`px-2 py-1 text-xs ${viewMode === 'json' ? 'bg-slate-200' : 'hover:bg-slate-100'}`}
+                >
+                  JSON
+                </button>
+              </div>
+            )}
             <button
               onClick={handleCopy}
               className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded hover:bg-slate-200 transition-colors"
@@ -403,9 +433,31 @@ function ItemModal({ index, axisName, item, onClose }: ItemModalProps) {
         
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
-          <pre className="text-sm font-mono text-slate-700 whitespace-pre-wrap break-words">
-            {content}
-          </pre>
+          {isObject && viewMode === 'structured' ? (
+            <div className="grid gap-3">
+              {Object.entries(item as object).map(([key, value]) => (
+                <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <div className="text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
+                    {key}
+                    <span className="text-xs font-normal text-slate-400">
+                      {typeof value === 'object' && value !== null 
+                        ? (Array.isArray(value) ? `array[${value.length}]` : 'object') 
+                        : typeof value}
+                    </span>
+                  </div>
+                  <div className="text-sm font-mono text-slate-800 whitespace-pre-wrap break-words">
+                    {typeof value === 'object' && value !== null
+                      ? JSON.stringify(value, null, 2)
+                      : String(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <pre className="text-sm font-mono text-slate-700 whitespace-pre-wrap break-words">
+              {content}
+            </pre>
+          )}
         </div>
       </div>
     </div>
@@ -456,7 +508,7 @@ function OneDView({ data, axisName }: { data: unknown[]; axisName: string }) {
 // =============================================================================
 
 function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
-  const [modalCell, setModalCell] = useState<{ row: number; col: number; item: unknown } | null>(null);
+  const [modalCell, setModalCell] = useState<{ row: number; col: number; item: unknown; parsedPS?: unknown } | null>(null);
   
   const rowAxis = axes[0] || 'row';
   const colAxis = axes[1] || 'col';
@@ -467,10 +519,20 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
   }
   
   const handleCellClick = (row: number, col: number, cell: unknown) => {
-    const isComplex = typeof cell === 'object' && cell !== null;
+    const isObject = typeof cell === 'object' && cell !== null;
+    const isPS = typeof cell === 'string' && isPerceptualSign(cell);
     const formatted = formatCellValue(cell);
-    if (isComplex || formatted.length > 30) {
-      setModalCell({ row, col, item: cell });
+    
+    if (isObject || isPS || formatted.length > 30) {
+      // Parse perceptual sign if applicable
+      let parsedData: unknown = undefined;
+      if (isPS) {
+        const psResult = parsePerceptualSignValue(cell as string);
+        if (psResult?.parsed) {
+          parsedData = psResult.parsed;
+        }
+      }
+      setModalCell({ row, col, item: cell, parsedPS: parsedData });
     }
   };
   
@@ -501,9 +563,10 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
                 </td>
                 {Array.from({ length: maxCols }, (_, j) => {
                   const cell = Array.isArray(row) && j < row.length ? row[j] : null;
-                  const isComplex = typeof cell === 'object' && cell !== null;
+                  const isObject = typeof cell === 'object' && cell !== null;
+                  const isPS = typeof cell === 'string' && isPerceptualSign(cell);
                   const formatted = formatCellValue(cell);
-                  const isClickable = isComplex || formatted.length > 30;
+                  const isClickable = isObject || isPS || formatted.length > 30;
                   
                   return (
                     <td
@@ -512,6 +575,7 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
                       className={`
                         px-2 py-1.5 border border-slate-200 font-mono text-slate-700 max-w-[150px]
                         ${isClickable ? 'cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors' : 'text-center'}
+                        ${isPS ? 'bg-purple-50/50' : ''}
                       `}
                       title={isClickable ? 'Click to expand' : undefined}
                     >
@@ -530,12 +594,12 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
         </table>
       </div>
       
-      {/* Modal for cell expansion */}
+      {/* Modal for cell expansion - pass parsed data if available */}
       {modalCell && (
         <ItemModal
           index={modalCell.row}
           axisName={`${rowAxis}[${modalCell.row}], ${colAxis}[${modalCell.col}]`}
-          item={modalCell.item}
+          item={modalCell.parsedPS ?? modalCell.item}
           onClose={() => setModalCell(null)}
         />
       )}

@@ -2,7 +2,7 @@
  * Graph type definitions matching backend schemas
  */
 
-export type NodeCategory = 'semantic-function' | 'semantic-value' | 'syntactic-function';
+export type NodeCategory = 'semantic-function' | 'semantic-value' | 'syntactic-function' | 'proposition';
 export type NodeType = 'value' | 'function';
 export type EdgeType = 'function' | 'value' | 'context' | 'alias';
 

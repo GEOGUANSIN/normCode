@@ -452,6 +452,37 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
               </details>
             )}
 
+            {/* Vertical Input Section for Function Nodes - Collapsible (Normal mode only) */}
+            {!isFullscreen && node.node_type === 'function' && referenceData && (
+              <details className="group pt-2" open>
+                <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
+                  <Database size={12} /> 
+                  <span>Vertical Input</span>
+                  <span className="text-[10px] font-normal text-slate-400 ml-1">
+                    ({Array.isArray(referenceData.data) ? referenceData.data.length + ' items' : 'loaded'})
+                  </span>
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); refreshReference(); }}
+                    disabled={isLoadingRef}
+                    className="ml-auto p-1 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
+                    title="Refresh"
+                  >
+                    <RefreshCw size={10} className={isLoadingRef ? 'animate-spin' : ''} />
+                  </button>
+                </summary>
+                <div className="mt-2">
+                  <TensorInspector
+                    data={referenceData.data}
+                    axes={referenceData.axes}
+                    shape={referenceData.shape}
+                    conceptName={referenceData.concept_name}
+                    isGround={false}
+                    isCompact={true}
+                  />
+                </div>
+              </details>
+            )}
+
             {/* Connections Section - Collapsible */}
             <details className={`group ${isFullscreen ? 'bg-slate-50 p-4 rounded-lg' : 'pt-2'}`} open>
               <summary className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none">
@@ -584,24 +615,56 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                 </section>
               )}
               
-              {/* For function nodes in fullscreen, show additional details */}
+              {/* For function nodes in fullscreen, show working interpretation AND reference data */}
               {node.node_type === 'function' && (
-                <section className="bg-purple-50/50 p-4 rounded-lg border border-purple-100 h-full flex flex-col">
-                  <h4 className="text-sm font-semibold text-slate-600 uppercase flex items-center gap-2 mb-3">
-                    <FileJson size={14} /> Full Working Interpretation
-                  </h4>
-                  <div className="flex-1 overflow-auto">
-                    {node.data.working_interpretation ? (
-                      <pre className="text-xs text-slate-700 bg-white p-4 rounded overflow-auto">
-                        {JSON.stringify(node.data.working_interpretation, null, 2)}
-                      </pre>
-                    ) : (
-                      <div className="text-sm text-slate-400 bg-white p-4 rounded">
-                        No working interpretation available
+                <>
+                  {/* Working Interpretation */}
+                  <section className="bg-purple-50/50 p-4 rounded-lg border border-purple-100 flex-1 flex flex-col">
+                    <h4 className="text-sm font-semibold text-slate-600 uppercase flex items-center gap-2 mb-3">
+                      <FileJson size={14} /> Full Working Interpretation
+                    </h4>
+                    <div className="flex-1 overflow-auto">
+                      {node.data.working_interpretation ? (
+                        <pre className="text-xs text-slate-700 bg-white p-4 rounded overflow-auto">
+                          {JSON.stringify(node.data.working_interpretation, null, 2)}
+                        </pre>
+                      ) : (
+                        <div className="text-sm text-slate-400 bg-white p-4 rounded">
+                          No working interpretation available
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                  
+                  {/* Vertical Input (Reference Data for function nodes) */}
+                  {referenceData && (
+                    <section className="bg-green-50/50 p-4 rounded-lg border border-green-100 flex-1 flex flex-col mt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-slate-600 uppercase flex items-center gap-2">
+                          <Database size={14} /> Vertical Input (Reference)
+                        </h4>
+                        <button
+                          onClick={refreshReference}
+                          disabled={isLoadingRef}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50 hover:bg-white rounded"
+                          title="Refresh reference data"
+                        >
+                          <RefreshCw size={14} className={isLoadingRef ? 'animate-spin' : ''} />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </section>
+                      <div className="flex-1 overflow-auto">
+                        <TensorInspector
+                          data={referenceData.data}
+                          axes={referenceData.axes}
+                          shape={referenceData.shape}
+                          conceptName={referenceData.concept_name}
+                          isGround={false}
+                          isCompact={false}
+                        />
+                      </div>
+                    </section>
+                  )}
+                </>
               )}
             </div>
           )}
