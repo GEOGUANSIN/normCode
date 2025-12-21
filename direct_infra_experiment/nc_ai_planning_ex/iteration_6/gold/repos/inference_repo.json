@@ -301,11 +301,10 @@
       "syntax": {
         "marker": "in",
         "by_axes": [
-          ["bullish_recommendation"],
-          ["bearish_recommendation"],
-          ["neutral_recommendation"]
-        ],
-        "create_axis": "recommendation"
+          ["signal"],
+          ["signal"],
+          ["signal"]
+        ]
       }
     }
   },

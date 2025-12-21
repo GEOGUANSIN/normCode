@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from string import Template
 from copy import copy
 
@@ -73,6 +73,149 @@ class Grouper:
 
         return element_actuation
 
+    # =========================================================================
+    # SHARED HELPER METHODS FOR CONSISTENT GROUPING BEHAVIOR
+    # =========================================================================
+
+    def _normalize_by_axes(
+        self, 
+        by_axes: Optional[List], 
+        references: List[Reference]
+    ) -> Tuple[Optional[List[List[str]]], bool]:
+        """
+        Normalize by_axes to per-reference format.
+        
+        Returns:
+            (normalized_by_axes, is_per_ref_mode)
+        """
+        if by_axes is None or len(by_axes) == 0:
+            return None, False
+        
+        # Check if already per-ref format
+        if isinstance(by_axes[0], list):
+            return by_axes, True
+        
+        # Flat list - broadcast to all references
+        normalized = [by_axes for _ in references]
+        return normalized, True
+
+    def _extract_elements_from_ref(
+        self,
+        ref: Reference,
+        specified_axes: List[str],
+        annotate_with: Optional[str] = None
+    ) -> Tuple[List[Any], Optional[List[str]], bool]:
+        """
+        Extract elements from a reference based on specified axes to collapse.
+        
+        Args:
+            ref: The reference to extract from
+            specified_axes: Axes that should be collapsed
+            annotate_with: If provided, wrap each element in {annotate_with: elem}
+        
+        Returns:
+            (elements, preserved_axes, is_stack_mode)
+            - elements: List of extracted elements
+            - preserved_axes: Axes that were preserved (for stack mode)
+            - is_stack_mode: True if tensor structure was kept intact
+        """
+        # Filter to only axes that actually exist in ref
+        axes_to_collapse = [ax for ax in specified_axes if ax in ref.axes]
+        
+        # Determine which axes to PRESERVE (not collapse)
+        preserve_axes = [ax for ax in ref.axes if ax not in axes_to_collapse]
+        
+        elements = []
+        is_stack_mode = False
+        
+        if not axes_to_collapse and preserve_axes:
+            # STACK MODE: No collapsing (specified axes don't match actual axes)
+            # Keep tensor structure intact, keep SKIPs for index consistency
+            tensor_data = ref.tensor
+            if annotate_with:
+                elements.append({annotate_with: tensor_data})
+            else:
+                elements.append(tensor_data)
+            is_stack_mode = True
+            return elements, preserve_axes, is_stack_mode
+        
+        elif preserve_axes:
+            # Partial collapse: slice to preserve axes, then extract leaves
+            sliced = ref.slice(*preserve_axes)
+            raw_elements = list(sliced._get_leaves())
+        else:
+            # Full collapse: extract all leaves directly
+            raw_elements = list(ref._get_leaves())
+        
+        # Filter SKIPs when axes are stripped (collapse mode)
+        for elem in raw_elements:
+            if elem != self.skip_value:
+                if annotate_with:
+                    elements.append({annotate_with: elem})
+                else:
+                    elements.append(elem)
+        
+        return elements, preserve_axes if is_stack_mode else None, is_stack_mode
+
+    def _build_result_reference(
+        self,
+        elements: List[Any],
+        create_axis: Optional[str],
+        preserved_axes: Optional[List[str]] = None
+    ) -> Reference:
+        """
+        Build the result reference based on collected elements and axis configuration.
+        
+        Args:
+            elements: List of elements to include in result
+            create_axis: Explicit axis name, or None for _none_axis behavior
+            preserved_axes: Axes preserved from stack mode (if any)
+        
+        Returns:
+            Reference with appropriate structure
+        """
+        if create_axis is not None:
+            # Explicit axis: create N elements along that axis
+            if preserved_axes:
+                # Stack mode: result has [create_axis] + preserved_axes
+                result_axes = [create_axis] + preserved_axes
+                # Calculate shape based on first element structure
+                if elements and isinstance(list(elements[0].values())[0] if isinstance(elements[0], dict) else elements[0], list):
+                    first_val = list(elements[0].values())[0] if isinstance(elements[0], dict) else elements[0]
+                    result_shape = (len(elements),) + tuple(
+                        len(first_val) if isinstance(first_val, list) else 1
+                        for _ in preserved_axes
+                    )
+                else:
+                    result_shape = (len(elements),) + (1,) * len(preserved_axes)
+                return Reference(
+                    axes=result_axes,
+                    shape=result_shape,
+                    initial_value=None,
+                    skip_value=self.skip_value
+                )._replace_data(elements)
+            else:
+                # 1D result with create_axis
+                return Reference(
+                    axes=[create_axis],
+                    shape=(len(elements),),
+                    initial_value=None,
+                    skip_value=self.skip_value
+                )._replace_data(elements)
+        else:
+            # No explicit axis (_none_axis): wrap all elements into a single element
+            # Shape (1,) where the element is the list of all elements
+            return Reference(
+                axes=["_none_axis"],
+                shape=(1,),
+                initial_value=None,
+                skip_value=self.skip_value
+            )._replace_data([elements])
+
+    # =========================================================================
+    # MAIN GROUPING METHODS
+    # =========================================================================
+
     def and_in(
         self, 
         references: List[Reference], 
@@ -91,65 +234,34 @@ class Grouper:
                 - List[str]: Shared axes to collapse (legacy behavior)
                 - List[List[str]]: Per-reference axes to collapse
             template: Optional template for formatting
-            create_axis: Name for the resulting axis dimension (enables per-ref mode)
-        
-        When create_axis is specified with per-ref by_axes:
-            1. For each reference, collapse its specified axes
-            2. Annotate each with its concept name
-            3. Wrap in create_axis dimension
-        
-        Otherwise uses legacy cross_product + annotate behavior.
+            create_axis: Name for the resulting axis dimension
+                - If provided: creates N elements along that axis
+                - If None: creates single element containing list of all (_none_axis)
         """
         if not references:
             axis_name = create_axis or "_none_axis"
             return Reference(axes=[axis_name], shape=(0,))
         
-        # Normalize by_axes format for backward compatibility
-        normalized_by_axes = by_axes
-        if by_axes is not None and len(by_axes) > 0:
-            if not isinstance(by_axes[0], list):
-                # Flat list (legacy format) - broadcast to all references if create_axis specified
-                if create_axis is not None:
-                    normalized_by_axes = [by_axes for _ in references]
-        
-        # Check if per-reference mode
-        is_per_ref_mode = (
-            create_axis is not None and 
-            normalized_by_axes is not None and 
-            len(normalized_by_axes) > 0 and 
-            isinstance(normalized_by_axes[0], list)
-        )
+        # Normalize by_axes format
+        normalized_by_axes, is_per_ref_mode = self._normalize_by_axes(by_axes, references)
         
         if is_per_ref_mode:
             # Per-reference collapse + annotate mode
-            annotated_elements = []
+            all_elements = []
+            preserved_axes_for_result = None
             
             for i, (ref, name) in enumerate(zip(references, annotation_list)):
-                # Get axes to collapse for this reference
-                axes_to_collapse = normalized_by_axes[i] if i < len(normalized_by_axes) else list(ref.axes)
+                specified_axes = normalized_by_axes[i] if i < len(normalized_by_axes) else list(ref.axes)
                 
-                # Determine which axes to PRESERVE (not collapse)
-                preserve_axes = [ax for ax in ref.axes if ax not in axes_to_collapse]
+                elements, preserved, is_stack = self._extract_elements_from_ref(
+                    ref, specified_axes, annotate_with=name
+                )
+                all_elements.extend(elements)
                 
-                if preserve_axes:
-                    # Partial collapse: slice to preserve axes, then extract leaves
-                    sliced = ref.slice(*preserve_axes)
-                    elements = list(sliced._get_leaves())
-                else:
-                    # Full collapse: extract all leaves directly
-                    elements = list(ref._get_leaves())
-                
-                # Annotate each element with concept name
-                for elem in elements:
-                    annotated_elements.append({name: elem})
+                if is_stack and preserved_axes_for_result is None:
+                    preserved_axes_for_result = preserved
             
-            # Create result with new axis
-            result = Reference(
-                axes=[create_axis],
-                shape=(len(annotated_elements),),
-                initial_value=None,
-                skip_value=self.skip_value
-            )._replace_data(annotated_elements)
+            result = self._build_result_reference(all_elements, create_axis, preserved_axes_for_result)
         
         else:
             # Legacy behavior: cross_product + annotate + collapse
@@ -185,89 +297,34 @@ class Grouper:
                 - List[str]: Shared axes to collapse (legacy behavior)
                 - List[List[str]]: Per-reference axes to collapse
             template: Optional template for formatting
-            create_axis: Name for the resulting axis dimension (enables per-ref mode)
-        
-        When create_axis is specified with per-ref by_axes:
-            1. For each reference, collapse its specified axes (using slice + _get_leaves)
-            2. Concatenate all extracted elements
-            3. Wrap in create_axis dimension
-        
-        Otherwise uses legacy cross_product + flatten behavior.
+            create_axis: Name for the resulting axis dimension
+                - If provided: creates N elements along that axis
+                - If None: creates single element containing list of all (_none_axis)
         """
         if not references:
             axis_name = create_axis or "_none_axis"
             return Reference(axes=[axis_name], shape=(0,))
         
-        # Normalize by_axes format for backward compatibility
-        # If by_axes is a flat list ["axis1", "axis2"], convert to per-ref format
-        # by broadcasting to all references: [["axis1", "axis2"], ["axis1", "axis2"], ...]
-        normalized_by_axes = by_axes
-        if by_axes is not None and len(by_axes) > 0:
-            if not isinstance(by_axes[0], list):
-                # Flat list (legacy format) - broadcast to all references if create_axis specified
-                if create_axis is not None:
-                    normalized_by_axes = [by_axes for _ in references]
-                # else: leave as flat list for legacy behavior
-        
-        # Check if per-reference mode
-        is_per_ref_mode = (
-            create_axis is not None and 
-            normalized_by_axes is not None and 
-            len(normalized_by_axes) > 0 and 
-            isinstance(normalized_by_axes[0], list)
-        )
+        # Normalize by_axes format
+        normalized_by_axes, is_per_ref_mode = self._normalize_by_axes(by_axes, references)
         
         if is_per_ref_mode:
             # Per-reference collapse + concatenate mode
             all_elements = []
-            preserved_axes_for_result = None  # Track preserved axes for stack mode
+            preserved_axes_for_result = None
             
             for i, ref in enumerate(references):
-                # Get axes to collapse for this reference
-                axes_to_collapse = normalized_by_axes[i] if i < len(normalized_by_axes) else list(ref.axes)
+                specified_axes = normalized_by_axes[i] if i < len(normalized_by_axes) else list(ref.axes)
                 
-                # Determine which axes to PRESERVE (not collapse)
-                preserve_axes = [ax for ax in ref.axes if ax not in axes_to_collapse]
+                elements, preserved, is_stack = self._extract_elements_from_ref(
+                    ref, specified_axes, annotate_with=None
+                )
+                all_elements.extend(elements)
                 
-                if not axes_to_collapse and preserve_axes:
-                    # STACK MODE: No collapsing - keep tensor structure intact
-                    # Each ref's tensor becomes one element along create_axis
-                    all_elements.append(ref.tensor)
-                    if preserved_axes_for_result is None:
-                        preserved_axes_for_result = preserve_axes
-                elif preserve_axes:
-                    # Partial collapse: slice to preserve axes, then extract leaves
-                    sliced = ref.slice(*preserve_axes)
-                    elements = list(sliced._get_leaves())
-                    all_elements.extend(elements)
-                else:
-                    # Full collapse: extract all leaves directly
-                    elements = list(ref._get_leaves())
-                    all_elements.extend(elements)
+                if is_stack and preserved_axes_for_result is None:
+                    preserved_axes_for_result = preserved
             
-            # Create result with appropriate axes
-            if preserved_axes_for_result:
-                # Stack mode: result has [create_axis] + preserved_axes
-                result_axes = [create_axis] + preserved_axes_for_result
-                # Shape: (num_refs, *original_shape)
-                result_shape = (len(all_elements),) + tuple(
-                    len(all_elements[0]) if isinstance(all_elements[0], list) else 1
-                    for _ in preserved_axes_for_result
-                ) if all_elements else (0,)
-                result = Reference(
-                    axes=result_axes,
-                    shape=result_shape,
-                    initial_value=None,
-                    skip_value=self.skip_value
-                )._replace_data(all_elements)
-            else:
-                # Original behavior: 1D result
-                result = Reference(
-                    axes=[create_axis],
-                    shape=(len(all_elements),),
-                    initial_value=None,
-                    skip_value=self.skip_value
-                )._replace_data(all_elements)
+            result = self._build_result_reference(all_elements, create_axis, preserved_axes_for_result)
         
         else:
             # Legacy behavior: cross_product + flatten
@@ -286,4 +343,4 @@ class Grouper:
             element_actuation = self.create_unified_element_actuation(template, None)
             result = element_action(element_actuation, [result])
 
-        return result 
+        return result
