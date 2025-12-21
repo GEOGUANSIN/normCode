@@ -88,7 +88,34 @@ def calculate_position_size(
     }
 
 
-# Entry point for paradigm execution
+# Entry point for paradigm execution (paradigm calls main())
+def main(input_1: dict, input_2: dict = None) -> dict:
+    """
+    Main entry point called by the paradigm.
+    
+    Args:
+        input_1: Signal bundle (quantitative + narrative signals)
+        input_2: Investor risk profile (optional, extracted from input_1 if bundled)
+    
+    Returns:
+        Position sizing details
+    """
+    # Handle case where inputs are bundled together
+    if input_2 is None:
+        # Assume input_1 contains both signal_bundle and risk_profile
+        if isinstance(input_1, dict):
+            signal_bundle = input_1.get("signal_bundle", input_1.get("validated_signal", input_1))
+            risk_profile = input_1.get("risk_profile", input_1.get("investor_risk_profile", {}))
+        else:
+            signal_bundle = input_1
+            risk_profile = {}
+    else:
+        signal_bundle = input_1
+        risk_profile = input_2
+    
+    return calculate_position_size(signal_bundle, risk_profile)
+
+
 if __name__ == "__main__":
     import json
     import sys
