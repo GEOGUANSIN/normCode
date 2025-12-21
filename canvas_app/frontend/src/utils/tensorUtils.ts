@@ -23,8 +23,18 @@ export interface SliceState {
 /**
  * Get the shape of tensor data as an array.
  * Handles nested arrays of any depth.
+ * 
+ * IMPORTANT: When the tensor contains complex values (objects, nested arrays)
+ * as cell values, those should NOT be counted as additional dimensions.
+ * Use the `maxDims` parameter to limit shape calculation to the known
+ * number of axes from the backend.
+ * 
+ * @param data - The tensor data (nested arrays)
+ * @param maxDims - Optional maximum dimensions to calculate (from axes count).
+ *                  If provided, stops descending once this depth is reached.
+ *                  This prevents treating list VALUES as extra dimensions.
  */
-export function getTensorShape(data: TensorData): TensorShape {
+export function getTensorShape(data: TensorData, maxDims?: number): TensorShape {
   if (!Array.isArray(data)) {
     return [];  // Scalar
   }
@@ -33,6 +43,11 @@ export function getTensorShape(data: TensorData): TensorShape {
   let current: unknown = data;
   
   while (Array.isArray(current)) {
+    // Stop if we've reached the maximum dimensions (based on axes count)
+    if (maxDims !== undefined && shape.length >= maxDims) {
+      break;
+    }
+    
     shape.push(current.length);
     if (current.length > 0) {
       current = current[0];
@@ -56,9 +71,104 @@ export function getShapeString(shape: TensorShape): string {
 
 /**
  * Get dimensions count.
+ * 
+ * @param data - The tensor data
+ * @param maxDims - Optional maximum dimensions (from axes count)
  */
-export function getDimensions(data: TensorData): number {
-  return getTensorShape(data).length;
+export function getDimensions(data: TensorData, maxDims?: number): number {
+  return getTensorShape(data, maxDims).length;
+}
+
+// =============================================================================
+// PERCEPTUAL SIGN PARSING
+// =============================================================================
+
+/**
+ * Regex to detect perceptual sign format: %xxx(...) or %(...) 
+ * Examples: %c2a({...}), %(some_value), %abc123(...)
+ */
+const PERCEPTUAL_SIGN_REGEX = /^%([a-zA-Z0-9]*)\((.+)\)$/s;
+
+/**
+ * Check if a string is a perceptual sign format.
+ */
+export function isPerceptualSign(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  return PERCEPTUAL_SIGN_REGEX.test(value);
+}
+
+/**
+ * Extract the content from a perceptual sign string.
+ * Returns { id: string, content: string } or null if not a perceptual sign.
+ */
+export function extractPerceptualSign(value: string): { id: string; content: string } | null {
+  const match = value.match(PERCEPTUAL_SIGN_REGEX);
+  if (!match) return null;
+  return { id: match[1] || '', content: match[2] };
+}
+
+/**
+ * Try to parse Python dict-like syntax into a JavaScript object.
+ * Handles: single quotes, True/False/None, and nested structures.
+ */
+export function parsePythonDict(content: string): unknown {
+  try {
+    // Convert Python syntax to JSON:
+    // 1. Replace single quotes with double quotes (but handle escaped quotes)
+    // 2. Replace True/False/None with JSON equivalents
+    // 3. Handle multiline strings
+    
+    let jsonStr = content;
+    
+    // Replace Python booleans and None (word boundary to avoid replacing inside strings)
+    // We need to be careful here - only replace outside of strings
+    // Simple approach: replace known patterns
+    jsonStr = jsonStr
+      .replace(/:\s*True\b/g, ': true')
+      .replace(/:\s*False\b/g, ': false')
+      .replace(/:\s*None\b/g, ': null')
+      .replace(/,\s*True\b/g, ', true')
+      .replace(/,\s*False\b/g, ', false')
+      .replace(/,\s*None\b/g, ', null')
+      .replace(/\[\s*True\b/g, '[true')
+      .replace(/\[\s*False\b/g, '[false')
+      .replace(/\[\s*None\b/g, '[null');
+    
+    // Replace single quotes with double quotes
+    // This is tricky because we need to handle:
+    // - 'key': 'value' -> "key": "value"
+    // - Don't break apostrophes inside strings like "don't"
+    // Simple approach: replace ' with " for dict keys and simple values
+    jsonStr = jsonStr.replace(/'/g, '"');
+    
+    // Try to parse as JSON
+    return JSON.parse(jsonStr);
+  } catch {
+    // If parsing fails, return null
+    return null;
+  }
+}
+
+/**
+ * Parse a perceptual sign value, returning the parsed object if possible.
+ * Returns { id, parsed, raw } where parsed is the JS object (or null if unparseable).
+ */
+export interface ParsedPerceptualSign {
+  id: string;
+  parsed: unknown;
+  raw: string;
+}
+
+export function parsePerceptualSignValue(value: string): ParsedPerceptualSign | null {
+  const extracted = extractPerceptualSign(value);
+  if (!extracted) return null;
+  
+  const parsed = parsePythonDict(extracted.content);
+  return {
+    id: extracted.id,
+    parsed,
+    raw: extracted.content,
+  };
 }
 
 // =============================================================================
@@ -67,7 +177,7 @@ export function getDimensions(data: TensorData): number {
 
 /**
  * Format a cell value for display.
- * Handles special syntax like %(value).
+ * Handles special syntax like %(value) and %xxx({...}).
  */
 export function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) {
@@ -75,11 +185,22 @@ export function formatCellValue(value: unknown): string {
   }
   
   if (typeof value === 'string') {
-    // Check for special %(value) syntax
-    if (value.startsWith('%(') && value.endsWith(')')) {
-      const inner = value.slice(2, -1);
+    // Check for perceptual sign format: %xxx(...) or %(...)
+    const psResult = parsePerceptualSignValue(value);
+    if (psResult) {
+      if (psResult.parsed && typeof psResult.parsed === 'object' && !Array.isArray(psResult.parsed)) {
+        const keys = Object.keys(psResult.parsed as object);
+        const idPrefix = psResult.id ? `%${psResult.id}` : '%';
+        if (keys.length <= 3) {
+          return `${idPrefix}{${keys.join(', ')}}`;
+        }
+        return `${idPrefix}{${keys.length} keys}`;
+      }
+      // Fallback: show as pinned value
+      const inner = psResult.raw.length > 40 ? psResult.raw.slice(0, 37) + '...' : psResult.raw;
       return `📌 ${inner}`;
     }
+    
     // Truncate long strings
     if (value.length > 50) {
       return value.slice(0, 47) + '...';
@@ -230,12 +351,24 @@ export function ensureAxisNames(axes: string[] | undefined, dims: number): strin
 
 /**
  * Detect the element type of tensor data.
+ * 
+ * @param data - The tensor data
+ * @param axesCount - Optional number of axes. If provided, descends only that many
+ *                    levels to find the element type. This prevents treating
+ *                    nested list VALUES as tensor structure.
  */
-export function detectElementType(data: TensorData): string {
-  // Navigate to a leaf element
+export function detectElementType(data: TensorData, axesCount?: number): string {
+  // Navigate to a leaf element, but only descend as far as the axes allow
   let current: unknown = data;
+  let depth = 0;
+  
   while (Array.isArray(current) && current.length > 0) {
+    // Stop if we've descended through all axes
+    if (axesCount !== undefined && depth >= axesCount) {
+      break;
+    }
     current = current[0];
+    depth++;
   }
   
   if (current === null || current === undefined) {
@@ -244,9 +377,49 @@ export function detectElementType(data: TensorData): string {
   
   const type = typeof current;
   
+  // Check for perceptual sign strings first
+  if (type === 'string' && isPerceptualSign(current)) {
+    const psResult = parsePerceptualSignValue(current as string);
+    if (psResult?.parsed && typeof psResult.parsed === 'object' && !Array.isArray(psResult.parsed)) {
+      const keys = Object.keys(psResult.parsed as object);
+      const idPrefix = psResult.id ? `%${psResult.id}` : '%';
+      if (keys.length <= 4) {
+        return `${idPrefix}{${keys.join(', ')}}`;
+      }
+      return `${idPrefix}{object, ${keys.length} keys}`;
+    }
+    // Unparseable perceptual sign
+    return psResult?.id ? `%${psResult.id}(...)` : '%(...)';
+  }
+  
   if (type === 'object') {
     if (Array.isArray(current)) {
-      return 'array';
+      const arr = current as unknown[];
+      if (arr.length === 0) {
+        return 'array (empty)';
+      }
+      // Check if first element is a perceptual sign
+      if (typeof arr[0] === 'string' && isPerceptualSign(arr[0])) {
+        const psResult = parsePerceptualSignValue(arr[0]);
+        if (psResult?.parsed && typeof psResult.parsed === 'object') {
+          const keys = Object.keys(psResult.parsed as object);
+          const idPrefix = psResult.id ? `%${psResult.id}` : '%';
+          if (keys.length <= 3) {
+            return `list[${idPrefix}{${keys.join(', ')}}]`;
+          }
+          return `list[${idPrefix}{...}] (${arr.length} items)`;
+        }
+      }
+      // Show first element type for array values
+      const firstType = typeof arr[0];
+      if (firstType === 'object' && arr[0] !== null) {
+        const keys = Object.keys(arr[0] as object);
+        if (keys.length <= 3) {
+          return `list[{${keys.join(', ')}}]`;
+        }
+        return `list[object] (${arr.length} items)`;
+      }
+      return `list[${firstType}] (${arr.length} items)`;
     }
     // Check for common object structures
     const keys = Object.keys(current as object);

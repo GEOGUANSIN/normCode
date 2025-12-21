@@ -6,6 +6,78 @@
 
 ---
 
+## December 21, 2024 - Fix: Tensor Shape Calculation & Perceptual Sign Parsing
+
+### Problem 1: Incorrect Tensor Dimensions
+
+The TensorInspector was incorrectly displaying tensor dimensions when the cell VALUE was itself a list/array.
+
+**Example**:
+- Backend reports: `axes=['_none_axis']`, `shape=(1,)`, `data=[[{...}, {...}, {...}, {...}]]`
+- The inner list `[{...}x4]` is the **VALUE** of cell `[0]`, not a second dimension
+- But TensorInspector showed: `shape=1×4`, `axes=[_none_axis, axis_1]` (WRONG)
+- Should show: `shape=1`, `axes=[_none_axis]` (CORRECT)
+
+### Problem 2: Perceptual Sign Strings Not Parsed
+
+Values like `%c2a({'final_action': 'BUY', 'confidence': 0.82, ...})` were displayed as raw strings, showing just "Type: string" instead of structured data.
+
+### Solution
+
+**For tensor dimensions**:
+1. **Backend `get_reference_data()`**: Limit shape calculation depth to the number of axes
+2. **Frontend `getTensorShape()`**: Accept optional `maxDims` parameter to limit depth
+3. **Frontend `detectElementType()`**: Accept optional `axesCount` to identify cell type correctly
+
+**For perceptual sign parsing**:
+1. Added `isPerceptualSign()` - detects `%xxx(...)` format
+2. Added `parsePerceptualSignValue()` - extracts and parses Python dict syntax
+3. Added `parsePythonDict()` - converts Python dict to JSON (handles `'` → `"`, `True/False/None`)
+4. Updated `formatCellValue()` - shows structured info for parsed objects
+5. Updated `detectElementType()` - shows `%c2a{final_action, confidence, ...}` for perceptual signs
+6. Updated `ExpandableItem` - displays parsed objects with key-value cards
+7. Updated `ScalarView` - structured layout for single perceptual sign values
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Updated `get_reference_data()` shape calculation to stop at axes count
+
+**Frontend**:
+- `canvas_app/frontend/src/utils/tensorUtils.ts`:
+  - `getTensorShape(data, maxDims?)` - added optional maxDims parameter
+  - `detectElementType(data, axesCount?)` - added optional axesCount parameter  
+  - `getDimensions(data, maxDims?)` - updated signature for consistency
+  - NEW: `isPerceptualSign()`, `extractPerceptualSign()`, `parsePythonDict()`, `parsePerceptualSignValue()`
+- `canvas_app/frontend/src/components/panels/TensorInspector.tsx`:
+  - Pass `axesCount` to `getTensorShape` and `detectElementType`
+  - `ExpandableItem` - parse and display perceptual signs as structured objects
+  - `ScalarView` - display parsed perceptual sign with key-value cards
+  - Purple badge for perceptual sign items
+
+### Visual Result
+
+**Before**:
+```
+Type: string
+_none_axis[0]: %c2a({'final_action': 'BUY', 'position_size_usd'... (1813 chars)
+```
+
+**After**:
+```
+Type: %c2a{final_action, position_size_usd, stop_loss_price, ...}
+_none_axis[0]: %c2a{5 keys}  [%c2a badge]
+  ├─ final_action: BUY
+  ├─ position_size_usd: 5000
+  ├─ stop_loss_price: 2023.5
+  ├─ target_price: 2250
+  ├─ rationale: "The final investment decision..."
+  └─ confidence: 0.82
+```
+
+---
+
 ## December 20, 2024 - Restart/Reset Fix (Fresh Orchestrator)
 
 ### Problem
@@ -1298,6 +1370,24 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.6.3 (December 21, 2024) - Tensor Shape Fix & Perceptual Sign Parsing
+- **Fixed tensor dimension calculation**:
+  - Shape now respects axes count from backend (authoritative)
+  - Inner lists/arrays that are cell VALUES no longer counted as extra dimensions
+  - e.g., `axes=['_none_axis']` with `data=[[{...}x4]]` correctly shows shape `1`, not `1×4`
+- **Improved element type detection**:
+  - `detectElementType()` now stops at axes boundary
+  - Shows `list[{key1, key2}] (4 items)` for array cell values instead of individual object type
+- **Perceptual sign parsing** (`%xxx({...})` format):
+  - New `isPerceptualSign()`, `parsePerceptualSignValue()` utilities
+  - Parses Python dict syntax inside perceptual signs to JavaScript objects
+  - Type detection shows structured info like `%c2a{final_action, confidence, ...}`
+  - ExpandableItem displays parsed objects with key-value cards
+  - ScalarView shows structured layout for single perceptual sign values
+  - Purple badge indicates perceptual sign type
+- **Backend `get_reference_data()` fix**:
+  - Shape calculation limited to axes count depth
 
 ### v0.6.2 (December 20, 2024) - Detail Panel UX Improvements
 - **Fullscreen Detail Panel**:

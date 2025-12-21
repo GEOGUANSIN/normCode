@@ -844,15 +844,28 @@ class ExecutionController:
                 result["axes"] = []
             
             # Calculate shape from tensor
+            # IMPORTANT: Limit depth to number of axes to avoid treating
+            # nested list VALUES as additional dimensions.
+            # e.g., axes=['_none_axis'], data=[[{...}, {...}]] should give shape=[1], not [1,2]
+            # The inner list [{...}, {...}] is the VALUE of cell [0], not another dimension.
             if result["data"] is not None:
                 shape = []
                 current = result["data"]
-                while isinstance(current, list):
-                    shape.append(len(current))
-                    if len(current) > 0:
-                        current = current[0]
-                    else:
-                        break
+                axes_count = len(result["axes"]) if result["axes"] else 0
+                
+                # If we have axes info, use it to limit shape depth
+                if axes_count > 0:
+                    while isinstance(current, list) and len(shape) < axes_count:
+                        shape.append(len(current))
+                        if len(current) > 0:
+                            current = current[0]
+                        else:
+                            break
+                else:
+                    # No axes - treat as scalar (shape=[])
+                    # Even if data is a list, with no axes it's a scalar complex value
+                    pass
+                
                 result["shape"] = shape
             else:
                 result["shape"] = []

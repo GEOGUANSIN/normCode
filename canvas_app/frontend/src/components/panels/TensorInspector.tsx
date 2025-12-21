@@ -17,6 +17,8 @@ import {
   ensureAxisNames,
   detectElementType,
   SliceState,
+  isPerceptualSign,
+  parsePerceptualSignValue,
 } from '../../utils/tensorUtils';
 
 interface TensorInspectorProps {
@@ -38,12 +40,25 @@ export function TensorInspector({
 }: TensorInspectorProps) {
   // Use backend-provided shape if available, otherwise compute from data
   // The backend shape is authoritative as it knows the logical tensor structure
-  const computedShape = useMemo(() => getTensorShape(data), [data]);
+  // 
+  // IMPORTANT: When computing shape as fallback, we limit depth to axes count
+  // to avoid treating nested list VALUES as extra dimensions.
+  // e.g., axes=['_none_axis'], data=[[{...},{...}]] should give shape=[1], not [1,2]
+  const axesCount = providedAxes?.length ?? 0;
+  const computedShape = useMemo(
+    () => getTensorShape(data, axesCount > 0 ? axesCount : undefined), 
+    [data, axesCount]
+  );
   const shape = providedShape && providedShape.length > 0 ? providedShape : computedShape;
   const dims = shape.length;
   // Use provided axes directly - the backend knows the correct axis count
   const axes = useMemo(() => ensureAxisNames(providedAxes, dims), [providedAxes, dims]);
-  const elementType = useMemo(() => detectElementType(data), [data]);
+  // Detect element type, respecting the axes boundary
+  // This ensures we identify the type of tensor CELLS, not nested structures within cells
+  const elementType = useMemo(
+    () => detectElementType(data, axesCount > 0 ? axesCount : undefined), 
+    [data, axesCount]
+  );
   
   const [sliceState, setSliceState] = useState<SliceState>(() => 
     createInitialSliceState(dims)
@@ -148,6 +163,32 @@ export function TensorInspector({
 // =============================================================================
 
 function ScalarView({ data }: { data: TensorData }) {
+  // Check for perceptual sign
+  const isPerceptual = typeof data === 'string' && isPerceptualSign(data);
+  const parsedPS = isPerceptual ? parsePerceptualSignValue(data as string) : null;
+  const hasParsedObject = parsedPS?.parsed && typeof parsedPS.parsed === 'object';
+  
+  if (hasParsedObject && !Array.isArray(parsedPS!.parsed)) {
+    // Display parsed object in a structured way
+    return (
+      <div className="py-2">
+        <div className="text-xs text-purple-600 mb-2 text-center">
+          Perceptual Sign: %{parsedPS!.id || ''}
+        </div>
+        <div className="space-y-1 max-h-80 overflow-auto">
+          {Object.entries(parsedPS!.parsed as object).map(([key, value]) => (
+            <div key={key} className="bg-slate-50 p-2 rounded border border-slate-200">
+              <div className="text-xs font-medium text-slate-600 mb-0.5">{key}</div>
+              <div className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-words">
+                {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="text-center py-4">
       <div className="text-xs text-slate-500 mb-1">Value</div>
@@ -173,13 +214,24 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  const isComplex = typeof item === 'object' && item !== null;
+  // Check if item is a perceptual sign that can be parsed
+  const isPerceptual = typeof item === 'string' && isPerceptualSign(item);
+  const parsedPS = isPerceptual ? parsePerceptualSignValue(item as string) : null;
+  const hasParsedObject = parsedPS?.parsed && typeof parsedPS.parsed === 'object';
+  
   const formattedValue = formatCellValue(item);
   
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const textToCopy = isComplex ? JSON.stringify(item, null, 2) : String(item);
+      let textToCopy: string;
+      if (hasParsedObject) {
+        textToCopy = JSON.stringify(parsedPS!.parsed, null, 2);
+      } else if (typeof item === 'object' && item !== null) {
+        textToCopy = JSON.stringify(item, null, 2);
+      } else {
+        textToCopy = String(item);
+      }
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -189,7 +241,22 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
   };
   
   // Get the full content for expanded view
-  const fullContent = isComplex ? JSON.stringify(item, null, 2) : String(item);
+  const fullContent = hasParsedObject 
+    ? JSON.stringify(parsedPS!.parsed, null, 2)
+    : (typeof item === 'object' && item !== null) 
+      ? JSON.stringify(item, null, 2) 
+      : String(item);
+  
+  // Determine type label
+  let typeLabel: string;
+  if (hasParsedObject) {
+    const keys = Object.keys(parsedPS!.parsed as object);
+    typeLabel = `%${parsedPS!.id || ''}{${keys.length} keys}`;
+  } else if (typeof item === 'object' && item !== null) {
+    typeLabel = Array.isArray(item) ? 'Array' : 'Object';
+  } else {
+    typeLabel = typeof item;
+  }
   
   return (
     <div className="border border-slate-200 rounded-lg mb-2 overflow-hidden bg-white hover:border-slate-300 transition-colors">
@@ -205,6 +272,11 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
         <span className="text-sm font-mono text-slate-700 flex-1 truncate">
           {formattedValue.length > 50 ? formattedValue.substring(0, 47) + '...' : formattedValue}
         </span>
+        {isPerceptual && (
+          <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded flex-shrink-0">
+            %{parsedPS?.id || ''}
+          </span>
+        )}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={handleCopy}
@@ -214,7 +286,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
             {copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} className="text-slate-400" />}
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onExpand(index, item); }}
+            onClick={(e) => { e.stopPropagation(); onExpand(index, hasParsedObject ? parsedPS!.parsed : item); }}
             className="p-1.5 hover:bg-slate-200 rounded transition-colors"
             title="View fullscreen"
           >
@@ -228,7 +300,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
         <div className="border-t border-slate-200 bg-slate-50 p-3">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-slate-500">
-              {isComplex ? (Array.isArray(item) ? 'Array' : 'Object') : typeof item}
+              {typeLabel}
               {fullContent.length > 100 && ` • ${fullContent.length} chars`}
             </span>
             <div className="flex gap-1">
@@ -240,7 +312,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
                 {copied ? 'Copied!' : 'Copy'}
               </button>
               <button
-                onClick={() => onExpand(index, item)}
+                onClick={() => onExpand(index, hasParsedObject ? parsedPS!.parsed : item)}
                 className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
               >
                 <Maximize2 size={12} />
@@ -248,9 +320,24 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
               </button>
             </div>
           </div>
-          <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words max-h-64 overflow-auto bg-white p-3 rounded border border-slate-200">
-            {fullContent}
-          </pre>
+          
+          {/* Structured view for parsed objects */}
+          {hasParsedObject && typeof parsedPS!.parsed === 'object' && !Array.isArray(parsedPS!.parsed) ? (
+            <div className="space-y-1 max-h-64 overflow-auto">
+              {Object.entries(parsedPS!.parsed as object).map(([key, value]) => (
+                <div key={key} className="bg-white p-2 rounded border border-slate-200">
+                  <div className="text-xs font-medium text-slate-600 mb-0.5">{key}</div>
+                  <div className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-words">
+                    {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words max-h-64 overflow-auto bg-white p-3 rounded border border-slate-200">
+              {fullContent}
+            </pre>
+          )}
         </div>
       )}
     </div>
