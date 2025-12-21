@@ -1,13 +1,16 @@
 /**
  * EditorPanel - NormCode file editor component
  * 
- * Allows loading, editing, and saving .ncd, .ncn, .ncdn files
+ * Allows loading, editing, and saving .ncd, .ncn, .ncdn, .py, .md files
+ * with a tree-based file browser preserving folder structure
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   FileText,
   FolderOpen,
+  Folder,
+  FolderClosed,
   Save,
   RefreshCw,
   AlertCircle,
@@ -18,6 +21,12 @@ import {
   Code,
   FileCode,
   Loader2,
+  ChevronRight,
+  ChevronDown,
+  FileJson,
+  FileType,
+  Hash,
+  Database,
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 
@@ -28,6 +37,16 @@ interface FileInfo {
   format: string;
   size: number;
   modified: number;
+}
+
+interface TreeNode {
+  name: string;
+  path: string;
+  type: 'file' | 'folder';
+  format?: string;
+  size?: number;
+  modified?: number;
+  children?: TreeNode[];
 }
 
 interface FileContent {
@@ -102,7 +121,31 @@ const editorApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         directory,
-        extensions: ['.ncd', '.ncn', '.ncdn', '.nc.json', '.nci.json', '.json'],
+        extensions: [
+          '.ncd', '.ncn', '.ncdn', '.nc.json', '.nci.json', '.json',
+          '.py', '.md', '.txt', '.yaml', '.yml', '.toml',
+          '.concept.json', '.inference.json'
+        ],
+      }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to list files');
+    }
+    return response.json();
+  },
+
+  async listFilesTree(directory: string): Promise<{ tree: TreeNode[]; total_files: number }> {
+    const response = await fetch('/api/editor/list-tree', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        directory,
+        extensions: [
+          '.ncd', '.ncn', '.ncdn', '.nc.json', '.nci.json', '.json',
+          '.py', '.md', '.txt', '.yaml', '.yml', '.toml',
+          '.concept.json', '.inference.json'
+        ],
       }),
     });
     if (!response.ok) {
@@ -158,13 +201,21 @@ const editorApi = {
 
 // Format icon mapping
 const formatIcons: Record<string, React.ReactNode> = {
+  // NormCode formats
   ncd: <FileCode className="w-4 h-4 text-blue-500" />,
   ncn: <FileText className="w-4 h-4 text-green-500" />,
   ncdn: <Code className="w-4 h-4 text-purple-500" />,
-  json: <File className="w-4 h-4 text-yellow-500" />,
-  'nc-json': <File className="w-4 h-4 text-orange-500" />,
-  nci: <File className="w-4 h-4 text-red-500" />,
-  text: <FileText className="w-4 h-4 text-gray-500" />,
+  nci: <FileJson className="w-4 h-4 text-red-500" />,
+  'nc-json': <FileJson className="w-4 h-4 text-orange-500" />,
+  concept: <Database className="w-4 h-4 text-cyan-500" />,
+  inference: <Hash className="w-4 h-4 text-pink-500" />,
+  // Common formats
+  json: <FileJson className="w-4 h-4 text-yellow-500" />,
+  python: <FileType className="w-4 h-4 text-blue-400" />,
+  markdown: <FileText className="w-4 h-4 text-gray-600" />,
+  yaml: <File className="w-4 h-4 text-amber-500" />,
+  toml: <File className="w-4 h-4 text-orange-400" />,
+  text: <FileText className="w-4 h-4 text-gray-400" />,
 };
 
 export function EditorPanel() {
@@ -174,6 +225,9 @@ export function EditorPanel() {
   // State - initialize directoryPath with projectPath
   const [directoryPath, setDirectoryPath] = useState<string>(projectPath || '');
   const [files, setFiles] = useState<FileInfo[]>([]);
+  const [fileTree, setFileTree] = useState<TreeNode[]>([]);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [originalContent, setOriginalContent] = useState<string>('');
@@ -186,7 +240,7 @@ export function EditorPanel() {
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [showFileBrowser, setShowFileBrowser] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [recursiveSearch, setRecursiveSearch] = useState(true);
+  const [useTreeView, setUseTreeView] = useState(true);
   
   // Parser and preview state
   const [editorViewMode, setEditorViewMode] = useState<EditorViewMode>('raw');
@@ -219,7 +273,7 @@ export function EditorPanel() {
     setIsModified(fileContent !== originalContent);
   }, [fileContent, originalContent]);
 
-  // Load files from directory
+  // Load files from directory (both tree and flat list)
   const loadFiles = useCallback(async (dir?: string) => {
     const targetDir = dir || directoryPath;
     if (!targetDir.trim()) return;
@@ -228,16 +282,29 @@ export function EditorPanel() {
     setError(null);
     
     try {
-      const result = await editorApi.listFiles(targetDir, recursiveSearch);
-      setFiles(result.files);
+      // Load both tree and flat list
+      const [treeResult, flatResult] = await Promise.all([
+        editorApi.listFilesTree(targetDir),
+        editorApi.listFiles(targetDir, true)
+      ]);
+      setFileTree(treeResult.tree);
+      setTotalFiles(treeResult.total_files);
+      setFiles(flatResult.files);
       if (dir) setDirectoryPath(dir);
+      
+      // Auto-expand first level folders
+      const firstLevelFolders = treeResult.tree
+        .filter(n => n.type === 'folder')
+        .map(n => n.path);
+      setExpandedFolders(new Set(firstLevelFolders));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load files');
       setFiles([]);
+      setFileTree([]);
     } finally {
       setIsLoading(false);
     }
-  }, [directoryPath, recursiveSearch]);
+  }, [directoryPath]);
   
   // Auto-load files from project directory on mount
   useEffect(() => {
@@ -360,6 +427,94 @@ export function EditorPanel() {
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Toggle folder expansion
+  const toggleFolder = useCallback((folderPath: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderPath)) {
+        next.delete(folderPath);
+      } else {
+        next.add(folderPath);
+      }
+      return next;
+    });
+  }, []);
+
+  // Filter tree nodes by search query
+  const filterTreeNodes = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
+    if (!query) return nodes;
+    
+    return nodes.reduce<TreeNode[]>((acc, node) => {
+      if (node.type === 'folder') {
+        const filteredChildren = filterTreeNodes(node.children || [], query);
+        if (filteredChildren.length > 0) {
+          acc.push({ ...node, children: filteredChildren });
+        }
+      } else {
+        if (node.name.toLowerCase().includes(query.toLowerCase())) {
+          acc.push(node);
+        }
+      }
+      return acc;
+    }, []);
+  }, []);
+
+  const filteredTree = filterTreeNodes(fileTree, searchQuery);
+
+  // Render a tree node recursively
+  const renderTreeNode = useCallback((node: TreeNode, depth: number = 0) => {
+    const isFolder = node.type === 'folder';
+    const isExpanded = expandedFolders.has(node.path);
+    const isSelected = selectedFile === node.path;
+    
+    return (
+      <div key={node.path}>
+        <button
+          onClick={() => isFolder ? toggleFolder(node.path) : loadFile(node.path)}
+          className={`w-full text-left flex items-center gap-1.5 py-1 px-2 hover:bg-gray-100 text-sm
+            ${isSelected ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+          style={{ paddingLeft: `${8 + depth * 16}px` }}
+        >
+          {isFolder ? (
+            <>
+              {isExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              )}
+              {isExpanded ? (
+                <FolderOpen className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              ) : (
+                <FolderClosed className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              )}
+            </>
+          ) : (
+            <>
+              <span className="w-3.5 flex-shrink-0" /> {/* Spacer for alignment */}
+              {formatIcons[node.format || 'text'] || formatIcons.text}
+            </>
+          )}
+          <span className="truncate flex-1" title={node.name}>
+            {node.name}
+          </span>
+          {!isFolder && node.size !== undefined && (
+            <span className="text-xs text-gray-400 flex-shrink-0">
+              {node.size < 1024 
+                ? `${node.size}B`
+                : `${(node.size / 1024).toFixed(1)}KB`
+              }
+            </span>
+          )}
+        </button>
+        {isFolder && isExpanded && node.children && (
+          <div>
+            {node.children.map(child => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  }, [expandedFolders, selectedFile, toggleFolder, loadFile]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -475,7 +630,7 @@ export function EditorPanel() {
                   className="flex-1 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
-                  onClick={loadFiles}
+                  onClick={() => loadFiles()}
                   disabled={isLoading || !directoryPath.trim()}
                   className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
                 >
@@ -483,71 +638,106 @@ export function EditorPanel() {
                 </button>
               </div>
               
+              {/* View toggle and search */}
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 text-xs text-gray-600">
+                <button
+                  onClick={() => setUseTreeView(!useTreeView)}
+                  className={`px-2 py-1 text-xs rounded border ${
+                    useTreeView 
+                      ? 'bg-blue-50 border-blue-300 text-blue-600'
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                  title={useTreeView ? 'Tree view' : 'Flat list view'}
+                >
+                  {useTreeView ? <FolderOpen className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                </button>
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    type="checkbox"
-                    checked={recursiveSearch}
-                    onChange={(e) => setRecursiveSearch(e.target.checked)}
-                    className="rounded"
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Filter files..."
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  Recursive
-                </label>
-              </div>
-              
-              {/* Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Filter files..."
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
-            {/* File list */}
+            {/* File browser - Tree or Flat view */}
             <div className="flex-1 overflow-y-auto">
-              {isLoading && files.length === 0 ? (
+              {isLoading && fileTree.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                   Loading files...
                 </div>
-              ) : filteredFiles.length === 0 ? (
-                <div className="p-4 text-center text-gray-500 text-sm">
-                  {files.length === 0 
-                    ? 'Enter a directory path and click Load'
-                    : 'No matching files found'
-                  }
-                </div>
+              ) : useTreeView ? (
+                /* Tree View */
+                filteredTree.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    {fileTree.length === 0 
+                      ? 'Enter a directory path and click Load'
+                      : 'No matching files found'
+                    }
+                  </div>
+                ) : (
+                  <div className="py-1">
+                    {filteredTree.map(node => renderTreeNode(node, 0))}
+                  </div>
+                )
               ) : (
-                <div className="py-1">
-                  {filteredFiles.map((file) => (
-                    <button
-                      key={file.path}
-                      onClick={() => loadFile(file.path)}
-                      className={`w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-gray-100 text-sm
-                        ${selectedFile === file.path ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
-                    >
-                      {formatIcons[file.format] || formatIcons.text}
-                      <span className="truncate flex-1" title={file.name}>
-                        {file.name}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {(file.size / 1024).toFixed(1)}KB
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                /* Flat List View */
+                filteredFiles.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    {files.length === 0 
+                      ? 'Enter a directory path and click Load'
+                      : 'No matching files found'
+                    }
+                  </div>
+                ) : (
+                  <div className="py-1">
+                    {filteredFiles.map((file) => (
+                      <button
+                        key={file.path}
+                        onClick={() => loadFile(file.path)}
+                        className={`w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-gray-100 text-sm
+                          ${selectedFile === file.path ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                      >
+                        {formatIcons[file.format] || formatIcons.text}
+                        <span className="truncate flex-1 text-xs" title={file.name}>
+                          {file.name}
+                        </span>
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {(file.size / 1024).toFixed(1)}KB
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )
               )}
             </div>
             
             {/* File count */}
-            {files.length > 0 && (
-              <div className="p-2 border-t text-xs text-gray-500 text-center">
-                {filteredFiles.length} of {files.length} files
+            {totalFiles > 0 && (
+              <div className="p-2 border-t text-xs text-gray-500 text-center flex items-center justify-center gap-2">
+                <span>{searchQuery ? filteredFiles.length + ' matching /' : ''} {totalFiles} files</span>
+                {useTreeView && (
+                  <button
+                    onClick={() => setExpandedFolders(new Set())}
+                    className="text-blue-500 hover:underline"
+                    title="Collapse all folders"
+                  >
+                    collapse
+                  </button>
+                )}
               </div>
             )}
           </div>

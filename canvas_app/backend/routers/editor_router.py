@@ -37,7 +37,11 @@ class FileSaveRequest(BaseModel):
 class FileListRequest(BaseModel):
     """Request to list files in a directory"""
     directory: str
-    extensions: List[str] = [".ncd", ".ncn", ".ncdn", ".nc.json", ".nci.json"]
+    extensions: List[str] = [
+        ".ncd", ".ncn", ".ncdn", ".nc.json", ".nci.json", ".json",
+        ".py", ".md", ".txt", ".yaml", ".yml", ".toml",
+        ".concept.json", ".inference.json"
+    ]
 
 
 class FileListResponse(BaseModel):
@@ -48,7 +52,12 @@ class FileListResponse(BaseModel):
 
 def get_file_format(filename: str) -> str:
     """Determine file format from extension"""
-    if filename.endswith('.nci.json'):
+    # NormCode specific formats (check longer extensions first)
+    if filename.endswith('.concept.json'):
+        return 'concept'
+    elif filename.endswith('.inference.json'):
+        return 'inference'
+    elif filename.endswith('.nci.json'):
         return 'nci'
     elif filename.endswith('.nc.json'):
         return 'nc-json'
@@ -60,6 +69,17 @@ def get_file_format(filename: str) -> str:
         return 'ncd'
     elif filename.endswith('.json'):
         return 'json'
+    # Common code formats
+    elif filename.endswith('.py'):
+        return 'python'
+    elif filename.endswith('.md'):
+        return 'markdown'
+    elif filename.endswith('.txt'):
+        return 'text'
+    elif filename.endswith('.yaml') or filename.endswith('.yml'):
+        return 'yaml'
+    elif filename.endswith('.toml'):
+        return 'toml'
     else:
         return 'text'
 
@@ -203,6 +223,130 @@ async def list_files_recursive(request: FileListRequest) -> FileListResponse:
         return FileListResponse(
             directory=str(dir_path.absolute()),
             files=files
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
+
+
+class TreeNode(BaseModel):
+    """A node in the file tree"""
+    name: str
+    path: str
+    type: str  # 'file' or 'folder'
+    format: Optional[str] = None
+    size: Optional[int] = None
+    modified: Optional[float] = None
+    children: List["TreeNode"] = []
+
+
+# Required for recursive model
+TreeNode.model_rebuild()
+
+
+class FileTreeResponse(BaseModel):
+    """Response with file tree structure"""
+    directory: str
+    tree: List[TreeNode]
+    total_files: int
+
+
+@router.post("/list-tree")
+async def list_files_tree(request: FileListRequest) -> FileTreeResponse:
+    """List files in a directory as a tree structure"""
+    try:
+        dir_path = Path(request.directory)
+        
+        if not dir_path.exists():
+            raise HTTPException(status_code=404, detail=f"Directory not found: {request.directory}")
+        
+        if not dir_path.is_dir():
+            raise HTTPException(status_code=400, detail=f"Not a directory: {request.directory}")
+        
+        # Build tree structure
+        tree_dict: dict = {}
+        total_files = 0
+        
+        # Walk through directory recursively
+        for root, dirs, filenames in os.walk(dir_path):
+            # Skip hidden directories and common excludes
+            dirs[:] = sorted([d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'venv', '.conda', '.git']])
+            
+            for filename in sorted(filenames):
+                # Skip hidden files
+                if filename.startswith('.'):
+                    continue
+                    
+                # Check if extension matches
+                matches = any(filename.endswith(ext) for ext in request.extensions)
+                if matches:
+                    file_path = Path(root) / filename
+                    try:
+                        stat = file_path.stat()
+                    except (OSError, PermissionError):
+                        continue
+                    
+                    # Get relative path parts
+                    rel_path = file_path.relative_to(dir_path)
+                    parts = rel_path.parts
+                    
+                    # Navigate/create the tree structure
+                    current = tree_dict
+                    for i, part in enumerate(parts[:-1]):  # All except the filename
+                        if part not in current:
+                            current[part] = {"__is_folder__": True, "__children__": {}}
+                        current = current[part]["__children__"]
+                    
+                    # Add the file
+                    filename_part = parts[-1]
+                    current[filename_part] = {
+                        "__is_folder__": False,
+                        "path": str(file_path.absolute()),
+                        "format": get_file_format(filename),
+                        "size": stat.st_size,
+                        "modified": stat.st_mtime
+                    }
+                    total_files += 1
+        
+        def dict_to_tree_nodes(d: dict, parent_path: str = "") -> List[TreeNode]:
+            """Convert nested dict to TreeNode list"""
+            nodes = []
+            
+            # Sort: folders first, then files, both alphabetically
+            items = sorted(d.items(), key=lambda x: (not x[1].get("__is_folder__", False), x[0].lower()))
+            
+            for name, info in items:
+                if info.get("__is_folder__"):
+                    # It's a folder
+                    folder_path = os.path.join(parent_path, name) if parent_path else name
+                    children = dict_to_tree_nodes(info.get("__children__", {}), folder_path)
+                    nodes.append(TreeNode(
+                        name=name,
+                        path=folder_path,
+                        type="folder",
+                        children=children
+                    ))
+                else:
+                    # It's a file
+                    nodes.append(TreeNode(
+                        name=name,
+                        path=info["path"],
+                        type="file",
+                        format=info.get("format"),
+                        size=info.get("size"),
+                        modified=info.get("modified")
+                    ))
+            
+            return nodes
+        
+        tree = dict_to_tree_nodes(tree_dict)
+        
+        return FileTreeResponse(
+            directory=str(dir_path.absolute()),
+            tree=tree,
+            total_files=total_files
         )
     
     except HTTPException:

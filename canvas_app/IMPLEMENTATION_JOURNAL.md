@@ -6,6 +6,84 @@
 
 ---
 
+## December 21, 2024 - Editor Panel Tree View Enhancement
+
+### What Was Implemented
+
+**Tree-Based File Browser**
+The file browser in the Editor panel now displays files in a proper tree structure, preserving folder hierarchy.
+
+- [x] **Folder tree display**: Files organized by their directory structure with expandable/collapsible folders
+- [x] **Auto-expand first level**: First-level folders automatically expanded on load
+- [x] **View mode toggle**: Switch between Tree view and Flat list view
+- [x] **Collapse all button**: Quick button to collapse all folders
+- [x] **Folder icons**: Separate icons for open/closed folders with chevron indicators
+
+**Extended File Type Support**
+The editor now supports viewing and editing more file types beyond NormCode formats.
+
+- [x] **Python files** (`.py`): Blue icon
+- [x] **Markdown files** (`.md`): Gray icon  
+- [x] **YAML files** (`.yaml`, `.yml`): Amber icon
+- [x] **TOML files** (`.toml`): Orange icon
+- [x] **Text files** (`.txt`): Gray icon
+- [x] **Concept repo** (`.concept.json`): Cyan database icon
+- [x] **Inference repo** (`.inference.json`): Pink hash icon
+
+**Backend Tree API**
+New endpoint that returns hierarchical file structure.
+
+- [x] `POST /api/editor/list-tree`: Returns files as a tree structure
+- [x] `TreeNode` model with recursive children support
+- [x] Folders sorted first, then files, both alphabetically
+- [x] Skips hidden files/folders (`.git`, `__pycache__`, etc.)
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/routers/editor_router.py`:
+  - Added `TreeNode` and `FileTreeResponse` Pydantic models
+  - Added `POST /api/editor/list-tree` endpoint
+  - Extended `get_file_format()` for new file types (python, markdown, yaml, toml, concept, inference)
+  - Extended default extensions list
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/EditorPanel.tsx`:
+  - Added `TreeNode` type definition
+  - Added `fileTree`, `expandedFolders`, `useTreeView` state
+  - Added `editorApi.listFilesTree()` API method
+  - Added `toggleFolder`, `filterTreeNodes`, `renderTreeNode` functions
+  - Extended `formatIcons` with new file type icons
+  - Redesigned file browser with tree/flat view toggle
+  - Added collapse all functionality
+
+### UI Flow
+
+**Tree View (Default)**:
+```
+📁 repos                      [expand/collapse]
+  📄 concept_repo.json        1.2KB
+  📄 inference_repo.json      0.8KB
+📁 provision
+  📁 paradigm
+    📄 h_Data-c_Pass.json     0.3KB
+  📁 prompts
+    📄 analyze.md             2.1KB
+📄 example.ncd                4.5KB
+📄 README.md                  1.0KB
+```
+
+**Flat View (Toggle)**:
+```
+repos/concept_repo.json       1.2KB
+repos/inference_repo.json     0.8KB
+provision/paradigm/h_Data...  0.3KB
+provision/prompts/analyze.md  2.1KB
+example.ncd                   4.5KB
+```
+
+---
+
 ## December 21, 2024 - Fix: Tensor Shape Calculation & Perceptual Sign Parsing
 
 ### Problem 1: Incorrect Tensor Dimensions
