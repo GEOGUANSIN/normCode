@@ -3,12 +3,17 @@
  */
 
 import { useState } from 'react';
-import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug } from 'lucide-react';
+import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug, Database } from 'lucide-react';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi } from '../../services/api';
 import { STEP_FULL_NAMES } from '../../types/execution';
 
-export function ControlPanel() {
+interface ControlPanelProps {
+  onCheckpointToggle?: () => void;
+  checkpointPanelOpen?: boolean;
+}
+
+export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: ControlPanelProps = {}) {
   const status = useExecutionStore((s) => s.status);
   const completedCount = useExecutionStore((s) => s.completedCount);
   const totalCount = useExecutionStore((s) => s.totalCount);
@@ -20,6 +25,7 @@ export function ControlPanel() {
   const verboseLogging = useExecutionStore((s) => s.verboseLogging);
   const setVerboseLogging = useExecutionStore((s) => s.setVerboseLogging);
   const stepProgress = useExecutionStore((s) => s.stepProgress);
+  const runId = useExecutionStore((s) => s.runId);
   
   const [isTogglingVerbose, setIsTogglingVerbose] = useState(false);
   
@@ -246,6 +252,16 @@ export function ControlPanel() {
           </div>
         )}
 
+        {/* Run ID */}
+        {runId && (
+          <div 
+            className="text-xs text-slate-400 font-mono truncate max-w-[120px]" 
+            title={`Run: ${runId}`}
+          >
+            Run: {runId.length > 12 ? `${runId.slice(0, 12)}...` : runId}
+          </div>
+        )}
+
         {/* Breakpoints count */}
         <div className="flex items-center gap-1 text-sm text-slate-600">
           <Circle size={12} className="text-red-500 fill-red-500" />
@@ -266,6 +282,22 @@ export function ControlPanel() {
           <Bug size={12} className={verboseLogging ? 'text-purple-500' : 'text-slate-400'} />
           <span>Verbose</span>
         </button>
+
+        {/* Checkpoint panel toggle */}
+        {onCheckpointToggle && (
+          <button
+            onClick={onCheckpointToggle}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+              checkpointPanelOpen
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+            }`}
+            title="Resume or fork from checkpoint"
+          >
+            <Database size={12} className={checkpointPanelOpen ? 'text-indigo-500' : 'text-slate-400'} />
+            <span>Checkpoints</span>
+          </button>
+        )}
       </div>
     </div>
   );

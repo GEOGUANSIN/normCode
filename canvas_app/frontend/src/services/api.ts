@@ -10,6 +10,11 @@ import type {
   CommandResponse,
   RepositoryExample,
   ExecutionConfig,
+  RunInfo,
+  CheckpointInfo,
+  ResumeRequest,
+  ForkRequest,
+  CheckpointLoadResult,
 } from '../types/execution';
 import type {
   ProjectResponse,
@@ -194,6 +199,38 @@ export const projectApi = {
     fetchJson(`${API_BASE}/project/settings`, {
       method: 'PUT',
       body: JSON.stringify(settings),
+    }),
+};
+
+// Checkpoint endpoints
+export const checkpointApi = {
+  listRuns: (dbPath: string): Promise<RunInfo[]> =>
+    fetchJson(`${API_BASE}/checkpoints/runs?db_path=${encodeURIComponent(dbPath)}`),
+  
+  listCheckpoints: (runId: string, dbPath: string): Promise<CheckpointInfo[]> =>
+    fetchJson(`${API_BASE}/checkpoints/runs/${encodeURIComponent(runId)}/checkpoints?db_path=${encodeURIComponent(dbPath)}`),
+  
+  getRunMetadata: (runId: string, dbPath: string): Promise<Record<string, unknown>> =>
+    fetchJson(`${API_BASE}/checkpoints/runs/${encodeURIComponent(runId)}/metadata?db_path=${encodeURIComponent(dbPath)}`),
+  
+  resume: (request: ResumeRequest): Promise<CheckpointLoadResult> =>
+    fetchJson(`${API_BASE}/checkpoints/resume`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  fork: (request: ForkRequest): Promise<CheckpointLoadResult> =>
+    fetchJson(`${API_BASE}/checkpoints/fork`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  checkDbExists: (dbPath: string): Promise<{ exists: boolean; path: string }> =>
+    fetchJson(`${API_BASE}/checkpoints/db-exists?db_path=${encodeURIComponent(dbPath)}`),
+
+  deleteRun: (runId: string, dbPath: string): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/checkpoints/runs/${encodeURIComponent(runId)}?db_path=${encodeURIComponent(dbPath)}`, {
+      method: 'DELETE',
     }),
 };
 

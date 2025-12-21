@@ -127,3 +127,63 @@ export const STEP_DESCRIPTIONS: Record<string, string> = {
   QR: "Process quantifier iteration",
   T: "Check timing conditions",
 };
+
+// ============================================================================
+// Checkpoint Types
+// ============================================================================
+
+export interface RunInfo {
+  run_id: string;
+  first_execution: string | null;
+  last_execution: string | null;
+  execution_count: number;
+  max_cycle: number;
+  config?: Record<string, unknown>;
+}
+
+export interface CheckpointInfo {
+  cycle: number;
+  inference_count: number;
+  timestamp: string;
+}
+
+export type ReconciliationMode = 'PATCH' | 'OVERWRITE' | 'FILL_GAPS';
+
+export interface ResumeRequest {
+  concepts_path: string;
+  inferences_path: string;
+  inputs_path?: string;
+  db_path: string;
+  run_id: string;
+  cycle?: number;
+  mode?: ReconciliationMode;
+  llm_model?: string;
+  base_dir?: string;
+  max_cycles?: number;
+  paradigm_dir?: string;
+}
+
+export interface ForkRequest {
+  concepts_path: string;
+  inferences_path: string;
+  inputs_path?: string;
+  db_path: string;
+  source_run_id: string;
+  new_run_id?: string;
+  cycle?: number;
+  mode?: ReconciliationMode;
+  llm_model?: string;
+  base_dir?: string;
+  max_cycles?: number;
+  paradigm_dir?: string;
+}
+
+export interface CheckpointLoadResult {
+  success: boolean;
+  run_id: string;
+  mode: 'resume' | 'fork';
+  forked_from?: string;
+  completed_count: number;
+  total_count: number;
+  message?: string;
+}

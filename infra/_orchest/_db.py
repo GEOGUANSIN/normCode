@@ -437,15 +437,21 @@ class OrchestratorDB:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
-        # Get run metadata from executions table
+        # Get run metadata from executions table, also check checkpoints for max_cycle
+        # (checkpoints may have more accurate cycle info if execution logging had issues)
         cursor.execute('''
-            SELECT run_id, 
-                   MIN(timestamp) as first_execution,
-                   MAX(timestamp) as last_execution,
-                   COUNT(*) as execution_count,
-                   MAX(cycle) as max_cycle
-            FROM executions
-            GROUP BY run_id
+            SELECT e.run_id, 
+                   MIN(e.timestamp) as first_execution,
+                   MAX(e.timestamp) as last_execution,
+                   COUNT(e.id) as execution_count,
+                   MAX(COALESCE(c.max_cycle, e.cycle)) as max_cycle
+            FROM executions e
+            LEFT JOIN (
+                SELECT run_id, MAX(cycle) as max_cycle 
+                FROM checkpoints 
+                GROUP BY run_id
+            ) c ON e.run_id = c.run_id
+            GROUP BY e.run_id
             ORDER BY first_execution DESC
         ''')
         rows = cursor.fetchall()

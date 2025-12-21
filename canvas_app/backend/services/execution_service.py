@@ -453,7 +453,12 @@ class ExecutionController:
         # Determine database path for checkpointing
         if db_path is None:
             db_path = str(Path(base_dir) / "orchestration.db")
-        
+        else:
+            # If db_path is relative, resolve it relative to base_dir
+            db_path_obj = Path(db_path)
+            if not db_path_obj.is_absolute():
+                db_path = str(Path(base_dir) / db_path)
+
         logger.info(f"Creating orchestrator with max_cycles={max_cycles}, db_path={db_path}")
         
         # Create orchestrator with full configuration
@@ -508,6 +513,12 @@ class ExecutionController:
         
         self._add_log("info", "", f"Loaded {len(concepts_data)} concepts and {self.total_count} inferences")
         self._add_log("info", "", f"Config: model={llm_model}, max_cycles={max_cycles}, db={db_path}")
+        
+        # Log checkpoint_manager status for debugging
+        if self.orchestrator and self.orchestrator.checkpoint_manager:
+            self._add_log("info", "", f"Checkpoint manager initialized for run: {self.orchestrator.run_id}")
+        else:
+            self._add_log("warning", "", "Checkpoint manager NOT initialized - checkpoints will NOT be saved!")
         
         return {
             "run_id": getattr(self.orchestrator, 'run_id', 'unknown'),
@@ -941,10 +952,27 @@ class ExecutionController:
                 
                 # Run one cycle
                 self.cycle_count += 1
+                # Sync cycle count with orchestrator tracker so execution logging uses correct cycle
+                if hasattr(self.orchestrator, 'tracker'):
+                    self.orchestrator.tracker.cycle_count = self.cycle_count
                 self._add_log("info", "", f"Starting cycle {self.cycle_count}")
                 
                 # Process cycle with event emission
                 progress_made = await self._run_cycle_with_events()
+                
+                # Save checkpoint at the end of each cycle (if checkpoint_manager is available)
+                if self.orchestrator and self.orchestrator.checkpoint_manager:
+                    try:
+                        await asyncio.to_thread(
+                            self.orchestrator.checkpoint_manager.save_state,
+                            self.cycle_count,
+                            self.orchestrator,
+                            0  # inference_count=0 marks end of cycle
+                        )
+                        self._add_log("debug", "", f"Checkpoint saved for cycle {self.cycle_count}")
+                    except Exception as e:
+                        self._add_log("warning", "", f"Failed to save checkpoint: {e}")
+                        logger.warning(f"Failed to save checkpoint: {e}")
                 
                 if not progress_made:
                     self._add_log("warning", "", "No progress made in cycle - possible deadlock")
@@ -1115,6 +1143,428 @@ class ExecutionController:
     async def _emit(self, event_type: str, data: Dict[str, Any]):
         """Emit event through event emitter."""
         await event_emitter.emit(event_type, data)
+    
+    # =========================================================================
+    # Checkpoint Management Methods
+    # =========================================================================
+    
+    async def list_runs(self, db_path: str) -> List[Dict[str, Any]]:
+        """List all runs stored in the checkpoint database.
+        
+        Args:
+            db_path: Path to the orchestration.db file
+            
+        Returns:
+            List of run dicts with: run_id, first_execution, last_execution, 
+            execution_count, max_cycle, config (if include_metadata)
+        """
+        from infra._orchest._db import OrchestratorDB
+        
+        try:
+            db = OrchestratorDB(db_path)
+            runs = db.list_runs(include_metadata=True)
+            return runs
+        except Exception as e:
+            logger.error(f"Failed to list runs from {db_path}: {e}")
+            return []
+    
+    async def list_checkpoints(self, db_path: str, run_id: str) -> List[Dict[str, Any]]:
+        """List all checkpoints for a specific run.
+        
+        Args:
+            db_path: Path to the orchestration.db file
+            run_id: The run ID to list checkpoints for
+            
+        Returns:
+            List of checkpoint dicts with: cycle, inference_count, timestamp
+        """
+        from infra._orchest._db import OrchestratorDB
+        
+        try:
+            db = OrchestratorDB(db_path, run_id=run_id)
+            checkpoints = db.list_checkpoints(run_id=run_id)
+            # Sort by cycle descending (newest first)
+            checkpoints.sort(key=lambda x: (x['cycle'], x['inference_count']), reverse=True)
+            return checkpoints
+        except Exception as e:
+            logger.error(f"Failed to list checkpoints for run {run_id}: {e}")
+            return []
+    
+    async def get_run_metadata(self, db_path: str, run_id: str) -> Optional[Dict[str, Any]]:
+        """Get metadata for a specific run."""
+        from infra._orchest._db import OrchestratorDB
+
+        try:
+            db = OrchestratorDB(db_path, run_id=run_id)
+            return db.get_run_metadata(run_id)
+        except Exception as e:
+            logger.error(f"Failed to get metadata for run {run_id}: {e}")
+            return None
+
+    async def delete_run(self, db_path: str, run_id: str) -> Dict[str, Any]:
+        """Delete a run and all its checkpoints from the database.
+        
+        Args:
+            db_path: Path to the orchestration database
+            run_id: The run ID to delete
+            
+        Returns:
+            Dict with success status and message
+        """
+        from infra._orchest._db import OrchestratorDB
+        
+        def _do_delete():
+            db = OrchestratorDB(db_path, run_id=run_id)
+            conn = db.get_connection()
+            cursor = conn.cursor()
+            try:
+                # Delete all checkpoints for this run
+                cursor.execute("DELETE FROM checkpoints WHERE run_id = ?", (run_id,))
+                
+                # Delete run metadata
+                cursor.execute("DELETE FROM run_metadata WHERE run_id = ?", (run_id,))
+                
+                # Delete execution records
+                cursor.execute("DELETE FROM executions WHERE run_id = ?", (run_id,))
+                
+                # Commit the changes
+                conn.commit()
+            finally:
+                conn.close()
+        
+        try:
+            await asyncio.to_thread(_do_delete)
+            
+            logger.info(f"Deleted run {run_id} from {db_path}")
+            return {"success": True, "message": f"Run {run_id} deleted successfully"}
+        except Exception as e:
+            logger.error(f"Failed to delete run {run_id}: {e}")
+            return {"success": False, "message": str(e)}
+
+    async def _load_repos_and_body(
+        self,
+        concepts_path: str,
+        inferences_path: str,
+        inputs_path: Optional[str],
+        llm_model: str,
+        base_dir: Optional[str],
+        paradigm_dir: Optional[str]
+    ):
+        """Internal helper to load repositories and create body.
+        
+        This is shared between resume_from_checkpoint and fork_from_checkpoint.
+        """
+        import json as json_module
+        
+        try:
+            from infra._orchest._repo import ConceptRepo, InferenceRepo
+            from infra._agent._body import Body
+        except ImportError as e:
+            logger.error(f"Failed to import infra modules: {e}")
+            raise RuntimeError(f"Failed to import infra modules: {e}")
+        
+        # Load repository files
+        with open(concepts_path, 'r', encoding='utf-8') as f:
+            concepts_data = json_module.load(f)
+        with open(inferences_path, 'r', encoding='utf-8') as f:
+            inferences_data = json_module.load(f)
+        
+        # Create repositories
+        self.concept_repo = ConceptRepo.from_json_list(concepts_data)
+        self.inference_repo = InferenceRepo.from_json_list(inferences_data, self.concept_repo)
+        
+        # Load inputs if provided
+        if inputs_path:
+            with open(inputs_path, 'r', encoding='utf-8') as f:
+                inputs_data = json_module.load(f)
+            for name, value in inputs_data.items():
+                if isinstance(value, dict) and 'data' in value:
+                    self.concept_repo.add_reference(
+                        name, 
+                        value['data'], 
+                        axis_names=value.get('axes')
+                    )
+                else:
+                    self.concept_repo.add_reference(name, value)
+        
+        # Create body with LLM
+        if base_dir is None:
+            base_dir = str(Path(concepts_path).parent)
+        
+        # Create custom paradigm tool if paradigm_dir is specified
+        custom_paradigm_tool = None
+        if paradigm_dir:
+            paradigm_path = Path(paradigm_dir)
+            if not paradigm_path.is_absolute():
+                paradigm_path = Path(base_dir) / paradigm_dir
+            
+            if paradigm_path.exists() and paradigm_path.is_dir():
+                custom_paradigm_tool = CustomParadigmTool(paradigm_path)
+                logger.info(f"Using custom paradigm directory: {paradigm_path}")
+        
+        self.body = Body(
+            llm_name=llm_model, 
+            base_dir=base_dir,
+            paradigm_tool=custom_paradigm_tool
+        )
+        
+        return concepts_data, inferences_data, base_dir
+    
+    def _sync_node_statuses_from_orchestrator(self):
+        """Sync node statuses from orchestrator's blackboard after loading checkpoint.
+        
+        This updates self.node_statuses based on the actual state of the blackboard.
+        """
+        if not self.orchestrator or not self.orchestrator.blackboard:
+            return
+        
+        self.node_statuses = {}
+        self.completed_count = 0
+        self.total_count = 0
+        
+        # Get all items from the waitlist
+        for item in self.orchestrator.waitlist.items:
+            flow_index = item.inference_entry.flow_info.get('flow_index', '')
+            if not flow_index:
+                continue
+            
+            self.total_count += 1
+            
+            # Check status in blackboard
+            status = self.orchestrator.blackboard.get_item_status(flow_index)
+            
+            if status == 'completed':
+                self.node_statuses[flow_index] = NodeStatus.COMPLETED
+                self.completed_count += 1
+            elif status == 'in_progress':
+                self.node_statuses[flow_index] = NodeStatus.RUNNING
+            elif status == 'failed':
+                self.node_statuses[flow_index] = NodeStatus.FAILED
+            else:
+                self.node_statuses[flow_index] = NodeStatus.PENDING
+        
+        logger.info(f"Synced node statuses: {self.completed_count}/{self.total_count} complete")
+    
+    async def resume_from_checkpoint(
+        self,
+        concepts_path: str,
+        inferences_path: str,
+        inputs_path: Optional[str],
+        db_path: str,
+        run_id: str,
+        cycle: Optional[int] = None,
+        mode: str = "PATCH",
+        llm_model: str = "demo",
+        base_dir: Optional[str] = None,
+        max_cycles: int = 50,
+        paradigm_dir: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Resume execution from an existing checkpoint (same run_id).
+        
+        This loads the checkpoint state and continues with the same run_id,
+        meaning execution history is preserved and continued.
+        
+        Args:
+            concepts_path: Path to concepts.json
+            inferences_path: Path to inferences.json
+            inputs_path: Optional path to inputs.json
+            db_path: Path to orchestration.db
+            run_id: The run ID to resume
+            cycle: Optional specific cycle to resume from (None = latest)
+            mode: Reconciliation mode (PATCH, OVERWRITE, FILL_GAPS)
+            llm_model: LLM model name
+            base_dir: Base directory for file operations
+            max_cycles: Maximum execution cycles
+            paradigm_dir: Custom paradigm directory
+        """
+        try:
+            from infra._orchest._orchestrator import Orchestrator
+        except ImportError as e:
+            raise RuntimeError(f"Failed to import Orchestrator: {e}")
+        
+        # Stop any running execution first
+        await self.stop()
+        
+        # Load repos and create body
+        concepts_data, inferences_data, base_dir = await self._load_repos_and_body(
+            concepts_path, inferences_path, inputs_path,
+            llm_model, base_dir, paradigm_dir
+        )
+        
+        self._add_log("info", "", f"Resuming run {run_id} from checkpoint...")
+        
+        # Load orchestrator from checkpoint
+        self.orchestrator = await asyncio.to_thread(
+            Orchestrator.load_checkpoint,
+            concept_repo=self.concept_repo,
+            inference_repo=self.inference_repo,
+            db_path=db_path,
+            body=self.body,
+            max_cycles=max_cycles,
+            run_id=run_id,
+            cycle=cycle,
+            mode=mode
+        )
+        
+        # Sync node statuses from orchestrator
+        self._sync_node_statuses_from_orchestrator()
+        
+        self.status = ExecutionStatus.IDLE
+        self._retries = []
+        self.cycle_count = self.orchestrator.tracker.cycle_count if hasattr(self.orchestrator, 'tracker') else 0
+        
+        # Store config for restart
+        self._load_config = {
+            "concepts_path": concepts_path,
+            "inferences_path": inferences_path,
+            "inputs_path": inputs_path,
+            "llm_model": llm_model,
+            "base_dir": base_dir,
+            "max_cycles": max_cycles,
+            "db_path": db_path,
+            "paradigm_dir": paradigm_dir,
+        }
+        
+        # Emit loaded event
+        await self._emit("execution:loaded", {
+            "run_id": self.orchestrator.run_id,
+            "total_inferences": self.total_count,
+            "completed_count": self.completed_count,
+            "mode": "resume",
+        })
+        
+        self._add_log("info", "", f"Resumed: {self.completed_count}/{self.total_count} already complete")
+        
+        # Log checkpoint_manager status for debugging
+        if self.orchestrator and self.orchestrator.checkpoint_manager:
+            self._add_log("debug", "", f"Checkpoint manager initialized for run: {run_id}")
+        else:
+            self._add_log("warning", "", "Checkpoint manager NOT initialized after resume - checkpoints will not be saved!")
+
+        return {
+            "success": True,
+            "run_id": run_id,
+            "mode": "resume",
+            "completed_count": self.completed_count,
+            "total_count": self.total_count,
+            "message": f"Resumed from checkpoint - {self.completed_count}/{self.total_count} nodes already complete"
+        }
+    
+    async def fork_from_checkpoint(
+        self,
+        concepts_path: str,
+        inferences_path: str,
+        inputs_path: Optional[str],
+        db_path: str,
+        source_run_id: str,
+        new_run_id: Optional[str] = None,
+        cycle: Optional[int] = None,
+        mode: str = "PATCH",
+        llm_model: str = "demo",
+        base_dir: Optional[str] = None,
+        max_cycles: int = 50,
+        paradigm_dir: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Fork from an existing checkpoint with a new run_id.
+        
+        This loads the checkpoint state but starts a NEW run with a new run_id,
+        meaning execution history starts fresh while inheriting checkpoint state.
+        
+        Args:
+            concepts_path: Path to concepts.json
+            inferences_path: Path to inferences.json
+            inputs_path: Optional path to inputs.json
+            db_path: Path to orchestration.db
+            source_run_id: The run ID to fork from
+            new_run_id: New run ID (auto-generated if None)
+            cycle: Optional specific cycle to fork from (None = latest)
+            mode: Reconciliation mode (PATCH, OVERWRITE, FILL_GAPS)
+            llm_model: LLM model name
+            base_dir: Base directory for file operations
+            max_cycles: Maximum execution cycles
+            paradigm_dir: Custom paradigm directory
+        """
+        import uuid as uuid_module
+        
+        try:
+            from infra._orchest._orchestrator import Orchestrator
+        except ImportError as e:
+            raise RuntimeError(f"Failed to import Orchestrator: {e}")
+        
+        # Stop any running execution first
+        await self.stop()
+        
+        # Generate new run_id if not provided
+        if new_run_id is None:
+            new_run_id = f"fork-{str(uuid_module.uuid4())[:8]}"
+        
+        # Load repos and create body
+        concepts_data, inferences_data, base_dir = await self._load_repos_and_body(
+            concepts_path, inferences_path, inputs_path,
+            llm_model, base_dir, paradigm_dir
+        )
+        
+        self._add_log("info", "", f"Forking from {source_run_id} to new run {new_run_id}...")
+        
+        # Fork orchestrator from checkpoint
+        self.orchestrator = await asyncio.to_thread(
+            Orchestrator.load_checkpoint,
+            concept_repo=self.concept_repo,
+            inference_repo=self.inference_repo,
+            db_path=db_path,
+            body=self.body,
+            max_cycles=max_cycles,
+            run_id=source_run_id,
+            new_run_id=new_run_id,  # This makes it a fork
+            cycle=cycle,
+            mode=mode
+        )
+        
+        # Sync node statuses from orchestrator
+        self._sync_node_statuses_from_orchestrator()
+        
+        self.status = ExecutionStatus.IDLE
+        self._retries = []
+        self.cycle_count = 0  # Fresh cycle count for fork
+        
+        # Store config for restart
+        self._load_config = {
+            "concepts_path": concepts_path,
+            "inferences_path": inferences_path,
+            "inputs_path": inputs_path,
+            "llm_model": llm_model,
+            "base_dir": base_dir,
+            "max_cycles": max_cycles,
+            "db_path": db_path,
+            "paradigm_dir": paradigm_dir,
+        }
+        
+        # Emit loaded event
+        await self._emit("execution:loaded", {
+            "run_id": new_run_id,
+            "total_inferences": self.total_count,
+            "completed_count": self.completed_count,
+            "mode": "fork",
+            "forked_from": source_run_id,
+        })
+        
+        self._add_log("info", "", f"Forked: {self.completed_count}/{self.total_count} nodes carried over")
+        
+        # Log checkpoint_manager status for debugging
+        if self.orchestrator and self.orchestrator.checkpoint_manager:
+            self._add_log("debug", "", f"Checkpoint manager initialized for run: {new_run_id}")
+        else:
+            self._add_log("warning", "", "Checkpoint manager NOT initialized after fork - checkpoints will not be saved!")
+        
+        return {
+            "success": True,
+            "run_id": new_run_id,
+            "forked_from": source_run_id,
+            "mode": "fork",
+            "completed_count": self.completed_count,
+            "total_count": self.total_count,
+            "message": f"Forked from {source_run_id} - {self.completed_count}/{self.total_count} nodes carried over"
+        }
 
 
 # Global execution controller instance

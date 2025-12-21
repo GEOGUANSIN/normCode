@@ -26,6 +26,7 @@ import { LogPanel } from './components/panels/LogPanel';
 import { SettingsPanel } from './components/panels/SettingsPanel';
 import { ProjectPanel } from './components/panels/ProjectPanel';
 import { EditorPanel } from './components/panels/EditorPanel';
+import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
@@ -39,6 +40,7 @@ function App() {
   const [showDetailPanel, setShowDetailPanel] = useState(true);
   const [showLogPanel, setShowLogPanel] = useState(true);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   
@@ -231,7 +233,18 @@ function App() {
       />
 
       {/* Control Panel - only show in canvas mode when graph is loaded */}
-      {graphData && viewMode === 'canvas' && <ControlPanel />}
+      {graphData && viewMode === 'canvas' && (
+        <ControlPanel 
+          onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
+          checkpointPanelOpen={showCheckpointPanel}
+        />
+      )}
+
+      {/* Checkpoint Panel - dropdown below control panel */}
+      <CheckpointPanel 
+        isOpen={showCheckpointPanel && viewMode === 'canvas'} 
+        onToggle={() => setShowCheckpointPanel(!showCheckpointPanel)} 
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative z-0">
