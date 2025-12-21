@@ -2,7 +2,7 @@
  * Project state management with Zustand
  */
 import { create } from 'zustand';
-import type { ProjectConfig, RecentProject } from '../types/project';
+import type { ProjectConfig, RegisteredProject } from '../types/project';
 import { projectApi, graphApi, executionApi } from '../services/api';
 import { useGraphStore } from './graphStore';
 import { useExecutionStore } from './executionStore';
@@ -12,11 +12,14 @@ interface ProjectState {
   // Current project state
   currentProject: ProjectConfig | null;
   projectPath: string | null;
+  projectConfigFile: string | null;  // The config filename
   isLoaded: boolean;  // Whether repositories are loaded
   repositoriesExist: boolean;
   
-  // Recent projects
-  recentProjects: RecentProject[];
+  // All registered projects and recent projects
+  allProjects: RegisteredProject[];
+  recentProjects: RegisteredProject[];
+  directoryProjects: RegisteredProject[];  // Projects in current directory
   
   // UI state
   isProjectPanelOpen: boolean;
@@ -24,18 +27,23 @@ interface ProjectState {
   error: string | null;
   
   // Actions
-  setCurrentProject: (project: ProjectConfig | null, path: string | null) => void;
+  setCurrentProject: (project: ProjectConfig | null, path: string | null, configFile: string | null) => void;
   setIsLoaded: (loaded: boolean) => void;
   setRepositoriesExist: (exist: boolean) => void;
-  setRecentProjects: (projects: RecentProject[]) => void;
+  setAllProjects: (projects: RegisteredProject[]) => void;
+  setRecentProjects: (projects: RegisteredProject[]) => void;
+  setDirectoryProjects: (projects: RegisteredProject[]) => void;
   setProjectPanelOpen: (open: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   
   // Async actions
   fetchCurrentProject: () => Promise<void>;
+  fetchAllProjects: () => Promise<void>;
   fetchRecentProjects: () => Promise<void>;
-  openProject: (projectPath: string) => Promise<boolean>;
+  fetchDirectoryProjects: (directory: string) => Promise<void>;
+  scanDirectory: (directory: string, register?: boolean) => Promise<RegisteredProject[]>;
+  openProject: (projectPath?: string, configFile?: string, projectId?: string) => Promise<boolean>;
   createProject: (
     projectPath: string,
     name: string,
@@ -52,6 +60,7 @@ interface ProjectState {
   saveProject: () => Promise<boolean>;
   closeProject: () => Promise<void>;
   loadProjectRepositories: () => Promise<boolean>;
+  removeProjectFromRegistry: (projectId: string) => Promise<void>;
   
   // Reset
   reset: () => void;
@@ -61,18 +70,27 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // Initial state
   currentProject: null,
   projectPath: null,
+  projectConfigFile: null,
   isLoaded: false,
   repositoriesExist: false,
+  allProjects: [],
   recentProjects: [],
+  directoryProjects: [],
   isProjectPanelOpen: false,
   isLoading: false,
   error: null,
   
   // Simple setters
-  setCurrentProject: (project, path) => set({ currentProject: project, projectPath: path }),
+  setCurrentProject: (project, path, configFile) => set({ 
+    currentProject: project, 
+    projectPath: path,
+    projectConfigFile: configFile,
+  }),
   setIsLoaded: (loaded) => set({ isLoaded: loaded }),
   setRepositoriesExist: (exist) => set({ repositoriesExist: exist }),
+  setAllProjects: (projects) => set({ allProjects: projects }),
   setRecentProjects: (projects) => set({ recentProjects: projects }),
+  setDirectoryProjects: (projects) => set({ directoryProjects: projects }),
   setProjectPanelOpen: (open) => set({ isProjectPanelOpen: open }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
@@ -85,6 +103,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         set({
           currentProject: response.config,
           projectPath: response.path,
+          projectConfigFile: response.config_file,
           isLoaded: response.is_loaded,
           repositoriesExist: response.repositories_exist,
         });
@@ -100,12 +119,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         set({
           currentProject: null,
           projectPath: null,
+          projectConfigFile: null,
           isLoaded: false,
           repositoriesExist: false,
         });
       }
     } catch (err) {
       console.error('Failed to fetch current project:', err);
+    }
+  },
+  
+  // Fetch all registered projects
+  fetchAllProjects: async () => {
+    try {
+      const response = await projectApi.getAll();
+      set({ allProjects: response.projects });
+    } catch (err) {
+      console.error('Failed to fetch all projects:', err);
     }
   },
   
@@ -119,14 +149,47 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
   
-  // Open an existing project
-  openProject: async (projectPath: string) => {
+  // Fetch projects in a specific directory
+  fetchDirectoryProjects: async (directory: string) => {
+    try {
+      const response = await projectApi.getProjectsInDirectory(directory);
+      set({ directoryProjects: response.projects });
+    } catch (err) {
+      console.error('Failed to fetch directory projects:', err);
+      set({ directoryProjects: [] });
+    }
+  },
+  
+  // Scan directory for project configs
+  scanDirectory: async (directory: string, register: boolean = true) => {
+    try {
+      const response = await projectApi.scanDirectory({ directory, register });
+      // Also update directoryProjects
+      set({ directoryProjects: response.projects });
+      // Refresh all projects if we registered
+      if (register) {
+        get().fetchAllProjects();
+      }
+      return response.projects;
+    } catch (err) {
+      console.error('Failed to scan directory:', err);
+      return [];
+    }
+  },
+  
+  // Open an existing project (by path, by path+config, or by ID)
+  openProject: async (projectPath?: string, configFile?: string, projectId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await projectApi.open({ project_path: projectPath });
+      const response = await projectApi.open({ 
+        project_path: projectPath,
+        config_file: configFile,
+        project_id: projectId,
+      });
       set({
         currentProject: response.config,
         projectPath: response.path,
+        projectConfigFile: response.config_file,
         isLoaded: response.is_loaded,
         repositoriesExist: response.repositories_exist,
         isLoading: false,
@@ -168,6 +231,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({
         currentProject: response.config,
         projectPath: response.path,
+        projectConfigFile: response.config_file,
         isLoaded: response.is_loaded,
         repositoriesExist: response.repositories_exist,
         isLoading: false,
@@ -181,8 +245,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       configStore.setDbPath(exec.db_path);
       configStore.setBaseDir(exec.base_dir || '');
       configStore.setParadigmDir(exec.paradigm_dir || '');
-      // Refresh recent projects
+      // Refresh projects lists
       get().fetchRecentProjects();
+      get().fetchAllProjects();
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create project';
@@ -222,11 +287,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({
         currentProject: null,
         projectPath: null,
+        projectConfigFile: null,
         isLoaded: false,
         repositoriesExist: false,
       });
     } catch (err) {
       console.error('Failed to close project:', err);
+    }
+  },
+  
+  // Remove a project from the registry
+  removeProjectFromRegistry: async (projectId: string) => {
+    try {
+      await projectApi.removeFromRegistry(projectId);
+      // Refresh project lists
+      get().fetchAllProjects();
+      get().fetchRecentProjects();
+    } catch (err) {
+      console.error('Failed to remove project from registry:', err);
     }
   },
   
@@ -271,8 +349,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   reset: () => set({
     currentProject: null,
     projectPath: null,
+    projectConfigFile: null,
     isLoaded: false,
     repositoriesExist: false,
+    directoryProjects: [],
     isLoading: false,
     error: null,
   }),

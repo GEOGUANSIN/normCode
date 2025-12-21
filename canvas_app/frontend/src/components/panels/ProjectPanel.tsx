@@ -1,6 +1,7 @@
 /**
  * ProjectPanel - Project management UI
  * Provides open project, create project, and recent projects functionality.
+ * Supports multiple projects per directory.
  */
 import { useState, useEffect } from 'react';
 import { 
@@ -12,30 +13,41 @@ import {
   ChevronRight,
   Folder,
   Cpu,
-  RefreshCw
+  RefreshCw,
+  Search,
+  File,
+  Trash2
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { executionApi } from '../../services/api';
 import type { ExecutionConfig } from '../../types/execution';
+import type { RegisteredProject } from '../../types/project';
 
-type TabType = 'open' | 'create' | 'recent';
+type TabType = 'open' | 'create' | 'recent' | 'all';
 
 export function ProjectPanel() {
   const {
     currentProject,
     recentProjects,
+    allProjects,
+    directoryProjects,
     isProjectPanelOpen,
     isLoading,
     error,
     setProjectPanelOpen,
     setError,
     fetchRecentProjects,
+    fetchAllProjects,
+    scanDirectory,
     openProject,
     createProject,
+    removeProjectFromRegistry,
   } = useProjectStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('recent');
   const [openPath, setOpenPath] = useState('');
+  const [scannedProjects, setScannedProjects] = useState<RegisteredProject[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
   
   // Create project form state
   const [createPath, setCreatePath] = useState('');
@@ -55,19 +67,40 @@ export function ProjectPanel() {
   // Fetch config on mount
   useEffect(() => {
     fetchRecentProjects();
+    fetchAllProjects();
     executionApi.getConfig().then((config: ExecutionConfig) => {
       setAvailableModels(config.available_models);
     }).catch(console.error);
-  }, [fetchRecentProjects]);
+  }, [fetchRecentProjects, fetchAllProjects]);
 
-  const handleOpenProject = async () => {
+  // Scan directory for projects
+  const handleScanDirectory = async () => {
     if (!openPath.trim()) {
-      setError('Please enter a project path');
+      setError('Please enter a directory path');
       return;
     }
-    const success = await openProject(openPath.trim());
+    setIsScanning(true);
+    setError(null);
+    try {
+      const projects = await scanDirectory(openPath.trim(), true);
+      setScannedProjects(projects);
+      if (projects.length === 0) {
+        setError('No project configs found in this directory');
+      } else if (projects.length === 1) {
+        // Auto-open if only one project found
+        await openProject(undefined, undefined, projects[0].id);
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  // Open a specific project from scanned list
+  const handleOpenScannedProject = async (project: RegisteredProject) => {
+    const success = await openProject(project.directory, project.config_file, project.id);
     if (success) {
       setOpenPath('');
+      setScannedProjects([]);
     }
   };
 
@@ -92,8 +125,13 @@ export function ProjectPanel() {
     }
   };
 
-  const handleOpenRecent = async (path: string) => {
-    await openProject(path);
+  const handleOpenRecent = async (project: RegisteredProject) => {
+    await openProject(undefined, undefined, project.id);
+  };
+  
+  const handleRemoveFromRegistry = async (e: React.MouseEvent, projectId: string) => {
+    e.stopPropagation();
+    await removeProjectFromRegistry(projectId);
   };
 
   if (!isProjectPanelOpen && !currentProject) {
@@ -126,19 +164,31 @@ export function ProjectPanel() {
               <div className="space-y-2">
                 {recentProjects.slice(0, 5).map((project) => (
                   <button
-                    key={project.path}
-                    onClick={() => handleOpenRecent(project.path)}
+                    key={project.id}
+                    onClick={() => handleOpenRecent(project)}
                     disabled={isLoading}
-                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50"
+                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
                   >
                     <Folder className="w-5 h-5 text-blue-500" />
                     <div className="flex-1 min-w-0">
                       <div className="text-slate-800 font-medium truncate">{project.name}</div>
-                      <div className="text-slate-500 text-xs truncate">{project.path}</div>
+                      <div className="text-slate-500 text-xs truncate flex items-center gap-1">
+                        <File className="w-3 h-3" />
+                        {project.config_file}
+                        <span className="text-slate-400 mx-1">in</span>
+                        {project.directory}
+                      </div>
                     </div>
                     <div className="text-slate-400 text-xs">
-                      {new Date(project.last_opened).toLocaleDateString()}
+                      {project.last_opened ? new Date(project.last_opened).toLocaleDateString() : ''}
                     </div>
+                    <button
+                      onClick={(e) => handleRemoveFromRegistry(e, project.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
+                      title="Remove from list"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                    </button>
                   </button>
                 ))}
               </div>
@@ -222,6 +272,17 @@ export function ProjectPanel() {
               <Clock className="w-4 h-4 inline mr-2" />
               Recent
             </button>
+            <button
+              onClick={() => { setActiveTab('all'); fetchAllProjects(); }}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === 'all'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Folder className="w-4 h-4 inline mr-2" />
+              All ({allProjects.length})
+            </button>
           </div>
 
           {error && (
@@ -238,25 +299,55 @@ export function ProjectPanel() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Project Directory
                 </label>
-                <input
-                  type="text"
-                  value={openPath}
-                  onChange={(e) => setOpenPath(e.target.value)}
-                  placeholder="C:\path\to\project"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={openPath}
+                    onChange={(e) => { setOpenPath(e.target.value); setScannedProjects([]); }}
+                    placeholder="C:\path\to\project"
+                    className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleScanDirectory()}
+                  />
+                  <button
+                    onClick={handleScanDirectory}
+                    disabled={isScanning || !openPath.trim()}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isScanning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    Scan
+                  </button>
+                </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Path to folder containing normcode-canvas.json
+                  Scan directory for project configs (*.normcode-canvas.json)
                 </p>
               </div>
-              <button
-                onClick={handleOpenProject}
-                disabled={isLoading || !openPath.trim()}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
-                Open Project
-              </button>
+
+              {/* Scanned projects list */}
+              {scannedProjects.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-slate-700">
+                    Found {scannedProjects.length} project{scannedProjects.length > 1 ? 's' : ''} in this directory:
+                  </h3>
+                  {scannedProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => handleOpenScannedProject(project)}
+                      disabled={isLoading}
+                      className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50"
+                    >
+                      <File className="w-5 h-5 text-blue-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-slate-800 font-medium">{project.name}</div>
+                        <div className="text-slate-500 text-xs truncate">
+                          {project.config_file}
+                          {project.description && <span className="text-slate-400 ml-2">— {project.description}</span>}
+                        </div>
+                      </div>
+                      <FolderOpen className="w-4 h-4 text-blue-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -414,21 +505,73 @@ export function ProjectPanel() {
               ) : (
                 recentProjects.map((project) => (
                   <button
-                    key={project.path}
-                    onClick={() => handleOpenRecent(project.path)}
+                    key={project.id}
+                    onClick={() => handleOpenRecent(project)}
                     disabled={isLoading}
-                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50"
+                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
                   >
                     <Folder className="w-5 h-5 text-blue-500" />
                     <div className="flex-1 min-w-0">
                       <div className="text-slate-800 font-medium truncate">{project.name}</div>
-                      <div className="text-slate-500 text-xs truncate">{project.path}</div>
+                      <div className="text-slate-500 text-xs truncate flex items-center gap-1">
+                        <File className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{project.config_file}</span>
+                        <span className="text-slate-400 mx-1 flex-shrink-0">in</span>
+                        <span className="truncate">{project.directory}</span>
+                      </div>
                     </div>
-                    <div className="text-slate-400 text-xs">
-                      {new Date(project.last_opened).toLocaleDateString()}
+                    <div className="text-slate-400 text-xs flex-shrink-0">
+                      {project.last_opened ? new Date(project.last_opened).toLocaleDateString() : ''}
                     </div>
+                    <button
+                      onClick={(e) => handleRemoveFromRegistry(e, project.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity flex-shrink-0"
+                      title="Remove from list"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                    </button>
                   </button>
                 ))
+              )}
+            </div>
+          )}
+          
+          {/* All Projects Tab */}
+          {activeTab === 'all' && (
+            <div className="space-y-2">
+              {allProjects.length === 0 ? (
+                <p className="text-slate-500 text-center py-8">No registered projects</p>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-500 mb-2">
+                    {allProjects.length} project{allProjects.length !== 1 ? 's' : ''} registered
+                  </p>
+                  {allProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => handleOpenRecent(project)}
+                      disabled={isLoading}
+                      className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
+                    >
+                      <Folder className="w-5 h-5 text-blue-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-slate-800 font-medium truncate">{project.name}</div>
+                        <div className="text-slate-500 text-xs truncate flex items-center gap-1">
+                          <File className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{project.config_file}</span>
+                        </div>
+                        <div className="text-slate-400 text-xs truncate">{project.directory}</div>
+                      </div>
+                      <button
+                        onClick={(e) => handleRemoveFromRegistry(e, project.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity flex-shrink-0"
+                        title="Remove from registry"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                      </button>
+                    </button>
+                  ))}
+                </>
               )}
             </div>
           )}

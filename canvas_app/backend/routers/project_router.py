@@ -11,7 +11,10 @@ from schemas.project_schemas import (
     CreateProjectRequest,
     SaveProjectRequest,
     ProjectResponse,
+    ProjectListResponse,
+    DirectoryProjectsResponse,
     RecentProjectsResponse,
+    ScanDirectoryRequest,
     ExecutionSettings,
 )
 from services.project_service import project_service
@@ -23,6 +26,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# Run migration on startup
+@router.on_event("startup")
+async def startup_migrate():
+    """Migrate legacy recent projects on startup."""
+    project_service.migrate_recent_projects()
+
+
 @router.get("/current", response_model=Optional[ProjectResponse])
 async def get_current_project():
     """Get the currently open project."""
@@ -30,7 +40,9 @@ async def get_current_project():
         return None
     
     return ProjectResponse(
+        id=project_service.current_config.id,
         path=str(project_service.current_project_path),
+        config_file=project_service.current_config_file or "normcode-canvas.json",
         config=project_service.current_config,
         is_loaded=execution_controller.orchestrator is not None,
         repositories_exist=project_service.check_repositories_exist(),
@@ -42,20 +54,33 @@ async def open_project(request: OpenProjectRequest):
     """
     Open an existing project.
     
+    Can open by:
+    - project_id: Open a registered project by ID
+    - project_path + config_file: Open a specific config in a directory
+    - project_path only: Open first/only project config in directory
+    
     This loads the project configuration but does NOT load the repositories.
-    Use /api/repositories/load to load the repositories after opening the project.
+    Use /api/project/load-repositories to load the repositories after opening.
     """
     try:
-        config = project_service.open_project(request.project_path)
+        config, config_file = project_service.open_project(
+            project_path=request.project_path,
+            config_file=request.config_file,
+            project_id=request.project_id,
+        )
         
         return ProjectResponse(
+            id=config.id,
             path=str(project_service.current_project_path),
+            config_file=config_file,
             config=config,
             is_loaded=False,
             repositories_exist=project_service.check_repositories_exist(),
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception(f"Failed to open project: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -66,10 +91,11 @@ async def create_project(request: CreateProjectRequest):
     """
     Create a new project.
     
-    This creates the project configuration file in the specified directory.
+    Creates a project configuration file named {project-name}.normcode-canvas.json
+    in the specified directory. Multiple projects can exist in the same directory.
     """
     try:
-        config = project_service.create_project(
+        config, config_file = project_service.create_project(
             project_path=request.project_path,
             name=request.name,
             description=request.description,
@@ -82,7 +108,9 @@ async def create_project(request: CreateProjectRequest):
         )
         
         return ProjectResponse(
+            id=config.id,
             path=str(project_service.current_project_path),
+            config_file=config_file,
             config=config,
             is_loaded=False,
             repositories_exist=project_service.check_repositories_exist(),
@@ -115,7 +143,9 @@ async def save_project(request: SaveProjectRequest):
         )
         
         return ProjectResponse(
+            id=config.id,
             path=str(project_service.current_project_path),
+            config_file=project_service.current_config_file or "normcode-canvas.json",
             config=config,
             is_loaded=execution_controller.orchestrator is not None,
             repositories_exist=project_service.check_repositories_exist(),
@@ -137,16 +167,52 @@ async def close_project():
 
 
 @router.get("/recent", response_model=RecentProjectsResponse)
-async def get_recent_projects():
+async def get_recent_projects(limit: int = 10):
     """Get list of recently opened projects."""
-    projects = project_service.get_recent_projects()
+    projects = project_service.get_recent_projects(limit=limit)
     return RecentProjectsResponse(projects=projects)
 
 
-@router.delete("/recent")
-async def clear_recent_projects():
-    """Clear the recent projects list."""
-    project_service.clear_recent_projects()
+@router.get("/all", response_model=ProjectListResponse)
+async def get_all_projects():
+    """Get all registered projects."""
+    projects = project_service.get_all_projects()
+    return ProjectListResponse(projects=projects)
+
+
+@router.get("/directory", response_model=DirectoryProjectsResponse)
+async def get_projects_in_directory(directory: str):
+    """Get all registered projects in a specific directory."""
+    projects = project_service.get_projects_in_directory(directory)
+    return DirectoryProjectsResponse(directory=directory, projects=projects)
+
+
+@router.post("/scan", response_model=DirectoryProjectsResponse)
+async def scan_directory_for_projects(request: ScanDirectoryRequest):
+    """
+    Scan a directory for project config files.
+    
+    Finds all *.normcode-canvas.json files in the directory
+    and optionally registers them.
+    """
+    projects = project_service.scan_directory_for_projects(
+        directory=request.directory,
+        register=request.register,
+    )
+    return DirectoryProjectsResponse(directory=request.directory, projects=projects)
+
+
+@router.delete("/registry/{project_id}")
+async def remove_project_from_registry(project_id: str):
+    """Remove a project from the registry (does not delete files)."""
+    project_service.remove_project_from_registry(project_id)
+    return {"status": "removed", "project_id": project_id}
+
+
+@router.delete("/registry")
+async def clear_registry():
+    """Clear the entire project registry."""
+    project_service.clear_registry()
     return {"status": "cleared"}
 
 
@@ -227,7 +293,9 @@ async def update_project_settings(settings: ExecutionSettings):
         config = project_service.save_project(execution=settings)
         
         return ProjectResponse(
+            id=config.id,
             path=str(project_service.current_project_path),
+            config_file=project_service.current_config_file or "normcode-canvas.json",
             config=config,
             is_loaded=execution_controller.orchestrator is not None,
             repositories_exist=project_service.check_repositories_exist(),

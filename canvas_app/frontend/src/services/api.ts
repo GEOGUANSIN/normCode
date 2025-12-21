@@ -18,10 +18,13 @@ import type {
 } from '../types/execution';
 import type {
   ProjectResponse,
+  ProjectListResponse,
+  DirectoryProjectsResponse,
   RecentProjectsResponse,
   OpenProjectRequest,
   CreateProjectRequest,
   SaveProjectRequest,
+  ScanDirectoryRequest,
   ExecutionSettings,
 } from '../types/project';
 
@@ -183,11 +186,29 @@ export const projectApi = {
   close: (): Promise<{ status: string }> =>
     fetchJson(`${API_BASE}/project/close`, { method: 'POST' }),
   
-  getRecent: (): Promise<RecentProjectsResponse> =>
-    fetchJson(`${API_BASE}/project/recent`),
+  // Project registry endpoints
+  getAll: (): Promise<ProjectListResponse> =>
+    fetchJson(`${API_BASE}/project/all`),
   
-  clearRecent: (): Promise<{ status: string }> =>
-    fetchJson(`${API_BASE}/project/recent`, { method: 'DELETE' }),
+  getRecent: (limit: number = 10): Promise<RecentProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/recent?limit=${limit}`),
+  
+  getProjectsInDirectory: (directory: string): Promise<DirectoryProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/directory?directory=${encodeURIComponent(directory)}`),
+  
+  scanDirectory: (request: ScanDirectoryRequest): Promise<DirectoryProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/scan`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  removeFromRegistry: (projectId: string): Promise<{ status: string; project_id: string }> =>
+    fetchJson(`${API_BASE}/project/registry/${encodeURIComponent(projectId)}`, {
+      method: 'DELETE',
+    }),
+  
+  clearRegistry: (): Promise<{ status: string }> =>
+    fetchJson(`${API_BASE}/project/registry`, { method: 'DELETE' }),
   
   loadRepositories: (): Promise<{ status: string; concepts_path: string; inferences_path: string; breakpoints_restored: number }> =>
     fetchJson(`${API_BASE}/project/load-repositories`, { method: 'POST' }),

@@ -6,6 +6,130 @@
 
 ---
 
+## December 21, 2024 - Multi-Project per Directory Support
+
+### What Was Implemented
+
+**Multiple Projects in Same Directory**
+The canvas app now supports having multiple project configurations in the same directory. This is useful for having different execution configurations (e.g., different LLM models, breakpoints) for the same repository files.
+
+- [x] **Named project config files**: Projects now use `{project-name}.normcode-canvas.json` format instead of a single `normcode-canvas.json`
+- [x] **Unique project IDs**: Each project gets a UUID-based ID for unambiguous identification
+- [x] **Centralized project registry**: All known projects stored in `~/.normcode-canvas/project-registry.json`
+- [x] **Directory scanning**: Scan any directory to discover all project configs within it
+- [x] **Open by ID**: Projects can be opened by their unique ID from the registry
+- [x] **Backwards compatibility**: Legacy `normcode-canvas.json` files are still supported
+
+**Project Registry**
+A centralized registry tracks all known projects across the system.
+
+- [x] **RegisteredProject model**: Stores project ID, name, directory, config filename, description, timestamps
+- [x] **Automatic registration**: Projects are registered when opened or created
+- [x] **Registry cleanup**: Invalid projects (deleted files) are automatically removed on access
+- [x] **Recent projects**: Sorted by last_opened timestamp
+- [x] **Remove from registry**: Remove project from registry without deleting files
+
+**Enhanced Project Panel UI**
+The project panel now shows more information and supports the multi-project workflow.
+
+- [x] **Directory scanning**: Enter a path and scan for all project configs
+- [x] **Project selection**: When multiple projects found, choose which to open
+- [x] **Config file display**: Shows the config filename in project lists
+- [x] **All Projects tab**: View all registered projects across the system
+- [x] **Remove button**: Remove projects from registry on hover
+
+### Technical Details
+
+**Config File Naming**:
+```
+Old: normcode-canvas.json (one per directory)
+New: {project-name}.normcode-canvas.json (multiple per directory)
+
+Examples:
+  gold-analysis.normcode-canvas.json
+  gold-debug.normcode-canvas.json
+  gold-chinese.normcode-canvas.json
+```
+
+**Project Registry Location**:
+```
+~/.normcode-canvas/project-registry.json
+```
+
+**Registry Entry Format**:
+```json
+{
+  "id": "a1b2c3d4",
+  "name": "Gold Analysis",
+  "directory": "C:/path/to/project",
+  "config_file": "gold-analysis.normcode-canvas.json",
+  "description": "Investment analysis project",
+  "created_at": "2024-12-21T10:00:00",
+  "last_opened": "2024-12-21T15:30:00"
+}
+```
+
+**API Changes**:
+- `POST /project/open`: Now accepts `project_id`, `project_path`, and `config_file`
+- `GET /project/all`: List all registered projects
+- `GET /project/directory?directory=...`: Get registered projects in a directory
+- `POST /project/scan`: Scan directory for project configs
+- `DELETE /project/registry/{project_id}`: Remove project from registry
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/schemas/project_schemas.py`:
+  - Added `generate_project_id()` and `get_project_config_filename()` helpers
+  - Added `id` field to `ProjectConfig`
+  - Added `RegisteredProject` and `ProjectRegistry` models
+  - Updated request/response models for new endpoints
+- `canvas_app/backend/services/project_service.py`:
+  - Added `find_project_configs()` to discover configs in directory
+  - Refactored `create_project()` to use named config files
+  - Refactored `open_project()` to support ID, path, or path+config
+  - Added project registry methods: `_register_project()`, `get_project_by_id()`, etc.
+  - Added `scan_directory_for_projects()` for discovery
+  - Added `migrate_recent_projects()` for legacy migration
+- `canvas_app/backend/routers/project_router.py`:
+  - Updated existing endpoints for new response format
+  - Added `GET /all`, `GET /directory`, `POST /scan`, `DELETE /registry/{id}` endpoints
+
+**Frontend**:
+- `canvas_app/frontend/src/types/project.ts`:
+  - Added `RegisteredProject` type
+  - Updated `ProjectResponse` with `id` and `config_file`
+  - Added new request/response types
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `getAll()`, `getProjectsInDirectory()`, `scanDirectory()`, `removeFromRegistry()` methods
+- `canvas_app/frontend/src/stores/projectStore.ts`:
+  - Added `projectConfigFile`, `allProjects`, `directoryProjects` state
+  - Added `fetchAllProjects()`, `fetchDirectoryProjects()`, `scanDirectory()`, `removeProjectFromRegistry()` actions
+  - Updated `openProject()` to accept ID, path, and/or config file
+- `canvas_app/frontend/src/components/panels/ProjectPanel.tsx`:
+  - Added directory scanning UI with project selection
+  - Added "All Projects" tab
+  - Show config filename in project lists
+  - Added remove from registry button
+
+### Usage Example
+
+**Creating multiple projects in same directory**:
+1. Navigate to directory containing repository files
+2. Click "New Project" and enter name "Gold Analysis"
+3. Creates `gold-analysis.normcode-canvas.json`
+4. Click "New Project" again with name "Gold Debug"
+5. Creates `gold-debug.normcode-canvas.json`
+6. Both projects share the same repository files but can have different settings
+
+**Opening a project from a directory with multiple configs**:
+1. Enter directory path in "Open" tab
+2. Click "Scan"
+3. See list of all project configs in that directory
+4. Click to select which project to open
+
+---
+
 ## December 21, 2024 - Editor Panel Tree View Enhancement
 
 ### What Was Implemented
@@ -1293,6 +1417,9 @@ API endpoints verified:
 | **Per-node log filtering** | ✅ Working | Filter logs by selected node |
 | **Restart after completion** | ✅ Working | Reset button allows re-running after completion |
 | **Project-based canvas** | ✅ Working | IDE-like project management with config persistence |
+| **Multi-project per directory** | ✅ Working | Multiple project configs in same directory |
+| **Project registry** | ✅ Working | Centralized registry of all known projects |
+| **Directory scanning** | ✅ Working | Discover all project configs in a directory |
 | **Recent projects** | ✅ Working | Quick access to recently opened projects |
 | **Project welcome screen** | ✅ Working | Launch screen for opening/creating projects |
 | **"Run to" feature** | ✅ Working | Run until specific node, then pause |
@@ -1448,6 +1575,31 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.7.0 (December 21, 2024) - Multi-Project per Directory
+- **Multiple projects per directory**:
+  - Projects now use `{project-name}.normcode-canvas.json` format
+  - Create multiple project configs in same directory with different settings
+  - Each project has a unique ID for unambiguous identification
+- **Centralized project registry**:
+  - All known projects tracked in `~/.normcode-canvas/project-registry.json`
+  - Registry persists across sessions
+  - Projects can be opened by ID from registry
+  - Automatic cleanup of invalid (deleted) projects
+- **Directory scanning**:
+  - Scan any directory to discover all project configs
+  - Select which project to open when multiple found
+- **Enhanced Project Panel UI**:
+  - Shows config filename in project lists
+  - "All Projects" tab to view all registered projects
+  - Remove from registry button (hover to see)
+  - Directory scan with project selection
+- **API enhancements**:
+  - `POST /project/scan` - scan directory for configs
+  - `GET /project/all` - list all registered projects
+  - `GET /project/directory` - projects in specific directory
+  - `DELETE /project/registry/{id}` - remove from registry
+- **Backwards compatible**: Legacy `normcode-canvas.json` still works
 
 ### v0.6.3 (December 21, 2024) - Tensor Shape Fix, Perceptual Signs & Function References
 - **Fixed tensor dimension calculation**:

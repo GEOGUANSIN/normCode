@@ -17,6 +17,7 @@ export interface ExecutionSettings {
 }
 
 export interface ProjectConfig {
+  id: string;  // Unique project ID
   name: string;
   description?: string;
   created_at: string;
@@ -27,6 +28,21 @@ export interface ProjectConfig {
   ui_preferences: Record<string, unknown>;
 }
 
+/**
+ * A registered project in the app's project registry.
+ * Tracks all known projects (not just recent ones).
+ */
+export interface RegisteredProject {
+  id: string;  // Unique project ID
+  name: string;
+  directory: string;  // Absolute path to project directory
+  config_file: string;  // Filename of the config
+  description?: string;
+  created_at: string;
+  last_opened?: string;
+}
+
+// Legacy type for backwards compatibility
 export interface RecentProject {
   path: string;
   name: string;
@@ -34,18 +50,31 @@ export interface RecentProject {
 }
 
 export interface ProjectResponse {
-  path: string;
+  id: string;  // Project ID
+  path: string;  // Directory path
+  config_file: string;  // Config filename
   config: ProjectConfig;
   is_loaded: boolean;
   repositories_exist: boolean;
 }
 
+export interface ProjectListResponse {
+  projects: RegisteredProject[];
+}
+
+export interface DirectoryProjectsResponse {
+  directory: string;
+  projects: RegisteredProject[];
+}
+
 export interface RecentProjectsResponse {
-  projects: RecentProject[];
+  projects: RegisteredProject[];
 }
 
 export interface OpenProjectRequest {
-  project_path: string;
+  project_id?: string;  // Open by project ID
+  project_path?: string;  // Path to directory
+  config_file?: string;  // Specific config file
 }
 
 export interface CreateProjectRequest {
@@ -64,4 +93,9 @@ export interface SaveProjectRequest {
   execution?: ExecutionSettings;
   breakpoints?: string[];
   ui_preferences?: Record<string, unknown>;
+}
+
+export interface ScanDirectoryRequest {
+  directory: string;
+  register?: boolean;
 }
