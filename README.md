@@ -274,16 +274,16 @@ NormCode is described in the paper:
 > 
 > Multi-step workflows that chain LLM calls suffer from context pollution. NormCode enforces explicit data isolation as a language-level constraint, making AI workflows auditable by construction.
 
-See [documentation/paper/paper_draft.md](documentation/paper/paper_draft.md) for the full draft.
+See [Arxiv](https://arxiv.org/abs/2512.10563) for the full draft.
 
 ---
 
 ## License
 
-[Add your license here]
+This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Contributing
 
-[Add contribution guidelines here]
+Contributions are welcome! Please feel free to submit issues and pull requests.
