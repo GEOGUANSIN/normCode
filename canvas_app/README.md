@@ -7,7 +7,11 @@ A visual, interactive environment for executing, debugging, and auditing NormCod
 - **Graph Visualization**: Interactive React Flow-based graph showing the inference structure
 - **Real-time Execution**: Watch nodes change status as the plan executes
 - **Debugging**: Set breakpoints, step through inferences, inspect node data
-- **Detail Panel**: View node details, connections, and working interpretations
+- **Tensor Inspector**: View N-dimensional tensor data with slicing and axis selection
+- **Agent Management**: Configure multiple agents with different LLM models
+- **Project System**: IDE-like project management with multi-project support
+- **Editor Panel**: Edit NormCode files directly within the app
+- **Tool Monitoring**: Real-time view of all LLM and tool calls
 
 ## Quick Start
 
@@ -17,14 +21,68 @@ A visual, interactive environment for executing, debugging, and auditing NormCod
 - Node.js 18+
 - npm 9+
 
-### Setup
+### LLM Configuration (settings.yaml)
+
+The canvas app reads LLM model configurations from `settings.yaml` in the project root. This file contains API keys for various LLM providers.
+
+**Required**: Create or edit `settings.yaml` in the project root:
+
+```yaml
+# settings.yaml - LLM Model Configuration
+# Each model name maps to its API key configuration
+
+qwen-plus:
+    DASHSCOPE_API_KEY: sk-your-api-key-here
+
+qwen-turbo-latest:
+    DASHSCOPE_API_KEY: sk-your-api-key-here
+
+gpt-4o:
+    OPENAI_API_KEY: sk-your-openai-key-here
+
+claude-3-sonnet:
+    ANTHROPIC_API_KEY: sk-your-anthropic-key-here
+
+# Optional: Custom API base URL
+# BASE_URL: https://your-custom-endpoint.com/v1
+```
+
+**Note**: The `demo` mode is always available and doesn't require an API key (for testing without LLM calls).
+
+### Running (First Time)
+
+The launcher automatically checks and installs dependencies on first run:
+
+```powershell
+cd canvas_app
+python launch.py
+```
+
+The launcher will:
+1. Check for Python dependencies (FastAPI, uvicorn, etc.)
+2. Check for Node.js dependencies (React, Vite, etc.)
+3. Install any missing dependencies automatically
+4. Start both backend and frontend servers
+
+### Launcher Options
+
+```powershell
+python launch.py              # Start in dev mode (default)
+python launch.py --prod       # Start in production mode (no auto-reload)
+python launch.py --install    # Force reinstall all dependencies
+python launch.py --skip-deps  # Skip dependency checks (faster startup)
+python launch.py --backend-only   # Only start the backend server
+python launch.py --frontend-only  # Only start the frontend server
+```
+
+### Manual Setup (Optional)
+
+If you prefer to install dependencies manually:
 
 1. **Install Backend Dependencies**
 
 ```powershell
 cd canvas_app/backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
@@ -35,21 +93,11 @@ cd canvas_app/frontend
 npm install
 ```
 
-### Running
-
-**Option 1: Combined Launcher**
-
-```powershell
-cd canvas_app
-python launch.py
-```
-
-**Option 2: Separate Terminals**
+### Running Manually (Separate Terminals)
 
 Terminal 1 (Backend):
 ```powershell
 cd canvas_app/backend
-.\venv\Scripts\Activate.ps1
 uvicorn main:app --reload --port 8000
 ```
 
@@ -166,16 +214,34 @@ npm run dev
 
 Vite provides hot module replacement for instant updates.
 
-## Next Steps (Phase 2+)
+## Completed Features
 
-- [ ] Full WebSocket integration for real-time updates
-- [ ] Tensor data inspection in detail panel
-- [ ] Value override capabilities
-- [ ] Selective re-run from any node
-- [ ] Export execution traces
+- ✅ Graph visualization with React Flow
+- ✅ Real-time WebSocket execution events
+- ✅ Breakpoints and step execution
+- ✅ TensorInspector for N-D data viewing
+- ✅ Log panel with per-node filtering
+- ✅ Project management (multi-project, registry)
+- ✅ Editor panel with file browser
+- ✅ Agent panel with tool monitoring
+- ✅ "Run to" feature
+- ✅ Fullscreen detail panel
+- ✅ Natural name display
+- ✅ **Value override dialog** (edit tensor values at any node)
+- ✅ **Function modification** (change paradigm, prompt, output type)
+- ✅ **Selective re-run** from any node
+- ✅ **Checkpoint resume/fork** (continue or branch from saved state)
+
+## Next Steps (Phase 5: Polish & Advanced)
+
 - [ ] Keyboard shortcuts
+- [ ] Node search and filtering
+- [ ] Export execution traces
+- [ ] Run comparison/diff view
+- [ ] Performance optimization for 500+ nodes
+- [ ] Watch expressions
 
 ---
 
-**Version**: 0.1.0 (Phase 1)  
-**Status**: Basic graph display and structure complete
+**Version**: 0.8.0 (Phase 4 Complete)  
+**Status**: All core features complete (Phases 1-4), moving to polish phase
