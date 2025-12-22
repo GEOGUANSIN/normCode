@@ -1,182 +1,289 @@
-# NormCode: An Engine for Building Reasoning Agents
+# NormCode: Context-Isolated AI Planning
 
-NormCode is a comprehensive framework for building and running intelligent agents that can understand natural language and execute complex, structured plans. At its core is **NormCode**, a declarative language designed to represent tasks not as rigid scripts, but as flexible "plans of inferences."
+**NormCode is a semi-formal language for building auditable, multi-step AI workflows where each step sees only what you explicitly pass to it.**
 
-The standout feature of this project is its ability to translate high-level, natural language descriptions of a task directly into an executable NormCode plan. This allows developers to create sophisticated agents with emergent reasoning capabilities.
+---
 
-This repository contains the complete ecosystem for NormCode, including:
-- The core **`infra` Engine** for executing NormCode plans.
-- A web-based **`editor_app`** for creating, visualizing, and debugging plans.
-- A **`translate_agent`** that can convert natural language into NormCode.
-- A **Streamlit App** (`streamlit_app/`) for running orchestrations via web UI.
-- A **CLI Tool** (`cli_orchestrator.py`) for running orchestrations from command line.
+## The Problem: Context Pollution
 
-## How It Works: A Visual Workflow
+When you chain multiple LLM calls together, **context pollution** causes failures:
 
-The following diagram illustrates the end-to-end workflow of the NormCode ecosystem:
+```
+Step 1: Read a 50-page document
+Step 2: Extract key entities  
+Step 3: Cross-reference with database
+Step 4: Generate summary
+        ↑ Why is this hallucinating names that don't exist?
+```
+
+By step 4, the model has 50 pages of document, raw database results, and extraction metadata all swimming in context. It hallucinates because it's drowning in noise.
+
+**Current approaches offer limited defense:**
+- Direct prompting bundles everything into one context window → cognitive overload
+- Chain-of-Thought extends interaction but doesn't isolate context → errors leak forward
+- Agent frameworks like LangChain provide orchestration but leave data flow implicit → debugging in the dark
+
+---
+
+## The Solution: The Alignment Stack
+
+NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  NormCode                    (Alignment Layer)          │
+│  Semi-formal contracts between humans and AI            │
+├─────────────────────────────────────────────────────────┤
+│  Shared Workspace            (Contextualization Layer)  │
+│  Data, tools, and constraints for specific tasks        │
+├─────────────────────────────────────────────────────────┤
+│  Foundation Models           (Intelligence Layer)       │
+│  General-purpose reasoning and generation               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**NormCode's core guarantee:** Each inference is a sealed room. It only sees what you explicitly pass in.
+
+---
+
+## What Makes NormCode Different
+
+### 1. Data Isolation by Construction
+
+```ncds
+<- risk assessment
+    <= evaluate legal exposure based on the extracted clauses
+    <- relevant clauses
+        <= extract clauses related to liability
+        <- full contract
+```
+
+The risk assessment **cannot see the full contract**. Only the extracted clauses. No confusion, reduced hallucination, fully auditable.
+
+### 2. Semantic vs. Syntactic Separation
+
+| Type | LLM? | Cost | Determinism | Examples |
+|------|------|------|-------------|----------|
+| **Semantic** | ✅ Yes | Tokens | Non-deterministic | Reasoning, generating, analyzing |
+| **Syntactic** | ❌ No | Free | 100% Deterministic | Collecting, selecting, routing |
+
+A typical 20-step plan might only call an LLM 8 times. The rest are instant, free data operations.
+
+### 3. Three Properties for Trust
+
+| Property | Description |
+|----------|-------------|
+| **Readable** | Humans can understand and audit every step |
+| **Executable** | AI can act on plans consistently and reliably |
+| **Accountable** | Every action is traceable with unique flow indices |
+
+---
+
+## The Ecosystem
 
 ```mermaid
 graph TD
-    A["Input <br> (Natural Language Task)"] --> B["translate_agent"];
-    B -- Translates --> C["NormCode Plan"];
-    C <--> D["editor_app <br> (View / Edit / Debug)"];
-    C --> E["infra Engine"];
-    E -- Orchestrates --> F["Execution"];
-    subgraph Execution Context
-        F --> G["🧠 Foundation Models"];
-        F --> H["⚙️ Tools & Data"];
-    end
-    F --> I["Output <br> (Final Result)"];
+    A["Natural Language Task"] --> B["Compiler"]
+    B --> C["NormCode Plan (.ncd)"]
+    C <--> D["Canvas App (Visual Debugger)"]
+    C --> E["Orchestrator"]
+    E --> F["Execution"]
+    F --> G["🧠 Foundation Models"]
+    F --> H["⚙️ Tools & Data"]
+    F --> I["Final Result + Audit Trail"]
 ```
 
-## The NormCode Ecosystem
+### Core Components
 
-The project is built on three main pillars that work together to provide a complete development and execution environment. Inspired by the concept of an "Alignment Stack," these layers ensure that the agent's actions are aligned with the user's intent and grounded in real-world context.
+| Component | Purpose |
+|-----------|---------|
+| **`infra/`** | The NormCode execution engine (Orchestrator, Blackboard, Agent Sequences) |
+| **`canvas_app/`** | Visual graph debugger with React Flow, breakpoints, and real-time execution |
+| **`cli_orchestrator.py`** | Command-line interface for running and managing orchestrations |
+| **`documentation/`** | Comprehensive guides, grammar reference, and API documentation |
 
-```mermaid
-graph TD
-    subgraph The Alignment Stack
-        direction TB
-        N["NormCode <br> The Alignment Layer"]
-        W["Shared Workspace <br> The Contextualization Layer"]
-        F["Foundation Models <br> The Intelligence Layer"]
-    end
+---
 
-    style N fill:#f97316,stroke:#333,stroke-width:2px,color:#fff
-    style W fill:#14b8a6,stroke:#333,stroke-width:2px,color:#fff
-    style F fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
-```
-
-### 1. The `infra` Engine: The Core Executor
-
-The `infra` directory contains the heart of the project: the NormCode execution engine. It's responsible for taking a plan of inferences and orchestrating its execution. Key components include:
-
--   **Orchestrator**: The central conductor that manages the execution flow.
--   **Blackboard**: A shared memory space that tracks the real-time state of every concept and inference in the plan.
--   **Agent's Sequences**: Pre-defined pipelines that execute the logic for different types of inferences (e.g., looping, making judgments, or running code).
--   **Body**: An interface for interacting with external tools, most notably Large Language Models (LLMs).
-
-For a deep dive into the theory and syntax of NormCode, please see the [**NormCode Guide**](documentation/NormCode_terms/NormCode_Guide.md).
-
-### 2. The `editor_app`: A Web-Based IDE
-
-To make working with NormCode intuitive, the project includes a powerful web-based IDE. The editor provides a graphical interface for:
-
--   Creating and modifying NormCode plans.
--   Visualizing the relationships between different inferences.
--   Debugging plan execution in real-time.
-
-The editor is built with a React frontend and a FastAPI backend, providing a modern and responsive development experience.
-
-### 3. The `translate_agent`: Natural Language to NormCode
-
-Perhaps the most powerful component of the ecosystem is the `translate_agent`. This agent is capable of taking a high-level, natural language description of a task and translating it into a structured, executable NormCode plan.
-
-This translation process is not based on simple heuristics; it follows a formal, structured algorithm detailed in the [**Comprehensive NormCode Translation Guide**](direct_infra_experiment/translation_experiment/comprehensive_normcode_translation_guide.md). This allows the system to reason about how to break down a problem and formulate a plan to solve it.
-
-## Getting Started
-
-This section will guide you through setting up the project and running your first examples.
+## Quick Start
 
 ### 1. Installation
-
-The core `infra` engine has minimal dependencies. To get started, clone the repository and install the required packages:
 
 ```bash
 git clone https://github.com/your-username/normCode.git
 cd normCode
-pip install -r requirements.txt
+pip install -e .
 ```
 
-### 2. Running a Basic Example
+### 2. Launch the Canvas App (Recommended)
 
-The easiest way to see NormCode in action is to run one of the included examples. The `ex_add_complete.py` script demonstrates a NormCode plan that performs multi-digit addition.
-
-To run it:
-
-```bash
-python infra/examples/add_examples/ex_add_complete.py
-```
-
-This will execute the plan and output the final result. You can inspect the script to see how the NormCode plan is defined and how the `Orchestrator` is used to run it.
-
-### 3. Running the LLM-Powered Example
-
-A more advanced example, `ex_add_complete_code.py`, showcases the framework's ability to integrate with Large Language Models (LLMs). In this example, some of the inference steps are not hard-coded but are instead executed by an LLM that generates and runs Python code on the fly.
-
-To run this example, you will first need to set up your OpenAI API key. Create a `.env` file in the root of the project:
-
-```
-OPENAI_API_KEY="your-api-key-here"
-```
-
-Then, run the script:
-
-```bash
-python infra/examples/add_examples/ex_add_complete_code.py
-```
-
-### 4. Using the Streamlit Orchestrator App
-
-For a quick and easy way to run orchestrations, we provide a minimal Streamlit web app:
-
-```bash
-cd streamlit_app
-pip install streamlit
-streamlit run app.py
-```
-
-This provides a web interface to:
-- Upload repository JSON files (concepts, inferences, inputs)
-- Configure execution parameters
-- Start/resume orchestrations with checkpointing
-- View results and execution history
-
-See [**streamlit_app/README.md**](streamlit_app/README.md) for detailed instructions.
-
-### 5. Launching the Canvas App (Recommended)
-
-The **Canvas App** is a modern visual debugger and execution environment for NormCode plans. Start it from the project root:
+The **Canvas App** is a visual debugger for executing and inspecting NormCode plans:
 
 ```bash
 python launch_canvas.py
 ```
 
-The launcher will automatically:
-- Check and install Python dependencies (FastAPI, uvicorn, etc.)
-- Check and install Node.js dependencies (React, Vite, etc.)
-- Start both backend (port 8000) and frontend (port 5173)
+This automatically:
+- Checks and installs Python dependencies (FastAPI, uvicorn, etc.)
+- Checks and installs Node.js dependencies (React, Vite, etc.)
+- Starts backend (port 8000) and frontend (port 5173)
 
 **Options:**
 ```bash
 python launch_canvas.py --prod       # Production mode (no auto-reload)
-python launch_canvas.py --install    # Force reinstall all dependencies
 python launch_canvas.py --skip-deps  # Skip dependency checks (faster startup)
 python launch_canvas.py --help       # Show all options
 ```
 
 **Prerequisites:** Python 3.11+, Node.js 18+
 
-See [**canvas_app/README.md**](canvas_app/README.md) for detailed documentation.
+### 3. Run from Command Line
 
-### 6. Launching the Legacy Editor
+For headless execution, use the CLI orchestrator:
 
-The `editor_app` is the original web-based IDE for working with NormCode. It has its own set of dependencies and requires a separate setup process for its FastAPI backend and React frontend.
+```bash
+# Start a new run
+python cli_orchestrator.py run --concepts path/to/concepts.json --inferences path/to/inferences.json
 
-Please see the [**Editor README**](editor_app/README.md) for detailed setup and launch instructions.
+# Resume from checkpoint
+python cli_orchestrator.py resume --run-id <UUID>
+
+# Fork from a past state
+python cli_orchestrator.py fork --from-run <UUID> --concepts new_concepts.json
+
+# List all runs
+python cli_orchestrator.py list-runs
+```
+
+### 4. Run a Basic Example
+
+See NormCode in action with the base-X addition algorithm (achieves 100% accuracy on arbitrary-length inputs):
+
+```bash
+python infra/examples/add_examples/ex_add_complete.py
+```
+
+---
+
+## How It Works
+
+### A Simple Plan
+
+```ncds
+<- document summary
+    <= summarize this text
+    <- clean text
+        <= extract main content, removing headers
+        <- raw document
+```
+
+Read bottom-up:
+1. Start with `raw document`
+2. Run `extract main content...` → produces `clean text`
+3. Run `summarize this text` → produces `document summary`
+
+**Key insight:** The summarization step literally cannot see the raw document.
+
+### The Compilation Pipeline
+
+```
+Natural Language → .ncds (draft) → .ncd (formal) → .concept.json + .inference.json → Execution
+```
+
+| Phase | Output | Purpose |
+|-------|--------|---------|
+| **Derivation** | `.ncds` | Extract structure from natural language |
+| **Formalization** | `.ncd` | Add flow indices, sequence types, bindings |
+| **Post-Formalization** | `.ncd` (enriched) | Add paradigms, resources, axis annotations |
+| **Activation** | JSON repositories | Generate executable format for orchestrator |
+
+### Execution Model
+
+The Orchestrator runs plans with:
+- **Dependency-driven scheduling** — inferences run only when inputs are ready
+- **SQLite checkpointing** — pause, resume, or fork from any cycle
+- **Full state tracking** — inspect what each step saw and produced
+
+---
+
+## When to Use NormCode
+
+| Scenario | Use NormCode? | Rationale |
+|----------|---------------|-----------|
+| Multi-step workflow (5+ LLM calls) | ✅ Yes | Isolation and debuggability pay off |
+| Auditable AI (legal, medical, finance) | ✅ Yes | You must prove what each step saw |
+| Long-running, resumable workflows | ✅ Yes | Built-in checkpointing |
+| Quick prototype (1-2 LLM calls) | ❌ No | Overhead exceeds benefit |
+| Simple Q&A chatbot | ❌ No | Just prompt the model directly |
+
+**Sweet spot:** Complex, multi-step workflows where you need to know exactly what happened at each step—and where a failure at step 7 shouldn't corrupt reasoning at step 12.
+
+---
 
 ## Project Structure
 
-The repository is organized into the following key directories:
+```
+normCode/
+├── infra/                    # Core execution engine
+│   ├── _agent/               # Agent framework and sequences
+│   ├── _orchest/             # Orchestrator and blackboard
+│   ├── _states/              # Reference system and tensors
+│   └── examples/             # Working examples
+├── canvas_app/               # Visual debugger (React + FastAPI)
+│   ├── frontend/             # React Flow graph visualization
+│   └── backend/              # Execution controller API
+├── documentation/            # Comprehensive documentation
+│   ├── current/              # Latest guides
+│   └── paper/                # Academic paper draft
+├── cli_orchestrator.py       # Command-line interface
+├── launch_canvas.py          # One-command Canvas App launcher
+└── settings.yaml             # LLM API configuration
+```
 
--   `infra/`: The core NormCode execution engine and its components.
--   `canvas_app/`: **Modern visual debugger** - React Flow-based graph visualization and debugging.
--   `editor_app/`: Legacy web-based IDE (frontend and backend).
--   `translate_agent/`: The agent responsible for translating natural language into NormCode.
--   `streamlit_app/`: Minimal Streamlit web interface for running orchestrations.
--   `direct_infra_experiment/`: Contains research, experiments, and documentation related to the translation agent.
--   `documentation/`: Contains high-level documentation, including the main NormCode guide.
+---
 
-**Quick Start Files (at project root):**
--   `launch_canvas.py`: One-command launcher for the Canvas App
--   `settings.yaml`: LLM API key configuration (create from `canvas_app/settings.yaml.example`) 
+## Configuration
+
+Create `settings.yaml` in the project root (see `canvas_app/settings.yaml.example`):
+
+```yaml
+llm:
+  provider: openai  # or: anthropic, dashscope
+  api_key: your-api-key-here
+  model: gpt-4o     # or: claude-3-opus, qwen-plus
+```
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Overview](documentation/current/1_intro/overview.md) | What NormCode is and why it exists |
+| [NCD Format](documentation/current/2_grammar/ncd_format.md) | The formal syntax reference |
+| [Execution](documentation/current/3_execution/overview.md) | How plans run at runtime |
+| [Compilation](documentation/current/4_compilation/overview.md) | The transformation pipeline |
+| [Canvas App](documentation/current/5_tools/canvas_app_overview.md) | Visual debugger guide |
+
+---
+
+## Research
+
+NormCode is described in the paper:
+
+> **NormCode: A Semi-Formal Language for Context-Isolated AI Planning**
+> 
+> Multi-step workflows that chain LLM calls suffer from context pollution. NormCode enforces explicit data isolation as a language-level constraint, making AI workflows auditable by construction.
+
+See [documentation/paper/paper_draft.md](documentation/paper/paper_draft.md) for the full draft.
+
+---
+
+## License
+
+[Add your license here]
+
+---
+
+## Contributing
+
+[Add contribution guidelines here]
