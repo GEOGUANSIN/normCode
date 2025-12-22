@@ -6,9 +6,44 @@
 
 ---
 
-## December 20, 2024 - Agent Panel Enhancements
+## December 20, 2024 - Agent Panel Enhancements & Capabilities Display
 
 ### What Was Implemented
+
+**Agent Capabilities Display (NEW)**
+- [x] New "Capabilities" section in Agent Panel showing:
+  - **Tools**: Displays all enabled tools (LLM, File System, Python Interpreter, User Input, Internal) with:
+    - Color-coded icons (blue for LLM, green for File System, orange for Python, purple for User Input, gray for Internal)
+    - Tool descriptions
+    - Collapsible list of methods for each tool (e.g., `.read()`, `.write()` for File System)
+    - Strikethrough for disabled tools
+  - **Paradigms**: Lists available paradigms, separated into:
+    - "★ Project Paradigms" (custom, from project `paradigm_dir`, green-tinted)
+    - "Default Paradigms" (from infra library, gray)
+    - Shows custom `paradigm_dir` path in header badge
+    - Each paradigm is collapsible to show description and inputs (vertical/horizontal)
+  - **Sequences**: Displays available inference sequences based on `AgentFrameModel` (e.g., "demo", "composition"):
+    - Grouped by category (Core, LLM, Python, Composition, Input)
+    - Color-coded badges (blue for Core/LLM, orange for Python, purple for Composition, cyan for Input)
+    - Distinct icons (Workflow, Zap, Repeat, Code) for different categories
+    - Tooltips showing sequence descriptions
+    - Badge showing current AgentFrameModel
+- [x] **Backend API**: `GET /api/agents/{agent_id}/capabilities` endpoint returns:
+  - `tools`: List of available tools with methods
+  - `paradigms`: List of paradigms from custom + default directories with metadata
+  - `sequences`: List of sequences available for the agent's frame model
+  - `paradigm_dir`: The effective paradigm directory path
+  - `agent_frame_model`: Current agent frame model (e.g., "demo")
+- [x] **Helper Functions**:
+  - `_get_tool_methods()`: Lists methods for common tools
+  - `_list_paradigms_from_dir()`: Scans paradigm directories (prioritizes custom over default)
+  - `_get_available_sequences()`: Retrieves sequences based on AgentFrameModel
+- [x] **Paradigm Directory Resolution**: Checks agent config first, then falls back to project-level config from `execution_controller._load_config`
+- [x] **UI Enhancements**:
+  - Panel width increased from `w-64` to `w-72` for better readability
+  - 3-panel layout: Agents list (top, collapsible), Capabilities (middle, collapsible), Tool Calls (bottom)
+  - Consistent collapse/expand icons (`ChevronDown`/`ChevronRight`) for all sections
+  - Agent list section limited to `max-h-32` to ensure space for capabilities
 
 **Tool Call Detail Modal**
 - [x] Click any tool call entry to open a detailed modal window
@@ -17,12 +52,14 @@
 - [x] Character count display for long values
 - [x] Status icon, timestamp, flow_index, agent, duration in header
 - [x] Click outside to dismiss modal
+- [x] Increased modal width from `w-[600px]` to `w-[800px]` for better readability
 
 **Collapsible Agent Panel Sections**
 - [x] Agents list section is now collapsible (click header to toggle)
-- [x] Tool Calls section expands to full height when Agents collapsed
-- [x] Maximize/minimize toggle for Tool Calls section
+- [x] Tool Calls section expands to full height when sections above are collapsed
+- [x] Consistent chevron icons for all collapsible sections
 - [x] Agent count shown in collapsed header
+- [x] Capability and tool call counts shown in collapsed headers
 
 **Full Tool Call Data Capture**
 - [x] Replaced `_summarize_value()` with `_serialize_value()` in `MonitoredToolProxy`
@@ -39,6 +76,51 @@
 - [x] Method name shown as `create_function_executor→execute` for clarity
 
 ### Technical Details
+
+**Agent Capabilities API**:
+```
+GET /api/agents/{agent_id}/capabilities
+Returns:
+{
+  "agent_id": "default",
+  "tools": [
+    {
+      "name": "LLM",
+      "enabled": true,
+      "description": "Language model for text generation",
+      "methods": [".ask()", ".complete()"]
+    },
+    ...
+  ],
+  "paradigms": [
+    {
+      "name": "v_Script-h_Data-c_Execute-o_Normal",
+      "description": "...",
+      "vertical_inputs": "...",
+      "horizontal_inputs": {...},
+      "is_custom": true,
+      "source": "C:/path/to/project/paradigm"
+    },
+    ...
+  ],
+  "sequences": [
+    {
+      "name": "demo",
+      "description": "Basic demonstration sequence",
+      "category": "core"
+    },
+    ...
+  ],
+  "paradigm_dir": "C:/path/to/project/paradigm",
+  "agent_frame_model": "demo"
+}
+```
+
+**Paradigm Directory Resolution**:
+1. First check agent's own `paradigm_dir` config
+2. If not set, check project-level config from `execution_controller._load_config`
+3. Resolve relative paths against project `base_dir`
+4. Fall back to default infra `PARADIGMS_DIR`
 
 **Callable Return Value Wrapping**:
 ```
@@ -65,10 +147,29 @@ After (full visibility):
   - Added `ToolCallDetailModal` component with portal rendering
   - Added `ValueDisplay` component for collapsible key-value display
   - Added `formatValue()` helper for proper string/JSON formatting
-  - Added `agentsCollapsed` and `toolCallsExpanded` state
+  - Added `agentsCollapsed` and `capabilitiesCollapsed` state
+  - Added `CapabilitiesPanel` component with three sections:
+    - Tools section with collapsible method lists
+    - Paradigms section separated into custom vs. default
+    - Sequences section grouped by category
   - Collapsible section headers with chevron icons
-  - Maximize/minimize toggle for Tool Calls section
+  - Changed `toolCallsExpanded` to `toolCallsCollapsed` for consistency
   - Wider modal (800px) with better overflow handling
+  - Wider panel (w-72) to accommodate new content
+  - 3-panel layout with proper flex behavior
+- `canvas_app/frontend/src/types/agent.ts` (updated):
+  - Added `ToolInfo`, `ParadigmInfo`, `SequenceInfo`, `AgentCapabilities` types
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `fetchAgentCapabilities(agentId)` API function
+
+**Types and Models**:
+- Backend Pydantic models: `ToolInfo`, `ParadigmInfo`, `SequenceInfo`, `AgentCapabilitiesResponse`
+- Frontend TypeScript types: `ToolInfo`, `ParadigmInfo`, `SequenceInfo`, `AgentCapabilities`
+- `ParadigmInfo` fields support both `dict` and `string` types for `vertical_inputs`/`horizontal_inputs`
+
+**Bug Fixes**:
+- Fixed Pydantic validation error: `vertical_inputs` and `horizontal_inputs` can be string descriptions, not just dicts
+- Fixed Pydantic validation error: `source` field from `PARADIGMS_DIR` needed `str()` conversion (was `Path` object)
 
 ---
 
@@ -1741,7 +1842,19 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 
 ## Changelog
 
-### v0.7.1 (December 20, 2024) - Agent Panel Enhancements
+### v0.7.1 (December 20, 2024) - Agent Panel Enhancements & Capabilities Display
+- **Agent Capabilities Display**:
+  - New "Capabilities" section showing Tools, Paradigms, and Sequences
+  - Tools section with method lists (e.g., `.read()`, `.write()`)
+  - Paradigms separated into "★ Project Paradigms" (custom) and "Default Paradigms"
+  - Sequences grouped by category (Core, LLM, Python, Composition, Input)
+  - Shows custom paradigm directory path and current AgentFrameModel
+  - Backend API: `GET /api/agents/{agent_id}/capabilities`
+- **UI Improvements**:
+  - Panel width increased to `w-72`
+  - 3-panel layout: Agents, Capabilities, Tool Calls
+  - Consistent chevron icons for all collapsible sections
+  - Color-coded tools, paradigms, and sequences
 - **Tool Call Detail Modal**:
   - Click any tool call entry to view full details in a modal
   - Collapsible sections for each input/output key
