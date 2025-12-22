@@ -341,6 +341,51 @@ class ProjectService:
         
         return self.current_config
     
+    def update_repositories(
+        self,
+        concepts: Optional[str] = None,
+        inferences: Optional[str] = None,
+        inputs: Optional[str] = None,
+    ) -> ProjectConfig:
+        """
+        Update repository paths for the current project.
+        
+        Only updates paths that are provided (non-None).
+        
+        Args:
+            concepts: New path to concepts file (relative to project dir)
+            inferences: New path to inferences file (relative to project dir)
+            inputs: New path to inputs file (relative to project dir, or None to remove)
+            
+        Returns:
+            ProjectConfig: The updated configuration
+            
+        Raises:
+            RuntimeError: If no project is open
+        """
+        if not self.is_project_open:
+            raise RuntimeError("No project is currently open")
+        
+        # Update repository paths
+        if concepts is not None:
+            self.current_config.repositories.concepts = concepts
+        if inferences is not None:
+            self.current_config.repositories.inferences = inferences
+        if inputs is not None:
+            # Empty string means clear the inputs path
+            self.current_config.repositories.inputs = inputs if inputs else None
+        
+        self.current_config.updated_at = datetime.now()
+        
+        # Save to file
+        config_path = self.get_project_config_path(self.current_project_path, self.current_config_file)
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(self.current_config.model_dump(mode='json'), f, indent=2, default=str)
+        
+        logger.info(f"Updated repository paths for project '{self.current_config.name}'")
+        
+        return self.current_config
+    
     def close_project(self):
         """Close the current project."""
         if self.is_project_open:

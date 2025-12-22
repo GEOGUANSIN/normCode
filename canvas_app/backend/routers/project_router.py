@@ -16,6 +16,7 @@ from schemas.project_schemas import (
     RecentProjectsResponse,
     ScanDirectoryRequest,
     ExecutionSettings,
+    UpdateRepositoriesRequest,
 )
 from services.project_service import project_service
 from services.execution_service import execution_controller
@@ -302,4 +303,35 @@ async def update_project_settings(settings: ExecutionSettings):
         )
     except Exception as e:
         logger.exception(f"Failed to update project settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/repositories", response_model=ProjectResponse)
+async def update_repository_paths(request: UpdateRepositoriesRequest):
+    """
+    Update repository paths for the current project.
+    
+    Only updates paths that are provided (non-None).
+    After updating, re-checks whether the repository files exist.
+    """
+    if not project_service.is_project_open:
+        raise HTTPException(status_code=400, detail="No project is currently open")
+    
+    try:
+        config = project_service.update_repositories(
+            concepts=request.concepts,
+            inferences=request.inferences,
+            inputs=request.inputs,
+        )
+        
+        return ProjectResponse(
+            id=config.id,
+            path=str(project_service.current_project_path),
+            config_file=project_service.current_config_file or "normcode-canvas.json",
+            config=config,
+            is_loaded=execution_controller.orchestrator is not None,
+            repositories_exist=project_service.check_repositories_exist(),
+        )
+    except Exception as e:
+        logger.exception(f"Failed to update repository paths: {e}")
         raise HTTPException(status_code=500, detail=str(e))

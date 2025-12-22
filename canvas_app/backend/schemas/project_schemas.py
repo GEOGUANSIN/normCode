@@ -179,3 +179,10 @@ class ScanDirectoryRequest(BaseModel):
     """Request to scan a directory for project config files."""
     directory: str
     register: bool = True  # Whether to register found projects
+
+
+class UpdateRepositoriesRequest(BaseModel):
+    """Request to update repository paths."""
+    concepts: Optional[str] = None
+    inferences: Optional[str] = None
+    inputs: Optional[str] = None

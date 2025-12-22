@@ -1,0 +1,167 @@
+:<:{result files} | ?{flow_index}: 1 | /: Final output containing all phase artifacts
+    <= &[#] %>({phase outputs}) | ?{flow_index}: 1.1 | ?{sequence}: grouping
+    <- {Phase 1: Confirmation of Instruction} | ?{flow_index}: 1.2
+        <= $. %<[{1.1_instruction_block.md}, {1.2_initial_context_registered.json}, {context_store/raw--*.md}] | ?{flow_index}: 1.2.1 | ?{sequence}: assigning
+        <- {1.1_instruction_block.md} | ?{flow_index}: 1.2.2
+            |%{file_location}: 1.1_instruction_block.md
+            <= ::({prompt}<$({instruction distillation prompt})%>; {1}<$({input files})%>) | ?{flow_index}: 1.2.2.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+                |%{h_input_norm}: file_location
+            <- {instruction distillation prompt}<:{prompt}> | ?{flow_index}: 1.2.2.2
+                |%{prompt_location}: prompts/1.1_instruction_distillation.md
+            <- {input files}<:{1}> | ?{flow_index}: 1.2.2.3
+                <= &[{}] | ?{flow_index}: 1.2.2.3.1 | ?{sequence}: grouping
+                <- {original prompt}<:{original_prompt}> | ?{flow_index}: 1.2.2.3.2
+                    |%{file_location}: prompts/0_original_prompt.md
+                <- {other input files}<:{other_files}> | ?{flow_index}: 1.2.2.3.3
+                    <= :>:({prompt}<$({location of related files prompt})%>) | ?{flow_index}: 1.2.2.3.3.1 | ?{sequence}: imperative
+                        |%{paradigm}: h_PromptTemplate-c_UserInput-o_Text
+                    <- {location of related files prompt}<:{prompt}> | ?{flow_index}: 1.2.2.3.3.2
+                        |%{prompt_location}: prompts/location_of_related_files.md
+            <- {output file location}<:{output}> | ?{flow_index}: 1.2.2.4
+                |%{location_string}: 1.1_instruction_block.md
+        <- [{1.2_initial_context_registered.json}, {context_store/raw--*.md}] | ?{flow_index}: 1.2.3
+            |%{file_location}: 1.2_initial_context_registered.json, context_store/raw--*.md
+            <= ::({prompt}<$({context registration prompt})%>; {1}<$({input files})%>) | ?{flow_index}: 1.2.3.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {context registration prompt}<:{prompt}> | ?{flow_index}: 1.2.3.2
+                |%{prompt_location}: prompts/1.2_context_registration.md
+            <- {input files}<:{1}> | ?{flow_index}: 1.2.3.3
+            <- {output file locations}<:{output}> | ?{flow_index}: 1.2.3.4
+                |%{location_string}: 1.2_initial_context_registered.json, context_store/raw--*.md
+        <- [{1.1_instruction_block.md}, {1.2_initial_context_registered.json}, {context_store/raw--*.md}] | ?{flow_index}: 1.2.4
+            <= :>:({prompt}<$({manual review prompt})%>; {1}) | ?{flow_index}: 1.2.4.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_Files-c_UserInputWithCanvas-o_Files
+            <- {manual review prompt}<:{prompt}> | ?{flow_index}: 1.2.4.2
+                |%{prompt_location}: prompts/1.3_manual_review.md
+            <- [{1.1_instruction_block.md}, {1.2_initial_context_registered.json}]<:{1}> | ?{flow_index}: 1.2.4.3
+
+    <- {Phase 2: Deconstruction into NormCode Draft} | ?{flow_index}: 1.3
+        <= $. %<[{2.1_draft.ncds}, {2.1_draft.ncn}] | ?{flow_index}: 1.3.1 | ?{sequence}: assigning
+        <- {2.1_draft.ncds} | ?{flow_index}: 1.3.2
+            |%{file_location}: 2.1_draft.ncds
+            <= ::({prompt}<$({deconstruction prompt})%>; {1}<$({1.1_instruction_block.md})%>) | ?{flow_index}: 1.3.2.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {deconstruction prompt}<:{prompt}> | ?{flow_index}: 1.3.2.2
+                |%{prompt_location}: prompts/2.1_deconstruction.md
+            <- {1.1_instruction_block.md}<:{1}> | ?{flow_index}: 1.3.2.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.3.2.4
+                |%{location_string}: 2.1_draft.ncds
+        <- {2.1_draft.ncn} | ?{flow_index}: 1.3.3
+            |%{file_location}: 2.1_draft.ncn
+            <= ::({prompt}<$({natural language translation prompt})%>; {1}<$({2.1_draft.ncds})%>) | ?{flow_index}: 1.3.3.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {natural language translation prompt}<:{prompt}> | ?{flow_index}: 1.3.3.2
+                |%{prompt_location}: prompts/2.2_natural_language_translation.md
+            <- {2.1_draft.ncds}<:{1}> | ?{flow_index}: 1.3.3.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.3.3.4
+                |%{location_string}: 2.1_draft.ncn
+        <- [{2.1_draft.ncds}, {2.1_draft.ncn}] | ?{flow_index}: 1.3.4
+            <= :>:({prompt}<$({manual review prompt})%>; {1}) | ?{flow_index}: 1.3.4.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_Files-c_UserInputWithCanvas-o_Files
+            <- {manual review prompt}<:{prompt}> | ?{flow_index}: 1.3.4.2
+                |%{prompt_location}: prompts/2.3_manual_review.md
+            <- [{2.1_draft.ncds}, {2.1_draft.ncn}]<:{1}> | ?{flow_index}: 1.3.4.3
+
+    <- {Phase 3: Formalization} | ?{flow_index}: 1.4
+        <= $. %<[{3.1_formalized.ncd}, {3.1_formalized.ncn}] | ?{flow_index}: 1.4.1 | ?{sequence}: assigning
+        <- {3.1_formalized.ncd} | ?{flow_index}: 1.4.2
+            |%{file_location}: 3.1_formalized.ncd
+            <= ::({prompt}<$({formalization prompt})%>; {1}<$({2.1_draft.ncds})%>) | ?{flow_index}: 1.4.2.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {formalization prompt}<:{prompt}> | ?{flow_index}: 1.4.2.2
+                |%{prompt_location}: prompts/3.1_formalization.md
+            <- {2.1_draft.ncds}<:{1}> | ?{flow_index}: 1.4.2.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.4.2.4
+                |%{location_string}: 3.1_formalized.ncd
+        <- {3.1_formalized.ncn} | ?{flow_index}: 1.4.3
+            |%{file_location}: 3.1_formalized.ncn
+            <= ::({prompt}<$({natural language translation prompt})%>; {1}<$({3.1_formalized.ncd})%>) | ?{flow_index}: 1.4.3.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {natural language translation prompt}<:{prompt}> | ?{flow_index}: 1.4.3.2
+                |%{prompt_location}: prompts/3.2_natural_language_translation.md
+            <- {3.1_formalized.ncd}<:{1}> | ?{flow_index}: 1.4.3.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.4.3.4
+                |%{location_string}: 3.1_formalized.ncn
+        <- [{3.1_formalized.ncd}, {3.1_formalized.ncn}] | ?{flow_index}: 1.4.4
+            <= :>:({prompt}<$({manual review prompt})%>; {1}) | ?{flow_index}: 1.4.4.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_Files-c_UserInputWithCanvas-o_Files
+            <- {manual review prompt}<:{prompt}> | ?{flow_index}: 1.4.4.2
+                |%{prompt_location}: prompts/3.3_manual_review.md
+            <- [{3.1_formalized.ncd}, {3.1_formalized.ncn}]<:{1}> | ?{flow_index}: 1.4.4.3
+
+    <- {Phase 4: Post-Formalization and Contextualization} | ?{flow_index}: 1.5
+        <= $. %<[{4.1_enriched.ncd}, {4.1_context_manifest.json}, {prompts/__flow_index__*.md}] | ?{flow_index}: 1.5.1 | ?{sequence}: assigning
+        <- {4.1_enriched.ncd} | ?{flow_index}: 1.5.2
+            |%{file_location}: 4.1_enriched.ncd
+            <= ::({prompt}<$({post-formalization prompt})%>; {1}<$({3.1_formalized.ncd})%>; {2}<$({initial context files})%>) | ?{flow_index}: 1.5.2.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {post-formalization prompt}<:{prompt}> | ?{flow_index}: 1.5.2.2
+                |%{prompt_location}: prompts/4.1_post_formalization.md
+            <- {3.1_formalized.ncd}<:{1}> | ?{flow_index}: 1.5.2.3
+            <- {initial context files}<:{2}> | ?{flow_index}: 1.5.2.4
+            <- {output file location}<:{output}> | ?{flow_index}: 1.5.2.5
+                |%{location_string}: 4.1_enriched.ncd
+        <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}] | ?{flow_index}: 1.5.3
+            |%{file_location}: 4.1_context_manifest.json, context_store/__flow_index__--*.md
+            <= ::({prompt}<$({context distribution prompt})%>; {1}) | ?{flow_index}: 1.5.3.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {context distribution prompt}<:{prompt}> | ?{flow_index}: 1.5.3.2
+                |%{prompt_location}: prompts/4.2_context_distribution.md
+            <- [{4.1_enriched.ncd}, {1.2_initial_context_registered.json}, {context_store/raw--*.md}]<:{1}> | ?{flow_index}: 1.5.3.3
+            <- {output file locations}<:{output}> | ?{flow_index}: 1.5.3.4
+                |%{location_string}: 4.1_context_manifest.json, context_store/__flow_index__--*.md
+        <- {prompts/__flow_index__*.md} | ?{flow_index}: 1.5.4
+            |%{file_location}: prompts/__flow_index__*.md
+            <= ::({prompt}<$({prompt generation prompt})%>; {1}<$({4.1_context_manifest.json})%>) | ?{flow_index}: 1.5.4.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {prompt generation prompt}<:{prompt}> | ?{flow_index}: 1.5.4.2
+                |%{prompt_location}: prompts/4.3_prompt_generation.md
+            <- {4.1_context_manifest.json}<:{1}> | ?{flow_index}: 1.5.4.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.5.4.4
+                |%{location_string}: prompts/__flow_index__*.md
+        <- [{4.1_enriched.ncd}, {4.1_context_manifest.json}, {prompts/__flow_index__*.md}] | ?{flow_index}: 1.5.5
+            <= :>:({prompt}<$({manual review prompt})%>; {1}) | ?{flow_index}: 1.5.5.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_Files-c_UserInputWithCanvas-o_Files
+            <- {manual review prompt}<:{prompt}> | ?{flow_index}: 1.5.5.2
+                |%{prompt_location}: prompts/4.4_manual_review.md
+            <- [{4.1_enriched.ncd}, {4.1_context_manifest.json}, {prompts/__flow_index__*.md}]<:{1}> | ?{flow_index}: 1.5.5.3
+
+    <- {Phase 5: Activation and Materialization} | ?{flow_index}: 1.6
+        <= $. %<[{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}] | ?{flow_index}: 1.6.1 | ?{sequence}: assigning
+        <- {concept_repo.json} | ?{flow_index}: 1.6.2
+            |%{file_location}: repos/concept_repo.json
+            <= ::({prompt}<$({concept activation prompt})%>; {1}<$({4.1_enriched.ncd})%>) | ?{flow_index}: 1.6.2.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {concept activation prompt}<:{prompt}> | ?{flow_index}: 1.6.2.2
+                |%{prompt_location}: prompts/5.1_concept_activation.md
+            <- {4.1_enriched.ncd}<:{1}> | ?{flow_index}: 1.6.2.3
+            <- {output file location}<:{output}> | ?{flow_index}: 1.6.2.4
+                |%{location_string}: repos/concept_repo.json
+        <- {inference_repo.json} | ?{flow_index}: 1.6.3
+            |%{file_location}: repos/inference_repo.json
+            <= ::({prompt}<$({inference activation prompt})%>; {1}<$({4.1_enriched.ncd})%>; {2}<$({4.1_context_manifest.json})%>) | ?{flow_index}: 1.6.3.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {inference activation prompt}<:{prompt}> | ?{flow_index}: 1.6.3.2
+                |%{prompt_location}: prompts/5.2_inference_activation.md
+            <- {4.1_enriched.ncd}<:{1}> | ?{flow_index}: 1.6.3.3
+            <- {4.1_context_manifest.json}<:{2}> | ?{flow_index}: 1.6.3.4
+            <- {output file location}<:{output}> | ?{flow_index}: 1.6.3.5
+                |%{location_string}: repos/inference_repo.json
+        <- {5.1_executable_script.py} | ?{flow_index}: 1.6.4
+            |%{file_location}: 5.1_executable_script.py
+            <= ::({prompt}<$({script generation prompt})%>; {1}<$({concept_repo.json})%>; {2}<$({inference_repo.json})%>) | ?{flow_index}: 1.6.4.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation
+            <- {script generation prompt}<:{prompt}> | ?{flow_index}: 1.6.4.2
+                |%{prompt_location}: prompts/5.3_script_generation.md
+            <- {concept_repo.json}<:{1}> | ?{flow_index}: 1.6.4.3
+            <- {inference_repo.json}<:{2}> | ?{flow_index}: 1.6.4.4
+            <- {output file location}<:{output}> | ?{flow_index}: 1.6.4.5
+                |%{location_string}: 5.1_executable_script.py
+        <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}] | ?{flow_index}: 1.6.5
+            <= :>:({prompt}<$({manual review prompt})%>; {1}) | ?{flow_index}: 1.6.5.1 | ?{sequence}: imperative
+                |%{paradigm}: h_PromptTemplate_Files-c_UserInputWithCanvas-o_Files
+            <- {manual review prompt}<:{prompt}> | ?{flow_index}: 1.6.5.2
+                |%{prompt_location}: prompts/5.4_manual_review.md
+            <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]<:{1}> | ?{flow_index}: 1.6.5.3
+
