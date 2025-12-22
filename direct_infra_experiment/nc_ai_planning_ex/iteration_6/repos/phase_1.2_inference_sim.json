@@ -1,0 +1,28 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1.2.2"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{context_store/raw--*.md}",
+        "function_concept": "::{%(composition)}({prompt}<$({context file copying prompt})%>, {script}<$({context file copying script})%>: {1}>)",
+        "value_concepts": [
+            "[{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]",
+            "{context file copying script}",
+            "{context file copying prompt}"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplate_ScriptLocation-c_Retrieve_or_GenerateThinkJson_ExtractPy_ExecuteWBody-o_FileLocationList",
+            "value_order": {
+                "file_mapping_content": 0,
+                "{context file copying script}": 1
+            },
+            "value_selectors": {
+                "file_mapping_content": {
+                    "source_concept": "[{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]",
+                    "index": 1
+                }
+            }
+        }
+    }
+]

@@ -1,0 +1,1 @@
+Execute the NormCode AI Planning pipeline by sequentially running its three phases: Deconstruction, Contextualization, and Materialization.

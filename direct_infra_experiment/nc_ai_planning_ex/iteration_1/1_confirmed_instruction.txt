@@ -1,0 +1,4 @@
+Create a NormCode plan that automates the NormCode AI Planning pipeline. This pipeline bootstraps from a high-level natural language prompt and system context into a structured, executable NormCode plan. The automation must be powered by the NormCode plan itself, following the three core phases outlined in the source document: 
+1. Phase 1: Instruction Confirmation and Deconstruction.
+2. Phase 2: Contextualization and NormCode Interpretation.
+3. Phase 3: Materialization into Executable Repositories.

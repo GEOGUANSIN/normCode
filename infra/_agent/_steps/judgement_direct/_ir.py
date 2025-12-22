@@ -4,12 +4,14 @@ from infra._core._concept import Concept
 from infra._states._judgement_direct_states import States
 from infra._states._common_states import ConceptInfoLite, ReferenceRecordLite
 from infra._core._reference import Reference
+from infra._agent._steps._filter_utils import apply_injected_filters
 
 
 def input_references(inference: Inference, states: States) -> States:
     """Populate references and concept info into the state from the inference instance."""
     # Simplified from simple_sequence_runner, as we just need the raw concepts for now.
     # The working_interpretation will drive which concepts are used where.
+    apply_injected_filters(inference, states)
     if inference.function_concept:
         states.function[0].concept = ConceptInfoLite(
             id=inference.function_concept.id,

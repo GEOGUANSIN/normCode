@@ -1,0 +1,25 @@
+[
+    {
+        "concept_name": "{location of related files}<:{prompt}>",
+        "type": "{}",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/[1.2.2.3.3.2.]location_of_related_files_prompt.md)"
+        ]
+    },
+    {
+        "concept_name": "::{%(composition)}({prompt}<$({location of related files prompt})%>)",
+        "type": "::({})",
+        "is_ground_concept": true,
+        "reference_data": [
+            "_"
+        ]
+    },
+    {
+        "concept_name": "{other input files}",
+        "type": "{}",
+        "is_ground_concept": false,
+        "is_final_concept": true
+    }
+]
+

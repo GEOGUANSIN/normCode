@@ -1,0 +1,86 @@
+## **Phase 2: Deconstruction into NormCode Plan**
+
+This phase takes the clean `Instruction Block` from Phase 1 and translates it into a first-pass structural representation in NormCode (`.ncd` file). This process is driven by an LLM guided by a meta-prompt that embodies the formal translation algorithm.
+
+### **Step 2.1: Automated NormCode Deconstruction**
+
+The core of this phase is an automated translation process. The `Instruction Block` is provided to an LLM that has been given a specialized meta-prompt, instructing it to act as a NormCode translation engine.
+
+The LLM applies the recursive decomposition algorithm from the `comprehensive_normcode_translation_guide.md`. It systematically analyzes the instruction, asking questions to break down the logic, selecting the appropriate NormCode operators (e.g., `@by`, `&across`, `$::`, `@if`), and structuring the result into a hierarchical NormCode draft.
+
+-   **Input:** The `Instruction Block` generated in Phase 1.
+-   **LLM Process:** The model recursively deconstructs the instruction, identifying the top-level goal and breaking it down into a sequence of logically connected inferences.
+-   **Output:** A **NormCode Draft (`.ncd`)**. This file represents the skeletal structure of the procedure, derived purely from the `Instruction Block`. It often includes annotations (`?:`, `/:`) that document the LLM's reasoning during the decomposition process.
+
+**Example Output (`.ncd`):**
+```normcode
+:<:(::(register a new user))
+    ?: How to register a new user?
+    <= @by(:_:)
+        /: The registration is requesting another process to be executed.
+    <- :_:{steps}({user name})
+    <- {steps}
+        ?: How are the steps composed?
+        <= &across
+            /: The steps are an ordered sequence of actions.
+        <- {step 1: check existence}
+            <= $::.<username exists>
+            <- ::<username exists?>
+                <- {user name}
+        <- {step 2: report error}
+            <= $::.{error}
+            <- ::(report error)
+                <= @if(::<username exists?>)
+        <- {step 3: create account}
+            <= $::.{new user account}
+            <- ::(create new user account)
+                <= @if!(::<username exists?>)
+                <- {user name}
+                <- {password}
+    <- {user name}
+        <= :>:{user name}?()
+    <- {password}
+        <= ::(securely generate a password)
+```
+
+**Note on `.ncd` vs. `.nc` vs. `.ncn` Files:**
+
+- The **NormCode Draft (`.ncd`)** file is the primary output of this deconstruction phase. It is a semi-formal representation that is rich with annotations (`?:`, `/:`) documenting the translation process, making it ideal for human review and debugging.
+
+- The **NormCode Natural (`.ncn`)** file is a hybrid, line-by-line translation of the `.ncd` designed for maximum readability. It maintains the exact hierarchical structure of the original plan and preserves the ` <= ` and ` <- ` operators, but translates the NormCode concepts on those lines into clear, natural language. Annotations (`?:`, `/:`) are omitted for clarity.
+
+- In contrast, a **NormCode (`.nc`)** file represents the final, formally parsable plan ready for execution. This version is created in a later phase by stripping the descriptive annotations from the `.ncd` file and adding execution-critical information, such as flow indices.
+
+**Example `.ncn` Translation:**
+
+Here is the natural language equivalent of the example `.ncd` file shown above, following the hybrid format:
+
+```ncn
+:<:(::(register a new user))
+    <= This is accomplished by a defined method.
+    <- The method is a series of steps that takes a user name as input.
+    <- The method is a composition of steps.
+        <= They are composed as a sequence of actions, one after the other.
+        <- The first step is to check for the existence of the username.
+            <= This step is defined as the action of checking if the username exists.
+            <- The action itself is to determine if the username exists.
+                <- This check requires the user name as input.
+        <- The second step is to report an error.
+            <= This step is defined as the action of reporting an error.
+            <- The action itself is to report an error.
+                <= This action is only performed if the username already exists.
+        <- The third step is to create an account.
+            <= This step is defined as the action of creating a new user account.
+            <- The action itself is to create a new user account.
+                <= This action is only performed if the username does not already exist.
+                <- Creating the account requires the user name.
+                <- Creating the account also requires a password.
+    <- The overall method requires a user name.
+        <= This user name is provided as a primitive input to the system.
+    <- The overall method also requires a password.
+        <= The password is created by securely generating one.
+```
+
+### **Step 2.2: Manual Review and Refinement (Optional)**
+
+Following the automated deconstruction, the generated `.ncd` file is presented for human review. This step is crucial for verifying the logical integrity of the generated plan. A developer can examine the draft, correct any structural errors, refine the decomposition, and ensure the plan accurately reflects the intent of the original instruction before it proceeds to the contextualization phase.

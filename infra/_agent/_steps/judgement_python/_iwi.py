@@ -102,6 +102,10 @@ def input_working_interpretation(
 
     # Set condition for TIP step
     states.condition = config.get("condition")
+    # Add after states.body = body:
+    states.workspace = config.get("workspace", {})
+    flow_info = config.get("flow_info", {})
+    states.flow_index = flow_info.get("flow_index")
 
     # Seed lists with empty records for each step's output
     for step in ["MFP"]:

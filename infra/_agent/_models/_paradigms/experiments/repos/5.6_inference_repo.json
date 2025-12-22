@@ -1,0 +1,19 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{wrapped_file_list}",
+        "function_concept": "::{%(composition)}(Ask user for multiple files)",
+        "value_concepts": [
+            "{prompt}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForMultipleFiles-o_FileList",
+            "value_order": {
+                "{prompt}<:{prompt}>": 0
+            }
+        }
+    }
+]

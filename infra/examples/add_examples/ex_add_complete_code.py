@@ -1232,7 +1232,7 @@ if __name__ == "__main__":
         os.makedirs(prompt_dir, exist_ok=True)
 
         # 1. Create repositories
-        length_max = 500
+        length_max = 20
         number_1, number_2 = quick_generate(min_length=length_max/2, max_length=length_max, seed=25)
         # number_1 = "12"
         # number_2 = "82"

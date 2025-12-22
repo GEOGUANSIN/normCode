@@ -1,0 +1,31 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1.2.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{other input files}",
+        "function_concept": ":>:{%(file_location)}({prompt}<$({location of related files prompt})%>)",
+        "value_concepts": [
+            "{location of related files prompt}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplate_SavePath-c_GenerateThinkJson-Extract-Save-o_FileLocation",
+            "value_order": {
+                "{location of related files prompt}<:{prompt}>": 0
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.2"
+        },
+        "inference_sequence": "grouping",
+        "concept_to_infer": "{input files}<:{1}>",
+        "function_concept": "&in",
+        "value_concepts": [
+            "{original prompt}",
+            "{other input files}"
+        ]
+    }
+]

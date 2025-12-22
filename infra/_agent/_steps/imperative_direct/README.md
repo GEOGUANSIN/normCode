@@ -1,21 +1,33 @@
-2# Imperative Direct Sequence
+# Imperative Direct Sequence
 
 ## Purpose
 
-The `imperative_direct` sequence provides a highly flexible and efficient method for executing "direct instructions" where the prompt template is supplied as part of the input data, rather than being generated through a multi-step translation process.
+The `imperative_direct` sequence provides a highly flexible and efficient method for executing "direct instructions" where operational details (like a prompt template or file path) are supplied as part of the input data, rather than being generated through a multi-step translation process.
 
-This approach is ideal for scenarios where the instruction is already known and the goal is to simply format it with dynamic values and execute it through a language model.
+This approach is ideal for scenarios where the instruction is already known and the goal is to simply format it with dynamic values and execute it through a language model or another tool.
 
 ## Methodology
 
-This sequence operates on a principle of separating planning, execution, and data gathering across its key steps. The central feature is the ability to dynamically load a prompt template from a file path specified directly within an input concept.
+This sequence operates on a principle of separating planning, execution, and data gathering across its key steps. Its central feature is the ability to interpret and process special **wrappers** within the input concepts. These wrappers can dynamically load content from files, retrieve values from memory, or format instructions for later steps.
 
-### Key Feature: The `%{prompt}(location)` Wrapper
+### Key Feature: The Wrapper Syntax
 
-The sequence is triggered by a special wrapper in one of the input concepts' string values.
+The sequence is triggered by special wrappers in the string values of the input concepts. The syntax is designed to be flexible and descriptive.
 
--   **Syntax:** `%{prompt}(path/to/prompt.txt)`
--   **Function:** The `MVP` step detects this wrapper. The `location` can be an absolute path or a relative path from the `infra/_agent/_models/prompts/` directory. The content of this file is then used as the prompt template for the LLM call.
+-   **General Syntax:** `%{wrapper_type}optional_id(content)`
+    -   `wrapper_type`: The core type of the instruction (e.g., `prompt`, `file_location`).
+    -   `optional_id`: An optional unique identifier for the wrapper instance. This is parsed but not currently used in the logic, serving as a placeholder for future functionality.
+    -   `content`: The parameter for the wrapper, typically a file path or a memory key.
+
+### Supported Wrappers
+
+| Wrapper Syntax | Description |
+| :--- | :--- |
+| `%{prompt}id(path)` | **Reads the file** at the given `path` and designates its content as the `prompt_template` for an LLM call. |
+| `%{file_location}id(path)` | **Reads the file** at the given `path` and treats its content as a **regular input value**. |
+| `%{prompt_location}id(path)` | **Passes the `path` itself** as a `prompt_location` instruction for a later step to handle. |
+| `%{script_location}id(path)` | **Passes the `path` itself** as a `script_location` instruction for a later step to handle. |
+| `%{memorized_parameter}id(key)`| Retrieves a value from the agent's memory using the specified `key`. Requires the `FileSystemTool`. |
 
 ### Workflow
 
@@ -29,11 +41,15 @@ The sequence is triggered by a special wrapper in one of the input concepts' str
     -   It runs a `ModelSequenceRunner` which calls the `create_generation_function_with_template_in_vars` method, creating a generic function that expects its prompt template to be supplied at runtime.
     -   This generic function is saved to the agent's state.
 
-3.  **`MVP` (The Data Gatherer - `_mvp.py`)**
-    -   This step gathers all the data required for the final LLM call.
-    -   It inspects all input concepts and identifies the prompt by looking for the `%{prompt}(location)` wrapper.
-    -   It reads the prompt content from the specified file location.
-    -   It assembles a dictionary containing the prompt template and all other input values, ready for the generation function.
+3.  **`MVP` (The Data Gatherer & Pre-processor - `_mvp.py`)**
+    -   This step is a versatile pre-processor that gathers and transforms all data required for the next agent step.
+    -   It inspects all input concepts and identifies special instructions by looking for the `%{...}` wrapper syntax.
+    -   Depending on the wrapper type, it may:
+        - Read content directly from a file (`%{prompt}`, `%{file_location}`).
+        - Fetch values from memory (`%{memorized_parameter}`).
+        - Reformat file paths as instructions for later steps (`%{prompt_location}`, `%{script_location}`).
+    -   It handles complex input ordering and selection using `value_selectors`.
+    -   It assembles a final dictionary containing all the prepared data (e.g., a prompt template, regular inputs, or other instructions) ready for the next step.
 
 4.  **`TIP` (The Action - `_tip.py`)**
     -   This step performs the final execution.

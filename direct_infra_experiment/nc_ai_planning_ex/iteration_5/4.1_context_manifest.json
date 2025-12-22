@@ -1,0 +1,136 @@
+{
+    "context_mapping": {
+        "[1.2.2.2.]1.1_instruction_distillation.md": {
+            "used_by_inference": "1.2.2.1.imperative|<= ::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+            "context_files": [
+                "./context_store/1.2.2.1---automated_instruction_distillation.md",
+                "./context_store/shared---pipeline_goal_and_structure.md",
+                "./context_store/shared--file_info-instruction_block-md.md"
+            ]
+        },
+        "[1.2.2.3.3.2.]location_of_related_files_prompt.md": {
+            "used_by_inference": "1.2.2.3.3.1.imperative|<= :>:{%(file_location)}({prompt}<$({location of related files prompt})%>)",
+            "context_files": [
+                "./context_store/shared---pipeline_goal_and_structure.md",
+                "./context_store/1.2.2.3.3.1---location_of_related_files.md"
+            ]
+        },
+        "[1.2.3.2.]1.2_context_registration.md": {
+            "used_by_inference": "1.2.3.1.imperative|<= ::{%(direct)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>)",
+            "context_files": [
+                "./context_store/1.2.3.1---automated_context_registration.md",
+                "./context_store/shared---pipeline_goal_and_structure.md",
+                "./context_store/shared--file_info-initial_context_registered-json.md",
+                "./context_store/shared--file_info-context_store-dir.md"
+            ]
+        },
+        "[1.2.4.2.]1.3_manual_review.md": {
+            "used_by_inference": "1.2.4.1.imperative|<= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.2.4.1---manual_review_of_confirmation.md"
+            ]
+        },
+        "[1.3.2.2.]2.1_deconstruction.md": {
+            "used_by_inference": "1.3.2.1.imperative|<= ::{%(direct)}({prompt}<$({deconstruction prompt})%>: {1}<$({1.1_instruction_block.md})%>)",
+            "context_files": [
+                "./context_store/1.3.2.1---automated_normcode_deconstruction.md",
+                "./context_store/shared---normcode_syntax_guide.md",
+                "./context_store/shared--file_info-instruction_block-md.md",
+                "./context_store/shared--file_info-deconstruction_draft-ncd.md"
+            ]
+        },
+        "[1.3.3.2.]2.2_natural_language_translation.md": {
+            "used_by_inference": "1.3.3.1.imperative|<= ::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+            "context_files": [
+                "./context_store/1.3.3.1---generate_natural_language_translation.md",
+                "./context_store/shared--file_info-normcode_draft-ncd.md",
+                "./context_store/shared--file_info-normcode_natural-ncn.md"
+            ]
+        },
+        "[1.3.4.2.]2.3_manual_review.md": {
+            "used_by_inference": "1.3.4.1.imperative|<= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.3.4.1---manual_review_of_deconstruction.md"
+            ]
+        },
+        "[1.4.2.2.]3.1_serialization.md": {
+            "used_by_inference": "1.4.2.1.imperative|<= ::{%(direct)}({prompt}<$({serialization prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+            "context_files": [
+                "./context_store/1.4.2.1---apply_serialization_patterns.md",
+                "./context_store/shared---normcode_syntax_guide.md",
+                "./context_store/shared--file_info-deconstruction_draft-ncd.md",
+                "./context_store/shared--file_info-serialized-ncd.md"
+            ]
+        },
+        "[1.4.3.2.]3.2_redirection.md": {
+            "used_by_inference": "1.4.3.1.imperative|<= ::{%(direct)}({prompt}<$({redirection prompt})%>: {1}<$({3.1_serialized.ncd})%>)",
+            "context_files": [
+                "./context_store/1.4.3.1---apply_redirection_patterns.md",
+                "./context_store/shared---normcode_syntax_guide.md",
+                "./context_store/shared--file_info-serialized-ncd.md",
+                "./context_store/shared--file_info-redirected-ncd.md"
+            ]
+        },
+        "[1.4.4.2.]3.3_formalization.md": {
+            "used_by_inference": "1.4.4.1.imperative|<= ::{%(direct)}({prompt}<$({formalization prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+            "context_files": [
+                "./context_store/1.4.4.1---plan_formalization.md",
+                "./context_store/shared--file_info-redirected-ncd.md",
+                "./context_store/shared--file_info-normcode_formal-nc.md"
+            ]
+        },
+        "[1.4.5.2.]3.4_natural_language_translation.md": {
+            "used_by_inference": "1.4.5.1.imperative|<= ::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+            "context_files": [
+                "./context_store/1.3.3.1---generate_natural_language_translation.md",
+                "./context_store/shared--file_info-redirected-ncd.md",
+                "./context_store/shared--file_info-normcode_natural-ncn.md"
+            ]
+        },
+        "[1.4.6.2.]3.5_manual_review.md": {
+            "used_by_inference": "1.4.6.1.imperative|<= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.3.4.1---manual_review_of_deconstruction.md"
+            ]
+        },
+        "[1.5.2.2.]4.1_context_distribution.md": {
+            "used_by_inference": "1.5.2.1.imperative|<= ::{%(direct)}({prompt}<$({context distribution prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.5.2.1---automated_context_distribution.md",
+                "./context_store/shared---pipeline_goal_and_structure.md",
+                "./context_store/shared--file_info-context_manifest-json.md",
+                "./context_store/shared--file_info-context_store-dir.md"
+            ]
+        },
+        "[1.5.3.2.]4.2_prompt_generation.md": {
+            "used_by_inference": "1.5.3.1.imperative|<= ::{%(direct)}({prompt}<$({prompt generation prompt})%>: {1}<$({4.1_context_manifest.json})%>)",
+            "context_files": [
+                "./context_store/1.5.3.1---automated_prompt_generation.md",
+                "./context_store/shared--file_info-prompt_files-md.md",
+                "./context_store/shared--file_info-context_manifest-json.md"
+            ]
+        },
+        "[1.5.4.2.]4.3_manual_review.md": {
+            "used_by_inference": "1.5.4.1.imperative|<= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.5.4.1---manual_review_of_contextualization.md"
+            ]
+        },
+        "[1.6.2.2.]5.1_script_generation.md": {
+            "used_by_inference": "1.6.2.1.imperative|<= ::{%(direct)}({prompt}<$({script generation prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.6.2.1---automated_script_generation.md",
+                "./context_store/shared---normcode_orchestrator_guide.md",
+                "./context_store/shared--file_info-concept_repo-json.md",
+                "./context_store/shared--file_info-inference_repo-json.md",
+                "./context_store/shared--file_info-executable_script-py.md"
+            ]
+        },
+        "[1.6.3.2.]5.2_manual_review.md": {
+            "used_by_inference": "1.6.3.1.imperative|<= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+            "context_files": [
+                "./context_store/1.6.3.1---manual_review_of_materialization.md"
+            ]
+        }
+    }
+}

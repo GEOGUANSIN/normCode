@@ -1,0 +1,65 @@
+## **Phase 1: Confirmation of Instruction**
+
+This phase transforms the initial, often conversational, user prompt into a set of clean, structured inputs ready for the NormCode translation pipeline. It leverages a powerful LLM-driven process to distill the user's intent and provides a crucial checkpoint for manual refinement.
+
+### **Step 1.1: Automated Instruction Distillation**
+
+The process begins by feeding the raw user prompt and any available system context to an LLM guided by a specialized meta-prompt. This meta-prompt instructs the model to perform a sophisticated analysis, separating the core procedural instructions from all other contextual information.
+
+The goal is to produce two key artifacts:
+
+1.  **Instruction Block:** This contains the clean, unambiguous, and procedural logic—the "what to do." It is synthesized from the core request in the user's prompt.
+2.  **Initial Context Block:** This is a comprehensive, initial collection of all non-procedural information that underpins the user's request. Its goal is to preserve the original prompt's context as faithfully as possible, while also enriching it with implicit information critical for accurate interpretation. This includes:
+    *   **Original Context:** All details from the user's prompt, including the original procedural descriptions, constraints, examples, and formatting requirements.
+    *   **Implicit Context:** Additional information gathered by the system, such as past user interactions, system environment details, user profile information, and the reasoning behind how the core instruction was extracted.
+    
+    This unified block serves as the complete, raw contextual input for the later phases of the pipeline. The distribution of this context to specific NormCode nodes happens in Phase 3.
+
+### **Example Scenarios**
+
+Below are a few examples demonstrating how the distillation process handles different types of prompts.
+
+#### **Scenario 1: Simple & Casual Request**
+
+-   **Input (Raw Prompt):** `"hey can you just get me the latest sales report and email it to me and Sarah? sarah@example.com"`
+-   **Input (System Context):** `{"tools": [{"tool_name": "generate_sales_report"}, {"tool_name": "send_email"}], "user_info": {"name": "Analyst", "email": "analyst@example.com"}}`
+-   **LLM Process:** The model identifies the core actions and consolidates all remaining information—original and system-provided—into a single context block.
+-   **Output:**
+    -   **Instruction Block:** `"Generate the latest sales report. Then, send an email with the report attached to analyst@example.com and sarah@example.com."`
+    -   **Initial Context Block:** `"The user's name is 'Analyst' and their email is 'analyst@example.com'. System environment includes the following available tools: {\"tools\": [{\"tool_name\": \"generate_sales_report\"}, {\"tool_name\": \"send_email\"}]}."`
+
+#### **Scenario 2: Complex & Technical Request (with Markdown)**
+
+-   **Input (Raw Prompt):**
+    ```markdown
+    Okay, here's the workflow for deploying the new feature.
+    1.  Run the migration script on the staging database.
+    2.  If it succeeds, deploy the `feature-branch` to the staging environment.
+    3.  Notify the #dev-ops channel on Slack with the results.
+    
+    Make sure the deployment only happens outside of peak hours (9am-5pm PST).
+    ```
+-   **LLM Process:** The model parses the procedural steps for the instruction block and captures the explicit constraint from the prompt in the context.
+-   **Output:**
+    -   **Instruction Block:** `"Run the migration script on the staging database. If the migration is successful, deploy the feature-branch to the staging environment and send a Slack message to the #dev-ops channel with the results."`
+    -   **Initial Context Block:** `"Constraint from prompt: The deployment must only occur outside of peak hours (9am-5pm PST)."`
+
+#### **Scenario 3: Implicit Intent**
+
+-   **Input (Raw Prompt):** `"We need to archive old user accounts. Anyone who hasn't logged in for over a year and doesn't have an active subscription should be backed up to S3 and then deleted."`
+-   **Input (System Context):** `{"database": "production", "s3_bucket": "user-archives"}`
+-   **LLM Process:** The model synthesizes the high-level goal into a concrete procedure and captures the system information in the context block, preserving its original structure.
+-   **Output:**
+    -   **Instruction Block:** `"Find all users who have not logged in for more than one year and do not have an active subscription. For each of these users, back up their account data to S3, and then delete their record from the database."`
+    -   **Initial Context Block:** `"System environment details: {\"database\": \"production\", \"s3_bucket\": \"user-archives\"}."`
+
+### **Step 1.2: Manual Review and Refinement (Optional)**
+
+After the automated distillation, the generated **Instruction Block** and **Context Blocks** are presented for human review. This is a critical step that ensures the accuracy and completeness of the distilled information before it is passed to the next phase.
+
+During this step, a developer can:
+-   Correct any misinterpretations made by the LLM.
+-   Refine the wording of the instruction for greater clarity.
+-   Add, remove, or modify context to ensure the subsequent NormCode generation is precise and correct.
+
+This intervention point is key to iteratively improving the system and handling complex or ambiguous prompts that automated systems might struggle with.

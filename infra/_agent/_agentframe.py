@@ -10,6 +10,7 @@ from infra._agent._sequences.simple import set_up_simple_demo, configure_simple_
 from infra._agent._sequences.imperative import set_up_imperative_demo, configure_imperative_demo
 from infra._agent._sequences.grouping import set_up_grouping_demo, configure_grouping_demo
 from infra._agent._sequences.quantifying import set_up_quantifying_demo, configure_quantifying_demo
+from infra._agent._sequences.looping import set_up_looping_demo, configure_looping_demo
 from infra._agent._sequences.assigning import set_up_assigning_demo, configure_assigning_demo
 from infra._agent._sequences.timing import set_up_timing_demo, configure_timing_demo
 from infra._agent._sequences.judgement import set_up_judgement_demo, configure_judgement_demo
@@ -20,15 +21,19 @@ from infra._agent._sequences.imperative_python import set_up_imperative_python_d
 from infra._agent._sequences.judgement_python import set_up_judgement_python_demo, configure_judgement_python_demo
 from infra._agent._sequences.imperative_python_indirect import set_up_imperative_python_indirect_demo, configure_imperative_python_indirect_demo
 from infra._agent._sequences.judgement_python_indirect import set_up_judgement_python_indirect_demo, configure_judgement_python_indirect_demo
+from infra._agent._sequences.imperative_in_composition import set_up_imperative_in_composition_demo, configure_imperative_in_composition_demo
+from infra._agent._sequences.judgement_in_composition import set_up_judgement_in_composition_demo, configure_judgement_in_composition_demo
 from infra._states._imperative_states import States as ImperativeStates
 from infra._states._grouping_states import States as GroupingStates
 from infra._states._quantifying_states import States as QuantifyingStates
+from infra._states._looping_states import States as LoopingStates
 from infra._states._simple_states import States as SimpleStates
 from infra._states._assigning_states import States as AssigningStates
 from infra._agent._steps.simple import simple_methods
 from infra._agent._steps.imperative import imperative_methods
 from infra._agent._steps.grouping import grouping_methods
 from infra._agent._steps.quantifying import quantifying_methods
+from infra._agent._steps.looping import looping_methods
 from infra._agent._steps.assigning import assigning_methods
 from infra._agent._steps.timing import timing_methods
 from infra._agent._steps.judgement import judgement_methods
@@ -39,6 +44,8 @@ from infra._agent._steps.imperative_python import imperative_python_methods
 from infra._agent._steps.judgement_python import judgement_python_methods
 from infra._agent._steps.imperative_python_indirect import imperative_python_indirect_methods
 from infra._agent._steps.judgement_python_indirect import judgement_python_indirect_methods
+from infra._agent._steps.imperative_in_composition import imperative_in_composition_methods
+from infra._agent._steps.judgement_in_composition import judgement_in_composition_methods
 
 
 # Configure logging
@@ -125,11 +132,12 @@ class AgentFrame():
     def _sequence_setup(self):
         logger.debug(f"Setting up sequences for NormCode inference")
         if self.AgentFrameModel == "demo":
-            logger.info("Setting up demo sequences: simple, imperative, grouping, quantifying, assigning, timing")
+            logger.info("Setting up demo sequences: simple, imperative, grouping, quantifying, looping, assigning, timing")
             set_up_simple_demo(self)
             set_up_imperative_demo(self)
             set_up_grouping_demo(self)
             set_up_quantifying_demo(self)
+            set_up_looping_demo(self)
             set_up_assigning_demo(self)
             set_up_timing_demo(self)
             set_up_judgement_demo(self)
@@ -140,6 +148,18 @@ class AgentFrame():
             set_up_judgement_python_demo(self)
             set_up_imperative_python_indirect_demo(self)
             set_up_judgement_python_indirect_demo(self)
+            set_up_imperative_in_composition_demo(self)
+            set_up_judgement_in_composition_demo(self)
+        elif self.AgentFrameModel == "composition":
+            logger.info("Setting up composition sequences: simple, imperative (composition), judgement (composition), grouping, quantifying, looping, assigning, timing")
+            set_up_simple_demo(self)
+            set_up_imperative_in_composition_demo(self)
+            set_up_judgement_in_composition_demo(self)
+            set_up_grouping_demo(self)
+            set_up_quantifying_demo(self)
+            set_up_looping_demo(self)
+            set_up_assigning_demo(self)
+            set_up_timing_demo(self)
         else:
             logger.warning(f"Unknown AgentFrameModel: {self.AgentFrameModel}")
 
@@ -155,6 +175,9 @@ class AgentFrame():
             elif inference_sequence == "quantifying":
                 logger.info("Configuring quantifying demo sequence")
                 configure_quantifying_demo(self, inference_instance, quantifying_methods)
+            elif inference_sequence == "looping":
+                logger.info("Configuring looping demo sequence")
+                configure_looping_demo(self, inference_instance, looping_methods)
             elif inference_sequence == "simple":
                 logger.info("Configuring simple demo sequence")
                 configure_simple_demo(self, inference_instance, simple_methods)
@@ -188,8 +211,43 @@ class AgentFrame():
             elif inference_sequence == "judgement_python_indirect":
                 logger.info("Configuring judgement_python_indirect demo sequence")
                 configure_judgement_python_indirect_demo(self, inference_instance, judgement_python_indirect_methods)
+            elif inference_sequence == "imperative_in_composition":
+                logger.info("Configuring imperative_in_composition demo sequence")
+                configure_imperative_in_composition_demo(self, inference_instance, imperative_in_composition_methods)
+            elif inference_sequence == "judgement_in_composition":
+                logger.info("Configuring judgement_in_composition demo sequence")
+                configure_judgement_in_composition_demo(self, inference_instance, judgement_in_composition_methods)
             else:
                 logger.warning(f"Unknown inference sequence: {inference_sequence}")
+        elif self.AgentFrameModel == "composition":
+            if inference_sequence == "imperative":
+                logger.info("Configuring imperative sequence using composition methods")
+                # Map 'imperative' request to 'imperative_in_composition' implementation
+                configure_imperative_in_composition_demo(self, inference_instance, imperative_in_composition_methods)
+            elif inference_sequence == "judgement":
+                logger.info("Configuring judgement sequence using composition methods")
+                # Map 'judgement' request to 'judgement_in_composition' implementation
+                configure_judgement_in_composition_demo(self, inference_instance, judgement_in_composition_methods)
+            elif inference_sequence == "grouping":
+                logger.info("Configuring grouping sequence")
+                configure_grouping_demo(self, inference_instance, grouping_methods)
+            elif inference_sequence == "quantifying":
+                logger.info("Configuring quantifying sequence")
+                configure_quantifying_demo(self, inference_instance, quantifying_methods)
+            elif inference_sequence == "looping":
+                logger.info("Configuring looping sequence")
+                configure_looping_demo(self, inference_instance, looping_methods)
+            elif inference_sequence == "simple":
+                logger.info("Configuring simple sequence")
+                configure_simple_demo(self, inference_instance, simple_methods)
+            elif inference_sequence == "assigning":
+                logger.info("Configuring assigning sequence")
+                configure_assigning_demo(self, inference_instance, assigning_methods)
+            elif inference_sequence == "timing":
+                logger.info("Configuring timing sequence")
+                configure_timing_demo(self, inference_instance, timing_methods)
+            else:
+                 logger.warning(f"Unknown inference sequence for composition model: {inference_sequence}")
         else:
             logger.warning(f"Configuration not supported for model: {self.AgentFrameModel}")
 

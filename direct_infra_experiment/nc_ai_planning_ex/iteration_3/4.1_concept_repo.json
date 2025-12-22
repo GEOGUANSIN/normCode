@@ -1,0 +1,156 @@
+[
+  {
+    "id": "a9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "::(Execute NormCode AI Planning)",
+    "type": "::",
+    "description": "The final output of the entire NormCode AI Planning pipeline execution.",
+    "is_final_concept": true
+  },
+  {
+    "id": "b9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{pipeline phases}",
+    "type": "{}",
+    "description": "A container for the four major phases of the pipeline.",
+    "axis_name": "value"
+  },
+  {
+    "id": "c9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{Phase 1: Confirmation of Instruction}",
+    "type": "{}",
+    "description": "Represents Phase 1 of the pipeline, focusing on instruction confirmation.",
+    "axis_name": "value"
+  },
+  {
+    "id": "d9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 1.1: Automated Instruction Distillation}",
+    "type": "{}",
+    "description": "Represents step 1.1: Distilling the user's intent into a clean instruction.",
+    "axis_name": "value"
+  },
+  {
+    "id": "e9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 1.2: Automated Context Registration}",
+    "type": "{}",
+    "description": "Represents step 1.2: Registering all raw context.",
+    "axis_name": "value"
+  },
+  {
+    "id": "f9e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 1.3: Manual Review of Confirmation}",
+    "type": "{}",
+    "description": "Represents step 1.3: Manual review of the distilled instruction and context.",
+    "axis_name": "value"
+  },
+  {
+    "id": "a1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{Phase 2: Deconstruction and Plan Formalization}",
+    "type": "{}",
+    "description": "Represents Phase 2 of the pipeline, focusing on deconstructing the instruction into a formal NormCode plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "b1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 2.1: Automated NormCode Deconstruction}",
+    "type": "{}",
+    "description": "Represents step 2.1: Automatically deconstructing the instruction into a NormCode draft.",
+    "axis_name": "value"
+  },
+  {
+    "id": "c1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 2.2: Generate Natural Language Translation}",
+    "type": "{}",
+    "description": "Represents step 2.2: Generating a human-readable translation of the plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "d1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 2.3: Plan Formalization}",
+    "type": "{}",
+    "description": "Represents step 2.3: Converting the draft plan into a formal, machine-parsable format.",
+    "axis_name": "value"
+  },
+  {
+    "id": "e1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 2.4: Manual Review of Deconstruction}",
+    "type": "{}",
+    "description": "Represents step 2.4: Manual review of the deconstructed plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "f1e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{Phase 3: Contextualization}",
+    "type": "{}",
+    "description": "Represents Phase 3 of the pipeline, focusing on enriching the plan with context.",
+    "axis_name": "value"
+  },
+  {
+    "id": "a2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 3.1: Automated Context Distribution}",
+    "type": "{}",
+    "description": "Represents step 3.1: Automatically distributing context to each step in the plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "b2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 3.2: Manual Review of Contextualization}",
+    "type": "{}",
+    "description": "Represents step 3.2: Manual review of the contextualized plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "c2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{Phase 4: Materialization into an Executable Script}",
+    "type": "{}",
+    "description": "Represents Phase 4 of the pipeline, focusing on materializing the plan into an executable script.",
+    "axis_name": "value"
+  },
+  {
+    "id": "d2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 4.1: Automated Script Generation}",
+    "type": "{}",
+    "description": "Represents step 4.1: Automatically generating the executable script from the plan.",
+    "axis_name": "value"
+  },
+  {
+    "id": "e2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "{step 4.2: Manual Review of Materialization}",
+    "type": "{}",
+    "description": "Represents step 4.2: Manual review of the generated executable script.",
+    "axis_name": "value"
+  },
+  {
+    "id": "f2e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "@by(:_:)",
+    "type": "@by",
+    "description": "A timing operator to sequence operations.",
+    "is_ground_concept": true
+  },
+  {
+    "id": "a3e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": ":_:{pipeline phases}()",
+    "type": "::",
+    "description": "An imperative to execute the pipeline phases.",
+    "is_ground_concept": true
+  },
+  {
+    "id": "b3e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "&across[{1},{2},{3},{4}]",
+    "type": "&across",
+    "description": "A grouping operator to iterate across four items.",
+    "is_ground_concept": true
+  },
+  {
+    "id": "c3e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "&across[{1}, {2}, {3}]",
+    "type": "&across",
+    "description": "A grouping operator to iterate across three items.",
+    "is_ground_concept": true
+  },
+  {
+    "id": "d3e1e5a0-8a1a-4a1e-8a1e-5a08a1a4a1e8",
+    "concept_name": "&across[{1}, {2}]",
+    "type": "&across",
+    "description": "A grouping operator to iterate across two items.",
+    "is_ground_concept": true
+  }
+]

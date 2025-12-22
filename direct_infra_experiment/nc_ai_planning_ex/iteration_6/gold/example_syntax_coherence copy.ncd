@@ -1,0 +1,355 @@
+# Gold Investment Decision - Formal NormCode Draft (Composition Mode)
+# ════════════════════════════════════════════════════════════════════════════
+# PERCEPTION NORMS (conservative set from PerceptionRouter):
+#   {file_location}       → Body.file_system.read()
+#   {prompt_location}     → Body.prompt_tool.read() → template
+#   {script_location}     → Body.python_interpreter (deferred)
+#   {save_path}           → Body.file_system.write() target
+#   {memorized_parameter} → Body.file_system.read_memorized_value()
+#
+# PARADIGM RESOLUTION (during IWI):
+#   norm_input → specifies WHICH paradigm to load (from working_interpretation)
+#   This is CONFIGURATION, resolved BEFORE MFP
+#
+# ANNOTATION CONVENTION — Provisioning:
+#   %{norm_input}        = paradigm selection (IWI) — which paradigm JSON to load
+#   %{v_input_norm}      = vertical input perception norm (MFP) — prompt/script location
+#   %{v_input_provision} = actual vertical resource path — where to find the prompt/script
+#   %{h_input_norm}      = horizontal input perception norm (MVP) — how data is perceived
+#   %{body_faculty}      = which Body tools get invoked (documentation)
+#   %{o_shape}           = output structure (what semantic form the result takes)
+#
+# ANNOTATION CONVENTION — Reference Structure (Syntactic Coherence):
+#   %{ref_axes}          = named axes of the reference tensor
+#                          [_none_axis] = singleton (no indeterminacy)
+#                          [axis_name]  = concept provides this axis
+#   %{ref_shape}         = shape of tensor (can use symbolic n_axis for dynamic)
+#   %{ref_element}       = type of elements in the tensor
+#                          dict(...)        = dictionary with specified keys
+#                          %{truth value}   = truth marker: %{truth value}(true) or %{truth value}(false)
+#                                             NOT a boolean — a perceptual sign for Timer to interpret
+#                          perceptual_sign  = %{norm}...(signifier)
+#   %{ref_skip}          = documents that timing (@:') will inject filter causing @#SKIP#@
+#                          NOTE: Judgement produces truth_mask; Timing injects filter; IR applies → skip
+#                          Format: "filtered by <condition_concept>"
+#
+# ASSERTION CONVENTION (for Judgements — maps to TIA step):
+#   Judgements produce TRUTH MASKS with %{truth value}(...) markers, not booleans.
+#   
+#   Quantifier Types:
+#     for-each  = non-collapsing, preserves axis, one truth marker per element
+#     all       = collapsing, all elements must match condition
+#     some      = collapsing, at least one element must match
+#     none      = collapsing, no elements may match
+#   
+#   Syntax Patterns:
+#     <For Each {concept} True/False>
+#         → TIA: {"quantifiers": {"axis": "for-each"}, "condition": True/False}
+#         → Output: [axis] preserved, one %{truth value}(...) per element
+#     
+#     <ALL True/False>
+#         → TIA: {"quantifiers": {"axis": "all"}, "condition": True/False}
+#         → Output: [_none_axis], single %{truth value}(...)
+#     
+#     <For Each {outer} where ALL {inner} True/False>
+#         → TIA: {"quantifiers": {"outer": "for-each", "inner": "all"}, "condition": True/False}
+#         → Output: [outer] preserved, inner collapsed per outer element
+#
+# TIMING + FILTER INJECTION:
+#   @:' (<condition>)  = if condition has for-each truth_mask:
+#                        1. Check condition_met (did ANY element pass?)
+#                        2. If yes: inject filter into parent's workspace
+#                        3. Parent IR applies filter: false elements → @#SKIP#@
+#
+# GROUPING AXIS CONVENTION:
+#   &[{}] creates annotated dict — source axes unified under output concept's axis
+#   &[#]  creates flat list — source axes collapsed, protected axes preserved
+#   %^<$!={axis}> = protect this axis (don't collapse it)
+# ════════════════════════════════════════════════════════════════════════════
+
+:<:({investment decision}) | ?{flow_index}: 1 | ?{sequence}: assigning
+    | %{ref_axes}: [_none_axis]
+    | %{ref_shape}: (1,)
+    | %{ref_element}: dict(action: str, rationale: str, confidence: float)
+    <= $. %>({investment decision})
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 1: DATA COLLECTION (External Sources → Internal References)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- [price data] | ?{flow_index}: 1.1 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict(symbol: str, currency: str, data: list)
+        <= :%(composition):{paradigm}(retrieve price data from market sources)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct
+           | %{h_input_norm}: {file_location} → file_system.read()
+           | %{body_faculty}: file_system
+           | %{o_shape}: dict in memory
+        <- {simulated data: price data}
+           | %{file_location}: provision/data/price_data.json
+           | %{ref_axes}: [_none_axis]
+           | %{ref_element}: perceptual_sign
+
+    <- [news data] | ?{flow_index}: 1.2 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict(articles: list)
+        <= :%(composition):{paradigm}(retrieve news data from text sources)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct
+           | %{h_input_norm}: {file_location} → file_system.read()
+           | %{body_faculty}: file_system
+           | %{o_shape}: dict with articles list
+        <- {simulated data: news data}
+           | %{file_location}: provision/data/news_data.json
+           | %{ref_axes}: [_none_axis]
+           | %{ref_element}: perceptual_sign
+
+    <- {theoretical framework} | ?{flow_index}: 1.3 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict(drivers: list, thresholds: dict)
+        <= :%(composition):{paradigm}(obtain theoretical framework from domain experts)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct
+           | %{h_input_norm}: {file_location} → file_system.read()
+           | %{body_faculty}: file_system
+           | %{o_shape}: structured theory dict
+        <- {simulated data: theoretical framework}
+           | %{file_location}: provision/data/theoretical_framework.json
+           | %{ref_axes}: [_none_axis]
+           | %{ref_element}: perceptual_sign
+
+    <- {investor risk profile} | ?{flow_index}: 1.4 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict(risk_tolerance: str, max_position_size: float, stop_loss: dict, horizon: str)
+        <= :%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)
+           | %{norm_input}: h_FileData-c_LoadValidate-o_Struct
+           | %{h_input_norm}: {file_location} → file_system.read()
+           | %{body_faculty}: file_system
+           | %{o_shape}: validated risk profile dict
+        <- {simulated data: investor risk profile}
+           | %{file_location}: provision/data/investor_risk_profile.json
+           | %{ref_axes}: [_none_axis]
+           | %{ref_element}: perceptual_sign
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 2: SIGNAL GENERATION (Raw Data → Actionable Signals)
+    # Axis transformation: [quantitative_signal] + [narrative_signal] + [_none_axis] → [signal]
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- {validated signal} | ?{flow_index}: 1.5 | ?{sequence}: grouping
+        | %{ref_axes}: [signal]
+        | %{ref_shape}: (n_signal,)
+        | %{ref_element}: dict(signal_name: str, signal_value: any, source: str)
+        <= &[#] %>[{quantitative signal}, {narrative signal}, {theoretical framework}]
+           # Axis unification: child axes become elements along [signal] axis
+
+        <- {quantitative signal} | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
+            | %{ref_axes}: [quantitative_signal]
+            | %{ref_shape}: (n_quantitative_signal,)
+            | %{ref_element}: dict(indicator: str, value: float, interpretation: str)
+            <= :%(composition):(compute price-based indicators from {1}<$([price data])%>)
+               | %{norm_input}: v_Script-h_Data-c_Execute-o_Struct
+               | %{v_input_norm}: {script_location}
+               | %{v_input_provision}: provision/scripts/technical_analysis.py
+               | %{h_input_norm}: in-memory (already resolved)
+               | %{body_faculty}: python_interpreter
+               | %{o_shape}: indicators dict
+            <- [price data]<:{1}>
+               | %{ref_axes}: [_none_axis]
+
+        <- {narrative signal} | ?{flow_index}: 1.5.2 | ?{sequence}: imperative
+            | %{ref_axes}: [narrative_signal]
+            | %{ref_shape}: (n_narrative_signal,)
+            | %{ref_element}: dict(theme: str, sentiment: float, summary: str)
+            <= :%(composition):(extract sentiment and themes from {1}<$([news data])%>)
+               | %{norm_input}: v_Prompt-h_Data-c_LLMGenerate-o_JSON
+               | %{v_input_norm}: {prompt_location}
+               | %{v_input_provision}: provision/prompts/sentiment_extraction.md
+               | %{h_input_norm}: in-memory (already resolved)
+               | %{body_faculty}: llm
+               | %{o_shape}: sentiment analysis dict
+            <- [news data]<:{1}>
+               | %{ref_axes}: [_none_axis]
+
+        <- {theoretical framework}
+            | %{ref_axes}: [_none_axis]
+            # Included in signal bundle for context
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 3: SIGNAL EVALUATION (Signals vs Theory → Boolean Judgements)
+    # Element-wise evaluation: one truth_value per signal
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- <signals surpass theoretical expectations> | ?{flow_index}: 1.6 | ?{sequence}: judgement
+        | %{ref_axes}: [signal]
+        | %{ref_shape}: (n_signal,)
+        | %{ref_element}: %{truth value}
+        <= :%(composition):({1}<$({validated signal})%> exceeds predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>
+           | %{norm_input}: v_Prompt-h_Data-c_LLMEvaluate-o_Bool
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/bullish_evaluation.md
+           | %{h_input_norm}: in-memory (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: boolean per signal (TVA output, before TIA transforms to truth markers)
+        <- {validated signal}<:{1}>
+           | %{ref_axes}: [signal]
+        <- {theoretical framework}<:{2}>
+           | %{ref_axes}: [_none_axis]
+
+    <- <signals deviate from theoretical expectations> | ?{flow_index}: 1.7 | ?{sequence}: judgement
+        | %{ref_axes}: [signal]
+        | %{ref_shape}: (n_signal,)
+        | %{ref_element}: %{truth value}
+        <= :%(composition):({1}<$({validated signal})%> falls below predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>
+           | %{norm_input}: v_Prompt-h_Data-c_LLMEvaluate-o_Bool
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/bearish_evaluation.md
+           | %{h_input_norm}: in-memory (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: boolean per signal (TVA output, before TIA transforms to truth markers)
+        <- {validated signal}<:{1}>
+           | %{ref_axes}: [signal]
+        <- {theoretical framework}<:{2}>
+           | %{ref_axes}: [_none_axis]
+
+    <- <signals are neutral> | ?{flow_index}: 1.8 | ?{sequence}: judgement
+        | %{ref_axes}: [signal]
+        | %{ref_shape}: (n_signal,)
+        | %{ref_element}: %{truth value}
+        # Neutral = NOT(bullish) AND NOT(bearish) per signal
+        # TIA: for-each signal, check if ALL status_type values are False
+        <= :%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>
+           | %{norm_input}: (none — pure assertion, no paradigm)
+           | %{h_input_norm}: truth markers from grouping
+           | %{body_faculty}: (none — TIA handles assertion directly)
+           | %{o_shape}: truth marker per signal (after TIA hierarchical collapse)
+        <- <signal status><:{1}> | ?{flow_index}: 1.8.1 | ?{sequence}: grouping
+            | %{ref_axes}: [signal]
+            | %{ref_shape}: (n_signal)
+            | %{ref_element}: %{truth value}
+            # Flatten truth markers but protect [signal] axis
+            <= &[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>
+            <- <signals surpass theoretical expectations>
+               | %{ref_axes}: [signal]
+            <- <signals deviate from theoretical expectations>
+               | %{ref_axes}: [signal]
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 4: DECISION SYNTHESIS (Conditional Recommendations → Final Decision)
+    # Conditional execution: only one recommendation branch produces non-skip values
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- {investment decision} | ?{flow_index}: 1.9 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict(action: str, rationale: str, confidence: float, constraints_applied: list)
+        <= :%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)
+           | %{norm_input}: v_Prompt-h_Data-c_LLMSynthesize-o_JSON
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/final_synthesis.md
+           | %{h_input_norm}: in-memory (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: final decision dict
+        <- {investor risk profile}<:{2}>
+           | %{ref_axes}: [_none_axis]
+        <- [all recommendations]<:{1}> | ?{flow_index}: 1.9.1 | ?{sequence}: grouping
+            | %{ref_axes}: [recommendation]
+            | %{ref_shape}: (n_recommendation,)
+            | %{ref_element}: dict OR @#SKIP#@
+            # At most one recommendation is non-skip due to timing gates
+            <= &[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}]
+
+            <- {bullish recommendation} | ?{flow_index}: 1.9.1.1 | ?{sequence}: imperative
+                | %{ref_axes}: [signal]
+                | %{ref_shape}: (n_signal,)
+                | %{ref_element}: dict(action: str, size: float, rationale: str)
+                | %{ref_skip}: filtered by <signals surpass theoretical expectations>
+                # Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@
+                <= :%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)
+                   | ?{flow_index}: 1.9.1.1.1 | ?{sequence}: timing
+                    <= @:' (<signals surpass theoretical expectations>)
+                   | %{norm_input}: v_Prompt_Script-h_Data-c_LLMReason_Compute-o_JSON
+                   | %{v_input_norm}: {prompt_location}, {script_location}
+                   | %{v_input_provision}: provision/prompts/buy_recommendation.md,
+                   |                       provision/scripts/position_sizing.py
+                   | %{h_input_norm}: in-memory (already resolved)
+                   | %{body_faculty}: llm, python_interpreter
+                   | %{o_shape}: BUY recommendation dict
+                <- {validated signal}<:{1}>
+                   | %{ref_axes}: [signal]
+                <- {investor risk profile}<:{2}>
+                   | %{ref_axes}: [_none_axis]
+
+            <- {bearish recommendation} | ?{flow_index}: 1.9.1.2 | ?{sequence}: imperative
+                | %{ref_axes}: [signal]
+                | %{ref_shape}: (n_signal,)
+                | %{ref_element}: dict(action: str, size: float, rationale: str)
+                | %{ref_skip}: filtered by <signals deviate from theoretical expectations>
+                # Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@
+                <= :%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)
+                   | ?{flow_index}: 1.9.1.2.1 | ?{sequence}: timing
+                    <= @:' (<signals deviate from theoretical expectations>)
+                   | %{norm_input}: v_Prompt_Script-h_Data-c_LLMReason_Compute-o_JSON
+                   | %{v_input_norm}: {prompt_location}, {script_location}
+                   | %{v_input_provision}: provision/prompts/sell_recommendation.md,
+                   |                       provision/scripts/position_sizing.py
+                   | %{h_input_norm}: in-memory (already resolved)
+                   | %{body_faculty}: llm, python_interpreter
+                   | %{o_shape}: SELL recommendation dict
+                <- {validated signal}<:{1}>
+                   | %{ref_axes}: [signal]
+                <- {investor risk profile}<:{2}>
+                   | %{ref_axes}: [_none_axis]
+
+            <- {neutral recommendation} | ?{flow_index}: 1.9.1.3 | ?{sequence}: imperative
+                | %{ref_axes}: [signal]
+                | %{ref_shape}: (n_signal,)
+                | %{ref_element}: dict(action: str, rationale: str)
+                | %{ref_skip}: filtered by <signals are neutral>
+                # Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@
+                <= :%(composition):(generate hold recommendation from {1}<$({validated signal})%>)
+                   | ?{flow_index}: 1.9.1.3.1 | ?{sequence}: timing
+                    <= @:' (<signals are neutral>)
+                   | %{norm_input}: v_Prompt-h_Data-c_LLMGenerate-o_JSON
+                   | %{v_input_norm}: {prompt_location}
+                   | %{v_input_provision}: provision/prompts/hold_recommendation.md
+                   | %{h_input_norm}: in-memory (already resolved)
+                   | %{body_faculty}: llm
+                   | %{o_shape}: HOLD recommendation dict
+                <- {validated signal}<:{1}>
+                   | %{ref_axes}: [signal]
+
+#═══════════════════════════════════════════════════════════════════════════════
+# REFERENCE FLOW SUMMARY
+#═══════════════════════════════════════════════════════════════════════════════
+#
+# Phase 1: Data Collection
+# ├── [price data]            → [_none_axis]  (singleton dict)
+# ├── [news data]             → [_none_axis]  (singleton dict)
+# ├── {theoretical framework} → [_none_axis]  (singleton dict)
+# └── {investor risk profile} → [_none_axis]  (singleton dict)
+#
+# Phase 2: Signal Generation
+# ├── {quantitative signal}   → [quantitative_signal]  (indicators from script)
+# ├── {narrative signal}      → [narrative_signal]     (sentiment from LLM)
+# └── {validated signal}      → [signal]               (unified via &[#] grouping)
+#
+# Phase 3: Evaluation (Judgements produce truth_masks, not booleans)
+# ├── <signals surpass...>    → [signal]  %{truth value}(true/false) per signal
+# ├── <signals deviate...>    → [signal]  %{truth value}(true/false) per signal
+# └── <signals are neutral>   → [signal]  %{truth value}(true/false) per signal
+#     └── <signal status>     → [signal]  (unified via &[#] grouping)
+#
+# Phase 4: Recommendations (Timing injects filter → IR applies → @#SKIP#@)
+# ├── {bullish recommendation}  → [signal]  (filtered by <signals surpass...>)
+# ├── {bearish recommendation}  → [signal]  (filtered by <signals deviate...>)
+# ├── {neutral recommendation}  → [signal]  (filtered by <signals are neutral>)
+# ├── [all recommendations]     → [recommendation]  (&[{}] groups the 3 recommendations)
+# └── {investment decision}     → [_none_axis]  (LLM synthesizes from all)
+#
+# KEY INSIGHT: The [signal] axis flows through evaluation and recommendations,
+# enabling per-signal judgement and per-signal conditional execution.
+# Only the final synthesis collapses to a single decision.
+#═══════════════════════════════════════════════════════════════════════════════

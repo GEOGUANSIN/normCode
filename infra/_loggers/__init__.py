@@ -16,11 +16,13 @@ from .utils import (
     log_states_progress,
     _log_concept_details,
     _log_inference_result,
+    ExecutionLogHandler,
 )
 
 __all__ = [
     "log_states_progress",
     "_log_concept_details", 
     "_log_inference_result",
+    "ExecutionLogHandler",
     "BaseStates",
 ]

@@ -1,0 +1,262 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "output",
+        "concept_to_infer": "{result files}",
+        "function_concept": ":<:({result files})",
+        "value_concepts": [
+            "{Phase 1: Confirmation of Instruction}",
+            "{Phase 2: Deconstruction into NormCode Plan}",
+            "{Phase 3: Plan Formalization and Redirection}",
+            "{Phase 4: Contextualization and Prompt Assembly}",
+            "{Phase 5: Materialization into an Executable Script}"
+        ]
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.1"
+        },
+        "inference_sequence": "grouping",
+        "concept_to_infer": "{result files}",
+        "function_concept": "&across",
+        "value_concepts": [
+            "{Phase 1: Confirmation of Instruction}",
+            "{Phase 2: Deconstruction into NormCode Plan}",
+            "{Phase 3: Plan Formalization and Redirection}",
+            "{Phase 4: Contextualization and Prompt Assembly}",
+            "{Phase 5: Materialization into an Executable Script}"
+        ]
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.2.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{1.1_instruction_block.md}",
+        "function_concept": "::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "value_concepts": [
+            "{instruction distillation prompt}<:{prompt}>",
+            "{input files}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "1.1_instruction_distillation.md",
+            "value_order": {
+                "{input files}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.2.3.3.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{other input files}",
+        "function_concept": ":>:{%(file_location)}({prompt}<$({location of related files prompt})%>)",
+        "value_concepts": [
+            "{location of related files}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "location_of_related_files_prompt.md"
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.3.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "[{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]",
+        "function_concept": "::{%(direct)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>)",
+        "value_concepts": [
+            "{context registration prompt}<:{prompt}>",
+            "{input files}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "1.2_context_registration.md",
+            "value_order": {
+                "{input files}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.2.4.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "[{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]",
+        "function_concept": ":>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})",
+        "value_concepts": [
+            "{manual review prompt}<:{prompt}>",
+            "[{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}]<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "1.3_manual_review.md",
+            "value_order": {
+                "[{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}]<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.3.2.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{2.1_deconstruction_draft.ncd}",
+        "function_concept": "::{%(direct)}({prompt}<$({deconstruction prompt})%>: {1}<$({1.1_instruction_block.md})%>)",
+        "value_concepts": [
+            "{deconstruction prompt}<:{prompt}>",
+            "{1.1_instruction_block.md}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "2.1_deconstruction.md",
+            "value_order": {
+                "{1.1_instruction_block.md}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.3.3.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{2.2_deconstruction_draft.ncn}",
+        "function_concept": "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+        "value_concepts": [
+            "{natural language translation prompt}<:{prompt}>",
+            "{2.1_deconstruction_draft.ncd}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "2.2_natural_language_translation.md",
+            "value_order": {
+                "{2.1_deconstruction_draft.ncd}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.4.2.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{3.1_serialized.ncd}",
+        "function_concept": "::{%(direct)}({prompt}<$({serialization prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)",
+        "value_concepts": [
+            "{serialization prompt}<:{prompt}>",
+            "{2.1_deconstruction_draft.ncd}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "3.1_serialization.md",
+            "value_order": {
+                "{2.1_deconstruction_draft.ncd}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.4.3.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{3.2_redirected.ncd}",
+        "function_concept": "::{%(direct)}({prompt}<$({redirection prompt})%>: {1}<$({3.1_serialized.ncd})%>)",
+        "value_concepts": [
+            "{redirection prompt}<:{prompt}>",
+            "{3.1_serialized.ncd}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "3.2_redirection.md",
+            "value_order": {
+                "{3.1_serialized.ncd}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.4.4.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{3.3_formalized.nc}",
+        "function_concept": "::{%(direct)}({prompt}<$({formalization prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+        "value_concepts": [
+            "{formalization prompt}<:{prompt}>",
+            "{3.2_redirected.ncd}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "3.3_formalization.md",
+            "value_order": {
+                "{3.2_redirected.ncd}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.4.5.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{3.4_natural_translation.ncn}",
+        "function_concept": "::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({3.2_redirected.ncd})%>)",
+        "value_concepts": [
+            "{natural language translation prompt}<:{prompt}>",
+            "{3.2_redirected.ncd}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "3.4_natural_language_translation.md",
+            "value_order": {
+                "{3.2_redirected.ncd}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.5.2.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "[{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]",
+        "function_concept": "::{%(direct)}({prompt}<$({context distribution prompt})%>: {1})",
+        "value_concepts": [
+            "{context distribution prompt}<:{prompt}>",
+            "[{3.3_formalized.nc}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "4.1_context_distribution.md",
+            "value_order": {
+                "[{3.3_formalized.nc}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.5.3.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "{prompts/[__flow_index__]*.md}",
+        "function_concept": "::{%(direct)}({prompt}<$({prompt generation prompt})%>: {1}<$({4.1_context_manifest.json})%>)",
+        "value_concepts": [
+            "{prompt generation prompt}<:{prompt}>",
+            "{4.1_context_manifest.json}<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "4.2_prompt_generation.md",
+            "value_order": {
+                "{4.1_context_manifest.json}<:{1}>": 1
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.6.2.1"
+        },
+        "inference_sequence": "imperative",
+        "concept_to_infer": "[{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]",
+        "function_concept": "::{%(direct)}({prompt}<$({script generation prompt})%>: {1})",
+        "value_concepts": [
+            "{script generation prompt}<:{prompt}>",
+            "[{3.3_formalized.nc}, {4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]<:{1}>"
+        ],
+        "working_interpretation": {
+            "prompt_location": "5.1_script_generation.md",
+            "value_order": {
+                "[{3.3_formalized.nc}, {4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]<:{1}>": 1
+            }
+        }
+    }
+]

@@ -1,5 +1,6 @@
 import uuid
 import logging
+import asyncio
 from typing import List, Optional, Dict, Any
 
 # Import dependencies
@@ -8,6 +9,8 @@ from infra._orchest._blackboard import Blackboard
 from infra._orchest._repo import ConceptEntry, InferenceEntry, ConceptRepo, InferenceRepo
 from infra._orchest._waitlist import WaitlistItem, Waitlist
 from infra._orchest._tracker import ProcessTracker
+from infra._orchest._db import OrchestratorDB
+from infra._orchest._checkpoint import CheckpointManager
 from infra._agent._body import Body
 
 class Orchestrator:
@@ -21,7 +24,17 @@ class Orchestrator:
                  blackboard: Optional[Blackboard] = None,
                  agent_frame_model: str = "demo",
                  body: Optional[Body] = None,
-                 max_cycles: int = 30):
+                 max_cycles: int = 30,
+                 db_path: Optional[str] = None,
+                 checkpoint_frequency: Optional[int] = None,
+                 run_id: Optional[str] = None):
+        """
+        Args:
+            checkpoint_frequency: If provided, save checkpoint every N inferences within a cycle.
+                                 If None, only checkpoint at the end of each cycle.
+                                 Example: checkpoint_frequency=5 will checkpoint at inferences 5, 10, 15, etc.
+            run_id: If provided, uses this run_id instead of generating a new one. Useful for continuing a run.
+        """
         self.inference_repo = inference_repo
         self.concept_repo = concept_repo
         self.agent_frame_model = agent_frame_model
@@ -31,12 +44,65 @@ class Orchestrator:
         self.tracker = ProcessTracker()
         self.max_cycles = max_cycles
         self.workspace = {}
+        self.checkpoint_frequency = checkpoint_frequency  # Checkpoint every N inferences
+        
+        # Use provided run_id or generate a unique run_id for this orchestrator instance
+        self.run_id = run_id if run_id is not None else str(uuid.uuid4())
+        
+        # Initialize checkpointing system if db_path is provided
+        self.db: Optional[OrchestratorDB] = None
+        self.checkpoint_manager: Optional[CheckpointManager] = None
+        if db_path:
+            self.db = OrchestratorDB(db_path, run_id=self.run_id)
+            self.checkpoint_manager = CheckpointManager(self.db)
+            self.tracker.set_db(self.db)
+            self.tracker.set_run_id(self.run_id)  # Ensure tracker has run_id
+            
+            # Save run metadata regarding environment and configuration
+            self._save_run_metadata()
+            
+            if self.checkpoint_frequency:
+                logging.info(f"Checkpointing enabled with database at: {db_path}, run_id: {self.run_id}, frequency: every {self.checkpoint_frequency} inferences")
+            else:
+                logging.info(f"Checkpointing enabled with database at: {db_path}, run_id: {self.run_id} (end of cycle only)")
+        
+        # Track execution IDs for status updates
+        self._current_execution_ids: Dict[str, int] = {}  # flow_index -> execution_id
+        
         self._create_waitlist()
         self._initialize_blackboard()
 
         self._item_by_inferred_concept: Dict[str, WaitlistItem] = {
             item.inference_entry.concept_to_infer.concept_name: item for item in self.waitlist.items
         }
+
+    def _save_run_metadata(self):
+        """Saves metadata about the current run environment (agent settings, paths, etc.)."""
+        if not self.db:
+            return
+
+        # Extract relevant metadata
+        metadata = {
+            "agent_frame_model": self.agent_frame_model,
+            "base_dir": self.body.base_dir if self.body else None,
+            "max_cycles": self.max_cycles,
+            "checkpoint_frequency": self.checkpoint_frequency
+        }
+        
+        # Try to get LLM info if available
+        if self.body and hasattr(self.body, "llm"):
+            # Handle various LLM object structures (real or mock)
+            if hasattr(self.body.llm, "model_name"): 
+                metadata["llm_model"] = self.body.llm.model_name
+            elif hasattr(self.body.llm, "name"):
+                metadata["llm_model"] = self.body.llm.name
+            elif hasattr(self.body.llm, "__class__"):
+                metadata["llm_model"] = self.body.llm.__class__.__name__
+            else:
+                metadata["llm_model"] = str(type(self.body.llm).__name__)
+
+        self.db.save_run_metadata(self.run_id, metadata)
+        logging.info(f"Saved run metadata for run_id: {self.run_id}")
 
     def _create_waitlist(self):
         """Creates the waitlist from the inference repository."""
@@ -192,6 +258,7 @@ class Orchestrator:
         """
         Executes a real inference using a fresh AgentFrame for each execution.
         Updates the item's result and returns the new status.
+        Captures all logs emitted during execution and stores them in the database.
         """
         flow_index = item.inference_entry.flow_info['flow_index']
         self.blackboard.increment_execution_count(flow_index)
@@ -202,19 +269,75 @@ class Orchestrator:
             self.blackboard.set_item_result(flow_index, "Error: Missing Inference object")
             return "failed"
 
+        # Set up log capture for this execution
+        log_handler = None
+        execution_id = None
+        
+        # Create execution record first to get execution_id (if DB is available)
+        if self.tracker.db:
+            execution_id = self.tracker.add_execution_record(
+                cycle=self.tracker.cycle_count,
+                flow_index=flow_index,
+                inference_type=item.inference_entry.inference_sequence,
+                status='in_progress',
+                concept_inferred=item.inference_entry.concept_to_infer.concept_name
+            )
+            
+            # Store execution_id for later status update
+            if execution_id is not None:
+                self._current_execution_ids[flow_index] = execution_id
+                
+                # Create and attach log handler to capture all logs
+                log_handler = self.tracker.create_log_handler(execution_id=execution_id)
+                root_logger = logging.getLogger()
+                root_logger.addHandler(log_handler)
+
         try:
             states = self._execute_agent_frame(item, inference)
-            return self._process_inference_state(states, item)
+            status = self._process_inference_state(states, item)
+            
+            # Capture and save logs
+            if log_handler and execution_id is not None:
+                log_content = log_handler.get_log_content()
+                if log_content.strip():  # Only save if there's content
+                    self.tracker.capture_inference_log(execution_id, log_content)
+            
+            return status
 
         except Exception as e:
+            # Allow NeedsUserInteraction to propagate to app layer for human-in-the-loop
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                raise
+
             self._handle_inference_failure(item, e)
+            
+            # Capture logs even on failure
+            if log_handler and execution_id is not None:
+                log_content = log_handler.get_log_content()
+                if log_content.strip():
+                    self.tracker.capture_inference_log(execution_id, log_content)
+            
             return "failed"
+        
+        finally:
+            # Remove log handler
+            if log_handler:
+                root_logger = logging.getLogger()
+                root_logger.removeHandler(log_handler)
+                log_handler.clear()
+
+    async def _inference_execution_async(self, item: WaitlistItem) -> str:
+        """
+        Executes inference in a separate thread to avoid blocking the event loop.
+        """
+        return await asyncio.to_thread(self._inference_execution, item)
 
     def _execute_agent_frame(self, item: WaitlistItem, inference: Inference) -> BaseStates:
         """Creates and executes an AgentFrame for a given inference."""
         working_interpretation = item.inference_entry.working_interpretation or {}
         working_interpretation["blackboard"] = self.blackboard
         working_interpretation["workspace"] = self.workspace
+        working_interpretation["flow_info"] = item.inference_entry.flow_info
         
         agent_frame = AgentFrame(
             self.agent_frame_model,
@@ -285,10 +408,49 @@ class Orchestrator:
             elif condition_met is False:
                 logging.info(f"Judgement condition for item {flow_index} not met. Marking as 'condition_not_met'.")
                 self.blackboard.set_item_completion_detail(flow_index, 'condition_not_met')
+            
+            # Store truth mask for filter injection if available (from TIA step)
+            self._store_truth_mask_if_available(states, item)
         
         all_conditions_met = self._update_references_and_check_completion(states, item)
         
         return "completed" if all_conditions_met else "pending"
+
+    def _store_truth_mask_if_available(self, states: BaseStates, item: WaitlistItem):
+        """
+        Store truth mask from judgement inference for filter injection.
+        
+        When a judgement inference with a 'for-each' quantifier completes,
+        the TIA step produces a truth mask. We store this on the blackboard
+        so that timing steps can inject it for downstream filtering.
+        """
+        # Check if there's a primary_filter_axis (indicates for-each quantifier was used)
+        primary_filter_axis = getattr(states, 'primary_filter_axis', None)
+        if not primary_filter_axis:
+            logging.debug(f"No primary_filter_axis in states - no truth mask to store")
+            return
+        
+        # Try to get the TIA output reference
+        tia_ref = None
+        if hasattr(states, 'get_reference'):
+            tia_ref = states.get_reference("inference", "TIA")
+        
+        if not tia_ref:
+            logging.debug(f"No TIA reference found in states")
+            return
+        
+        # Build truth mask data
+        concept_name = item.inference_entry.concept_to_infer.concept_name
+        truth_mask_data = {
+            'tensor': tia_ref.tensor if hasattr(tia_ref, 'tensor') else None,
+            'axes': tia_ref.axes if hasattr(tia_ref, 'axes') else [],
+            'filter_axis': primary_filter_axis,
+            'shape': tia_ref.shape if hasattr(tia_ref, 'shape') else None,
+        }
+        
+        self.blackboard.set_truth_mask(concept_name, truth_mask_data)
+        logging.info(f"Stored truth mask for judgement concept '{concept_name}' "
+                    f"(filter_axis='{primary_filter_axis}', shape={truth_mask_data['shape']})")
 
     def _update_references_and_check_completion(self, states: BaseStates, item: WaitlistItem) -> bool:
         """
@@ -396,16 +558,19 @@ class Orchestrator:
         return None
 
     def _update_execution_tracking(self, item: WaitlistItem, status: str):
-        """Updates the process tracker after an item execution attempt."""
+        """
+        Updates the process tracker after an item execution attempt.
+        Note: The execution record is created in _inference_execution() before execution
+        to get the execution_id for log capture. This method updates the status and counters.
+        """
         flow_index = item.inference_entry.flow_info['flow_index']
-
-        self.tracker.add_execution_record(
-            cycle=self.tracker.cycle_count,
-            flow_index=flow_index,
-            inference_type=item.inference_entry.inference_sequence,
-            status=status,
-            concept_inferred=item.inference_entry.concept_to_infer.concept_name
-        )
+        
+        # Update the execution record status if we have the execution_id
+        execution_id = self._current_execution_ids.get(flow_index)
+        if execution_id is not None and self.tracker.db:
+            self.tracker.update_execution_status(execution_id, status)
+            # Clean up the stored execution_id
+            del self._current_execution_ids[flow_index]
 
         if status == 'completed':
             detail = self.blackboard.get_item_completion_detail(item.inference_entry.flow_info['flow_index'])
@@ -430,7 +595,40 @@ class Orchestrator:
         logging.info(f"Item {flow_index} is ready. Executing.")
 
         self.blackboard.set_item_status(flow_index, 'in_progress')
-        new_status = self._inference_execution(item)
+        
+        try:
+            new_status = self._inference_execution(item)
+        except Exception as e:
+            # Check for user interaction exception to reset status before propagating
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                logging.info(f"Item {flow_index} paused for user interaction. Resetting to 'pending'.")
+                self.blackboard.set_item_status(flow_index, 'pending')
+                raise
+            raise
+
+        self.tracker.total_executions += 1
+        self.blackboard.set_item_status(flow_index, new_status)
+
+        self._update_execution_tracking(item, new_status)
+
+        return new_status
+
+    async def _execute_item_async(self, item: WaitlistItem) -> str:
+        """Executes a single waitlist item asynchronously and updates its status and tracking info."""
+        flow_index = item.inference_entry.flow_info['flow_index']
+        logging.info(f"Item {flow_index} is ready. Executing.")
+
+        self.blackboard.set_item_status(flow_index, 'in_progress')
+        
+        try:
+            new_status = await self._inference_execution_async(item)
+        except Exception as e:
+            # Check for user interaction exception to reset status before propagating
+            if e.__class__.__name__ == 'NeedsUserInteraction':
+                logging.info(f"Item {flow_index} paused for user interaction. Resetting to 'pending'.")
+                self.blackboard.set_item_status(flow_index, 'pending')
+                raise
+            raise
 
         self.tracker.total_executions += 1
         self.blackboard.set_item_status(flow_index, new_status)
@@ -444,6 +642,7 @@ class Orchestrator:
         cycle_executions = 0
         cycle_successes = 0
         next_cycle_retries: List[WaitlistItem] = []
+        inference_count_in_cycle = 0  # Track inferences executed in this cycle
 
         # Get items to process for this cycle, prioritizing retries
         retried_items_set = set(retries_from_previous_cycle)
@@ -455,12 +654,62 @@ class Orchestrator:
             flow_index = item.inference_entry.flow_info['flow_index']
             if self.blackboard.get_item_status(flow_index) == 'pending' and self._is_ready(item):
                 cycle_executions += 1
+                inference_count_in_cycle += 1
                 new_status = self._execute_item(item)
 
                 if new_status == 'completed':
                     cycle_successes += 1
                 else:
                     next_cycle_retries.append(item)
+                
+                # Checkpoint based on frequency (if enabled)
+                if self.checkpoint_frequency and self.checkpoint_manager:
+                    if inference_count_in_cycle % self.checkpoint_frequency == 0:
+                        self.checkpoint_manager.save_state(
+                            self.tracker.cycle_count, 
+                            self, 
+                            inference_count=inference_count_in_cycle
+                        )
+                        logging.info(f"Intra-cycle checkpoint saved at cycle {self.tracker.cycle_count}, inference {inference_count_in_cycle}")
+
+        logging.info(f"Cycle {self.tracker.cycle_count}: {cycle_executions} executions, {cycle_successes} completions")
+
+        return cycle_executions > 0, next_cycle_retries
+
+    async def _run_cycle_async(self, retries_from_previous_cycle: List[WaitlistItem]) -> tuple[bool, List[WaitlistItem]]:
+        """Processes one cycle of the orchestration loop asynchronously."""
+        cycle_executions = 0
+        cycle_successes = 0
+        next_cycle_retries: List[WaitlistItem] = []
+        inference_count_in_cycle = 0  # Track inferences executed in this cycle
+
+        # Get items to process for this cycle, prioritizing retries
+        retried_items_set = set(retries_from_previous_cycle)
+        items_to_process = retries_from_previous_cycle + [
+            item for item in self.waitlist.items if item not in retried_items_set
+        ]
+
+        for item in items_to_process:
+            flow_index = item.inference_entry.flow_info['flow_index']
+            if self.blackboard.get_item_status(flow_index) == 'pending' and self._is_ready(item):
+                cycle_executions += 1
+                inference_count_in_cycle += 1
+                new_status = await self._execute_item_async(item)
+
+                if new_status == 'completed':
+                    cycle_successes += 1
+                else:
+                    next_cycle_retries.append(item)
+                
+                # Checkpoint based on frequency (if enabled)
+                if self.checkpoint_frequency and self.checkpoint_manager:
+                    if inference_count_in_cycle % self.checkpoint_frequency == 0:
+                        self.checkpoint_manager.save_state(
+                            self.tracker.cycle_count, 
+                            self, 
+                            inference_count=inference_count_in_cycle
+                        )
+                        logging.info(f"Intra-cycle checkpoint saved at cycle {self.tracker.cycle_count}, inference {inference_count_in_cycle}")
 
         logging.info(f"Cycle {self.tracker.cycle_count}: {cycle_executions} executions, {cycle_successes} completions")
 
@@ -471,13 +720,378 @@ class Orchestrator:
         stuck_items = [i.inference_entry.flow_info['flow_index'] for i in self.waitlist.items if self.blackboard.get_item_status(i.inference_entry.flow_info['flow_index']) != 'completed']
         logging.warning(f"Stuck items: {stuck_items}")
 
-    def run(self) -> List[ConceptEntry]:
-        """Runs the orchestration loop until completion or deadlock."""
+    def _validate_repo_compatibility(self, checkpoint_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validates repository compatibility according to REPO_COMPATIBILITY.md.
+        Checks for data sufficiency and state validity.
+        
+        Returns:
+            Dictionary with:
+            - 'compatible': bool - True if compatible
+            - 'warnings': List[str] - List of warnings
+            - 'errors': List[str] - List of errors (incompatibility issues)
+        """
+        warnings = []
+        errors = []
+        
+        # 1. Data Sufficiency Check: Ground Concepts
+        # Every ground concept in the new repo must have data (either in repo or checkpoint)
+        completed_concepts = checkpoint_data.get("completed_concepts", {})
+        missing_ground_concepts = []
+        
+        for concept_entry in self.concept_repo.get_all_concepts():
+            if concept_entry.is_ground_concept:
+                concept_name = concept_entry.concept_name
+                # Check if it has data in repo
+                has_repo_data = (concept_entry.reference_data is not None) or \
+                               (concept_entry.concept and concept_entry.concept.reference is not None)
+                # Check if it has data in checkpoint
+                has_checkpoint_data = concept_name in completed_concepts
+                
+                if not has_repo_data and not has_checkpoint_data:
+                    missing_ground_concepts.append(concept_name)
+                    errors.append(f"Ground concept '{concept_name}' is missing data in both repo and checkpoint.")
+        
+        if missing_ground_concepts:
+            errors.append(f"Data Insufficiency: Missing ground concepts: {missing_ground_concepts}")
+        
+        # 2. Workspace Validity Check
+        # Check if loop counters in workspace map to valid flow indices
+        workspace = checkpoint_data.get("workspace", {})
+        invalid_workspace_keys = []
+        
+        if self.waitlist:
+            valid_flow_indices = {item.inference_entry.flow_info['flow_index'] for item in self.waitlist.items}
+            
+            # Workspace keys for quantifying loops typically look like "{quantifier_index}_{LoopBaseConcept}"
+            # We need to check if the flow indices referenced in workspace still exist
+            for key in workspace.keys():
+                # Try to match workspace keys to flow indices
+                # This is a heuristic - workspace structure depends on quantifying implementation
+                if isinstance(key, str):
+                    # Check if key might reference a flow index
+                    parts = key.split('_')
+                    if len(parts) >= 2:
+                        # Might be a quantifier workspace key
+                        # We'll be lenient here and just warn if we can't validate
+                        pass
+        
+        # 3. Stale Interference Check (for PATCH mode)
+        # This is handled in reconcile_state, but we can pre-check here
+        saved_signatures = checkpoint_data.get("signatures", {})
+        saved_concept_signatures = saved_signatures.get("concept_signatures", {})
+        stale_concepts = []
+        
+        for concept_name, saved_sig in saved_concept_signatures.items():
+            concept_entry = self.concept_repo.get_concept(concept_name)
+            if concept_entry:
+                current_sig = concept_entry.get_signature()
+                if saved_sig != current_sig:
+                    stale_concepts.append(concept_name)
+                    warnings.append(f"Concept '{concept_name}' has changed logic (signature mismatch). Will be re-run in PATCH mode.")
+        
+        if stale_concepts:
+            warnings.append(f"Found {len(stale_concepts)} concept(s) with changed logic: {stale_concepts}")
+        
+        compatible = len(errors) == 0
+        
+        return {
+            'compatible': compatible,
+            'warnings': warnings,
+            'errors': errors
+        }
+    
+    @classmethod
+    def load_checkpoint(cls,
+                       concept_repo: ConceptRepo,
+                       inference_repo: InferenceRepo,
+                       db_path: str,
+                       agent_frame_model: str = "demo",
+                       body: Optional[Body] = None,
+                       max_cycles: int = 30,
+                       run_id: Optional[str] = None,
+                       new_run_id: Optional[str] = None,
+                       cycle: Optional[int] = None,
+                       inference_count: Optional[int] = None,
+                       validate_environment: bool = True,
+                       mode: str = "PATCH",
+                       validate_compatibility: bool = True) -> 'Orchestrator':
+        """
+        Initialize the system from an existing DB file (checkpoint).
+        Creates a new Orchestrator instance and reconciles its state with the checkpoint.
+        
+        Args:
+            run_id: If provided, loads checkpoint for that specific run. 
+                   If None, loads the latest checkpoint from any run.
+            new_run_id: If provided, starts a NEW run history (fork) with this ID, 
+                       initialized with state from the checkpoint.
+                       The cycle count and execution history will start fresh.
+            cycle: If provided, loads the checkpoint at this specific cycle number.
+                  If None, loads the latest checkpoint for the specified run_id.
+            inference_count: If provided with cycle, loads the checkpoint at this specific inference count within the cycle.
+                            If None (but cycle is provided), loads the latest checkpoint for that cycle.
+                            Ignored if cycle is None.
+            validate_environment: If True, validates that the current environment matches the saved run metadata
+                                 and logs warnings if there are mismatches.
+            mode: Loading mode - one of:
+                - "PATCH" (default): Smart merge - discard stale state, keep valid state
+                - "OVERWRITE": Trust checkpoint 100%, ignore repo changes
+                - "FILL_GAPS": Only fill missing values, prefer new repo defaults
+            validate_compatibility: If True, validates repository compatibility before loading
+        """
+        # Initialize DB to find source run_id if needed
+        db = OrchestratorDB(db_path)
+        
+        # If run_id (source) not provided, try to find the latest run
+        source_run_id = run_id
+        if not source_run_id:
+            runs = db.list_runs()
+            if runs:
+                source_run_id = runs[0]['run_id']  # Most recent run
+                logging.info(f"No run_id provided, using latest run as source: {source_run_id}")
+            else:
+                logging.warning(f"No runs found in {db_path}. Starting fresh orchestration.")
+                # Create a new orchestrator with a new run_id (or provided new_run_id)
+                orchestrator = cls(
+                    concept_repo=concept_repo,
+                    inference_repo=inference_repo,
+                    agent_frame_model=agent_frame_model,
+                    body=body,
+                    max_cycles=max_cycles,
+                    db_path=db_path,
+                    run_id=new_run_id
+                )
+                return orchestrator
+        
+        # Determine target_run_id
+        # If new_run_id is provided, we use that (Forking).
+        # If not, we continue the source run (Continuity).
+        target_run_id = new_run_id if new_run_id else source_run_id
+        is_forking = (new_run_id is not None)
+        
+        # Create a new orchestrator instance with the TARGET run_id
+        orchestrator = cls(
+            concept_repo=concept_repo,
+            inference_repo=inference_repo,
+            agent_frame_model=agent_frame_model,
+            body=body,
+            max_cycles=max_cycles,
+            db_path=db_path,
+            run_id=target_run_id
+        )
+        
+        # CheckpointManager needs to load from SOURCE run_id
+        # We can use a temporary CheckpointManager with source_run_id
+        source_db = OrchestratorDB(db_path, run_id=source_run_id)
+        checkpoint_manager = CheckpointManager(source_db)
+        
+        # Validate environment compatibility of SOURCE run
+        if validate_environment:
+            validation_result = orchestrator.validate_environment_compatibility(source_run_id)
+            if validation_result['warnings']:
+                logging.warning(f"Environment validation for run_id {source_run_id} found {len(validation_result['warnings'])} warning(s):")
+                for warning in validation_result['warnings']:
+                    logging.warning(f"  - {warning}")
+            if not validation_result['compatible']:
+                logging.error(f"Environment is not fully compatible with saved run_id {source_run_id}. Proceeding anyway, but results may differ.")
+        
+        # Load checkpoint from SOURCE - either specific cycle/inference_count or latest
+        checkpoint_data = None
+        if cycle is not None:
+            checkpoint_data = checkpoint_manager.load_checkpoint_by_cycle(cycle, source_run_id, inference_count)
+            if checkpoint_data:
+                if inference_count is not None:
+                    logging.info(f"Loaded checkpoint from cycle {cycle}, inference {inference_count} in {db_path} for run_id: {source_run_id}")
+                else:
+                    logging.info(f"Loaded latest checkpoint from cycle {cycle} in {db_path} for run_id: {source_run_id}")
+            else:
+                logging.warning(f"No checkpoint found at cycle {cycle}, inference {inference_count} in {db_path} for run_id {source_run_id}. Starting fresh orchestration.")
+        else:
+            checkpoint_data = checkpoint_manager.load_latest_checkpoint(source_run_id)
+            if checkpoint_data:
+                logging.info(f"Loaded latest checkpoint from {db_path} for run_id: {source_run_id}")
+            else:
+                logging.warning(f"No checkpoint found in {db_path} for run_id {source_run_id}. Starting fresh orchestration.")
+        
+        # Validate repository compatibility if requested
+        if checkpoint_data and validate_compatibility:
+            compatibility_result = orchestrator._validate_repo_compatibility(checkpoint_data)
+            if compatibility_result['warnings']:
+                logging.warning(f"Repository compatibility validation found {len(compatibility_result['warnings'])} warning(s):")
+                for warning in compatibility_result['warnings']:
+                    logging.warning(f"  - {warning}")
+            if compatibility_result['errors']:
+                logging.error(f"Repository compatibility validation found {len(compatibility_result['errors'])} error(s):")
+                for error in compatibility_result['errors']:
+                    logging.error(f"  - {error}")
+            if not compatibility_result['compatible']:
+                logging.error(f"Repository is incompatible with checkpoint. Proceeding with reconciliation anyway, but execution may fail.")
+        
+        # Reconcile state with the specified mode
+        if checkpoint_data:
+            checkpoint_manager.reconcile_state(checkpoint_data, orchestrator, mode=mode, is_forking=is_forking)
+            logging.info(f"Successfully reconciled checkpoint state (Mode: {mode})")
+            
+            # If forking, reset the tracker counters (start fresh history)
+            if is_forking:
+                orchestrator.tracker.reset_counters()
+                logging.info(f"Forking enabled: Tracker counters reset for new run_id: {target_run_id}")
+        
+        return orchestrator
+
+    def validate_environment_compatibility(self, run_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Validates if the current orchestrator environment matches the saved run metadata.
+        Useful for checking if a checkpoint can be safely loaded with different repos/environment.
+        
+        Args:
+            run_id: The run_id to validate against. If None, uses self.run_id.
+        
+        Returns:
+            Dictionary with validation results:
+            - 'compatible': bool - True if environments match
+            - 'warnings': List[str] - List of warnings about mismatches
+            - 'saved_metadata': Dict - The saved metadata from the run
+            - 'current_metadata': Dict - The current environment metadata
+        """
+        if not self.db:
+            return {
+                'compatible': False,
+                'warnings': ['No database connection available'],
+                'saved_metadata': None,
+                'current_metadata': None
+            }
+        
+        target_run_id = run_id or self.run_id
+        if not target_run_id:
+            return {
+                'compatible': False,
+                'warnings': ['No run_id provided'],
+                'saved_metadata': None,
+                'current_metadata': None
+            }
+        
+        saved_metadata = self.db.get_run_metadata(target_run_id)
+        if not saved_metadata:
+            return {
+                'compatible': True,  # No saved metadata means no constraints
+                'warnings': ['No saved metadata found for this run_id'],
+                'saved_metadata': None,
+                'current_metadata': self._get_current_metadata()
+            }
+        
+        # Get current metadata
+        current_metadata = self._get_current_metadata()
+        
+        # Compare metadata
+        warnings = []
+        compatible = True
+        
+        # Check agent_frame_model
+        if saved_metadata.get('agent_frame_model') != current_metadata.get('agent_frame_model'):
+            warnings.append(f"agent_frame_model mismatch: saved='{saved_metadata.get('agent_frame_model')}', current='{current_metadata.get('agent_frame_model')}'")
+            compatible = False
+        
+        # Check base_dir
+        saved_base_dir = saved_metadata.get('base_dir')
+        current_base_dir = current_metadata.get('base_dir')
+        if saved_base_dir != current_base_dir:
+            warnings.append(f"base_dir mismatch: saved='{saved_base_dir}', current='{current_base_dir}'")
+            # base_dir mismatch is a warning, not necessarily incompatible (depends on use case)
+        
+        # Check LLM model
+        saved_llm = saved_metadata.get('llm_model')
+        current_llm = current_metadata.get('llm_model')
+        if saved_llm and current_llm and saved_llm != current_llm:
+            warnings.append(f"LLM model mismatch: saved='{saved_llm}', current='{current_llm}'")
+            # LLM mismatch might affect results but checkpoint can still be loaded
+        
+        # Check max_cycles (less critical, but good to know)
+        if saved_metadata.get('max_cycles') != current_metadata.get('max_cycles'):
+            warnings.append(f"max_cycles mismatch: saved={saved_metadata.get('max_cycles')}, current={current_metadata.get('max_cycles')}")
+        
+        return {
+            'compatible': compatible,
+            'warnings': warnings,
+            'saved_metadata': saved_metadata,
+            'current_metadata': current_metadata
+        }
+
+    def _get_current_metadata(self) -> Dict[str, Any]:
+        """Helper method to get current environment metadata."""
+        metadata = {
+            "agent_frame_model": self.agent_frame_model,
+            "base_dir": self.body.base_dir if self.body else None,
+            "max_cycles": self.max_cycles,
+            "checkpoint_frequency": self.checkpoint_frequency
+        }
+        
+        # Try to get LLM info if available
+        if self.body and hasattr(self.body, "llm"):
+            if hasattr(self.body.llm, "model_name"): 
+                metadata["llm_model"] = self.body.llm.model_name
+            elif hasattr(self.body.llm, "name"):
+                metadata["llm_model"] = self.body.llm.name
+            elif hasattr(self.body.llm, "__class__"):
+                metadata["llm_model"] = self.body.llm.__class__.__name__
+            else:
+                metadata["llm_model"] = str(type(self.body.llm).__name__)
+        
+        return metadata
+
+    def export_state(self) -> Dict[str, Any]:
+        """
+        Exports the comprehensive state of the orchestration.
+        Includes execution history, logs, and concept states.
+        """
+        if self.checkpoint_manager:
+            return self.checkpoint_manager.export_comprehensive_state(self)
+        
+        logging.warning("Checkpoint manager not initialized. Returning partial in-memory state.")
+        return {
+            "blackboard": self.blackboard.to_dict(),
+            "tracker": self.tracker.to_dict(),
+            "workspace": self.workspace, # Note: Reference objects might not be serialized here without CheckpointManager
+            "warning": "Full export requires checkpoint manager (DB) to be initialized."
+        }
+    
+    @staticmethod
+    def list_available_checkpoints(db_path: str, run_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        List all available checkpoints for a given database and optionally a specific run_id.
+        Returns a list of checkpoints with cycle numbers and timestamps.
+        
+        Args:
+            db_path: Path to the database file
+            run_id: If provided, lists checkpoints only for this run. If None, lists all runs.
+        
+        Returns:
+            List of dictionaries with 'run_id', 'cycle', and 'timestamp' keys
+        """
+        db = OrchestratorDB(db_path, run_id=run_id)
+        
+        if run_id:
+            # List checkpoints for specific run
+            checkpoints = db.list_checkpoints(run_id)
+            return [{'run_id': run_id, **cp} for cp in checkpoints]
+        else:
+            # List checkpoints for all runs
+            runs = db.list_runs()
+            all_checkpoints = []
+            for run in runs:
+                run_checkpoints = db.list_checkpoints(run['run_id'])
+                for cp in run_checkpoints:
+                    all_checkpoints.append({'run_id': run['run_id'], **cp})
+            return all_checkpoints
+
+    async def run_async(self) -> List[ConceptEntry]:
+        """Runs the orchestration loop asynchronously until completion or deadlock."""
         if not self.waitlist:
             logging.error("No waitlist created.")
             return []
 
-        logging.info(f"--- Starting Orchestration for Waitlist {self.waitlist.id} ---")
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Starting Async Orchestration for Waitlist {self.waitlist.id}{run_id_info} ---")
 
         retries: List[WaitlistItem] = []
 
@@ -485,7 +1099,14 @@ class Orchestrator:
             self.tracker.cycle_count += 1
             logging.info(f"--- Cycle {self.tracker.cycle_count} ---")
             
-            progress_made, retries = self._run_cycle(retries)
+            progress_made, retries = await self._run_cycle_async(retries)
+            
+            # Save checkpoint at the end of each cycle (if frequency-based checkpointing didn't already save it)
+            # Note: We still save at end of cycle even with frequency-based checkpointing to ensure we have a complete state
+            if self.checkpoint_manager:
+                # Get the current inference count for this cycle from the tracker
+                # We'll use 0 as a marker for "end of cycle" checkpoint
+                self.checkpoint_manager.save_state(self.tracker.cycle_count, self, inference_count=0)
             
             if not progress_made:
                 logging.warning("No progress made in the last cycle. Deadlock detected.")
@@ -495,7 +1116,50 @@ class Orchestrator:
         if self.tracker.cycle_count >= self.max_cycles:
             logging.error(f"Maximum cycles ({self.max_cycles}) reached. Stopping orchestration.")
         
-        logging.info(f"--- Orchestration Finished for Waitlist {self.waitlist.id} ---")
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Orchestration Finished for Waitlist {self.waitlist.id}{run_id_info} ---")
+        
+        # Automatically log summary when orchestration completes
+        if self.waitlist:
+            self.tracker.log_summary(self.waitlist.id, self.waitlist.items, self.blackboard, self.concept_repo)
+
+        final_concepts = [c for c in self.concept_repo.get_all_concepts() if c.is_final_concept]
+        return final_concepts
+
+    def run(self) -> List[ConceptEntry]:
+        """Runs the orchestration loop until completion or deadlock."""
+        if not self.waitlist:
+            logging.error("No waitlist created.")
+            return []
+
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Starting Orchestration for Waitlist {self.waitlist.id}{run_id_info} ---")
+
+        retries: List[WaitlistItem] = []
+
+        while self.blackboard.get_all_pending_or_in_progress_items() and self.tracker.cycle_count < self.max_cycles:
+            self.tracker.cycle_count += 1
+            logging.info(f"--- Cycle {self.tracker.cycle_count} ---")
+            
+            progress_made, retries = self._run_cycle(retries)
+            
+            # Save checkpoint at the end of each cycle (if frequency-based checkpointing didn't already save it)
+            # Note: We still save at end of cycle even with frequency-based checkpointing to ensure we have a complete state
+            if self.checkpoint_manager:
+                # Get the current inference count for this cycle from the tracker
+                # We'll use 0 as a marker for "end of cycle" checkpoint
+                self.checkpoint_manager.save_state(self.tracker.cycle_count, self, inference_count=0)
+            
+            if not progress_made:
+                logging.warning("No progress made in the last cycle. Deadlock detected.")
+                self._log_stuck_items()
+                break
+        
+        if self.tracker.cycle_count >= self.max_cycles:
+            logging.error(f"Maximum cycles ({self.max_cycles}) reached. Stopping orchestration.")
+        
+        run_id_info = f" (Run ID: {self.run_id})" if self.run_id else ""
+        logging.info(f"--- Orchestration Finished for Waitlist {self.waitlist.id}{run_id_info} ---")
         
         # Automatically log summary when orchestration completes
         if self.waitlist:

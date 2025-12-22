@@ -1,0 +1,25 @@
+{
+  "summary": "This context block provides the high-level summary and references for the NormCode AI Planning Pipeline meta-algorithm. The full, detailed context is stored in the referenced files within the context_store directory.",
+  "sections": [
+    {
+      "title": "Core Methodology and Examples",
+      "description": "The primary methodology is a four-phase pipeline (Confirmation, Deconstruction and Plan Formalization, Contextualization, Materialization). A complete, practical walkthrough of this pipeline, including the illustrative 'user registration flow' example, detailed phase descriptions, and guiding principles, is provided in raw_context_prompt.txt. This document also contains the overall project goal.",
+      "file_reference": "./context_store/raw--prompt.txt"
+    },
+    {
+      "title": "Technical Language Specification",
+      "description": "The underlying semi-formal language used in the plan is NormCode. The complete technical reference for the language, including its syntax, concept types, data storage model (`Reference`), and execution logic (`Agent's Sequences` and `Orchestrator`), is detailed in raw_context_normcode_terminology_guide.txt.",
+      "file_reference": "./context_store/raw--normcode_terminology_guide.txt"
+    },
+    {
+      "title": "Automated Translation Process",
+      "description": "The set of prompts and meta-plans that define the automated translation from natural language to NormCode is documented in raw_context_normcode_translation_guide.txt.",
+      "file_reference": "./context_store/raw--normcode_translation_guide.txt"
+    },
+    {
+      "title": "File Format Specifications",
+      "description": "The specifications for the various file formats used throughout the pipeline (.txt, .json, .ncd, .ncn, .nc) are detailed in raw_context_file_formats_guide.txt.",
+      "file_reference": "./context_store/raw--file_formats_guide.txt"
+    }
+  ]
+}

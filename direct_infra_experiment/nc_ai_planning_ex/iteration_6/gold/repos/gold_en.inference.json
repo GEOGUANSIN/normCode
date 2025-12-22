@@ -1,0 +1,426 @@
+[
+  {
+    "flow_info": {
+      "flow_index": "1"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": ":<:({investment decision})",
+    "function_concept": "$. %>({investment decision})",
+    "value_concepts": [
+      "[price data]",
+      "[news data]",
+      "{theoretical framework}",
+      "{investor risk profile}",
+      "{validated signal}",
+      "<signals surpass theoretical expectations>",
+      "<signals deviate from theoretical expectations>",
+      "<signals are neutral>",
+      "{investment decision}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{investment decision}",
+        "assign_destination": ":<:({investment decision})"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[price data]",
+    "function_concept": ":%(composition):{paradigm}(retrieve price data from market sources)",
+    "value_concepts": [
+      "{simulated data: price data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{simulated data: price data}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[news data]",
+    "function_concept": ":%(composition):{paradigm}(retrieve news data from text sources)",
+    "value_concepts": [
+      "{simulated data: news data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{simulated data: news data}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{theoretical framework}",
+    "function_concept": ":%(composition):{paradigm}(obtain theoretical framework from domain experts)",
+    "value_concepts": [
+      "{simulated data: theoretical framework}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{simulated data: theoretical framework}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.5"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{investor risk profile}",
+    "function_concept": ":%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)",
+    "value_concepts": [
+      "{simulated data: investor risk profile}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{simulated data: investor risk profile}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{validated signal}",
+    "function_concept": "&[#] %>[{quantitative signal}, {narrative signal}] %+(signal)",
+    "value_concepts": [
+      "{quantitative signal}",
+      "{narrative signal}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axes": [
+          ["quantitative_signal"],
+          ["narrative_signal"]
+        ],
+        "create_axis": "signal"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{quantitative signal}",
+    "function_concept": ":%(composition):(compute price-based indicators from {1}<$([price data])%>)",
+    "value_concepts": [
+      "[price data]"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Script-h_Data-c_Execute-o_Normal",
+      "value_order": {
+        "[price data]": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{narrative signal}",
+    "function_concept": ":%(composition):(extract sentiment and themes from {1}<$([news data])%>)",
+    "value_concepts": [
+      "[news data]"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "[news data]": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.7"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<signals surpass theoretical expectations>",
+    "function_concept": ":%(composition):({1}<$({validated signal})%> exceeds predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+    "value_concepts": [
+      "{validated signal}",
+      "{theoretical framework}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{validated signal}": 1,
+        "{theoretical framework}": 2
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "signal": "for-each"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.8"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<signals deviate from theoretical expectations>",
+    "function_concept": ":%(composition):({1}<$({validated signal})%> falls below predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+    "value_concepts": [
+      "{validated signal}",
+      "{theoretical framework}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{validated signal}": 1,
+        "{theoretical framework}": 2
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "signal": "for-each"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.9"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<signals are neutral>",
+    "function_concept": ":%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>",
+    "value_concepts": [
+      "<signal status>"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "<signal status>": 1
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "signal": "for-each",
+          "status_type": "all"
+        },
+        "condition": false
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.9.2"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "<signal status>",
+    "function_concept": "&[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>",
+    "value_concepts": [
+      "<signals surpass theoretical expectations>",
+      "<signals deviate from theoretical expectations>"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axes": [[], []],
+        "create_axis": "status_type"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{investment decision}",
+    "function_concept": ":%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)",
+    "value_concepts": [
+      "[all recommendations]",
+      "{investor risk profile}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "[all recommendations]": 1,
+        "{investor risk profile}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "[all recommendations]",
+    "function_concept": "&[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}] %+(recommendation)",
+    "value_concepts": [
+      "{bullish recommendation}",
+      "{bearish recommendation}",
+      "{neutral recommendation}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "in",
+        "by_axes": [
+          ["signal"],
+          ["signal"],
+          ["signal"]
+        ]
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{bullish recommendation}",
+    "function_concept": ":%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "value_concepts": [
+      "{validated signal}",
+      "{investor risk profile}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{validated signal}": 1,
+        "{investor risk profile}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.2.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "function_concept": "@:' (<signals surpass theoretical expectations>)",
+    "value_concepts": [
+      "<signals surpass theoretical expectations>"
+    ],
+    "context_concepts": ["<signals surpass theoretical expectations>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<signals surpass theoretical expectations>"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{bearish recommendation}",
+    "function_concept": ":%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "value_concepts": [
+      "{validated signal}",
+      "{investor risk profile}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{validated signal}": 1,
+        "{investor risk profile}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+    "function_concept": "@:' (<signals deviate from theoretical expectations>)",
+    "value_concepts": [
+      "<signals deviate from theoretical expectations>"
+    ],
+    "context_concepts": ["<signals deviate from theoretical expectations>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<signals deviate from theoretical expectations>"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{neutral recommendation}",
+    "function_concept": ":%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+    "value_concepts": [
+      "{validated signal}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{validated signal}": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+    "function_concept": "@:' (<signals are neutral>)",
+    "value_concepts": [
+      "<signals are neutral>"
+    ],
+    "context_concepts": ["<signals are neutral>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<signals are neutral>"
+      }
+    }
+  }
+]

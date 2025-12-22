@@ -1,0 +1,66 @@
+# Gold Investment Decision - Formal NormCode Draft (Composition Mode)
+
+:<:({investment decision}) | ?{flow_index}: 1 | ?{sequence}: assigning
+    <= $. %>({investment decision})
+
+    <- [price data] | ?{flow_index}: 1.1 | ?{sequence}: imperative
+        <= :%(composition):(retrieve price data from market sources)
+
+    <- [news data] | ?{flow_index}: 1.2 | ?{sequence}: imperative
+        <= :%(composition):(retrieve news data from text sources)
+
+    <- {theoretical framework} | ?{flow_index}: 1.3 | ?{sequence}: imperative
+        <= :%(composition):(obtain theoretical framework from domain experts)
+
+    <- {investor risk profile} | ?{flow_index}: 1.4 | ?{sequence}: imperative
+        <= :%(composition):(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)
+
+    <- {validated signal bundle} | ?{flow_index}: 1.5 | ?{sequence}: grouping
+        <= &[{}] %>[{quantitative signals}, {narrative signals}, {theoretical framework}]
+        <- {quantitative signals} | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
+            <= :%(composition):(compute price-based indicators from {1}<$([price data])%>)
+            <- [price data]<:{1}>
+            <- {theoretical framework}
+        <- {narrative signals} | ?{flow_index}: 1.5.2 | ?{sequence}: imperative
+            <= :%(composition):(extract sentiment and themes from {1}<$([news data])%>)
+            <- [news data]<:{1}>
+            <- {theoretical framework}
+
+    <- <signals surpass theoretical expectations> | ?{flow_index}: 1.6 | ?{sequence}: judgement
+        <= :%(composition):({1}<$({validated signal bundle})%> exceeds predictions of {2}<$({theoretical framework})%>) <ALL True>
+        <- {validated signal bundle}<:{1}>
+        <- {theoretical framework}<:{2}>
+
+    <- <signals deviate from theoretical expectations> | ?{flow_index}: 1.7 | ?{sequence}: judgement
+        <= :%(composition):({1}<$({validated signal bundle})%> falls below predictions of {2}<$({theoretical framework})%>) <ALL True>
+        <- {validated signal bundle}<:{1}>
+        <- {theoretical framework}<:{2}>
+
+    <- <signals are neutral> | ?{flow_index}: 1.8 | ?{sequence}: judgement
+        <= :%(composition):({1}<$(<signal status>)%>) <ALL False>
+        <- <signal status><:{1}> | ?{flow_index}: 1.8.1 | ?{sequence}: assigning
+            <= $- %>([<signal status>]) %^(<$*#>) %:(<signal status>)
+            <- [<signal status>] | ?{flow_index}: 1.8.1.1 | ?{sequence}: grouping
+                <= &[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>]
+                <- <signals surpass theoretical expectations>
+                <- <signals deviate from theoretical expectations>
+
+    <- {investment decision} | ?{flow_index}: 1.9 | ?{sequence}: imperative
+        <= :%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)
+        <- {investor risk profile}<:{2}>
+        <- [all recommendations]<:{1}> | ?{flow_index}: 1.9.1 | ?{sequence}: grouping
+            <= &[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}]
+            <- {bullish recommendation} | ?{flow_index}: 1.9.1.1 | ?{sequence}: imperative
+                <= :%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal bundle})%> and {2}<$({investor risk profile})%>) | ?{flow_index}: 1.9.1.1.1 | ?{sequence}: timing
+                    <= @:' (<signals surpass theoretical expectations>)
+                <- {validated signal bundle}<:{1}>
+                <- {investor risk profile}<:{2}>
+            <- {bearish recommendation} | ?{flow_index}: 1.9.1.2 | ?{sequence}: imperative
+                <= :%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal bundle})%> and {2}<$({investor risk profile})%>) | ?{flow_index}: 1.9.1.2.1 | ?{sequence}: timing
+                    <= @:' (<signals deviate from theoretical expectations>)
+                <- {validated signal bundle}<:{1}>
+                <- {investor risk profile}<:{2}>
+            <- {neutral recommendation} | ?{flow_index}: 1.9.1.3 | ?{sequence}: imperative
+                <= :%(composition):(generate hold recommendation from {1}<$({validated signal bundle})%>) | ?{flow_index}: 1.9.1.3.1 | ?{sequence}: timing
+                    <= @:' (<signals are neutral>)
+                <- {validated signal bundle}<:{1}>

@@ -1,0 +1,44 @@
+:<:({result files})
+    <= &across
+    <- {Phase 1: Confirmation of Instruction}
+        <= $.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])
+        <- {1.1_instruction_block.md}
+            <= ::(step 1.1: Automated Instruction Distillation)
+        <- [{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
+            <= ::(step 1.2: Automated Context Registration)
+        <- [{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
+            <= ::(step 1.3: Manual Review of Confirmation)
+    <- {Phase 2: Deconstruction into NormCode Plan}
+        <= $.([{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}])
+        <- {2.1_deconstruction_draft.ncd}
+            <= ::(step 2.1: Automated NormCode Deconstruction)
+        <- {2.2_deconstruction_draft.ncn}
+            <= ::(step 2.2: Generate Natural Language Translation)
+        <- [{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}]
+            <= ::(step 2.3: Manual Review of Deconstruction)
+    <- {Phase 3: Plan Formalization and Redirection}
+        <= $.([{3.1_serialized.ncd}, {3.2_redirected.ncd}, {3.3_formalized.nc}, {3.4_natural_translation.ncn}])
+        <- {3.1_serialized.ncd}
+            <= ::(step 3.1: Apply Serialization Patterns)
+        <- {3.2_redirected.ncd}
+            <= ::(step 3.2: Apply Redirection Patterns)
+        <- {3.3_formalized.nc}
+            <= ::(step 3.3: Formalize into NormCode (.nc))
+        <- {3.4_natural_translation.ncn}
+            <= ::(step 3.4: Generate Updated Natural Language Translation)
+        <- [{3.3_formalized.nc}, {3.2_redirected.ncd}, {3.1_serialized.ncd}, {3.4_natural_translation.ncn}]
+            <= ::(step 3.5: Manual Review of Formalization)
+    <- {Phase 4: Contextualization and Prompt Assembly}
+        <= $.([{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}])
+        <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]
+            <= ::(step 4.1: Automated Context Distribution)
+        <- {prompts/[__flow_index__]*.md}
+            <= ::(step 4.2: Generate Prompts)
+        <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}]
+            <= ::(step 4.3: Manual Review of Contextualization)
+    <- {Phase 5: Materialization into an Executable Script}
+        <= $.([{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}])
+        <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]
+            <= ::(step 5.1: Automated Script Generation)
+        <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]
+            <= ::(step 5.2: Manual Review of Materialization)

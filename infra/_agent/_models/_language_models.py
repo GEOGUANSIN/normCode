@@ -5,7 +5,11 @@ import logging
 from openai import OpenAI
 from string import Template
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, List, Dict
+
+# --- Import the composition tool and define a placeholder ---
+from infra._agent._models._composition_tool import CompositionTool
+GENERATE_METHOD_PLACEHOLDER = object()
 
 from infra._agent._models._file_system import FileSystemTool
 from infra._agent._models._python_interpreter import PythonInterpreterTool
@@ -161,6 +165,12 @@ class LanguageModel:
         # Add response format if specified
         if response_format:
             request_params["response_format"] = response_format
+            # Add instruction for JSON output if not already present in the prompt
+            if response_format.get("type") == "json_object" and "json" not in prompt.lower():
+                for msg in messages:
+                    if msg["role"] == "user":
+                        msg["content"] = msg["content"] + "\n\nYour response must be in JSON format."
+                        break
 
         # Run the prompt through the LLM
         client = self.client
@@ -586,6 +596,46 @@ class LanguageModel:
             params = {**expansion_params, "new_record": base_out}
             return expansion_function(params)
         return _expanded
+
+
+    def create_generation_function_with_composition(self, plan: List[Dict[str, Any]], return_key: str | None = None):
+        """
+        Creates a new generation function by composing a list of callables
+        based on an explicit execution plan.
+
+        This method acts as a factory for complex, multi-step functions. It takes a
+        plan that defines a pipeline and intelligently substitutes a
+        placeholder with its own `generate` method, making itself part of the chain.
+
+        Args:
+            plan (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a step in the execution plan. The special
+                placeholder `GENERATE_METHOD_PLACEHOLDER` can be used as a
+                'function' value in a step, and it will be replaced by this
+                instance's `generate` method.
+            return_key (str, optional): The key from the execution context to
+                                       return as the final result. If None, the
+                                       result of the last step is returned.
+
+        Returns:
+            Callable: A new, single function that executes the entire plan.
+        """
+        logger.debug(f"Creating a composed generation function from a plan with {len(plan)} steps.")
+        
+        # Substitute the placeholder in the plan with the actual instance method
+        concrete_plan = []
+        for step in plan:
+            new_step = step.copy() # Avoid modifying the original spec
+            if new_step.get('function') is GENERATE_METHOD_PLACEHOLDER:
+                new_step['function'] = self.generate
+                logger.debug(f"Substituted GENERATE_METHOD_PLACEHOLDER in plan step for output '{new_step['output_key']}'.")
+            concrete_plan.append(new_step)
+        
+        # Use the composition tool to build the function from the plan.
+        composed_function = CompositionTool().compose(concrete_plan, return_key=return_key)
+        logger.debug("Successfully composed functions from plan into a single callable.")
+        
+        return composed_function
 
 
 if __name__ == "__main__":

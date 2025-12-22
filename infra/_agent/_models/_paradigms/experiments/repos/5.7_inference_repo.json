@@ -1,0 +1,23 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{saved_file_location}",
+        "function_concept": "::{%(composition)}(Edit and Save text)",
+        "value_concepts": [
+            "{prompt}<:{prompt}>",
+            "{initial_text}<:{text}>",
+            "{save_path}<:{path}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_InitialText_SavePath-c_EditText_Save-o_FileLocation",
+            "value_order": {
+                "{prompt}<:{prompt}>": 0,
+                "{initial_text}<:{text}>": 1,
+                "{save_path}<:{path}>": 2
+            }
+        }
+    }
+]

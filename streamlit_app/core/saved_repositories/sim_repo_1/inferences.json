@@ -1,0 +1,23 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1.2.2.1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{1.1_instruction_block.md}",
+        "function_concept": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>; {output}<$({output directory of instruction distillation})%>)",
+        "value_concepts": [
+            "{instruction distillation prompt}<:{prompt}>",
+            "{input files}<:{1}>",
+            "{output directory of instruction distillation}<:{output}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplate_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocation",
+            "value_order": {
+                "{instruction distillation prompt}<:{prompt}>": 0,
+                "{input files}<:{1}>": 1,
+                "{output directory of instruction distillation}<:{output}>": 2
+            }
+        }
+    }
+]

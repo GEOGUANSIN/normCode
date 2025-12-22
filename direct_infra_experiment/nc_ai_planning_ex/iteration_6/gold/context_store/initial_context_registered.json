@@ -1,0 +1,15 @@
+{
+  "summary": "This context block provides the high-level summary and references for the Gold Investment Meta-Framework, including the core theoretical document and supplementary test instructions.",
+  "sections": [
+    {
+      "title": "Core of the Meta-Framework for Gold Investment Decisions",
+      "description": "The foundational document outlining a theory-led, technology-enhanced human-machine cognition system for gold investment. It includes the six-stage meta-process, principles for integrating machine learning with economic theory, and guidelines for decision-making under uncertainty.",
+      "file_reference": "./gold/context_store/raw--prompt.md"
+    },
+    {
+      "title": "Test Context for Script Validation",
+      "description": "A test instruction file used to validate the script's ability to infer contextual information and process instructions. Contains example content for testing inference capabilities.",
+      "file_reference": "./gold/context_store/test_context.md"
+    }
+  ]
+}

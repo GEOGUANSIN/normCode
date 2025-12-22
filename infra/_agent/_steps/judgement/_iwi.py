@@ -164,6 +164,10 @@ def input_working_interpretation(
     """Initialize states with tools, specs, and placeholder records."""
     # Store the body containing tools
     states.body = body
+	# Add after states.body = body:
+    states.workspace = working_interpretation.get("workspace", {})
+    flow_info = working_interpretation.get("flow_info", {})
+    states.flow_index = flow_info.get("flow_index")
 
     # Check for relation output and thinking flags and update state
     is_relation = (working_interpretation or {}).get("is_relation_output", False)

@@ -2,6 +2,32 @@ import copy
 from typing import Any, Optional, List
 import logging
 
+# Dev mode flag - when True, exceptions in cross_action and element_action are raised instead of returning skip values
+_DEV_MODE = False
+
+def set_dev_mode(enabled: bool):
+    """
+    Enable or disable dev mode for Reference operations.
+    
+    When dev mode is enabled, exceptions in cross_action and element_action
+    will be raised instead of being silently converted to skip values.
+    This is useful for debugging.
+    
+    Args:
+        enabled (bool): True to enable dev mode, False to disable
+    """
+    global _DEV_MODE
+    _DEV_MODE = enabled
+    if enabled:
+        logging.info("Reference dev mode ENABLED - exceptions will be raised")
+    else:
+        logging.info("Reference dev mode DISABLED - exceptions will return skip values")
+
+def get_dev_mode() -> bool:
+    """Check if dev mode is currently enabled."""
+    global _DEV_MODE
+    return _DEV_MODE
+
 class Reference:
     def __init__(self, axes, shape, initial_value=None, skip_value="@#SKIP#@"):
         if len(axes) != len(set(axes)):
@@ -28,6 +54,103 @@ class Reference:
         )
         new_ref.data = copy.deepcopy(self.data)
         return new_ref
+
+    def transpose(self, new_axis_order: List[str]) -> 'Reference':
+        """
+        Reorder axes and underlying data to match a new axis order.
+        
+        Args:
+            new_axis_order: List of axis names in the desired order.
+                            Must contain exactly the same axes as current.
+        
+        Returns:
+            Reference: A new Reference with reordered axes and data.
+        
+        Example:
+            ref with axes ['status_type', 'signal'] and shape (2, 2)
+            ref.transpose(['signal', 'status_type']) 
+            -> new ref with axes ['signal', 'status_type'] and shape (2, 2)
+        """
+        # Validate new_axis_order
+        if set(new_axis_order) != set(self.axes):
+            raise ValueError(
+                f"new_axis_order {new_axis_order} must contain exactly the same axes as {self.axes}"
+            )
+        if len(new_axis_order) != len(self.axes):
+            raise ValueError(
+                f"new_axis_order must have same length as current axes"
+            )
+        
+        # If order is the same, just return a copy
+        if new_axis_order == self.axes:
+            return self.copy()
+        
+        # Compute the permutation: perm[i] = index in old axes for new axis i
+        perm = [self.axes.index(ax) for ax in new_axis_order]
+        
+        # Compute new shape
+        new_shape = tuple(self.shape[p] for p in perm)
+        
+        # Create new reference
+        new_ref = Reference(
+            axes=list(new_axis_order),
+            shape=new_shape,
+            initial_value=None,
+            skip_value=self.skip_value
+        )
+        
+        # Transpose the data
+        new_ref.data = self._transpose_data(self.data, perm, self.shape)
+        return new_ref
+    
+    def _transpose_data(self, data: Any, perm: List[int], old_shape: tuple) -> Any:
+        """
+        Recursively transpose nested list data according to permutation.
+        
+        Uses an iterative approach: collect all elements with their indices,
+        then rebuild in new order.
+        """
+        if not old_shape:
+            return data
+        
+        # Collect all leaf elements with their indices
+        def collect_elements(d, indices, depth):
+            if depth == len(old_shape):
+                yield indices, d
+            elif isinstance(d, list):
+                for i, item in enumerate(d):
+                    yield from collect_elements(item, indices + (i,), depth + 1)
+            else:
+                yield indices, d
+        
+        elements = list(collect_elements(data, (), 0))
+        
+        # Compute new shape
+        new_shape = tuple(old_shape[p] for p in perm)
+        
+        # Create empty nested structure for new shape
+        def create_nested(shape):
+            if not shape:
+                return None
+            return [create_nested(shape[1:]) for _ in range(shape[0])]
+        
+        new_data = create_nested(new_shape)
+        
+        # Place elements at transposed indices
+        for old_indices, value in elements:
+            # Compute new indices by permuting
+            new_indices = tuple(old_indices[perm[i]] for i in range(len(perm)))
+            
+            # Navigate to location and set value
+            target = new_data
+            for i, idx in enumerate(new_indices[:-1]):
+                target = target[idx]
+            if new_indices:
+                target[new_indices[-1]] = value
+            else:
+                new_data = value
+        
+        return new_data
 
     @classmethod
     def from_data(cls, data, axis_names=None, skip_value="@#SKIP#@"):
@@ -691,18 +814,52 @@ def join(references: List['Reference'], new_axis_name: str) -> 'Reference':
     for i, ref in enumerate(references[1:], 1):
         if not isinstance(ref, Reference):
             raise TypeError("All elements must be Reference instances")
+        
+        # Handle axis permutation
         if ref.axes != common_axes:
-            raise ValueError(
-                f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
-            )
+            if set(ref.axes) == set(common_axes):
+                # Realign axes to match common_axes
+                ref = ref.slice(*common_axes)
+            else:
+                raise ValueError(
+                    f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
+                )
+        
         if ref.shape != common_shape:
             raise ValueError(
                 f"Shape mismatch at index {i}. Expected {common_shape}, got {ref.shape}"
             )
-
+            
     new_axes = [new_axis_name] + common_axes
     new_shape = (len(references),) + common_shape
-    new_data = [ref.tensor for ref in references]
+    new_data = [ref.tensor for ref in references]  # Use original ref list? No, use aligned refs!
+
+    # We need to update the list of references to use the aligned ones
+    # But the loop iterates over references[1:]. first_ref is references[0].
+    # Let's restructure slightly to collect aligned references.
+    
+    aligned_references = [first_ref]
+    for i, ref in enumerate(references[1:], 1):
+        if not isinstance(ref, Reference):
+            raise TypeError("All elements must be Reference instances")
+        
+        if ref.axes != common_axes:
+            if set(ref.axes) == set(common_axes):
+                ref = ref.slice(*common_axes)
+            else:
+                raise ValueError(
+                    f"Axis mismatch at index {i}. Expected {common_axes}, got {ref.axes}"
+                )
+        
+        if ref.shape != common_shape:
+            raise ValueError(
+                f"Shape mismatch at index {i}. Expected {common_shape}, got {ref.shape}"
+            )
+        aligned_references.append(ref)
+
+    new_axes = [new_axis_name] + common_axes
+    new_shape = (len(aligned_references),) + common_shape
+    new_data = [ref.tensor for ref in aligned_references]
 
     # Create and return new Reference
     result = Reference(
@@ -764,7 +921,15 @@ def cross_action(A, B, new_axis_name):
                 if any(r == "@#SKIP#@" for r in result):
                     return "@#SKIP#@"
                 return result
-            except Exception:
+            except Exception as e:
+                # Re-raise specific exceptions that need to propagate up (e.g., for human-in-the-loop)
+                # Check if this is a NeedsUserInteraction exception (avoiding import)
+                if e.__class__.__name__ == 'NeedsUserInteraction':
+                    raise
+                # In dev mode, always raise exceptions for debugging
+                if get_dev_mode():
+                    logging.error(f"cross_action: Exception in dev mode at {a_indices}: {type(e).__name__}: {e}")
+                    raise
                 return "@#SKIP#@"
         else:
             axis = current_axes[0]
@@ -864,6 +1029,14 @@ def element_action(f, references, index_awareness=False):
                     # logging.debug(f"element_action: applied function '{f.__name__}' to {elements}, result: {result}")
                     return result
             except Exception as e:
+                # Re-raise specific exceptions that need to propagate up (e.g., for human-in-the-loop)
+                # Check if this is a NeedsUserInteraction exception (avoiding import)
+                if e.__class__.__name__ == 'NeedsUserInteraction':
+                    raise
+                # In dev mode, always raise exceptions for debugging
+                if get_dev_mode():
+                    logging.error(f"element_action: Exception in dev mode at {index_dict}: {type(e).__name__}: {e}")
+                    raise
                 # logging.error(f"element_action: error applying function '{f.__name__}' to {elements}: {e}")
                 return "@#SKIP#@"
         else:

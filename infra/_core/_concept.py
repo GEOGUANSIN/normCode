@@ -8,6 +8,8 @@ TYPE_CLASS_SEMANTICAL = "semantical"
 TYPE_CLASS_INFERENTIAL = "inferential"
 
 # Concept type constants with type classification
+# Supports both OLD syntax (e.g., @if, &in) and NEW unified syntax (e.g., @:', &[{}])
+# See: shared---normcode_syntatical_concepts_reconstruction.md for new syntax spec
 CONCEPT_TYPES = {
     # Core inference operators (INFERENTIAL)
     "<=": {"description": "functional", "type_class": TYPE_CLASS_INFERENTIAL},
@@ -19,13 +21,16 @@ CONCEPT_TYPES = {
     "$when?": {"description": "when", "type_class": TYPE_CLASS_SYNTACTICAL},
     
     # Assignment operators (SYNTACTICAL)
+    # OLD: $=, $., $%, $+  |  NEW adds: $-
     "$=": {"description": "assignment", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$::": {"description": "nominalization", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$.": {"description": "specification", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$%": {"description": "abstraction", "type_class": TYPE_CLASS_SYNTACTICAL},
     "$+": {"description": "continuation", "type_class": TYPE_CLASS_SYNTACTICAL},
+    "$-": {"description": "selection", "type_class": TYPE_CLASS_SYNTACTICAL},  # NEW: selection operator
     
-    # Sequencing operators (SYNTACTICAL)
+    # Timing/Sequencing operators (SYNTACTICAL)
+    # OLD syntax
     "@by": {"description": "by", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@if": {"description": "if", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@if!": {"description": "if not", "type_class": TYPE_CLASS_SYNTACTICAL},
@@ -37,23 +42,35 @@ CONCEPT_TYPES = {
     "@while": {"description": "while", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@until": {"description": "until", "type_class": TYPE_CLASS_SYNTACTICAL},
     "@afterstep": {"description": "afterstep", "type_class": TYPE_CLASS_SYNTACTICAL},
+    # NEW unified syntax (aliases)
+    "@:'": {"description": "if", "type_class": TYPE_CLASS_SYNTACTICAL},          # = @if (conditional if true)
+    "@:!": {"description": "if not", "type_class": TYPE_CLASS_SYNTACTICAL},      # = @if! (conditional if false)
+    "@.": {"description": "after", "type_class": TYPE_CLASS_SYNTACTICAL},        # = @after (sequencing)
     
     # Grouping operators (SYNTACTICAL)
+    # OLD syntax
     "&in": {"description": "in", "type_class": TYPE_CLASS_SYNTACTICAL},
     "&across": {"description": "across", "type_class": TYPE_CLASS_SYNTACTICAL},
     "&set": {"description": "set", "type_class": TYPE_CLASS_SYNTACTICAL},
     "&pair": {"description": "pair", "type_class": TYPE_CLASS_SYNTACTICAL},
+    # NEW unified syntax (aliases)
+    "&[{}]": {"description": "in", "type_class": TYPE_CLASS_SYNTACTICAL},        # = &in (group in)
+    "&[#]": {"description": "across", "type_class": TYPE_CLASS_SYNTACTICAL},     # = &across (group across)
     
-    # Quantification operators (SYNTACTICAL)
+    # Quantification/Looping operators (SYNTACTICAL)
+    # OLD syntax
     "*every": {"description": "every", "type_class": TYPE_CLASS_SYNTACTICAL},
     "*some": {"description": "some", "type_class": TYPE_CLASS_SYNTACTICAL},
     "*count": {"description": "count", "type_class": TYPE_CLASS_SYNTACTICAL},
+    # NEW unified syntax (aliases)
+    "*.": {"description": "every", "type_class": TYPE_CLASS_SYNTACTICAL},        # = *every (iterate)
     
     # Object and concept types (SEMANTICAL)
     "{}": {"description": "object", "type_class": TYPE_CLASS_SEMANTICAL},
     "::": {"description": "imperative", "type_class": TYPE_CLASS_SEMANTICAL},
     "<>": {"description": "judgement", "type_class": TYPE_CLASS_SEMANTICAL},
     "<{}>": {"description": "functional_judgement", "type_class": TYPE_CLASS_SEMANTICAL},
+    "({})": {"description": "functional_imperative", "type_class": TYPE_CLASS_SEMANTICAL},  # Alternative syntax
     "::({})": {"description": "functional_imperative", "type_class": TYPE_CLASS_SEMANTICAL},
     "[]": {"description": "relation", "type_class": TYPE_CLASS_SEMANTICAL},
     ":S:": {"description": "subject", "type_class": TYPE_CLASS_SEMANTICAL},
@@ -66,6 +83,29 @@ CONCEPT_TYPES = {
     "{}?": {"description": "object_placeholder", "type_class": TYPE_CLASS_SYNTACTICAL},
     "<:_>": {"description": "position_reference", "type_class": TYPE_CLASS_SYNTACTICAL},
 }
+
+# Type aliases: maps new syntax to canonical old syntax for normalization
+# Use normalize_type() to convert new syntax to canonical form when needed
+TYPE_ALIASES = {
+    # Timing aliases (new → old)
+    "@:'": "@if",
+    "@:!": "@if!",
+    "@.": "@after",
+    # Grouping aliases (new → old)
+    "&[{}]": "&in",
+    "&[#]": "&across",
+    # Looping aliases (new → old)
+    "*.": "*every",
+}
+
+
+def normalize_type(type_str: str) -> str:
+    """
+    Normalize a type string to its canonical form.
+    Converts new unified syntax to old canonical form for consistency.
+    Returns the type unchanged if it's not an alias.
+    """
+    return TYPE_ALIASES.get(type_str, type_str)
 
 
 class Concept:

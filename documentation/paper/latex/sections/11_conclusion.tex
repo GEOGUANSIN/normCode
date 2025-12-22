@@ -1,0 +1,12 @@
+\section{Conclusion}
+
+As large language models enable increasingly sophisticated multi-step reasoning, the problem of context pollution threatens to undermine their reliability. When information accumulates implicitly across reasoning steps, models hallucinate, confuse intermediate outputs, and lose track of constraints---making complex workflows paradoxically more brittle than simple ones.
+
+NormCode addresses this through \textbf{enforced data isolation}: each inference operates in a sealed environment with only explicitly passed inputs. This is not a convention but a language-level constraint. Combined with a clean semantic/syntactic separation (probabilistic reasoning vs. deterministic data flow), NormCode makes AI workflows auditable by construction.
+
+The three-format ecosystem (\texttt{.ncds} for authoring, \texttt{.ncd} for execution, \texttt{.ncn} for verification) embodies a broader principle: transparent AI systems should provide multiple views of the same underlying logic, each optimized for different stakeholders. Domain experts can verify plans in natural language; machines execute with formal rigor; auditors trace decisions with precision.
+
+We validate the approach through self-hosted execution (NormCode's compiler runs as a NormCode plan) and algorithmic correctness (100\% accuracy on base-X addition). These demonstrations confirm that structured intermediate representations can bridge human intuition and machine execution without sacrificing either.
+
+NormCode is not appropriate for every use case---simple tasks don't justify the overhead. But for high-stakes domains where failures have consequences (legal, medical, financial), the ability to answer ``What did step 7 actually see?'' is not optional. By making context isolation structural rather than aspirational, NormCode provides a foundation for AI systems that are reliable, transparent, and auditable---requirements that will only intensify as LLMs move into production.
+

@@ -1,7 +1,9 @@
 import logging
+import inspect
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
+
 
 class PythonInterpreterTool:
     def execute(self, script_code: str, inputs: Dict[str, Any]) -> Any:
@@ -20,16 +22,16 @@ class PythonInterpreterTool:
         try:
             # Prepare the global scope for the execution
             execution_globals = inputs.copy()
-            execution_globals['__builtins__'] = __builtins__
+            execution_globals["__builtins__"] = __builtins__
 
             logger.info(f"Executing script with inputs: {list(inputs.keys())}")
-            
+
             # Execute the code
             exec(script_code, execution_globals)
 
             # Extract the result
-            if 'result' in execution_globals:
-                result = execution_globals['result']
+            if "result" in execution_globals:
+                result = execution_globals["result"]
                 logger.info(f"Script executed successfully. Result: {result}")
                 return result
             else:
@@ -40,3 +42,67 @@ class PythonInterpreterTool:
             logger.error(f"Error executing Python script: {e}")
             logger.error(f"Script that failed:\n{script_code}")
             return {"status": "error", "message": str(e)}
+
+    def function_execute(self, script_code: str, function_name: str, function_params: Dict[str, Any]) -> Any:
+        """
+        Executes a specific function from a Python script string with given parameters.
+
+        Args:
+            script_code (str): The Python code containing the function definition.
+            function_name (str): The name of the function to execute.
+            function_params (Dict[str, Any]): A dictionary of keyword arguments to pass to the function.
+
+        Returns:
+            Any: The return value of the function, or an error dictionary.
+        """
+        try:
+            execution_scope: Dict[str, Any] = {}
+            exec(script_code, execution_scope)
+
+            if function_name not in execution_scope:
+                raise NameError(f"Function '{function_name}' not found in the provided script.")
+
+            function_to_call = execution_scope[function_name]
+
+            if not callable(function_to_call):
+                raise TypeError(f"'{function_name}' is not a callable function.")
+
+            # Clone params so we don't mutate the original dict
+            params: Dict[str, Any] = dict(function_params or {})
+
+            # Conditionally inject Body, but only if the target function can accept it
+            body = getattr(self, "body", None)
+            if body is not None:
+                sig = inspect.signature(function_to_call)
+                accepts_body = (
+                    "body" in sig.parameters
+                    or any(
+                        p.kind == inspect.Parameter.VAR_KEYWORD
+                        for p in sig.parameters.values()
+                    )
+                )
+                if accepts_body and "body" not in params:
+                    params["body"] = body
+
+            logger.info(f"Executing function '{function_name}' with params: {list(params.keys())}")
+
+            result = function_to_call(**params)
+
+            logger.info(f"Function '{function_name}' executed successfully. Result: {result}")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error executing function '{function_name}' from script: {e}")
+            logger.error(f"Script that failed:\n{script_code}")
+            return {"status": "error", "message": str(e)}
+
+    def create_function_executor(self, script_code: str, function_name: str):
+        """
+        Creates a bound function that executes a specific function from the script.
+        
+        Used by paradigms to create a callable function for script execution.
+        Returns a function that accepts function_params dict and calls the script function.
+        """
+        def executor_fn(function_params: Dict[str, Any]) -> Any:
+            return self.function_execute(script_code, function_name, function_params)
+        return executor_fn

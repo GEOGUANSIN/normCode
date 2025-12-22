@@ -1,0 +1,70 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+\documentclass[11pt]{article}
+
+% Change "review" to "final" to generate the final (sometimes called camera-ready) version.
+% Change to "preprint" to generate a non-anonymous version with page numbers.
+\usepackage[preprint]{acl}
+\onecolumn
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage{inputenc}
+
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+%Including images in your LaTeX document requires adding
+%additional package(s)
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\title{NormCode: A Semi-Formal Language for Context-Isolated AI Planning}
+
+\author{\textbf{Xin Guan} \\
+  PsylensAI / Center for Long-Term AI \\
+  \texttt{garguan2001@outlook.com / psylensai.com}}
+
+\begin{document}
+
+\maketitle
+
+\input{sections/abstract}
+\input{sections/01_introduction}
+\input{sections/02_background}
+\input{sections/03_language}
+\input{sections/04_reference}
+\input{sections/05_philosophy}
+\input{sections/06_execution}
+\input{sections/07_compiler}
+\input{sections/08_evaluation}
+\input{sections/09_discussion}
+\input{sections/10_future_work}
+\input{sections/11_conclusion}
+
+\bibliography{references}
+
+\appendix
+\input{sections/appendix_a}
+
+\end{document}

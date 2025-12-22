@@ -18,6 +18,14 @@ def input_working_interpretation(
         states.syntax.marker = working_interpretation.get("syntax", {}).get("marker")
         states.syntax.by_axis_concepts = working_interpretation.get("syntax", {}).get("by_axis_concepts", [])
         states.syntax.protect_axes = working_interpretation.get("syntax", {}).get("protect_axes", [])
+        # New: per-reference axes to collapse (List[List[str]])
+        states.syntax.by_axes = working_interpretation.get("syntax", {}).get("by_axes")
+        # New: name for the resulting axis
+        states.syntax.create_axis = working_interpretation.get("syntax", {}).get("create_axis")
+
+    states.workspace = working_interpretation.get("workspace", {})
+    flow_info = working_interpretation.get("flow_info", {})
+    states.flow_index = flow_info.get("flow_index")
 
     # Seed lists with empty records for each step
     for step in ["GR", "OR"]:

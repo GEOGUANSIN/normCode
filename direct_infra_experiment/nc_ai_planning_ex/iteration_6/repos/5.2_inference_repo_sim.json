@@ -1,0 +1,20 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "5.2"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{other input files}",
+        "function_concept": "::{%(composition)}({prompt}<$({location of related files prompt})%>)",
+        "value_concepts": [
+            "{location of related files}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForMultipleFiles-o_FileLocationList",
+            "value_order": {
+                "{location of related files}<:{prompt}>": 0
+            }
+        }
+    }
+]
+

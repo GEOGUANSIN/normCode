@@ -1,0 +1,152 @@
+{
+  "_description": "Provision manifest mapping NormCode steps to actual resources",
+  "_convention": {
+    "h_input": "Horizontal inputs - data files perceived at runtime (MVP)",
+    "v_input": "Vertical inputs - resources for paradigm configuration (MFP)"
+  },
+  "_note": "Flow indices match inference_repo.json",
+  
+  "provisions": {
+    "1.2": {
+      "step": "[price data]",
+      "concept_to_infer": "[price data]",
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "h_input": {
+        "file_location": "provision/data/price_data.json"
+      },
+      "ground_concept": "{simulated data: price data}"
+    },
+    "1.3": {
+      "step": "[news data]",
+      "concept_to_infer": "[news data]",
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "h_input": {
+        "file_location": "provision/data/news_data.json"
+      },
+      "ground_concept": "{simulated data: news data}"
+    },
+    "1.4": {
+      "step": "{theoretical framework}",
+      "concept_to_infer": "{theoretical framework}",
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "h_input": {
+        "file_location": "provision/data/theoretical_framework.json"
+      },
+      "ground_concept": "{simulated data: theoretical framework}"
+    },
+    "1.5": {
+      "step": "{investor risk profile}",
+      "concept_to_infer": "{investor risk profile}",
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "h_input": {
+        "file_location": "provision/data/investor_risk_profile.json"
+      },
+      "ground_concept": "{simulated data: investor risk profile}"
+    },
+    "1.6": {
+      "step": "{validated signal}",
+      "concept_to_infer": "{validated signal}",
+      "inference_sequence": "grouping",
+      "note": "Groups quantitative and narrative signals with signal axis"
+    },
+    "1.6.2": {
+      "step": "{quantitative signal}",
+      "concept_to_infer": "{quantitative signal}",
+      "paradigm": "v_Script-h_Data-c_Execute-o_Normal",
+      "v_input": {
+        "script_location": "provision/scripts/technical_analysis.py"
+      },
+      "h_input": "[price data]"
+    },
+    "1.6.3": {
+      "step": "{narrative signal}",
+      "concept_to_infer": "{narrative signal}",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/sentiment_extraction.md"
+      },
+      "h_input": "[news data]"
+    },
+    "1.7": {
+      "step": "<signals surpass theoretical expectations>",
+      "concept_to_infer": "<signals surpass theoretical expectations>",
+      "inference_sequence": "judgement_in_composition",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/bullish_evaluation.md"
+      },
+      "h_input": ["{validated signal}", "{theoretical framework}"],
+      "note": "TIA handles truth value conversion"
+    },
+    "1.8": {
+      "step": "<signals deviate from theoretical expectations>",
+      "concept_to_infer": "<signals deviate from theoretical expectations>",
+      "inference_sequence": "judgement_in_composition",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/bearish_evaluation.md"
+      },
+      "h_input": ["{validated signal}", "{theoretical framework}"],
+      "note": "TIA handles truth value conversion"
+    },
+    "1.9": {
+      "step": "<signals are neutral>",
+      "concept_to_infer": "<signals are neutral>",
+      "inference_sequence": "judgement_in_composition",
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "h_input": "<signal status>",
+      "note": "Pure assertion - TIA evaluates 'for each signal where all status_type false'"
+    },
+    "1.9.2": {
+      "step": "<signal status>",
+      "concept_to_infer": "<signal status>",
+      "inference_sequence": "grouping",
+      "note": "Groups bullish and bearish truth masks for neutral evaluation"
+    },
+    "1.10": {
+      "step": "{investment decision}",
+      "concept_to_infer": "{investment decision}",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/final_synthesis.md"
+      },
+      "h_input": ["[all recommendations]", "{investor risk profile}"]
+    },
+    "1.10.3": {
+      "step": "[all recommendations]",
+      "concept_to_infer": "[all recommendations]",
+      "inference_sequence": "grouping",
+      "note": "Bundles bullish, bearish, and neutral recommendations"
+    },
+    "1.10.3.2": {
+      "step": "{bullish recommendation}",
+      "concept_to_infer": "{bullish recommendation}",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/buy_recommendation.md"
+      },
+      "h_input": ["{validated signal}", "{investor risk profile}"],
+      "timing": "@:' (<signals surpass theoretical expectations>)"
+    },
+    "1.10.3.3": {
+      "step": "{bearish recommendation}",
+      "concept_to_infer": "{bearish recommendation}",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/sell_recommendation.md"
+      },
+      "h_input": ["{validated signal}", "{investor risk profile}"],
+      "timing": "@:' (<signals deviate from theoretical expectations>)"
+    },
+    "1.10.3.4": {
+      "step": "{neutral recommendation}",
+      "concept_to_infer": "{neutral recommendation}",
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "v_input": {
+        "prompt_location": "provision/prompts/hold_recommendation.md"
+      },
+      "h_input": ["{validated signal}"],
+      "timing": "@:' (<signals are neutral>)"
+    }
+  }
+}

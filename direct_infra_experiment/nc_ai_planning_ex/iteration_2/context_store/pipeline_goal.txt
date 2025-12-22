@@ -1,0 +1,1 @@
+To bootstrap from a high-level natural language prompt into a structured and executable NormCode plan, powered by a NormCode plan itself, creating a meta-algorithm that allows the system to understand, decompose, and act upon complex instructions.

@@ -80,6 +80,10 @@ def input_working_interpretation(
     logger.debug("Running IWI for imperative_python: Building specs for python execution.")
 
     states.body = body
+    states.workspace = working_interpretation.get("workspace", {})
+    flow_info = working_interpretation.get("flow_info", {})
+    states.flow_index = flow_info.get("flow_index")
+
     
     config = working_interpretation or {}
 

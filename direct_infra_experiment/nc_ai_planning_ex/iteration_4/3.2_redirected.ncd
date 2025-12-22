@@ -1,0 +1,103 @@
+:<:({result files})
+    <= &across
+    <- {Phase 1: Confirmation of Instruction}
+        <= $.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])
+        <- {1.1_instruction_block.md}
+            <= ::{%(direct)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)
+            <- {instruction distillation prompt}<:{prompt}>
+                |%{prompt_location}: 1.1_instruction_distillation.md
+            <- {input files}<:{1}>
+                <= &in
+                <- {original prompt}
+                    |%{file_location}: prompts/0_original_prompt.md
+                <- {other input files}
+                    <= :>:{%(file_location)}({prompt}<$({location of related files prompt})%>)
+                    <- {location of related files}<:{prompt}>
+                        |%{prompt_location}: location_of_related_files_prompt.md
+        <- [{1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
+            <= ::{%(direct)}({prompt}<$({context registration prompt})%>: {1}<$({input files})%>)
+            <- {context registration prompt}<:{prompt}>
+                |%{prompt_location}: 1.2_context_registration.md
+            <- {input files}<:{1}>
+        <- [{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]
+            <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
+            <- {manual review prompt}<:{prompt}>
+                |%{prompt_location}: 1.3_manual_review.md
+            <- [{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}]<:{1}>
+
+    <- {Phase 2: Deconstruction into NormCode Plan}
+        <= $.([{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}])
+        <- {2.1_deconstruction_draft.ncd}
+            <= ::{%(direct)}({prompt}<$({deconstruction prompt})%>: {1}<$({1.1_instruction_block.md})%>)
+            <- {deconstruction prompt}<:{prompt}>
+                |%{prompt_location}: 2.1_deconstruction.md
+            <- {1.1_instruction_block.md}<:{1}>
+        <- {2.2_deconstruction_draft.ncn}
+            <= ::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)
+            <- {natural language translation prompt}<:{prompt}>
+                |%{prompt_location}: 2.2_natural_language_translation.md
+            <- {2.1_deconstruction_draft.ncd}<:{1}>
+        <- [{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}]
+            <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
+            <- {manual review prompt}<:{prompt}>
+                |%{prompt_location}: 2.3_manual_review.md
+            <- [{2.1_deconstruction_draft.ncd}, {2.2_deconstruction_draft.ncn}]<:{1}>
+
+    <- {Phase 3: Plan Formalization and Redirection}
+        <= $.([{3.1_serialized.ncd}, {3.2_redirected.ncd}, {3.3_formalized.nc}, {3.4_natural_translation.ncn}])
+        <- {3.1_serialized.ncd}
+            <= ::{%(direct)}({prompt}<$({serialization prompt})%>: {1}<$({2.1_deconstruction_draft.ncd})%>)
+            <- {serialization prompt}<:{prompt}>
+                |%{prompt_location}: 3.1_serialization.md
+            <- {2.1_deconstruction_draft.ncd}<:{1}>
+        <- {3.2_redirected.ncd}
+            <= ::{%(direct)}({prompt}<$({redirection prompt})%>: {1}<$({3.1_serialized.ncd})%>)
+            <- {redirection prompt}<:{prompt}>
+                |%{prompt_location}: 3.2_redirection.md
+            <- {3.1_serialized.ncd}<:{1}>
+        <- {3.3_formalized.nc}
+            <= ::{%(direct)}({prompt}<$({formalization prompt})%>: {1}<$({3.2_redirected.ncd})%>)
+            <- {formalization prompt}<:{prompt}>
+                |%{prompt_location}: 3.3_formalization.md
+            <- {3.2_redirected.ncd}<:{1}>
+        <- {3.4_natural_translation.ncn}
+            <= ::{%(direct)}({prompt}<$({natural language translation prompt})%>: {1}<$({3.2_redirected.ncd})%>)
+            <- {natural language translation prompt}<:{prompt}>
+                |%{prompt_location}: 3.4_natural_language_translation.md
+            <- {3.2_redirected.ncd}<:{1}>
+        <- [{3.3_formalized.nc}, {3.2_redirected.ncd}, {3.1_serialized.ncd}, {3.4_natural_translation.ncn}]
+            <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
+            <- {manual review prompt}<:{prompt}>
+                |%{prompt_location}: 3.5_manual_review.md
+            <- [{3.3_formalized.nc}, {3.2_redirected.ncd}, {3.1_serialized.ncd}, {3.4_natural_translation.ncn}]<:{1}>
+
+    <- {Phase 4: Contextualization and Prompt Assembly}
+        <= $.([{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}])
+        <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]
+            <= ::{%(direct)}({prompt}<$({context distribution prompt})%>: {1})
+            <- {context distribution prompt}<:{prompt}>
+                |%{prompt_location}: 4.1_context_distribution.md
+            <- [{3.3_formalized.nc}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}]<:{1}>
+        <- {prompts/[__flow_index__]*.md}
+            <= ::{%(direct)}({prompt}<$({prompt generation prompt})%>: {1}<$({4.1_context_manifest.json})%>)
+            <- {prompt generation prompt}<:{prompt}>
+                |%{prompt_location}: 4.2_prompt_generation.md
+            <- {4.1_context_manifest.json}<:{1}>
+        <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}]
+            <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
+            <- {manual review prompt}<:{prompt}>
+                |%{prompt_location}: 4.3_manual_review.md
+            <- [{4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}, {prompts/[__flow_index__]*.md}]<:{1}>
+
+    <- {Phase 5: Materialization into an Executable Script}
+        <= $.([{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}])
+        <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]
+            <= ::{%(direct)}({prompt}<$({script generation prompt})%>: {1})
+            <- {script generation prompt}<:{prompt}>
+                |%{prompt_location}: 5.1_script_generation.md
+            <- [{3.3_formalized.nc}, {4.1_context_manifest.json}, {context_store/__flow_index__--*.md}, {context_store/shared--*.md}]<:{1}>
+        <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]
+            <= :>:{%(with-canvas)}({prompt}<$({manual review prompt})%>: {1})
+            <- {manual review prompt}<:{prompt}>
+                |%{prompt_location}: 5.2_manual_review.md
+            <- [{concept_repo.json}, {inference_repo.json}, {5.1_executable_script.py}]<:{1}>
