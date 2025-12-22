@@ -378,6 +378,12 @@ class ExecutionController:
                 "default", "user_input", body.user_input,
                 emit_tool_event, get_flow_index
             )
+
+        if hasattr(body, 'paradigm_tool') and body.paradigm_tool is not None:
+            body.paradigm_tool = MonitoredToolProxy(
+                "default", "paradigm", body.paradigm_tool,
+                emit_tool_event, get_flow_index
+            )
         
         logger.info("Wrapped body tools with monitoring proxies")
     
