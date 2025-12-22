@@ -1,0 +1,62 @@
+[
+  {
+    "id": "inf-grouping",
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{number digits}",
+    "function_concept": "&across({new number pair}:{new number pair}<--<!_>>)",
+    "value_concepts": [
+      "{new number pair}"
+    ],
+    "context_concepts": [
+      "{new number pair}"
+    ],
+    "flow_info": {
+      "flow_index": "1.1"
+    },
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axis_concepts": ["{new number pair}"],
+        "protect_axes": ["sum"]
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  },
+  {
+    "id": "inf-imperative",
+    "inference_sequence": "imperative_python",
+    "concept_to_infer": "{sum}",
+    "function_concept": "::(combine all {1}<$({number digits})%_>)",
+    "value_concepts": [
+      "{number digits}",
+      "nominalized_action_combine",
+      "prompt_location_combine"
+    ],
+    "context_concepts": [],
+    "flow_info": {
+      "flow_index": "1"
+    },
+    "working_interpretation": {
+      "is_relation_output": false,
+      "with_thinking": true,
+      "protect_axes": ["number pair"],
+      "value_order": {
+        "{number digits}": 1,
+        "nominalized_action_combine": 2,
+        "prompt_location_combine": 3
+      }
+    },
+    "start_without_value": false,
+    "start_without_value_only_once": false,
+    "start_without_function": false,
+    "start_without_function_only_once": false,
+    "start_with_support_reference_only": false,
+    "start_without_support_reference_only_once": false
+  }
+]
+

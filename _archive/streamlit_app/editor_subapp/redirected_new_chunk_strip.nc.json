@@ -1,0 +1,106 @@
+{
+  "lines": [
+    {
+      "flow_index": "1",
+      "type": "main",
+      "depth": 0,
+      "nc_main": ":<:({result files})"
+    },
+    {
+      "flow_index": "1.1",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<= &across"
+    },
+    {
+      "flow_index": "1.2",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {Phase 1: Confirmation of Instruction}"
+    },
+    {
+      "flow_index": "1.2.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= $.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])"
+    },
+    {
+      "flow_index": "1.2.2",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- {1.1_instruction_block.md}"
+    },
+    {
+      "flow_index": "1.2.2.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= :%(Composition):{paradigm}({1}<$({Input})%>; {2+}<$({InputOther})%>)"
+    },
+    {
+      "flow_index": "1.2.2.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {input files}<${_}=><[{original prompt}:{1}, {other input files}:{2+}]>"
+    },
+    {
+      "flow_index": "1.2.2.2.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= &in[{original prompt}, {other input files}]"
+    },
+    {
+      "flow_index": "1.2.2.2.2",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {original prompt}"
+    },
+    {
+      "flow_index": "1.2.2.2.3",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {other input files}"
+    },
+    {
+      "flow_index": "1.2.2.2.3.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= :%>(Composition):{paradigm}()"
+    },
+    {
+      "flow_index": "1.2.3",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]"
+    },
+    {
+      "flow_index": "1.2.3.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= :%(Composition):{paradigm}({1}<$({Input})%>; {2+}<$({InputOther})%>)"
+    },
+    {
+      "flow_index": "1.2.3.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {input files}<[{original prompt}:{1}, {other input files}:{2+}]><$=>"
+    },
+    {
+      "flow_index": "1.2.4",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- {context_store/raw--*.md}"
+    },
+    {
+      "flow_index": "1.2.4.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= :%(Composition):{paradigm}({1}<$({Input})%>)>"
+    },
+    {
+      "flow_index": "1.2.4.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]<{*2}:{1}>"
+    }
+  ]
+}

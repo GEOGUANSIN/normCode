@@ -1,0 +1,2218 @@
+[
+  {
+    "concept_to_infer": {
+      "flow_index": "1",
+      "type": "main",
+      "depth": 0,
+      "nc_main": ":<:({investment decision})",
+      "attached_comments": [
+        {
+          "flow_index": "1",
+          "type": "inline_comment",
+          "depth": 0,
+          "nc_comment": "?{flow_index}: 1 | ?{sequence}: assigning"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_element}: dict(action: str, rationale: str, confidence: float)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.1",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<= $. %>({investment decision})",
+      "attached_comments": []
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.2",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [price data]",
+        "attached_comments": [
+          {
+            "flow_index": "1.2",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.1 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(symbol: str, currency: str, data: list)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [news data]",
+        "attached_comments": [
+          {
+            "flow_index": "1.3",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.2 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(articles: list)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.4",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {theoretical framework}",
+        "attached_comments": [
+          {
+            "flow_index": "1.4",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.3 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(drivers: list, thresholds: dict)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.5",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {investor risk profile}",
+        "attached_comments": [
+          {
+            "flow_index": "1.5",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.4 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(risk_tolerance: str, max_position_size: float, stop_loss: dict, horizon: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.6",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {validated signal}",
+        "attached_comments": [
+          {
+            "flow_index": "1.6",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.5 | ?{sequence}: grouping"
+          },
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(signal_name: str, signal_value: any, source: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.7",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- <signals surpass theoretical expectations>",
+        "attached_comments": [
+          {
+            "flow_index": "1.7",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.6 | ?{sequence}: judgement"
+          },
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: %{truth value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- <signals deviate from theoretical expectations>",
+        "attached_comments": [
+          {
+            "flow_index": "1.8",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.7 | ?{sequence}: judgement"
+          },
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: %{truth value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.9",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- <signals are neutral>",
+        "attached_comments": [
+          {
+            "flow_index": "1.9",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.8 | ?{sequence}: judgement"
+          },
+          {
+            "flow_index": "1.9",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.9",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.9",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: %{truth value}"
+          },
+          {
+            "flow_index": "1.9",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| Neutral = NOT(bullish) AND NOT(bearish) per signal"
+          },
+          {
+            "flow_index": "1.9",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| TIA: for-each signal, check if ALL status_type values are False"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {investment decision}",
+        "attached_comments": [
+          {
+            "flow_index": "1.10",
+            "type": "inline_comment",
+            "depth": 1,
+            "nc_comment": "?{flow_index}: 1.9 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.10",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.10",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.10",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(action: str, rationale: str, confidence: float, constraints_applied: list)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.2",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [price data]",
+      "attached_comments": [
+        {
+          "flow_index": "1.2",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.1 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(symbol: str, currency: str, data: list)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.2.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):{paradigm}(retrieve price data from market sources)",
+      "attached_comments": [
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: h_FileData-c_LoadParse-o_Normal"
+        },
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: {file_location} → file_system.read()"
+        },
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: dict in memory"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.2.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {simulated data: price data}",
+        "attached_comments": [
+          {
+            "flow_index": "1.2.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{file_location}: provision/data/price_data.json"
+          },
+          {
+            "flow_index": "1.2.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.2.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: perceptual_sign"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [news data]",
+      "attached_comments": [
+        {
+          "flow_index": "1.3",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.2 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(articles: list)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):{paradigm}(retrieve news data from text sources)",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: h_FileData-c_LoadParse-o_Normal"
+        },
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: {file_location} → file_system.read()"
+        },
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: dict with articles list"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {simulated data: news data}",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{file_location}: provision/data/news_data.json"
+          },
+          {
+            "flow_index": "1.3.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: perceptual_sign"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.4",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {theoretical framework}",
+      "attached_comments": [
+        {
+          "flow_index": "1.4",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.3 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.4",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.4",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.4",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(drivers: list, thresholds: dict)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.4.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):{paradigm}(obtain theoretical framework from domain experts)",
+      "attached_comments": [
+        {
+          "flow_index": "1.4.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: h_FileData-c_LoadParse-o_Normal"
+        },
+        {
+          "flow_index": "1.4.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: {file_location} → file_system.read()"
+        },
+        {
+          "flow_index": "1.4.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.4.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: structured theory dict"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.4.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {simulated data: theoretical framework}",
+        "attached_comments": [
+          {
+            "flow_index": "1.4.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{file_location}: provision/data/theoretical_framework.json"
+          },
+          {
+            "flow_index": "1.4.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.4.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: perceptual_sign"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.5",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {investor risk profile}",
+      "attached_comments": [
+        {
+          "flow_index": "1.5",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.4 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(risk_tolerance: str, max_position_size: float, stop_loss: dict, horizon: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.5.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: h_FileData-c_LoadParse-o_Normal"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: {file_location} → file_system.read()"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: validated risk profile dict"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.5.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {simulated data: investor risk profile}",
+        "attached_comments": [
+          {
+            "flow_index": "1.5.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{file_location}: provision/data/investor_risk_profile.json"
+          },
+          {
+            "flow_index": "1.5.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.5.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: perceptual_sign"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.6",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {validated signal}",
+      "attached_comments": [
+        {
+          "flow_index": "1.6",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.5 | ?{sequence}: grouping"
+        },
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(signal_name: str, signal_value: any, source: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.6.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= &[#] %>[{quantitative signal}, {narrative signal}]",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| Axis unification: child axes become elements along [signal] axis"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.6.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {quantitative signal}",
+        "attached_comments": [
+          {
+            "flow_index": "1.6.2",
+            "type": "inline_comment",
+            "depth": 2,
+            "nc_comment": "?{flow_index}: 1.5.1 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.6.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [quantitative_signal]"
+          },
+          {
+            "flow_index": "1.6.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_shape}: (n_quantitative_signal,)"
+          },
+          {
+            "flow_index": "1.6.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: dict(indicator: str, value: float, interpretation: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.6.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {narrative signal}",
+        "attached_comments": [
+          {
+            "flow_index": "1.6.3",
+            "type": "inline_comment",
+            "depth": 2,
+            "nc_comment": "?{flow_index}: 1.5.2 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.6.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [narrative_signal]"
+          },
+          {
+            "flow_index": "1.6.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_shape}: (n_narrative_signal,)"
+          },
+          {
+            "flow_index": "1.6.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: dict(theme: str, sentiment: float, summary: str)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.6.2",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- {quantitative signal}",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.2",
+          "type": "inline_comment",
+          "depth": 2,
+          "nc_comment": "?{flow_index}: 1.5.1 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.6.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_axes}: [quantitative_signal]"
+        },
+        {
+          "flow_index": "1.6.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_shape}: (n_quantitative_signal,)"
+        },
+        {
+          "flow_index": "1.6.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_element}: dict(indicator: str, value: float, interpretation: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.6.2.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= :%(composition):(compute price-based indicators from {1}<$([price data])%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{norm_input}: v_Script-h_Data-c_Execute-o_Normal"
+        },
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_norm}: {script_location}"
+        },
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_provision}: provision/scripts/technical_analysis.py"
+        },
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        },
+        {
+          "flow_index": "1.6.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{o_shape}: indicators dict"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.6.2.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- [price data]<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.6.2.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.6.3",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- {narrative signal}",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.3",
+          "type": "inline_comment",
+          "depth": 2,
+          "nc_comment": "?{flow_index}: 1.5.2 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.6.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_axes}: [narrative_signal]"
+        },
+        {
+          "flow_index": "1.6.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_shape}: (n_narrative_signal,)"
+        },
+        {
+          "flow_index": "1.6.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_element}: dict(theme: str, sentiment: float, summary: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.6.3.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= :%(composition):(extract sentiment and themes from {1}<$([news data])%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/sentiment_extraction.md"
+        },
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.6.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{o_shape}: sentiment analysis dict"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.6.3.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- [news data]<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.6.3.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.7",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- <signals surpass theoretical expectations>",
+      "attached_comments": [
+        {
+          "flow_index": "1.7",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.6 | ?{sequence}: judgement"
+        },
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: %{truth value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.7.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):({1}<$({validated signal})%> exceeds predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+      "attached_comments": [
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/bullish_evaluation.md"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: boolean per signal (TVA output, before TIA transforms to truth markers)"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.7.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {validated signal}<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.7.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {theoretical framework}<:{2}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.7.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- <signals deviate from theoretical expectations>",
+      "attached_comments": [
+        {
+          "flow_index": "1.8",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.7 | ?{sequence}: judgement"
+        },
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: %{truth value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):({1}<$({validated signal})%> falls below predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/bearish_evaluation.md"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: boolean per signal (TVA output, before TIA transforms to truth markers)"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {validated signal}<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {theoretical framework}<:{2}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.9",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- <signals are neutral>",
+      "attached_comments": [
+        {
+          "flow_index": "1.9",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.8 | ?{sequence}: judgement"
+        },
+        {
+          "flow_index": "1.9",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.9",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.9",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: %{truth value}"
+        },
+        {
+          "flow_index": "1.9",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| Neutral = NOT(bullish) AND NOT(bearish) per signal"
+        },
+        {
+          "flow_index": "1.9",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| TIA: for-each signal, check if ALL status_type values are False"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.9.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>",
+      "attached_comments": [
+        {
+          "flow_index": "1.9.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: h_Data-c_PassThrough-o_Normal"
+        },
+        {
+          "flow_index": "1.9.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: truth markers from grouping"
+        },
+        {
+          "flow_index": "1.9.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: (none — TIA handles assertion directly)"
+        },
+        {
+          "flow_index": "1.9.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: truth marker per signal (after TIA hierarchical collapse)"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.9.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- <signal status><:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.9.2",
+            "type": "inline_comment",
+            "depth": 2,
+            "nc_comment": "?{flow_index}: 1.8.1 | ?{sequence}: grouping"
+          },
+          {
+            "flow_index": "1.9.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.9.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_shape}: (n_signal)"
+          },
+          {
+            "flow_index": "1.9.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: %{truth value}"
+          },
+          {
+            "flow_index": "1.9.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| Flatten truth markers but protect [signal] axis"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.9.2",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- <signal status><:{1}>",
+      "attached_comments": [
+        {
+          "flow_index": "1.9.2",
+          "type": "inline_comment",
+          "depth": 2,
+          "nc_comment": "?{flow_index}: 1.8.1 | ?{sequence}: grouping"
+        },
+        {
+          "flow_index": "1.9.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.9.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_shape}: (n_signal)"
+        },
+        {
+          "flow_index": "1.9.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_element}: %{truth value}"
+        },
+        {
+          "flow_index": "1.9.2",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| Flatten truth markers but protect [signal] axis"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.9.2.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= &[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>",
+      "attached_comments": []
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.9.2.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- <signals surpass theoretical expectations>",
+        "attached_comments": [
+          {
+            "flow_index": "1.9.2.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.9.2.3",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- <signals deviate from theoretical expectations>",
+        "attached_comments": [
+          {
+            "flow_index": "1.9.2.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {investment decision}",
+      "attached_comments": [
+        {
+          "flow_index": "1.10",
+          "type": "inline_comment",
+          "depth": 1,
+          "nc_comment": "?{flow_index}: 1.9 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.10",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.10",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.10",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(action: str, rationale: str, confidence: float, constraints_applied: list)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= :%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/final_synthesis.md"
+        },
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.10.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{o_shape}: final decision dict"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.10.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {investor risk profile}<:{2}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- [all recommendations]<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3",
+            "type": "inline_comment",
+            "depth": 2,
+            "nc_comment": "?{flow_index}: 1.9.1 | ?{sequence}: grouping"
+          },
+          {
+            "flow_index": "1.10.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [recommendation]"
+          },
+          {
+            "flow_index": "1.10.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_shape}: (n_recommendation,)"
+          },
+          {
+            "flow_index": "1.10.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: dict OR @#SKIP#@"
+          },
+          {
+            "flow_index": "1.10.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| At most one recommendation is non-skip due to timing gates"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<- [all recommendations]<:{1}>",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3",
+          "type": "inline_comment",
+          "depth": 2,
+          "nc_comment": "?{flow_index}: 1.9.1 | ?{sequence}: grouping"
+        },
+        {
+          "flow_index": "1.10.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_axes}: [recommendation]"
+        },
+        {
+          "flow_index": "1.10.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_shape}: (n_recommendation,)"
+        },
+        {
+          "flow_index": "1.10.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{ref_element}: dict OR @#SKIP#@"
+        },
+        {
+          "flow_index": "1.10.3",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| At most one recommendation is non-skip due to timing gates"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= &[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}]",
+      "attached_comments": []
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.10.3.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {bullish recommendation}",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.2",
+            "type": "inline_comment",
+            "depth": 3,
+            "nc_comment": "?{flow_index}: 1.9.1.1 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.10.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.10.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.10.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: dict(action: str, size: float, rationale: str)"
+          },
+          {
+            "flow_index": "1.10.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_skip}: filtered by <signals surpass theoretical expectations>"
+          },
+          {
+            "flow_index": "1.10.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10.3.3",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {bearish recommendation}",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.3",
+            "type": "inline_comment",
+            "depth": 3,
+            "nc_comment": "?{flow_index}: 1.9.1.2 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.10.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.10.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.10.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: dict(action: str, size: float, rationale: str)"
+          },
+          {
+            "flow_index": "1.10.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_skip}: filtered by <signals deviate from theoretical expectations>"
+          },
+          {
+            "flow_index": "1.10.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10.3.4",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {neutral recommendation}",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.4",
+            "type": "inline_comment",
+            "depth": 3,
+            "nc_comment": "?{flow_index}: 1.9.1.3 | ?{sequence}: imperative"
+          },
+          {
+            "flow_index": "1.10.3.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          },
+          {
+            "flow_index": "1.10.3.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (n_signal,)"
+          },
+          {
+            "flow_index": "1.10.3.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: dict(action: str, rationale: str)"
+          },
+          {
+            "flow_index": "1.10.3.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_skip}: filtered by <signals are neutral>"
+          },
+          {
+            "flow_index": "1.10.3.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {bullish recommendation}",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.2",
+          "type": "inline_comment",
+          "depth": 3,
+          "nc_comment": "?{flow_index}: 1.9.1.1 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.10.3.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.10.3.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.10.3.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: dict(action: str, size: float, rationale: str)"
+        },
+        {
+          "flow_index": "1.10.3.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_skip}: filtered by <signals surpass theoretical expectations>"
+        },
+        {
+          "flow_index": "1.10.3.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.2.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.2.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.1.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.10.3.2.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {validated signal}<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.2.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10.3.2.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {investor risk profile}<:{2}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.2.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.2.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.2.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.1.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.2.1.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= @:' (<signals surpass theoretical expectations>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}, {script_location}"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/buy_recommendation.md,"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| provision/scripts/position_sizing.py"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{body_faculty}: llm, python_interpreter"
+        },
+        {
+          "flow_index": "1.10.3.2.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{o_shape}: BUY recommendation dict"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.3",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {bearish recommendation}",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.3",
+          "type": "inline_comment",
+          "depth": 3,
+          "nc_comment": "?{flow_index}: 1.9.1.2 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.10.3.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.10.3.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.10.3.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: dict(action: str, size: float, rationale: str)"
+        },
+        {
+          "flow_index": "1.10.3.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_skip}: filtered by <signals deviate from theoretical expectations>"
+        },
+        {
+          "flow_index": "1.10.3.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.3.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.3.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.2.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.10.3.3.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {validated signal}<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.3.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.10.3.3.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {investor risk profile}<:{2}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.3.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.3.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.3.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.2.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.3.1.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= @:' (<signals deviate from theoretical expectations>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}, {script_location}"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/sell_recommendation.md,"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| provision/scripts/position_sizing.py"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{body_faculty}: llm, python_interpreter"
+        },
+        {
+          "flow_index": "1.10.3.3.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{o_shape}: SELL recommendation dict"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.4",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {neutral recommendation}",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.4",
+          "type": "inline_comment",
+          "depth": 3,
+          "nc_comment": "?{flow_index}: 1.9.1.3 | ?{sequence}: imperative"
+        },
+        {
+          "flow_index": "1.10.3.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [signal]"
+        },
+        {
+          "flow_index": "1.10.3.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (n_signal,)"
+        },
+        {
+          "flow_index": "1.10.3.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: dict(action: str, rationale: str)"
+        },
+        {
+          "flow_index": "1.10.3.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_skip}: filtered by <signals are neutral>"
+        },
+        {
+          "flow_index": "1.10.3.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| Timing injects filter from judgement's truth_mask → IR applies → false signals become @#SKIP#@"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.4.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.4.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.3.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.10.3.4.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {validated signal}<:{1}>",
+        "attached_comments": [
+          {
+            "flow_index": "1.10.3.4.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [signal]"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.10.3.4.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= :%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.4.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| ?{flow_index}: 1.9.1.3.1 | ?{sequence}: timing"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.10.3.4.1.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= @:' (<signals are neutral>)",
+      "attached_comments": [
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{norm_input}: v_Prompt-h_Data-c_ThinkJSON-o_Normal"
+        },
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/hold_recommendation.md"
+        },
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{h_input_norm}: in-memory (already resolved)"
+        },
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.10.3.4.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{o_shape}: HOLD recommendation dict"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  }
+]

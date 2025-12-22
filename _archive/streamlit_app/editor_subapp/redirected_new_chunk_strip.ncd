@@ -1,0 +1,17 @@
+:<:({result files})
+    <= &across
+    <- {Phase 1: Confirmation of Instruction}
+        <= $.([{1.1_instruction_block.md}, {1.2_initial_context_registerd.json}, {context_store/raw--*.md}])
+        <- {1.1_instruction_block.md}
+            <= :%(Composition):{paradigm}({1}<$({Input})%>; {2+}<$({InputOther})%>)
+            <- {input files}<${_}=><[{original prompt}:{1}, {other input files}:{2+}]>
+                <= &in[{original prompt}, {other input files}]
+                <- {original prompt}
+                <- {other input files}
+                    <= :%>(Composition):{paradigm}()
+        <- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]
+            <= :%(Composition):{paradigm}({1}<$({Input})%>; {2+}<$({InputOther})%>)
+            <- {input files}<[{original prompt}:{1}, {other input files}:{2+}]><$=>
+        <- {context_store/raw--*.md}
+            <= :%(Composition):{paradigm}({1}<$({Input})%>)>
+            <- [{1.2_initial_context_registerd.json}<*1>/{file_mapping.json}<*2>]<{*2}:{1}>

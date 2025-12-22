@@ -1,0 +1,9 @@
+:<: The result is outputted.
+    <= This is done by assigning the sum.
+    <- Given the number b.
+    <- Given the number a.
+    <- Then given the sum.
+        <= Obtained by adding the first number input and the second number input to get the sum.
+        <- Use number a as the first input.
+        <- Use number b as the second input.
+        <- Given what sum means.
