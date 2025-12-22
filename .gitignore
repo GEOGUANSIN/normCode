@@ -135,3 +135,6 @@ orchestrator_log_*.txt
 
 # Keep the directory structure
 !.gitignore 
+
+# ignore the cursor files 
+.cursor/
