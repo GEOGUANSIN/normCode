@@ -16,6 +16,7 @@ from schemas.execution_schemas import (
     SEQUENCE_STEPS, STEP_FULL_NAMES
 )
 from core.events import event_emitter
+from services.agent_service import agent_registry, agent_mapping, ToolCallEvent
 
 # Add project root to path for infra imports
 project_root = Path(__file__).parent.parent.parent.parent
@@ -312,6 +313,73 @@ class ExecutionController:
         self._inference_metadata = {}
         self._main_loop: Optional[asyncio.AbstractEventLoop] = None  # Store main event loop for thread-safe calls
         self._load_config = None  # Will be set in load_repositories
+        
+        # Register tool call callback for WebSocket emission
+        self._setup_agent_tool_monitoring()
+    
+    def _setup_agent_tool_monitoring(self):
+        """Set up tool call monitoring to emit events via WebSocket."""
+        def emit_tool_event(event: ToolCallEvent):
+            """Emit tool call event through WebSocket."""
+            event_type = f"tool:call_{event.status}"
+            self._emit_threadsafe(event_type, event.to_dict())
+        
+        # Register callback with agent registry
+        agent_registry.register_tool_callback("execution_controller", emit_tool_event)
+        logger.info("Registered tool call monitoring for WebSocket events")
+    
+    def _wrap_body_with_monitoring(self, body: Any) -> None:
+        """
+        Wrap a Body's tools with MonitoredToolProxy for real-time monitoring.
+        
+        This enables the Agent Panel to show tool calls during execution.
+        """
+        from services.agent_service import MonitoredToolProxy
+        
+        def get_flow_index():
+            return self.current_inference or ""
+        
+        def emit_tool_event(event: ToolCallEvent):
+            """Emit tool call event through WebSocket."""
+            event_type = f"tool:call_{event.status}"
+            self._emit_threadsafe(event_type, event.to_dict())
+            # Also add to agent_registry history for persistence
+            agent_registry.tool_call_history.append(event)
+            if len(agent_registry.tool_call_history) > agent_registry.max_history:
+                agent_registry.tool_call_history = agent_registry.tool_call_history[-agent_registry.max_history:]
+        
+        # Wrap the main tools used during execution
+        if hasattr(body, 'llm') and body.llm is not None:
+            body.llm = MonitoredToolProxy(
+                "default", "llm", body.llm,
+                emit_tool_event, get_flow_index
+            )
+        
+        if hasattr(body, 'file_system') and body.file_system is not None:
+            body.file_system = MonitoredToolProxy(
+                "default", "file_system", body.file_system,
+                emit_tool_event, get_flow_index
+            )
+        
+        if hasattr(body, 'python_interpreter') and body.python_interpreter is not None:
+            body.python_interpreter = MonitoredToolProxy(
+                "default", "python_interpreter", body.python_interpreter,
+                emit_tool_event, get_flow_index
+            )
+        
+        if hasattr(body, 'prompt_tool') and body.prompt_tool is not None:
+            body.prompt_tool = MonitoredToolProxy(
+                "default", "prompt", body.prompt_tool,
+                emit_tool_event, get_flow_index
+            )
+        
+        if hasattr(body, 'user_input') and body.user_input is not None:
+            body.user_input = MonitoredToolProxy(
+                "default", "user_input", body.user_input,
+                emit_tool_event, get_flow_index
+            )
+        
+        logger.info("Wrapped body tools with monitoring proxies")
     
     def _attach_infra_log_handlers(self):
         """Attach our log handler to infra loggers to capture orchestrator logs."""
@@ -449,6 +517,9 @@ class ExecutionController:
             base_dir=base_dir,
             paradigm_tool=custom_paradigm_tool
         )
+        
+        # Wrap body tools with monitoring proxies for real-time tool call tracking
+        self._wrap_body_with_monitoring(self.body)
         
         # Determine database path for checkpointing
         if db_path is None:
@@ -1075,6 +1146,9 @@ class ExecutionController:
             cycle_executions += 1
             self.current_inference = flow_index
             
+            # Update agent registry with current flow index for tool monitoring
+            agent_registry.set_current_flow_index(flow_index)
+            
             # Emit inference started
             self.node_statuses[flow_index] = NodeStatus.RUNNING
             await self._emit("inference:started", {
@@ -1320,6 +1394,9 @@ class ExecutionController:
             base_dir=base_dir,
             paradigm_tool=custom_paradigm_tool
         )
+        
+        # Wrap body tools with monitoring proxies for real-time tool call tracking
+        self._wrap_body_with_monitoring(self.body)
         
         return concepts_data, inferences_data, base_dir
     

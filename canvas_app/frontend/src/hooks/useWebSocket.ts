@@ -5,8 +5,10 @@
 import { useEffect, useCallback, useState } from 'react';
 import { wsClient } from '../services/websocket';
 import { useExecutionStore } from '../stores/executionStore';
+import { useAgentStore } from '../stores/agentStore';
 import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
+import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
 
 export function useWebSocket() {
   const setStatus = useExecutionStore((s) => s.setStatus);
@@ -22,6 +24,13 @@ export function useWebSocket() {
   const setStepProgress = useExecutionStore((s) => s.setStepProgress);
   const updateStepProgress = useExecutionStore((s) => s.updateStepProgress);
   const clearStepProgress = useExecutionStore((s) => s.clearStepProgress);
+
+  // Agent store actions
+  const addToolCall = useAgentStore((s) => s.addToolCall);
+  const updateToolCall = useAgentStore((s) => s.updateToolCall);
+  const addAgent = useAgentStore((s) => s.addAgent);
+  const updateAgent = useAgentStore((s) => s.updateAgent);
+  const deleteAgent = useAgentStore((s) => s.deleteAgent);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -254,11 +263,44 @@ export function useWebSocket() {
           }
           break;
 
+        // Agent and tool call events
+        case 'tool:call_started':
+          addToolCall(data as unknown as ToolCallEvent);
+          break;
+
+        case 'tool:call_completed':
+          // Update existing tool call or add as new
+          if (data.id) {
+            updateToolCall(data.id as string, data as unknown as Partial<ToolCallEvent>);
+          } else {
+            addToolCall(data as unknown as ToolCallEvent);
+          }
+          break;
+
+        case 'tool:call_failed':
+          if (data.id) {
+            updateToolCall(data.id as string, data as unknown as Partial<ToolCallEvent>);
+          } else {
+            addToolCall(data as unknown as ToolCallEvent);
+          }
+          break;
+
+        case 'agent:registered':
+        case 'agent:updated':
+          addAgent(data as unknown as AgentConfig);
+          break;
+
+        case 'agent:deleted':
+          if (data.agent_id) {
+            deleteAgent(data.agent_id as string);
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent]
   );
 
   const [isConnected, setIsConnected] = useState(false);

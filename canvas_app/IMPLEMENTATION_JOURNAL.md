@@ -6,6 +6,171 @@
 
 ---
 
+## December 20, 2024 - Agent Panel Enhancements
+
+### What Was Implemented
+
+**Tool Call Detail Modal**
+- [x] Click any tool call entry to open a detailed modal window
+- [x] Full inputs/outputs display with collapsible sections per key
+- [x] Proper string formatting (preserves newlines, markdown)
+- [x] Character count display for long values
+- [x] Status icon, timestamp, flow_index, agent, duration in header
+- [x] Click outside to dismiss modal
+
+**Collapsible Agent Panel Sections**
+- [x] Agents list section is now collapsible (click header to toggle)
+- [x] Tool Calls section expands to full height when Agents collapsed
+- [x] Maximize/minimize toggle for Tool Calls section
+- [x] Agent count shown in collapsed header
+
+**Full Tool Call Data Capture**
+- [x] Replaced `_summarize_value()` with `_serialize_value()` in `MonitoredToolProxy`
+- [x] Preserves complete string content (up to 50,000 chars)
+- [x] Serializes full dict/list structures (not placeholders like `"{dict with 2 keys}"`)
+- [x] Handles nested objects up to 10 levels deep
+- [x] Converts objects with `__dict__` or `to_dict()` methods
+- [x] Limits: 100 array items, 50 dict keys to prevent huge payloads
+
+**Python Executor Monitoring Fix**
+- [x] **Problem**: `python_interpreter.create_function_executor` returns a function that was NOT monitored
+- [x] **Solution**: Added `_wrap_returned_callable()` to automatically wrap callable return values
+- [x] When `executor_fn` is later called during composition, it now emits monitoring events
+- [x] Method name shown as `create_function_executor→execute` for clarity
+
+### Technical Details
+
+**Callable Return Value Wrapping**:
+```
+Before (invisible execution):
+  python_interpreter.create_function_executor(...) → returns executor_fn ✅ monitored
+  executor_fn(inputs) → ❌ NOT monitored (actual Python runs here!)
+
+After (full visibility):
+  python_interpreter.create_function_executor(...) → returns wrapped_executor ✅ monitored  
+  wrapped_executor(inputs) → ✅ monitored as "create_function_executor→execute"
+```
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/agent_service.py`:
+  - Replaced `_summarize_value()` with `_serialize_value()` for complete data capture
+  - Updated `_sanitize_inputs()` to serialize all args/kwargs (no limits)
+  - Added `_wrap_returned_callable()` method to wrap callable return values
+  - Updated `_create_monitored_method()` to detect and wrap callable results
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/AgentPanel.tsx`:
+  - Added `ToolCallDetailModal` component with portal rendering
+  - Added `ValueDisplay` component for collapsible key-value display
+  - Added `formatValue()` helper for proper string/JSON formatting
+  - Added `agentsCollapsed` and `toolCallsExpanded` state
+  - Collapsible section headers with chevron icons
+  - Maximize/minimize toggle for Tool Calls section
+  - Wider modal (800px) with better overflow handling
+
+---
+
+## December 20, 2024 - Agent Customizing Panel
+
+### What Was Implemented
+
+**Agent Panel** - A new panel for managing multiple agent configurations and monitoring tool calls in real-time.
+
+- [x] **AgentRegistry** (`backend/services/agent_service.py`): Manages multiple agent configurations with different LLM models and tool settings
+- [x] **AgentMappingService**: Maps inferences to agents based on rules (flow_index, concept_name, sequence_type) or explicit assignments
+- [x] **MonitoredToolProxy**: Wraps tools (llm, file_system, python_interpreter, prompt) to emit events on each call
+- [x] **Agent REST API** (`backend/routers/agent_router.py`): Full CRUD for agents, mapping rules, explicit assignments, tool call history
+- [x] **Agent Store** (`frontend/stores/agentStore.ts`): Zustand store for agent state, mappings, and tool calls
+- [x] **AgentPanel UI** (`frontend/components/panels/AgentPanel.tsx`): Agent list, editor modal, tool call feed
+- [x] **WebSocket Integration**: Tool call events (`tool:call_started`, `tool:call_completed`, `tool:call_failed`) streamed to frontend
+- [x] **App Integration**: "Agents" toggle button in header, panel displays on left side of canvas
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        AgentRegistry                            │
+├─────────────────────────────────────────────────────────────────┤
+│  "default": Body(llm="qwen-plus", ...)                         │
+│  "analyst": Body(llm="gpt-4o", ...)                            │
+│  "coder": Body(llm="claude-3", ...)                            │
+├─────────────────────────────────────────────────────────────────┤
+│  AgentMappingService                                            │
+│  ├── rules: pattern-based assignment                           │
+│  ├── explicit: flow_index → agent_id                           │
+│  └── default: fallback agent                                   │
+├─────────────────────────────────────────────────────────────────┤
+│  MonitoredToolProxy                                             │
+│  └── Wraps tools to emit WebSocket events                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### UI Layout
+
+The Agent Panel appears on the left side of the canvas when toggled:
+
+```
+┌────────────┬────────────────────────────┬─────────────┐
+│  Agent     │        Graph Canvas        │   Detail    │
+│  Panel     │                            │   Panel     │
+│            │                            │             │
+│ ┌────────┐ │                            │             │
+│ │ Agents │ │                            │             │
+│ │  List  │ │                            │             │
+│ └────────┘ │                            │             │
+│            │                            │             │
+│ ┌────────┐ │                            │             │
+│ │ Tool   │ │                            │             │
+│ │ Calls  │ │                            │             │
+│ └────────┘ │                            │             │
+└────────────┴────────────────────────────┴─────────────┘
+```
+
+### Files Created/Modified
+
+**New Files**:
+- `backend/services/agent_service.py` - AgentConfig, AgentRegistry, AgentMappingService, MonitoredToolProxy
+- `backend/routers/agent_router.py` - REST API endpoints for agents
+- `frontend/src/stores/agentStore.ts` - Zustand store for agent state
+- `frontend/src/components/panels/AgentPanel.tsx` - Agent panel UI
+
+**Modified Files**:
+- `backend/routers/__init__.py` - Added agent_router import
+- `backend/main.py` - Included agent_router
+- `backend/services/execution_service.py` - Wired tool monitoring to WebSocket
+- `frontend/src/App.tsx` - Added Agents toggle button and AgentPanel
+- `frontend/src/hooks/useWebSocket.ts` - Handle agent/tool events
+- `frontend/src/services/api.ts` - Added agentApi functions
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/agents/` | List all agents |
+| POST | `/api/agents/` | Create/update agent |
+| DELETE | `/api/agents/{id}` | Delete agent |
+| GET | `/api/agents/mappings/state` | Get mapping rules and assignments |
+| POST | `/api/agents/mappings/rules` | Add mapping rule |
+| DELETE | `/api/agents/mappings/rules/{index}` | Remove mapping rule |
+| POST | `/api/agents/mappings/explicit/{flow_index}` | Set explicit assignment |
+| DELETE | `/api/agents/mappings/explicit/{flow_index}` | Clear explicit assignment |
+| GET | `/api/agents/mappings/resolve/{flow_index}` | Resolve agent for inference |
+| GET | `/api/agents/tool-calls` | Get tool call history |
+| DELETE | `/api/agents/tool-calls` | Clear tool call history |
+
+### Next Steps
+
+- [ ] Integrate per-inference agent selection into actual execution (currently monitoring only)
+- [ ] Add agent assignment UI in DetailPanel for selected nodes
+- [ ] Add cost/token tracking per agent
+- [ ] Add agent templates for common use cases
+
+See `AGENT_PANEL_PLAN.md` for full design documentation.
+
+---
+
 ## December 21, 2024 - Multi-Project per Directory Support
 
 ### What Was Implemented
@@ -1575,6 +1740,28 @@ Inferences: c:/Users/ProgU/PycharmProjects/normCode/streamlit_app/core/saved_rep
 ---
 
 ## Changelog
+
+### v0.7.1 (December 20, 2024) - Agent Panel Enhancements
+- **Tool Call Detail Modal**:
+  - Click any tool call entry to view full details in a modal
+  - Collapsible sections for each input/output key
+  - Preserves string formatting (newlines, markdown)
+  - Shows character count for long values
+  - Click outside to dismiss
+- **Collapsible Panel Sections**:
+  - Agents list section is now collapsible
+  - Tool Calls section can expand to full height
+  - Maximize/minimize toggle for Tool Calls
+  - Agent count shown in collapsed header
+- **Full Tool Call Data Capture**:
+  - Complete string content preserved (up to 50,000 chars)
+  - Full dict/list structures serialized (no more `"{dict with 2 keys}"` placeholders)
+  - Nested objects up to 10 levels deep
+  - Objects with `__dict__` or `to_dict()` properly serialized
+- **Python Executor Monitoring Fix**:
+  - `create_function_executor` return values now auto-wrapped with monitoring
+  - Actual Python script execution now visible as `create_function_executor→execute`
+  - Full inputs/outputs captured for script execution
 
 ### v0.7.0 (December 21, 2024) - Multi-Project per Directory
 - **Multiple projects per directory**:

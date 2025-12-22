@@ -17,6 +17,7 @@ import {
   X,
   GitGraph,
   FileCode,
+  Bot,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -27,6 +28,7 @@ import { SettingsPanel } from './components/panels/SettingsPanel';
 import { ProjectPanel } from './components/panels/ProjectPanel';
 import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
+import { AgentPanel } from './components/panels/AgentPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
@@ -41,6 +43,7 @@ function App() {
   const [showLogPanel, setShowLogPanel] = useState(true);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
+  const [showAgentPanel, setShowAgentPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   
@@ -154,6 +157,21 @@ function App() {
         
         {/* Right side: Actions */}
         <div className="flex items-center gap-1">
+          {/* Agent Panel Toggle - left-side panel opener */}
+          {viewMode === 'canvas' && (
+            <button
+              onClick={() => setShowAgentPanel(!showAgentPanel)}
+              className={`p-2 rounded-lg transition-colors ${
+                showAgentPanel
+                  ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+              }`}
+              title="Agent Configuration Panel"
+            >
+              <Bot size={18} />
+            </button>
+          )}
+          
           {/* Panel toggles - only show in canvas mode */}
           {graphData && viewMode === 'canvas' && (
             <>
@@ -283,6 +301,9 @@ function App() {
           // Canvas View
           <>
             <div className="flex-1 flex overflow-hidden">
+              {/* Agent Panel (left side) */}
+              {showAgentPanel && <AgentPanel />}
+              
               {/* Graph Canvas */}
               <div className="flex-1 overflow-hidden">
                 <GraphCanvas />

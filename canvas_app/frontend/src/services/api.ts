@@ -223,6 +223,132 @@ export const projectApi = {
     }),
 };
 
+// Agent endpoints
+export interface AgentConfigApi {
+  id: string;
+  name: string;
+  description: string;
+  llm_model: string;
+  file_system_enabled: boolean;
+  file_system_base_dir?: string;
+  python_interpreter_enabled: boolean;
+  python_interpreter_timeout: number;
+  user_input_enabled: boolean;
+  user_input_mode: 'blocking' | 'async' | 'disabled';
+  paradigm_dir?: string;
+}
+
+export interface MappingRuleApi {
+  match_type: 'flow_index' | 'concept_name' | 'sequence_type';
+  pattern: string;
+  agent_id: string;
+  priority: number;
+}
+
+export interface MappingStateApi {
+  rules: MappingRuleApi[];
+  explicit: Record<string, string>;
+  default_agent: string;
+}
+
+export interface ToolCallEventApi {
+  id: string;
+  timestamp: string;
+  flow_index: string;
+  agent_id: string;
+  tool_name: string;
+  method: string;
+  inputs: Record<string, unknown>;
+  outputs?: unknown;
+  duration_ms?: number;
+  status: 'started' | 'completed' | 'failed';
+  error?: string;
+}
+
+export const agentApi = {
+  // Agent CRUD
+  listAgents: (): Promise<AgentConfigApi[]> =>
+    fetchJson(`${API_BASE}/agents/`),
+  
+  getAgent: (agentId: string): Promise<AgentConfigApi> =>
+    fetchJson(`${API_BASE}/agents/${encodeURIComponent(agentId)}`),
+  
+  createOrUpdateAgent: (config: AgentConfigApi): Promise<AgentConfigApi> =>
+    fetchJson(`${API_BASE}/agents/`, {
+      method: 'POST',
+      body: JSON.stringify(config),
+    }),
+  
+  deleteAgent: (agentId: string): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/${encodeURIComponent(agentId)}`, {
+      method: 'DELETE',
+    }),
+  
+  // Mapping endpoints
+  getMappingState: (): Promise<MappingStateApi> =>
+    fetchJson(`${API_BASE}/agents/mappings/state`),
+  
+  addMappingRule: (rule: MappingRuleApi): Promise<{ success: boolean; rule: MappingRuleApi }> =>
+    fetchJson(`${API_BASE}/agents/mappings/rules`, {
+      method: 'POST',
+      body: JSON.stringify(rule),
+    }),
+  
+  removeMappingRule: (index: number): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/rules/${index}`, {
+      method: 'DELETE',
+    }),
+  
+  clearAllRules: (): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/rules`, {
+      method: 'DELETE',
+    }),
+  
+  setExplicitMapping: (flowIndex: string, agentId: string): Promise<{ success: boolean; flow_index: string; agent_id: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/explicit/${encodeURIComponent(flowIndex)}`, {
+      method: 'POST',
+      body: JSON.stringify({ agent_id: agentId }),
+    }),
+  
+  clearExplicitMapping: (flowIndex: string): Promise<{ success: boolean; flow_index: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/explicit/${encodeURIComponent(flowIndex)}`, {
+      method: 'DELETE',
+    }),
+  
+  clearAllExplicitMappings: (): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/explicit`, {
+      method: 'DELETE',
+    }),
+  
+  resolveAgentForInference: (flowIndex: string, conceptName?: string, sequenceType?: string): Promise<{ flow_index: string; agent_id: string; reason: string }> => {
+    const params = new URLSearchParams();
+    if (conceptName) params.set('concept_name', conceptName);
+    if (sequenceType) params.set('sequence_type', sequenceType);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return fetchJson(`${API_BASE}/agents/mappings/resolve/${encodeURIComponent(flowIndex)}${queryString}`);
+  },
+  
+  setDefaultAgent: (agentId: string): Promise<{ success: boolean; default_agent: string }> =>
+    fetchJson(`${API_BASE}/agents/mappings/default?agent_id=${encodeURIComponent(agentId)}`, {
+      method: 'PUT',
+    }),
+  
+  // Tool call history
+  getToolCalls: (limit = 100): Promise<ToolCallEventApi[]> =>
+    fetchJson(`${API_BASE}/agents/tool-calls?limit=${limit}`),
+  
+  clearToolCalls: (): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/tool-calls`, {
+      method: 'DELETE',
+    }),
+  
+  // Utility
+  invalidateBodies: (): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/agents/invalidate-bodies`, {
+      method: 'POST',
+    }),
+};
+
 // Checkpoint endpoints
 export const checkpointApi = {
   listRuns: (dbPath: string): Promise<RunInfo[]> =>
