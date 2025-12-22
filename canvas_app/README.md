@@ -21,6 +21,34 @@ A visual, interactive environment for executing, debugging, and auditing NormCod
 - Node.js 18+
 - npm 9+
 
+### LLM Configuration (settings.yaml)
+
+The canvas app reads LLM model configurations from `settings.yaml` in the project root. This file contains API keys for various LLM providers.
+
+**Required**: Create or edit `settings.yaml` in the project root:
+
+```yaml
+# settings.yaml - LLM Model Configuration
+# Each model name maps to its API key configuration
+
+qwen-plus:
+    DASHSCOPE_API_KEY: sk-your-api-key-here
+
+qwen-turbo-latest:
+    DASHSCOPE_API_KEY: sk-your-api-key-here
+
+gpt-4o:
+    OPENAI_API_KEY: sk-your-openai-key-here
+
+claude-3-sonnet:
+    ANTHROPIC_API_KEY: sk-your-anthropic-key-here
+
+# Optional: Custom API base URL
+# BASE_URL: https://your-custom-endpoint.com/v1
+```
+
+**Note**: The `demo` mode is always available and doesn't require an API key (for testing without LLM calls).
+
 ### Running (First Time)
 
 The launcher automatically checks and installs dependencies on first run:
@@ -199,17 +227,21 @@ Vite provides hot module replacement for instant updates.
 - ✅ "Run to" feature
 - ✅ Fullscreen detail panel
 - ✅ Natural name display
+- ✅ **Value override dialog** (edit tensor values at any node)
+- ✅ **Function modification** (change paradigm, prompt, output type)
+- ✅ **Selective re-run** from any node
+- ✅ **Checkpoint resume/fork** (continue or branch from saved state)
 
-## Next Steps (Phase 4: Modification & Re-run)
+## Next Steps (Phase 5: Polish & Advanced)
 
-- [ ] Value override dialog (edit tensor values)
-- [ ] Function modification (change paradigm, prompt)
-- [ ] Selective re-run from any node
-- [ ] Checkpoint resume/fork
 - [ ] Keyboard shortcuts
+- [ ] Node search and filtering
 - [ ] Export execution traces
+- [ ] Run comparison/diff view
+- [ ] Performance optimization for 500+ nodes
+- [ ] Watch expressions
 
 ---
 
-**Version**: 0.7.1 (Phase 3 Complete, Phase 4 In Progress)  
-**Status**: Debugging features complete, implementing modification features
+**Version**: 0.8.0 (Phase 4 Complete)  
+**Status**: All core features complete (Phases 1-4), moving to polish phase

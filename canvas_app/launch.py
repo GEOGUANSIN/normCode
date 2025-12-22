@@ -19,11 +19,15 @@ import time
 import signal
 import argparse
 import shutil
+import socket
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 BACKEND_DIR = SCRIPT_DIR / "backend"
 FRONTEND_DIR = SCRIPT_DIR / "frontend"
+PROJECT_ROOT = SCRIPT_DIR.parent  # normCode root
 
 # Required Python packages (from requirements.txt)
 REQUIRED_PACKAGES = [
@@ -137,6 +141,83 @@ def install_frontend_dependencies() -> bool:
         return False
 
 
+def check_infra_module() -> tuple[bool, str]:
+    """Check if the infra module can be imported (required for backend)."""
+    try:
+        # Add project root to path temporarily
+        if str(PROJECT_ROOT) not in sys.path:
+            sys.path.insert(0, str(PROJECT_ROOT))
+        
+        from infra._constants import PROJECT_ROOT as _
+        return True, ""
+    except ImportError as e:
+        return False, str(e)
+    except Exception as e:
+        return False, str(e)
+
+
+def check_settings_yaml() -> tuple[bool, str]:
+    """Check if settings.yaml exists in project root."""
+    settings_path = PROJECT_ROOT / "settings.yaml"
+    if settings_path.exists():
+        return True, str(settings_path)
+    return False, str(settings_path)
+
+
+def check_port_available(port: int) -> bool:
+    """Check if a port is available."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            result = s.connect_ex(('127.0.0.1', port))
+            return result != 0  # Port is available if connect fails
+    except Exception:
+        return True  # Assume available if we can't check
+
+
+def wait_for_backend(port: int = 8000, timeout: int = 15) -> bool:
+    """Wait for backend to start responding."""
+    start_time = time.time()
+    url = f"http://127.0.0.1:{port}/api/execution/config"
+    
+    while time.time() - start_time < timeout:
+        try:
+            with urllib.request.urlopen(url, timeout=2) as response:
+                if response.status == 200:
+                    return True
+        except urllib.error.URLError:
+            pass
+        except Exception:
+            pass
+        time.sleep(0.5)
+    
+    return False
+
+
+def verify_backend_can_start() -> tuple[bool, str]:
+    """Verify the backend can be imported without errors."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", 
+             "import sys; sys.path.insert(0, r'" + str(PROJECT_ROOT) + "'); "
+             "from main import app; print('OK')"],
+            capture_output=True,
+            text=True,
+            cwd=BACKEND_DIR,
+            timeout=30
+        )
+        
+        if result.returncode == 0 and "OK" in result.stdout:
+            return True, ""
+        else:
+            error_msg = result.stderr.strip() or result.stdout.strip()
+            return False, error_msg
+    except subprocess.TimeoutExpired:
+        return False, "Import check timed out"
+    except Exception as e:
+        return False, str(e)
+
+
 def check_and_install_dependencies(force_install: bool = False, skip_check: bool = False) -> bool:
     """
     Check and install dependencies if needed.
@@ -169,6 +250,39 @@ def check_and_install_dependencies(force_install: bool = False, skip_check: bool
             print(f"  ✗ Missing packages: {', '.join(missing_packages)}")
         
         if not install_backend_dependencies():
+            all_ready = False
+    
+    # Check infra module (required for backend to work)
+    print("\n📦 NormCode Infra Module:")
+    infra_ok, infra_error = check_infra_module()
+    if infra_ok:
+        print("  ✓ infra module available")
+    else:
+        print("  ✗ infra module not found")
+        print(f"    Error: {infra_error}")
+        print("    Make sure you're running from the normCode project directory")
+        all_ready = False
+    
+    # Check settings.yaml
+    print("\n📦 LLM Configuration:")
+    settings_ok, settings_path = check_settings_yaml()
+    if settings_ok:
+        print(f"  ✓ settings.yaml found at {settings_path}")
+    else:
+        print(f"  ⚠ settings.yaml not found at {settings_path}")
+        print("    LLM features will be limited to 'demo' mode")
+        print("    See canvas_app/settings.yaml.example for template")
+        # This is a warning, not a failure
+    
+    # Verify backend can actually start
+    if all_ready:
+        print("\n📦 Backend Import Check:")
+        can_start, error = verify_backend_can_start()
+        if can_start:
+            print("  ✓ Backend imports successfully")
+        else:
+            print("  ✗ Backend failed to import")
+            print(f"    Error: {error[:500]}...")  # Truncate long errors
             all_ready = False
     
     # Check frontend dependencies
@@ -258,6 +372,14 @@ Examples:
     try:
         print_header(f"Starting NormCode Canvas ({'DEV' if dev_mode else 'PROD'})")
         
+        # Check if port 8000 is already in use
+        if not args.frontend_only:
+            if not check_port_available(8000):
+                print("\n⚠ Port 8000 is already in use!")
+                print("   Another backend may be running. Kill it or use a different port.")
+                print("   You can check with: netstat -ano | findstr :8000")
+                sys.exit(1)
+        
         # Start backend
         if not args.frontend_only:
             print_step("1", "2", "Starting FastAPI backend on http://localhost:8000")
@@ -285,9 +407,28 @@ Examples:
             )
             processes.append(("Backend", backend_process))
         
-        # Wait a moment for backend to start
+        # Wait for backend to be ready (with health check)
         if not args.frontend_only:
-            time.sleep(2)
+            print("         Waiting for backend to start...", end="", flush=True)
+            
+            # First check if process died immediately
+            time.sleep(1)
+            if backend_process.poll() is not None:
+                print(" FAILED!")
+                print(f"\n❌ Backend process exited with code {backend_process.returncode}")
+                print("   Run the backend manually to see the error:")
+                print(f"   cd {BACKEND_DIR}")
+                print(f"   {sys.executable} -m uvicorn main:app --port 8000")
+                sys.exit(1)
+            
+            # Wait for backend to respond
+            if wait_for_backend(port=8000, timeout=15):
+                print(" OK!")
+            else:
+                print(" TIMEOUT!")
+                print("\n⚠ Backend started but is not responding on port 8000")
+                print("   Check for errors in the backend terminal output above")
+                # Don't exit - backend might just be slow, let user see the output
         
         # Start frontend
         if not args.backend_only:

@@ -1,0 +1,61 @@
+# NormCode Canvas - LLM Configuration Template
+# ============================================
+#
+# Copy this file to the PROJECT ROOT as 'settings.yaml' and fill in your API keys.
+# The canvas app reads from: {project_root}/settings.yaml
+#
+# Format:
+#   model-name:
+#       API_KEY_NAME: your-api-key-here
+#
+# The model name becomes available in the Settings Panel dropdown.
+# 'demo' mode is always available (no LLM calls, for testing).
+
+# ============================================
+# DashScope (Alibaba Cloud - Qwen models)
+# ============================================
+# Get your key at: https://dashscope.console.aliyun.com/
+
+qwen-plus:
+    DASHSCOPE_API_KEY: sk-your-dashscope-key-here
+
+qwen-turbo-latest:
+    DASHSCOPE_API_KEY: sk-your-dashscope-key-here
+
+qwen-max:
+    DASHSCOPE_API_KEY: sk-your-dashscope-key-here
+
+deepseek-r1-distill-qwen-1.5b:
+    DASHSCOPE_API_KEY: sk-your-dashscope-key-here
+
+# ============================================
+# OpenAI
+# ============================================
+# Get your key at: https://platform.openai.com/api-keys
+
+# gpt-4o:
+#     OPENAI_API_KEY: sk-your-openai-key-here
+
+# gpt-4o-mini:
+#     OPENAI_API_KEY: sk-your-openai-key-here
+
+# gpt-3.5-turbo:
+#     OPENAI_API_KEY: sk-your-openai-key-here
+
+# ============================================
+# Anthropic (Claude)
+# ============================================
+# Get your key at: https://console.anthropic.com/
+
+# claude-3-5-sonnet:
+#     ANTHROPIC_API_KEY: sk-your-anthropic-key-here
+
+# claude-3-opus:
+#     ANTHROPIC_API_KEY: sk-your-anthropic-key-here
+
+# ============================================
+# Custom API Endpoint (Optional)
+# ============================================
+# Uncomment to use a custom OpenAI-compatible endpoint
+
+# BASE_URL: https://your-custom-endpoint.com/v1
