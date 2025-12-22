@@ -134,9 +134,34 @@ This provides a web interface to:
 
 See [**streamlit_app/README.md**](streamlit_app/README.md) for detailed instructions.
 
-### 5. Launching the Editor
+### 5. Launching the Canvas App (Recommended)
 
-The `editor_app` is a powerful web-based IDE for working with NormCode. It has its own set of dependencies and requires a separate setup process for its FastAPI backend and React frontend.
+The **Canvas App** is a modern visual debugger and execution environment for NormCode plans. Start it from the project root:
+
+```bash
+python launch_canvas.py
+```
+
+The launcher will automatically:
+- Check and install Python dependencies (FastAPI, uvicorn, etc.)
+- Check and install Node.js dependencies (React, Vite, etc.)
+- Start both backend (port 8000) and frontend (port 5173)
+
+**Options:**
+```bash
+python launch_canvas.py --prod       # Production mode (no auto-reload)
+python launch_canvas.py --install    # Force reinstall all dependencies
+python launch_canvas.py --skip-deps  # Skip dependency checks (faster startup)
+python launch_canvas.py --help       # Show all options
+```
+
+**Prerequisites:** Python 3.11+, Node.js 18+
+
+See [**canvas_app/README.md**](canvas_app/README.md) for detailed documentation.
+
+### 6. Launching the Legacy Editor
+
+The `editor_app` is the original web-based IDE for working with NormCode. It has its own set of dependencies and requires a separate setup process for its FastAPI backend and React frontend.
 
 Please see the [**Editor README**](editor_app/README.md) for detailed setup and launch instructions.
 
@@ -145,7 +170,13 @@ Please see the [**Editor README**](editor_app/README.md) for detailed setup and 
 The repository is organized into the following key directories:
 
 -   `infra/`: The core NormCode execution engine and its components.
--   `editor_app/`: The source code for the web-based IDE (frontend and backend).
+-   `canvas_app/`: **Modern visual debugger** - React Flow-based graph visualization and debugging.
+-   `editor_app/`: Legacy web-based IDE (frontend and backend).
 -   `translate_agent/`: The agent responsible for translating natural language into NormCode.
+-   `streamlit_app/`: Minimal Streamlit web interface for running orchestrations.
 -   `direct_infra_experiment/`: Contains research, experiments, and documentation related to the translation agent.
--   `documentation/`: Contains high-level documentation, including the main NormCode guide. 
+-   `documentation/`: Contains high-level documentation, including the main NormCode guide.
+
+**Quick Start Files (at project root):**
+-   `launch_canvas.py`: One-command launcher for the Canvas App
+-   `settings.yaml`: LLM API key configuration (create from `canvas_app/settings.yaml.example`) 

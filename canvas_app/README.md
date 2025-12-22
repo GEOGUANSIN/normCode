@@ -73,6 +73,7 @@ python launch.py --install    # Force reinstall all dependencies
 python launch.py --skip-deps  # Skip dependency checks (faster startup)
 python launch.py --backend-only   # Only start the backend server
 python launch.py --frontend-only  # Only start the frontend server
+python launch.py --kill       # Kill existing servers before starting (Windows)
 ```
 
 ### Manual Setup (Optional)

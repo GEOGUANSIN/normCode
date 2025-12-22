@@ -175,6 +175,52 @@ def check_port_available(port: int) -> bool:
         return True  # Assume available if we can't check
 
 
+def kill_process_on_port(port: int) -> bool:
+    """Kill any process using a specific port (Windows only)."""
+    if sys.platform != "win32":
+        return False
+    
+    try:
+        # Find PID using netstat
+        result = subprocess.run(
+            ["netstat", "-ano"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        pids_to_kill = set()
+        for line in result.stdout.splitlines():
+            if f":{port}" in line and "LISTENING" in line:
+                parts = line.split()
+                if parts:
+                    try:
+                        pid = int(parts[-1])
+                        if pid > 0:
+                            pids_to_kill.add(pid)
+                    except ValueError:
+                        pass
+        
+        if not pids_to_kill:
+            return True  # No process found, port is free
+        
+        # Kill each PID
+        for pid in pids_to_kill:
+            print(f"   Killing process {pid} on port {port}...")
+            subprocess.run(
+                ["taskkill", "/T", "/F", "/PID", str(pid)],
+                capture_output=True,
+                timeout=10
+            )
+        
+        # Give time for port to be released
+        time.sleep(1)
+        return check_port_available(port)
+    except Exception as e:
+        print(f"   Error killing process on port {port}: {e}")
+        return False
+
+
 def wait_for_backend(port: int = 8000, timeout: int = 15) -> bool:
     """Wait for backend to start responding."""
     start_time = time.time()
@@ -332,6 +378,7 @@ Examples:
   python launch.py --skip-deps  # Skip dependency checks
   python launch.py --backend-only   # Only start the backend
   python launch.py --frontend-only  # Only start the frontend
+  python launch.py --kill       # Kill existing servers before starting
         """
     )
     parser.add_argument("--prod", action="store_true", 
@@ -346,6 +393,8 @@ Examples:
                         help="Force reinstall all dependencies")
     parser.add_argument("--skip-deps", action="store_true", 
                         help="Skip dependency checking")
+    parser.add_argument("--kill", action="store_true", 
+                        help="Kill any existing servers on ports 8000/5173 before starting")
     args = parser.parse_args()
     
     # Dev mode is the default
@@ -372,12 +421,38 @@ Examples:
     try:
         print_header(f"Starting NormCode Canvas ({'DEV' if dev_mode else 'PROD'})")
         
+        # Kill existing servers if --kill flag is used
+        if args.kill:
+            print("\n🔪 Killing existing servers...")
+            if not args.frontend_only and not check_port_available(8000):
+                kill_process_on_port(8000)
+            if not args.backend_only and not check_port_available(5173):
+                kill_process_on_port(5173)
+            time.sleep(1)
+        
         # Check if port 8000 is already in use
         if not args.frontend_only:
             if not check_port_available(8000):
                 print("\n⚠ Port 8000 is already in use!")
-                print("   Another backend may be running. Kill it or use a different port.")
-                print("   You can check with: netstat -ano | findstr :8000")
+                print("   Another backend may be running.")
+                if sys.platform == "win32":
+                    print("   Use --kill flag to automatically kill existing servers:")
+                    print(f"   python {Path(__file__).name} --kill")
+                else:
+                    print("   Kill it manually or use a different port.")
+                    print("   You can check with: lsof -i :8000")
+                sys.exit(1)
+        
+        # Check if port 5173 is already in use
+        if not args.backend_only:
+            if not check_port_available(5173):
+                print("\n⚠ Port 5173 is already in use!")
+                print("   Another frontend may be running.")
+                if sys.platform == "win32":
+                    print("   Use --kill flag to automatically kill existing servers:")
+                    print(f"   python {Path(__file__).name} --kill")
+                else:
+                    print("   Kill it manually or use a different port.")
                 sys.exit(1)
         
         # Start backend
@@ -474,24 +549,35 @@ Examples:
     except KeyboardInterrupt:
         print("\n\n🛑 Shutting down...")
     finally:
-        # Terminate all processes
+        # Terminate all processes - use taskkill on Windows to kill process trees
         for name, p in processes:
             try:
-                print(f"   Stopping {name}...")
+                print(f"   Stopping {name} (PID {p.pid})...")
                 if sys.platform == "win32":
-                    p.terminate()
+                    # Use taskkill with /T to kill entire process tree
+                    # /T = kill child processes, /F = force
+                    subprocess.run(
+                        ["taskkill", "/T", "/F", "/PID", str(p.pid)],
+                        capture_output=True,
+                        timeout=10
+                    )
                 else:
                     os.killpg(os.getpgid(p.pid), signal.SIGTERM)
             except Exception as e:
                 print(f"   Error terminating {name}: {e}")
         
-        # Wait for processes to terminate
+        # Give processes a moment to terminate
+        time.sleep(1)
+        
+        # Double-check processes are dead
         for name, p in processes:
             try:
-                p.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                print(f"   Force killing {name}...")
-                p.kill()
+                if p.poll() is None:
+                    print(f"   Force killing {name}...")
+                    p.kill()
+                    p.wait(timeout=3)
+            except Exception:
+                pass
         
         print("\n✓ All servers stopped.")
 

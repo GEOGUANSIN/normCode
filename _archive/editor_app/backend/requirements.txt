@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pytest
+httpx
+openai
+python-dotenv
