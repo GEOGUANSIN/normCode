@@ -1,0 +1,97 @@
+<- result files
+    <= gather all phase outputs together
+    <- Phase 1: Confirmation of Instruction
+        <= collect phase 1 outputs
+        <- instruction block file
+            <= run instruction distillation with prompt template
+            <- instruction distillation prompt
+            <- input files
+                <= collect the original prompt and other input files
+                <- original prompt file
+                <- other input files
+                    <= request file locations from user
+                    <- location of related files prompt
+        <- initial context manifest and context store files
+            <= run context registration with prompt template
+            <- context registration prompt
+            <- input files
+        <- reviewed Phase 1 artifacts
+            <= request manual review with canvas interface
+            <- manual review prompt
+            <- instruction block file
+            <- initial context manifest and context store files
+    <- Phase 2: Deconstruction into NormCode Draft
+        <= collect phase 2 outputs
+        <- deconstruction draft file
+            <= run deconstruction with prompt template
+            <- deconstruction prompt
+            <- instruction block file
+        <- natural language translation file
+            <= run natural language translation with prompt template
+            <- translation prompt
+            <- deconstruction draft file
+        <- reviewed Phase 2 artifacts
+            <= request manual review with canvas interface
+            <- manual review prompt
+            <- deconstruction draft file
+            <- natural language translation file
+    <- Phase 3: Formalization
+        <= collect phase 3 outputs
+        <- formalized ncd file
+            <= run formalization with prompt template
+            <- formalization prompt
+            <- deconstruction draft file
+        <- formalized ncn companion file
+            <= run natural language translation with prompt template
+            <- translation prompt
+            <- formalized ncd file
+        <- reviewed Phase 3 artifacts
+            <= request manual review with canvas interface
+            <- manual review prompt
+            <- formalized ncd file
+            <- formalized ncn companion file
+    <- Phase 4: Post-Formalization and Contextualization
+        <= collect phase 4 outputs
+        <- enriched ncd file
+            <= run post-formalization with prompt template
+            <- post-formalization prompt
+            <- formalized ncd file
+            <- initial context manifest and context store files
+        <- context manifest file
+            <= run context distribution with prompt template
+            <- context distribution prompt
+            <- enriched ncd file
+            <- initial context manifest and context store files
+        <- prompt files
+            <= run prompt generation with prompt template
+            <- prompt generation prompt
+            <- context manifest file
+        <- reviewed Phase 4 artifacts
+            <= request manual review with canvas interface
+            <- manual review prompt
+            <- enriched ncd file
+            <- context manifest file
+            <- prompt files
+    <- Phase 5: Activation and Materialization
+        <= collect phase 5 outputs
+        <- concept repo json file
+            <= run activation to generate concept repo
+            <- activation prompt for concepts
+            <- enriched ncd file
+        <- inference repo json file
+            <= run activation to generate inference repo
+            <- activation prompt for inferences
+            <- enriched ncd file
+            <- context manifest file
+        <- executable script file
+            <= run script generation with prompt template
+            <- script generation prompt
+            <- concept repo json file
+            <- inference repo json file
+        <- reviewed Phase 5 artifacts
+            <= request manual review with canvas interface
+            <- manual review prompt
+            <- concept repo json file
+            <- inference repo json file
+            <- executable script file
+

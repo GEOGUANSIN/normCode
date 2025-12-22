@@ -12,7 +12,6 @@ import {
   ChevronDown, 
   ChevronRight,
   Folder,
-  Cpu,
   RefreshCw,
   Search,
   File,
@@ -141,7 +140,7 @@ export function ProjectPanel() {
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-2xl w-full mx-4 border border-slate-200">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Cpu className="w-10 h-10 text-purple-500" />
+              <img src="/psylens-logo.png" alt="Psylens" className="w-10 h-10" />
               <h1 className="text-3xl font-bold text-slate-800">NormCode Canvas</h1>
             </div>
             <p className="text-slate-500">Visual execution and debugging for NormCode plans</p>

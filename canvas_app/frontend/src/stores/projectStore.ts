@@ -61,6 +61,7 @@ interface ProjectState {
   closeProject: () => Promise<void>;
   loadProjectRepositories: () => Promise<boolean>;
   removeProjectFromRegistry: (projectId: string) => Promise<void>;
+  updateRepositories: (paths: { concepts?: string; inferences?: string; inputs?: string }) => Promise<boolean>;
   
   // Reset
   reset: () => void;
@@ -308,10 +309,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
   
-  // Load repositories for current project
+  // Update repository paths
+  updateRepositories: async (paths: { concepts?: string; inferences?: string; inputs?: string }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await projectApi.updateRepositories(paths);
+      set({
+        currentProject: response.config,
+        repositoriesExist: response.repositories_exist,
+        isLoading: false,
+      });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update repository paths';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+  
+  // Load repositories for current project (also serves as reload)
   loadProjectRepositories: async () => {
     set({ isLoading: true, error: null });
     try {
+      // Reset execution state before loading (clean slate for reload)
+      const executionStore = useExecutionStore.getState();
+      executionStore.reset();
+      
       const result = await projectApi.loadRepositories();
       
       // Fetch graph data after loading repositories
@@ -321,7 +344,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       useGraphStore.getState().setGraphData(graphData);
       
       // Update execution store with initial counts
-      const executionStore = useExecutionStore.getState();
       executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
       
       // Fetch and sync breakpoints from backend

@@ -282,6 +282,12 @@ export const projectApi = {
       method: 'PUT',
       body: JSON.stringify(settings),
     }),
+  
+  updateRepositories: (paths: { concepts?: string; inferences?: string; inputs?: string }): Promise<ProjectResponse> =>
+    fetchJson(`${API_BASE}/project/repositories`, {
+      method: 'PUT',
+      body: JSON.stringify(paths),
+    }),
 };
 
 // Agent endpoints

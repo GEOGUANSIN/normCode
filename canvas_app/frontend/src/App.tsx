@@ -18,6 +18,8 @@ import {
   GitGraph,
   FileCode,
   Bot,
+  AlertTriangle,
+  Save,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -37,6 +39,121 @@ import { useProjectStore } from './stores/projectStore';
 // View modes for the main content area
 type ViewMode = 'canvas' | 'editor';
 
+// Modal for editing repository paths
+interface RepositoryPathsModalProps {
+  currentPaths: { concepts: string; inferences: string; inputs?: string };
+  onSave: (paths: { concepts: string; inferences: string; inputs?: string }) => Promise<void>;
+  onClose: () => void;
+}
+
+function RepositoryPathsModal({ currentPaths, onSave, onClose }: RepositoryPathsModalProps) {
+  const [concepts, setConceptsPath] = useState(currentPaths.concepts);
+  const [inferences, setInferencesPath] = useState(currentPaths.inferences);
+  const [inputs, setInputsPath] = useState(currentPaths.inputs || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave({
+      concepts,
+      inferences,
+      inputs: inputs || undefined,
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div 
+        className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <h2 className="text-lg font-semibold text-slate-800">Edit Repository Paths</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-slate-600">
+            Update the paths to your repository files. Paths are relative to the project directory.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Concepts File <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={concepts}
+              onChange={(e) => setConceptsPath(e.target.value)}
+              placeholder="e.g., repos/concepts.json"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Inferences File <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={inferences}
+              onChange={(e) => setInferencesPath(e.target.value)}
+              placeholder="e.g., repos/inferences.json"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Inputs File <span className="text-slate-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={inputs}
+              onChange={(e) => setInputsPath(e.target.value)}
+              placeholder="e.g., repos/inputs.json"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!concepts || !inferences || saving}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+          >
+            {saving ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save Paths
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [showLoadPanel, setShowLoadPanel] = useState(false);
   const [showDetailPanel, setShowDetailPanel] = useState(true);
@@ -46,6 +163,7 @@ function App() {
   const [showAgentPanel, setShowAgentPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
+  const [showRepoPathsModal, setShowRepoPathsModal] = useState(false);
   
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
@@ -63,6 +181,7 @@ function App() {
     loadProjectRepositories,
     closeProject,
     setProjectPanelOpen,
+    updateRepositories,
   } = useProjectStore();
 
   // Fetch project state on startup
@@ -83,7 +202,7 @@ function App() {
         {/* Left side: Logo + Project Info */}
         <div className="flex items-center gap-4">
           {/* App Logo */}
-          <img src="/logo.png" alt="NormCode Canvas" className="w-6 h-6 opacity-90" style={{ filter: 'brightness(1.1)' }} />
+          <img src="/psylens-logo.png" alt="NormCode Canvas" className="w-6 h-6" />
           
           {/* Project Info */}
           <div className="flex items-center gap-2">
@@ -94,6 +213,14 @@ function App() {
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                   Loaded
                 </span>
+                <button
+                  onClick={loadProjectRepositories}
+                  disabled={projectLoading}
+                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                  title="Reload repositories (refresh from source files)"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${projectLoading ? 'animate-spin' : ''}`} />
+                </button>
                 <button
                   onClick={() => setShowLoadPanel(true)}
                   className="text-xs text-slate-400 hover:text-slate-600 hover:underline transition-colors"
@@ -116,9 +243,14 @@ function App() {
                 Load
               </button>
             ) : (
-              <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+              <button
+                onClick={() => setShowRepoPathsModal(true)}
+                className="px-2 py-0.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 text-xs rounded-full flex items-center gap-1 transition-colors cursor-pointer"
+                title="Click to edit repository paths"
+              >
+                <AlertTriangle className="w-3 h-3" />
                 Missing files
-              </span>
+              </button>
             )}
           </div>
           
@@ -342,6 +474,20 @@ function App() {
 
       {/* Project Panel Modal */}
       <ProjectPanel />
+
+      {/* Repository Paths Modal */}
+      {showRepoPathsModal && (
+        <RepositoryPathsModal
+          currentPaths={currentProject.repositories}
+          onSave={async (paths) => {
+            const success = await updateRepositories(paths);
+            if (success) {
+              setShowRepoPathsModal(false);
+            }
+          }}
+          onClose={() => setShowRepoPathsModal(false)}
+        />
+      )}
 
       {/* Status Bar */}
       <footer className="bg-white border-t border-slate-200 px-4 py-1 flex items-center justify-between text-xs text-slate-500">
