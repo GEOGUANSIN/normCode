@@ -1586,11 +1586,10 @@ class ExecutionController:
             axis_names = None
             if hasattr(concept, 'reference') and concept.reference is not None:
                 if hasattr(concept.reference, 'axes') and concept.reference.axes:
-                    axis_names = [ax.name if hasattr(ax, 'name') else str(ax) for ax in concept.reference.axes]
+                    axis_names = concept.reference.axes.copy() if isinstance(concept.reference.axes, list) else list(concept.reference.axes)
             
-            # Create new reference with the override value
-            from infra._core._reference import Reference
-            concept.reference = Reference(new_value, axis_names=axis_names)
+            # Use the concept_repo.add_reference() method which handles Reference creation properly
+            self.concept_repo.add_reference(concept_name, new_value, axis_names=axis_names)
             
             # Find dependent inferences (nodes that use this concept as input)
             dependents = self._find_dependents(concept_name)
