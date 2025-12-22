@@ -5,13 +5,16 @@
  */
 
 import { useEffect, useState } from 'react';
-import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Workflow, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Workflow, Maximize2, Minimize2, Edit3, RotateCcw, Settings } from 'lucide-react';
 import { useSelectionStore } from '../../stores/selectionStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi, ReferenceData } from '../../services/api';
 import { TensorInspector } from './TensorInspector';
 import { StepPipeline } from './StepPipeline';
+import { ValueOverrideModal } from './ValueOverrideModal';
+import { FunctionModifyModal } from './FunctionModifyModal';
+import { RerunConfirmModal } from './RerunConfirmModal';
 
 interface DetailPanelProps {
   isFullscreen?: boolean;
@@ -39,6 +42,11 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
   
   // Run-to state
   const [isRunningTo, setIsRunningTo] = useState(false);
+  
+  // Phase 4: Modification modal states
+  const [showValueOverride, setShowValueOverride] = useState(false);
+  const [showFunctionModify, setShowFunctionModify] = useState(false);
+  const [showRerunConfirm, setShowRerunConfirm] = useState(false);
 
   // Navigate to a node - selects it and highlights its branch
   const navigateToNode = (nodeId: string) => {
@@ -202,10 +210,26 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     }
   };
 
-  const categoryLabels: Record<string, string> = {
-    'semantic-function': 'Semantic Function',
-    'semantic-value': 'Semantic Value',
-    'syntactic-function': 'Syntactic Function',
+  // Phase 4: Value Override handler
+  const handleValueOverrideApply = (success: boolean) => {
+    if (success) {
+      // Refresh reference data after override
+      refreshReference();
+    }
+  };
+
+  // Phase 4: Function Modify handler
+  const handleFunctionModifyApply = (success: boolean) => {
+    if (success) {
+      // Could trigger a graph refresh if needed
+    }
+  };
+
+  // Phase 4: Rerun handler
+  const handleRerunConfirm = (success: boolean) => {
+    if (success) {
+      // Nodes will be updated via WebSocket events
+    }
   };
 
   const statusColors: Record<string, string> = {
@@ -310,7 +334,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
               
               {/* Debugging Buttons - inline */}
               {node.flow_index && (
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2 mt-3 flex-wrap">
                   <button
                     onClick={handleToggleBreakpoint}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-colors ${
@@ -330,6 +354,42 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                     >
                       <Play size={8} className={isRunningTo ? 'animate-pulse' : ''} />
                       {isRunningTo ? '...' : 'Run To'}
+                    </button>
+                  )}
+                  
+                  {/* Phase 4: Value Override button (for value nodes with reference) */}
+                  {node.node_type === 'value' && status !== 'running' && (
+                    <button
+                      onClick={() => setShowValueOverride(true)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                      title="Override this node's value"
+                    >
+                      <Edit3 size={8} />
+                      Override
+                    </button>
+                  )}
+                  
+                  {/* Phase 4: Function Modify button (for function nodes) */}
+                  {node.node_type === 'function' && status !== 'running' && (
+                    <button
+                      onClick={() => setShowFunctionModify(true)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                      title="Modify function parameters"
+                    >
+                      <Settings size={8} />
+                      Modify
+                    </button>
+                  )}
+                  
+                  {/* Phase 4: Re-run From button (for completed nodes) */}
+                  {status !== 'running' && nodeStatus === 'completed' && (
+                    <button
+                      onClick={() => setShowRerunConfirm(true)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
+                      title="Reset and re-run from this node"
+                    >
+                      <RotateCcw size={8} />
+                      Re-run
                     </button>
                   )}
                 </div>
@@ -718,6 +778,40 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
           )}
         </div>
       </div>
+      
+      {/* Phase 4: Value Override Modal */}
+      {showValueOverride && node && (
+        <ValueOverrideModal
+          conceptName={node.data.concept_name || node.label}
+          currentValue={referenceData?.data}
+          axes={referenceData?.axes || []}
+          shape={referenceData?.shape || []}
+          isGround={node.data.is_ground || false}
+          onClose={() => setShowValueOverride(false)}
+          onApply={handleValueOverrideApply}
+        />
+      )}
+      
+      {/* Phase 4: Function Modify Modal */}
+      {showFunctionModify && node && node.node_type === 'function' && (
+        <FunctionModifyModal
+          flowIndex={node.flow_index || ''}
+          conceptName={node.data.concept_name || node.label}
+          currentWI={node.data.working_interpretation || null}
+          onClose={() => setShowFunctionModify(false)}
+          onApply={handleFunctionModifyApply}
+        />
+      )}
+      
+      {/* Phase 4: Rerun Confirm Modal */}
+      {showRerunConfirm && node && (
+        <RerunConfirmModal
+          flowIndex={node.flow_index || ''}
+          conceptName={node.data.concept_name || node.label}
+          onClose={() => setShowRerunConfirm(false)}
+          onConfirm={handleRerunConfirm}
+        />
+      )}
     </div>
   );
 }

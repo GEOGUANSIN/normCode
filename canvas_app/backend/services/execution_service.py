@@ -1546,6 +1546,322 @@ class ExecutionController:
             "message": f"Resumed from checkpoint - {self.completed_count}/{self.total_count} nodes already complete"
         }
     
+    # =========================================================================
+    # Value Override Methods (Phase 4.1)
+    # =========================================================================
+    
+    async def override_value(
+        self,
+        concept_name: str,
+        new_value: Any,
+        rerun_dependents: bool = False
+    ) -> Dict[str, Any]:
+        """Override a concept's reference value.
+        
+        This allows modifying the value at any node (ground or computed) and
+        optionally triggering re-execution of dependent nodes.
+        
+        Args:
+            concept_name: The name of the concept to override
+            new_value: The new value to set (can be any JSON-serializable value)
+            rerun_dependents: If True, mark dependents as stale and start execution
+            
+        Returns:
+            Dict with success status, overridden concept, and stale nodes list
+        """
+        if self.concept_repo is None:
+            raise RuntimeError("No repositories loaded. Call load_repositories first.")
+        
+        try:
+            # Get concept from repo
+            concept_entry = self.concept_repo.get_concept(concept_name)
+            if concept_entry is None:
+                raise ValueError(f"Concept '{concept_name}' not found in repository")
+            
+            concept = concept_entry.concept if hasattr(concept_entry, 'concept') else None
+            if concept is None:
+                raise ValueError(f"Could not access concept object for '{concept_name}'")
+            
+            # Get axis names from existing reference if present
+            axis_names = None
+            if hasattr(concept, 'reference') and concept.reference is not None:
+                if hasattr(concept.reference, 'axes') and concept.reference.axes:
+                    axis_names = [ax.name if hasattr(ax, 'name') else str(ax) for ax in concept.reference.axes]
+            
+            # Create new reference with the override value
+            from infra._core._reference import Reference
+            concept.reference = Reference(new_value, axis_names=axis_names)
+            
+            # Find dependent inferences (nodes that use this concept as input)
+            dependents = self._find_dependents(concept_name)
+            
+            # Mark dependents as stale (pending)
+            stale_nodes = []
+            for flow_index in dependents:
+                if flow_index in self.node_statuses:
+                    self.node_statuses[flow_index] = NodeStatus.PENDING
+                    stale_nodes.append(flow_index)
+            
+            self._add_log("info", "", f"Overridden value for '{concept_name}', {len(stale_nodes)} nodes marked stale")
+            
+            # Emit override event
+            await self._emit("value:overridden", {
+                "concept_name": concept_name,
+                "stale_nodes": stale_nodes,
+            })
+            
+            if rerun_dependents and stale_nodes:
+                # Start execution to process stale nodes
+                await self.start()
+            
+            return {
+                "success": True,
+                "overridden": concept_name,
+                "stale_nodes": stale_nodes,
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to override value for {concept_name}: {e}")
+            raise
+    
+    def _find_dependents(self, concept_name: str) -> List[str]:
+        """Find all flow_indices of inferences that depend on a given concept.
+        
+        This finds all inferences that use the concept as:
+        - concept_to_infer (the target concept)
+        - function_concept
+        - value_concepts
+        - context_concepts
+        """
+        if self.inference_repo is None:
+            return []
+        
+        dependents = []
+        
+        for inf_entry in self.inference_repo.inferences:
+            flow_index = inf_entry.flow_info.get('flow_index', '')
+            if not flow_index:
+                continue
+            
+            # Check if this inference uses the concept
+            is_dependent = False
+            
+            # Check value concepts
+            if hasattr(inf_entry, 'value_concepts') and inf_entry.value_concepts:
+                for vc in inf_entry.value_concepts:
+                    vc_name = vc.concept_name if hasattr(vc, 'concept_name') else str(vc)
+                    if vc_name == concept_name:
+                        is_dependent = True
+                        break
+            
+            # Check context concepts
+            if not is_dependent and hasattr(inf_entry, 'context_concepts') and inf_entry.context_concepts:
+                for cc in inf_entry.context_concepts:
+                    cc_name = cc.concept_name if hasattr(cc, 'concept_name') else str(cc)
+                    if cc_name == concept_name:
+                        is_dependent = True
+                        break
+            
+            if is_dependent:
+                dependents.append(flow_index)
+        
+        return dependents
+    
+    def _find_descendants(self, flow_index: str) -> List[str]:
+        """Find all nodes that are downstream from a given flow_index.
+        
+        This traverses the inference graph to find all nodes that directly or
+        indirectly depend on the specified node.
+        """
+        if self.inference_repo is None or self.concept_repo is None:
+            return []
+        
+        # Build a mapping from flow_index to concept_name
+        flow_to_concept: Dict[str, str] = {}
+        for inf_entry in self.inference_repo.inferences:
+            fi = inf_entry.flow_info.get('flow_index', '')
+            if fi and hasattr(inf_entry, 'concept_to_infer'):
+                flow_to_concept[fi] = inf_entry.concept_to_infer.concept_name
+        
+        # Get the concept name for the starting flow_index
+        start_concept = flow_to_concept.get(flow_index)
+        if not start_concept:
+            return []
+        
+        # BFS to find all descendants
+        descendants = []
+        visited = set()
+        queue = [start_concept]
+        
+        while queue:
+            current_concept = queue.pop(0)
+            if current_concept in visited:
+                continue
+            visited.add(current_concept)
+            
+            # Find inferences that use this concept
+            dependents = self._find_dependents(current_concept)
+            for dep_fi in dependents:
+                if dep_fi not in visited and dep_fi != flow_index:
+                    descendants.append(dep_fi)
+                    # Get the concept for this inference and add to queue
+                    dep_concept = flow_to_concept.get(dep_fi)
+                    if dep_concept and dep_concept not in visited:
+                        queue.append(dep_concept)
+        
+        return descendants
+    
+    # =========================================================================
+    # Selective Re-run Methods (Phase 4.3)
+    # =========================================================================
+    
+    async def rerun_from(self, flow_index: str) -> Dict[str, Any]:
+        """Reset and re-execute from a specific node.
+        
+        This resets the target node and all its descendants, then starts
+        execution from the beginning (which will skip already-completed nodes).
+        
+        Args:
+            flow_index: The flow_index to re-run from
+            
+        Returns:
+            Dict with success status and reset node count
+        """
+        if self.orchestrator is None:
+            raise RuntimeError("No repositories loaded. Call load_repositories first.")
+        
+        # Validate the flow_index exists
+        if flow_index not in self.node_statuses:
+            raise ValueError(f"Unknown flow_index: {flow_index}")
+        
+        # Stop any running execution first
+        if self.status in (ExecutionStatus.RUNNING, ExecutionStatus.STEPPING):
+            await self.stop()
+        
+        # Find all descendants
+        descendants = self._find_descendants(flow_index)
+        nodes_to_reset = [flow_index] + descendants
+        
+        self._add_log("info", flow_index, f"Re-running from {flow_index}, resetting {len(nodes_to_reset)} nodes")
+        
+        # Reset node statuses
+        for fi in nodes_to_reset:
+            if fi in self.node_statuses:
+                self.node_statuses[fi] = NodeStatus.PENDING
+                self.completed_count = max(0, self.completed_count - 1)
+        
+        # Clear computed references for reset nodes
+        for fi in nodes_to_reset:
+            try:
+                # Find the concept for this flow_index
+                for inf_entry in self.inference_repo.inferences:
+                    if inf_entry.flow_info.get('flow_index') == fi:
+                        concept_name = inf_entry.concept_to_infer.concept_name
+                        concept_entry = self.concept_repo.get_concept(concept_name)
+                        if concept_entry:
+                            concept = concept_entry.concept if hasattr(concept_entry, 'concept') else None
+                            if concept and not getattr(concept, 'is_ground_concept', False):
+                                # Clear the reference for non-ground concepts
+                                concept.reference = None
+                        break
+            except Exception as e:
+                logger.warning(f"Could not clear reference for {fi}: {e}")
+        
+        # Reset blackboard statuses
+        try:
+            for fi in nodes_to_reset:
+                if self.orchestrator.blackboard:
+                    # Mark as pending in blackboard
+                    self.orchestrator.blackboard.set_item_status(fi, 'pending')
+        except Exception as e:
+            logger.warning(f"Could not reset blackboard for some nodes: {e}")
+        
+        # Emit partial reset event
+        await self._emit("execution:partial_reset", {
+            "reset_nodes": nodes_to_reset,
+            "from_flow_index": flow_index,
+        })
+        
+        # Start execution
+        await self.start()
+        
+        return {
+            "success": True,
+            "from_flow_index": flow_index,
+            "reset_count": len(nodes_to_reset),
+            "reset_nodes": nodes_to_reset,
+        }
+    
+    # =========================================================================
+    # Function Modification Methods (Phase 4.2)
+    # =========================================================================
+    
+    async def modify_function(
+        self,
+        flow_index: str,
+        modifications: Dict[str, Any],
+        retry: bool = False
+    ) -> Dict[str, Any]:
+        """Modify a function node's working interpretation.
+        
+        This allows changing the paradigm, prompt location, output type, etc.
+        for a function node before re-execution.
+        
+        Args:
+            flow_index: The flow_index of the function node to modify
+            modifications: Dict of fields to update (paradigm, prompt_location, etc.)
+            retry: If True, immediately run to this node
+            
+        Returns:
+            Dict with success status
+        """
+        if self.inference_repo is None:
+            raise RuntimeError("No repositories loaded. Call load_repositories first.")
+        
+        # Find the inference
+        target_inference = None
+        for inf_entry in self.inference_repo.inferences:
+            if inf_entry.flow_info.get('flow_index') == flow_index:
+                target_inference = inf_entry
+                break
+        
+        if target_inference is None:
+            raise ValueError(f"Inference not found for flow_index: {flow_index}")
+        
+        # Update working interpretation
+        wi = getattr(target_inference, 'working_interpretation', {})
+        if not isinstance(wi, dict):
+            wi = {}
+        
+        modified_fields = []
+        for key, value in modifications.items():
+            if value is not None:
+                wi[key] = value
+                modified_fields.append(key)
+        
+        target_inference.working_interpretation = wi
+        
+        # Reset node status to pending
+        if flow_index in self.node_statuses:
+            self.node_statuses[flow_index] = NodeStatus.PENDING
+        
+        self._add_log("info", flow_index, f"Modified working interpretation: {', '.join(modified_fields)}")
+        
+        # Emit modification event
+        await self._emit("function:modified", {
+            "flow_index": flow_index,
+            "modified_fields": modified_fields,
+        })
+        
+        if retry:
+            await self.run_to(flow_index)
+        
+        return {
+            "success": True,
+            "flow_index": flow_index,
+            "modified_fields": modified_fields,
+        }
+    
     async def fork_from_checkpoint(
         self,
         concepts_path: str,

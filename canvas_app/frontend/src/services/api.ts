@@ -138,6 +138,28 @@ export const executionApi = {
   
   getStepProgress: (flowIndex?: string): Promise<StepProgressResponse> =>
     fetchJson(`${API_BASE}/execution/step-progress${flowIndex ? `?flow_index=${encodeURIComponent(flowIndex)}` : ''}`),
+  
+  // Phase 4: Modification & Re-run endpoints
+  overrideValue: (conceptName: string, newValue: unknown, rerunDependents: boolean = false): Promise<ValueOverrideResponse> =>
+    fetchJson(`${API_BASE}/execution/override/${encodeURIComponent(conceptName)}`, {
+      method: 'POST',
+      body: JSON.stringify({ new_value: newValue, rerun_dependents: rerunDependents }),
+    }),
+  
+  rerunFrom: (flowIndex: string): Promise<RerunFromResponse> =>
+    fetchJson(`${API_BASE}/execution/rerun-from/${encodeURIComponent(flowIndex)}`, { method: 'POST' }),
+  
+  modifyFunction: (flowIndex: string, modifications: FunctionModifyRequest): Promise<FunctionModifyResponse> =>
+    fetchJson(`${API_BASE}/execution/modify-function/${encodeURIComponent(flowIndex)}`, {
+      method: 'POST',
+      body: JSON.stringify(modifications),
+    }),
+  
+  getDependents: (conceptName: string): Promise<DependentsResponse> =>
+    fetchJson(`${API_BASE}/execution/dependents/${encodeURIComponent(conceptName)}`),
+  
+  getDescendants: (flowIndex: string): Promise<DescendantsResponse> =>
+    fetchJson(`${API_BASE}/execution/descendants/${encodeURIComponent(flowIndex)}`),
 };
 
 // Step progress response type
@@ -158,6 +180,45 @@ export interface ReferenceData {
   data: unknown;
   axes: string[];
   shape: number[];
+}
+
+// Phase 4: Modification response types
+export interface ValueOverrideResponse {
+  success: boolean;
+  overridden: string;
+  stale_nodes: string[];
+}
+
+export interface RerunFromResponse {
+  success: boolean;
+  from_flow_index: string;
+  reset_count: number;
+  reset_nodes: string[];
+}
+
+export interface FunctionModifyRequest {
+  paradigm?: string;
+  prompt_location?: string;
+  output_type?: string;
+  retry?: boolean;
+}
+
+export interface FunctionModifyResponse {
+  success: boolean;
+  flow_index: string;
+  modified_fields: string[];
+}
+
+export interface DependentsResponse {
+  concept_name: string;
+  dependents: string[];
+  count: number;
+}
+
+export interface DescendantsResponse {
+  flow_index: string;
+  descendants: string[];
+  count: number;
 }
 
 // Project endpoints

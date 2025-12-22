@@ -296,6 +296,46 @@ export function useWebSocket() {
           }
           break;
 
+        // Phase 4: Modification events
+        case 'value:overridden':
+          if (data.concept_name && data.stale_nodes) {
+            addLog({
+              flowIndex: '',
+              level: 'info',
+              message: `Value overridden: ${data.concept_name}. ${(data.stale_nodes as string[]).length} nodes marked stale.`,
+            });
+            // Mark stale nodes as pending
+            for (const fi of (data.stale_nodes as string[])) {
+              setNodeStatus(fi, 'pending');
+            }
+          }
+          break;
+
+        case 'function:modified':
+          if (data.flow_index && data.modified_fields) {
+            addLog({
+              flowIndex: data.flow_index as string,
+              level: 'info',
+              message: `Function modified: ${(data.modified_fields as string[]).join(', ')}`,
+            });
+            setNodeStatus(data.flow_index as string, 'pending');
+          }
+          break;
+
+        case 'execution:partial_reset':
+          if (data.reset_nodes) {
+            addLog({
+              flowIndex: (data.from_flow_index as string) || '',
+              level: 'info',
+              message: `Partial reset: ${(data.reset_nodes as string[]).length} nodes reset from ${data.from_flow_index}`,
+            });
+            // Mark reset nodes as pending
+            for (const fi of (data.reset_nodes as string[])) {
+              setNodeStatus(fi, 'pending');
+            }
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }

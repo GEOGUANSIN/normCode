@@ -11,7 +11,7 @@
 | **Phase 1**: Foundation (Graph Display) | ✅ Complete | 100% |
 | **Phase 2**: Execution Integration | ✅ Complete | 100% |
 | **Phase 3**: Debugging Features | ✅ Complete | 100% |
-| **Phase 4**: Modification & Re-run | 🔄 Partial | ~30% |
+| **Phase 4**: Modification & Re-run | ✅ Complete | 100% |
 | **Phase 5**: Polish & Advanced | ❌ Not Started | 0% |
 
 ### What's Complete
@@ -27,18 +27,19 @@
 - ✅ "Run to" feature
 - ✅ Fullscreen detail panel
 - ✅ Natural name display
+- ✅ Value override capability
+- ✅ Function modification dialog
+- ✅ Selective re-run from any node
+- ✅ Checkpoint resume/fork
 
 ### What's Remaining
 
-- ❌ Value override capability
-- ❌ Function modification dialog
-- ❌ Selective re-run from any node
 - ❌ Run comparison/diff view
-- 🔄 Checkpoint resume/fork (partially implemented)
 - ❌ Keyboard shortcuts
 - ❌ Export/import functionality
 - ❌ Performance optimization for 500+ nodes
 - ❌ Watch expressions
+- ❌ Node search
 
 ---
 

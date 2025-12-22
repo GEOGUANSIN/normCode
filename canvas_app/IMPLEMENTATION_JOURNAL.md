@@ -2,7 +2,152 @@
 
 **Project Start**: December 18, 2024  
 **Current Phase**: Phase 4 - Modification & Re-run  
-**Status**: ✅ Phase 3 Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 🔄 In Progress)
+**Status**: ✅ Phase 4 Core Features Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Core)
+
+---
+
+## December 22, 2024 - Phase 4: Modification & Re-run Features
+
+### What Was Implemented
+
+**Value Override Feature (4.1)**
+Allow users to inject or modify values at any ground or computed node.
+
+- [x] **Backend `override_value()` method**: ExecutionController method that:
+  - Updates concept reference with new value
+  - Finds all dependent inferences using `_find_dependents()`
+  - Marks dependent nodes as stale (pending)
+  - Optionally triggers re-execution of stale nodes
+  - Emits `value:overridden` WebSocket event
+- [x] **POST `/execution/override/{concept_name}` endpoint**: API endpoint for value override
+- [x] **`ValueOverrideModal` component**: Full-featured modal with:
+  - JSON editor for value input with validation
+  - Display of current value, axes, and shape
+  - Preview of dependent nodes that will be affected
+  - "Re-run dependents" checkbox option
+  - Success/error feedback
+- [x] **"Override" button** in DetailPanel for value nodes
+
+**Selective Re-run Feature (4.3)**
+Reset and re-execute from any node in the graph.
+
+- [x] **Backend `rerun_from()` method**: ExecutionController method that:
+  - Finds all downstream nodes using `_find_descendants()` (BFS traversal)
+  - Resets node statuses to pending
+  - Clears computed references for non-ground concepts
+  - Resets blackboard statuses
+  - Emits `execution:partial_reset` WebSocket event
+  - Starts execution automatically
+- [x] **POST `/execution/rerun-from/{flow_index}` endpoint**: API endpoint for re-run
+- [x] **`RerunConfirmModal` component**: Confirmation modal with:
+  - Preview of nodes that will be reset
+  - Target node display
+  - List of downstream descendants
+  - Warning about scope of reset
+- [x] **"Re-run" button** in DetailPanel for completed nodes
+
+**Function Modification Feature (4.2)**
+Modify working interpretation and retry function nodes.
+
+- [x] **Backend `modify_function()` method**: ExecutionController method that:
+  - Updates inference's working interpretation (paradigm, prompt_location, output_type)
+  - Resets node status to pending
+  - Optionally runs to the modified node
+  - Emits `function:modified` WebSocket event
+- [x] **POST `/execution/modify-function/{flow_index}` endpoint**: API endpoint for modification
+- [x] **`FunctionModifyModal` component**: Editor modal with:
+  - Paradigm name input
+  - Prompt location input
+  - Output type input
+  - Read-only value order display
+  - "Run to this node" checkbox option
+- [x] **"Modify" button** in DetailPanel for function nodes
+
+**Helper API Endpoints**
+- [x] **GET `/execution/dependents/{concept_name}`**: Preview nodes affected by value override
+- [x] **GET `/execution/descendants/{flow_index}`**: Preview nodes affected by re-run
+
+**WebSocket Event Handlers**
+- [x] `value:overridden`: Updates stale nodes to pending status
+- [x] `function:modified`: Updates node to pending status
+- [x] `execution:partial_reset`: Updates all reset nodes to pending status
+
+### Files Created
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/ValueOverrideModal.tsx` - Value override modal
+- `canvas_app/frontend/src/components/panels/FunctionModifyModal.tsx` - Function modify modal
+- `canvas_app/frontend/src/components/panels/RerunConfirmModal.tsx` - Re-run confirmation modal
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `override_value()` method
+  - Added `rerun_from()` method
+  - Added `modify_function()` method
+  - Added `_find_dependents()` helper
+  - Added `_find_descendants()` helper
+- `canvas_app/backend/routers/execution_router.py`:
+  - Added `POST /execution/override/{concept_name}` endpoint
+  - Added `POST /execution/rerun-from/{flow_index}` endpoint
+  - Added `POST /execution/modify-function/{flow_index}` endpoint
+  - Added `GET /execution/dependents/{concept_name}` endpoint
+  - Added `GET /execution/descendants/{flow_index}` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `overrideValue()` method
+  - Added `rerunFrom()` method
+  - Added `modifyFunction()` method
+  - Added `getDependents()` method
+  - Added `getDescendants()` method
+  - Added response types for Phase 4 endpoints
+- `canvas_app/frontend/src/components/panels/DetailPanel.tsx`:
+  - Added "Override" button for value nodes
+  - Added "Modify" button for function nodes
+  - Added "Re-run" button for completed nodes
+  - Integrated modal components
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`:
+  - Added handlers for `value:overridden`, `function:modified`, `execution:partial_reset` events
+
+### API Endpoints Summary
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/execution/override/{concept_name}` | Override a concept's value |
+| POST | `/execution/rerun-from/{flow_index}` | Reset and re-run from a node |
+| POST | `/execution/modify-function/{flow_index}` | Modify function working interpretation |
+| GET | `/execution/dependents/{concept_name}` | Get dependent nodes |
+| GET | `/execution/descendants/{flow_index}` | Get downstream nodes |
+
+### UI Flow
+
+**Value Override**:
+```
+1. Select a value node
+2. Click "Override" button
+3. Edit JSON value in modal
+4. (Optional) Check "Re-run dependents"
+5. Click "Apply" → Value updated, dependents marked stale
+```
+
+**Selective Re-run**:
+```
+1. Select a completed node
+2. Click "Re-run" button
+3. Review affected nodes in confirmation modal
+4. Click "Reset & Re-run" → Nodes reset, execution starts
+```
+
+**Function Modification**:
+```
+1. Select a function node
+2. Click "Modify" button
+3. Edit paradigm/prompt/output_type
+4. (Optional) Check "Run to this node"
+5. Click "Apply" → Working interpretation updated
+```
 
 ---
 
@@ -1696,14 +1841,22 @@ API endpoints verified:
 | **Fullscreen detail panel** | ✅ Working | Expand node details to fullscreen with two-column layout |
 | **Collapsible panel sections** | ✅ Working | Compact UI with expand/collapse for each section |
 | **Clickable connections** | ✅ Working | Navigate to connected nodes with branch highlighting |
+| **Value override** | ✅ Working | Override values at any node with re-run option |
+| **Function modification** | ✅ Working | Modify paradigm, prompt, output_type for functions |
+| **Selective re-run** | ✅ Working | Reset and re-execute from any completed node |
 
 ### What's Not Yet Working
 
 | Feature | Status | Phase |
-| Value override | ❌ Not started | Phase 4 |
-| Function modification | ❌ Not started | Phase 4 |
-| Selective re-run | ❌ Not started | Phase 4 |
-| Run comparison | ❌ Not started | Phase 4 |
+|---------|--------|-------|
+| Value override | ✅ Complete | Phase 4 |
+| Function modification | ✅ Complete | Phase 4 |
+| Selective re-run | ✅ Complete | Phase 4 |
+| Run comparison | ❌ Not started | Phase 5 |
+| Keyboard shortcuts | ❌ Not started | Phase 5 |
+| Export/import | ❌ Not started | Phase 5 |
+| Performance optimization | ❌ Not started | Phase 5 |
+| Watch expressions | ❌ Not started | Phase 5 |
 
 ---
 

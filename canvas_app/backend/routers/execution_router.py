@@ -1,7 +1,7 @@
 """Execution control endpoints."""
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any, List
 
 from services.execution_service import execution_controller
 from services.project_service import project_service
@@ -266,3 +266,159 @@ async def get_step_progress(flow_index: Optional[str] = Query(default=None)):
             "completed_steps": [],
         }
     return progress
+
+
+# =============================================================================
+# Phase 4: Modification & Re-run Endpoints
+# =============================================================================
+
+class ValueOverrideRequest(BaseModel):
+    """Request to override a concept's value."""
+    new_value: Any
+    rerun_dependents: bool = False
+
+
+class ValueOverrideResponse(BaseModel):
+    """Response for value override."""
+    success: bool
+    overridden: str
+    stale_nodes: list
+
+
+@router.post("/override/{concept_name}", response_model=ValueOverrideResponse)
+async def override_value(concept_name: str, request: ValueOverrideRequest):
+    """Override a concept's reference value.
+    
+    This allows injecting or modifying values at any ground or computed node.
+    Optionally triggers re-execution of dependent nodes.
+    
+    Args:
+        concept_name: The name of the concept to override
+        request.new_value: The new value to set
+        request.rerun_dependents: If True, mark dependents as stale and start execution
+    """
+    try:
+        result = await execution_controller.override_value(
+            concept_name=concept_name,
+            new_value=request.new_value,
+            rerun_dependents=request.rerun_dependents
+        )
+        return ValueOverrideResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class RerunFromResponse(BaseModel):
+    """Response for re-run from node."""
+    success: bool
+    from_flow_index: str
+    reset_count: int
+    reset_nodes: list
+
+
+@router.post("/rerun-from/{flow_index}", response_model=RerunFromResponse)
+async def rerun_from_node(flow_index: str):
+    """Reset and re-execute from a specific node.
+    
+    This resets the target node and all its descendants, then starts
+    execution from the beginning.
+    
+    Args:
+        flow_index: The flow_index to re-run from
+    """
+    try:
+        result = await execution_controller.rerun_from(flow_index)
+        return RerunFromResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class FunctionModifyRequest(BaseModel):
+    """Request to modify a function node's working interpretation."""
+    paradigm: Optional[str] = None
+    prompt_location: Optional[str] = None
+    output_type: Optional[str] = None
+    retry: bool = False
+
+
+class FunctionModifyResponse(BaseModel):
+    """Response for function modification."""
+    success: bool
+    flow_index: str
+    modified_fields: list
+
+
+@router.post("/modify-function/{flow_index}", response_model=FunctionModifyResponse)
+async def modify_function(flow_index: str, request: FunctionModifyRequest):
+    """Modify a function node's working interpretation.
+    
+    This allows changing the paradigm, prompt location, output type, etc.
+    for a function node before re-execution.
+    
+    Args:
+        flow_index: The flow_index of the function node to modify
+        request: The modifications to apply
+    """
+    try:
+        modifications = {}
+        if request.paradigm is not None:
+            modifications['paradigm'] = request.paradigm
+        if request.prompt_location is not None:
+            modifications['prompt_location'] = request.prompt_location
+        if request.output_type is not None:
+            modifications['output_type'] = request.output_type
+        
+        result = await execution_controller.modify_function(
+            flow_index=flow_index,
+            modifications=modifications,
+            retry=request.retry
+        )
+        return FunctionModifyResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/dependents/{concept_name}")
+async def get_dependents(concept_name: str):
+    """Get all flow_indices that depend on a concept.
+    
+    Useful for previewing which nodes would be affected by overriding a value.
+    """
+    try:
+        dependents = execution_controller._find_dependents(concept_name)
+        return {
+            "concept_name": concept_name,
+            "dependents": dependents,
+            "count": len(dependents)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/descendants/{flow_index}")
+async def get_descendants(flow_index: str):
+    """Get all downstream nodes from a flow_index.
+    
+    Useful for previewing which nodes would be reset by re-running from a node.
+    """
+    try:
+        descendants = execution_controller._find_descendants(flow_index)
+        return {
+            "flow_index": flow_index,
+            "descendants": descendants,
+            "count": len(descendants)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
