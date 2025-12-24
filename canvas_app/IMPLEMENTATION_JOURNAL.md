@@ -6,6 +6,223 @@
 
 ---
 
+## December 22, 2024 - LLM Customization Panel
+
+### What Was Implemented
+
+**LLM Provider Configuration System**
+Added a comprehensive LLM customization panel that allows users to configure LLM providers directly in the app, eliminating the need for a local settings.yaml file.
+
+- [x] **Backend LLM Schemas** (`schemas/llm_schemas.py`):
+  - `LLMProviderConfig`: Configuration for individual providers (api_key, base_url, model, temperature, etc.)
+  - `LLMProvider` enum: openai, anthropic, azure, dashscope, ollama, custom
+  - `LLMProviderPreset`: Quick-setup presets for common providers
+  - Built-in presets for: OpenAI, Anthropic, DashScope, Azure, Ollama, DeepSeek, Together AI, Groq
+
+- [x] **Backend LLM Settings Service** (`services/llm_settings_service.py`):
+  - Stores configurations in `~/.normcode-canvas/llm-settings.json`
+  - Full CRUD operations for providers
+  - Default provider management
+  - Provider connection testing
+  - Import from settings.yaml (migration support)
+
+- [x] **Backend LLM Router** (`routers/llm_router.py`):
+  - `GET /api/llm/providers` - List all providers
+  - `POST /api/llm/providers` - Create provider
+  - `PUT /api/llm/providers/{id}` - Update provider
+  - `DELETE /api/llm/providers/{id}` - Delete provider
+  - `POST /api/llm/providers/{id}/set-default` - Set default
+  - `POST /api/llm/providers/test` - Test connection
+  - `GET /api/llm/presets` - Get quick-setup presets
+  - `POST /api/llm/import-yaml` - Import from settings.yaml
+
+- [x] **Updated Canvas LLM Tool** (`tools/llm_tool.py`):
+  - `from_provider_id()` factory method - Create LLM from provider ID
+  - `from_default_provider()` factory method - Create LLM from default
+  - Automatic initialization from LLM settings service
+  - Falls back to settings.yaml if no providers configured
+  - Direct API key/base_url configuration support
+
+- [x] **Frontend LLM Types** (`types/llm.ts`):
+  - TypeScript interfaces for all LLM configuration types
+  - Provider display info (labels, colors, icons)
+
+- [x] **Frontend LLM Store** (`stores/llmStore.ts`):
+  - Zustand store for LLM settings state
+  - Provider CRUD operations
+  - Connection testing
+  - Preset fetching
+
+- [x] **Frontend LLM Settings Panel** (`components/panels/LLMSettingsPanel.tsx`):
+  - Full-featured modal for managing LLM providers
+  - Quick-setup presets grid
+  - Provider list with edit/delete/test actions
+  - Add new provider form with preset selection
+  - API key visibility toggle
+  - Connection test with result display
+  - Import from YAML button
+
+- [x] **Settings Panel Integration**:
+  - "Configure" button next to LLM Model dropdown
+  - LLM providers merged into available models list
+  - LLM Settings Panel opens as modal overlay
+
+### Provider Presets
+
+| Preset | Provider | Default Model | Base URL |
+|--------|----------|---------------|----------|
+| OpenAI | openai | gpt-4o | api.openai.com/v1 |
+| Anthropic | anthropic | claude-3-5-sonnet | api.anthropic.com/v1 |
+| DashScope | dashscope | qwen-plus | dashscope.aliyuncs.com |
+| Azure | azure | gpt-4o | (user-provided) |
+| Ollama | ollama | llama3 | localhost:11434/v1 |
+| DeepSeek | custom | deepseek-chat | api.deepseek.com/v1 |
+| Together | custom | Llama-3-70b | api.together.xyz/v1 |
+| Groq | custom | llama-3.3-70b | api.groq.com/openai/v1 |
+
+### Files Created
+
+**Backend**:
+- `canvas_app/backend/schemas/llm_schemas.py` - LLM configuration schemas
+- `canvas_app/backend/services/llm_settings_service.py` - LLM settings service
+- `canvas_app/backend/routers/llm_router.py` - LLM API endpoints
+
+**Frontend**:
+- `canvas_app/frontend/src/types/llm.ts` - TypeScript types
+- `canvas_app/frontend/src/stores/llmStore.ts` - LLM state store
+- `canvas_app/frontend/src/components/panels/LLMSettingsPanel.tsx` - Settings UI
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/routers/__init__.py` - Added llm_router
+- `canvas_app/backend/main.py` - Included llm_router
+- `canvas_app/backend/tools/llm_tool.py` - Added settings service integration
+- `canvas_app/backend/routers/execution_router.py` - Merged LLM providers into available models
+
+**Frontend**:
+- `canvas_app/frontend/src/components/panels/SettingsPanel.tsx` - Added LLM config button
+- `canvas_app/frontend/src/components/panels/AgentPanel.tsx` - AgentEditor now uses LLM providers
+
+### Usage
+
+1. Open Settings Panel (click gear icon)
+2. Click "Configure" next to LLM Model dropdown
+3. In LLM Settings Panel:
+   - Click "Add Provider" to add new
+   - Select a preset for quick setup (OpenAI, Anthropic, etc.)
+   - Enter API key and optionally customize base URL
+   - Test connection before saving
+   - Set as default if desired
+4. Or click "Import from YAML" to migrate from settings.yaml
+
+---
+
+## December 22, 2024 - Self-Contained Canvas Tools
+
+### What Was Implemented
+
+**Canvas-Native Tool Wrappers**
+Added self-contained tool wrappers that integrate with the Canvas app's WebSocket architecture. These tools can work independently of the infra module, making the canvas app more self-contained while still proxying to infra when available.
+
+- [x] **CanvasLLMTool** (`tools/llm_tool.py`):
+  - Wraps infra `LanguageModel` with WebSocket event emission
+  - Emits `llm:call_started`, `llm:call_completed`, `llm:call_failed` events
+  - Shows prompt previews, response previews, and duration
+  - Falls back to mock mode if API keys not available
+  - Supports all LanguageModel factory methods (`create_generation_function`, etc.)
+  - Includes `get_available_llm_models()` utility function
+
+- [x] **CanvasPythonInterpreterTool** (`tools/python_interpreter_tool.py`):
+  - Wraps infra `PythonInterpreterTool` with WebSocket event emission
+  - Emits `python:execution_started`, `python:execution_completed`, `python:execution_failed`
+  - Emits `python:function_started`, `python:function_completed`, `python:function_failed`
+  - Shows code preview and execution results
+  - Supports `execute()`, `function_execute()`, and `create_function_executor()`
+  - Supports Body injection for script access to tools
+
+- [x] **CanvasPromptTool** (`tools/prompt_tool.py`):
+  - Wraps infra `PromptTool` with WebSocket event emission
+  - Emits `prompt:read_started`, `prompt:read_completed`, `prompt:read_failed`
+  - Emits `prompt:render_started`, `prompt:render_completed`, `prompt:render_failed`
+  - Shows template previews and rendered output previews
+  - Supports `read()`, `substitute()`, `render()`, and `create_template_function()`
+  - Caches templates for performance
+
+### Technical Details
+
+**Tool Design Pattern**:
+```python
+class CanvasXxxTool:
+    def __init__(self, emit_callback=None, ...):
+        self._emit_callback = emit_callback
+        # Try to import infra tool
+        try:
+            from infra._agent._models._xxx import XxxTool
+            self._tool = XxxTool(...)
+        except ImportError:
+            self._tool = None  # Use fallback
+    
+    def method(self, ...):
+        self._emit("xxx:started", {...})
+        try:
+            if self._tool:
+                result = self._tool.method(...)
+            else:
+                result = self._fallback_method(...)
+            self._emit("xxx:completed", {...})
+            return result
+        except Exception as e:
+            self._emit("xxx:failed", {...})
+            raise
+```
+
+**WebSocket Events Emitted**:
+
+| Tool | Events |
+|------|--------|
+| LLM | `llm:call_started`, `llm:call_completed`, `llm:call_failed` |
+| Python | `python:execution_started/completed/failed`, `python:function_started/completed/failed` |
+| Prompt | `prompt:read_started/completed/failed`, `prompt:render_started/completed/failed` |
+| File System | `file:operation` (existing) |
+| User Input | `user_input:request/completed/cancelled` (existing) |
+
+### Files Created
+
+- `canvas_app/backend/tools/llm_tool.py` - LLM tool wrapper
+- `canvas_app/backend/tools/python_interpreter_tool.py` - Python interpreter wrapper
+- `canvas_app/backend/tools/prompt_tool.py` - Prompt template wrapper
+
+### Files Modified
+
+- `canvas_app/backend/tools/__init__.py` - Export new tools
+- `canvas_app/backend/tools/README.md` - Document all tools
+
+### Usage
+
+```python
+from tools import (
+    CanvasLLMTool,
+    CanvasPythonInterpreterTool,
+    CanvasPromptTool,
+    CanvasFileSystemTool,
+    CanvasUserInputTool,
+    get_available_llm_models
+)
+
+# Create tools with WebSocket event emission
+def create_canvas_tools(emit_callback, base_dir):
+    return {
+        "llm": CanvasLLMTool(model_name="qwen-plus", emit_callback=emit_callback),
+        "python": CanvasPythonInterpreterTool(emit_callback=emit_callback),
+        "prompt": CanvasPromptTool(base_dir=base_dir, emit_callback=emit_callback),
+        "file_system": CanvasFileSystemTool(base_dir=base_dir, emit_callback=emit_callback),
+        "user_input": CanvasUserInputTool(emit_callback=emit_callback),
+    }
+```
+
+---
+
 ## December 22, 2024 - Auto-Discovery of Repository Paths
 
 ### What Was Implemented

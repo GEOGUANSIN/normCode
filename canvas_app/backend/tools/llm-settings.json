@@ -1,0 +1,72 @@
+{
+  "providers": [
+    {
+      "id": "demo",
+      "name": "Demo (No LLM)",
+      "provider": "custom",
+      "api_key": null,
+      "base_url": null,
+      "model": "demo",
+      "temperature": 0.0,
+      "max_tokens": null,
+      "top_p": null,
+      "is_default": true,
+      "is_enabled": true,
+      "created_at": "2025-12-24T16:57:17.546293",
+      "updated_at": "2025-12-24T16:57:17.546293",
+      "description": "Demo mode - returns mock responses"
+    },
+    {
+      "id": "42db013b",
+      "name": "deepseek-r1-distill-qwen-1.5b",
+      "provider": "dashscope",
+      "api_key": "sk-1fbd0fcfdaa94ba0972f9d60c1e9c7cb",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-r1-distill-qwen-1.5b",
+      "temperature": 0.0,
+      "max_tokens": null,
+      "top_p": null,
+      "is_default": false,
+      "is_enabled": true,
+      "created_at": "2025-12-24T16:57:17.546293",
+      "updated_at": "2025-12-24T16:57:17.546293",
+      "description": "Imported from settings.yaml"
+    },
+    {
+      "id": "0176f3f9",
+      "name": "qwen-turbo-latest",
+      "provider": "dashscope",
+      "api_key": "sk-1fbd0fcfdaa94ba0972f9d60c1e9c7cb",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen-turbo-latest",
+      "temperature": 0.0,
+      "max_tokens": null,
+      "top_p": null,
+      "is_default": false,
+      "is_enabled": true,
+      "created_at": "2025-12-24T16:57:17.546293",
+      "updated_at": "2025-12-24T16:57:17.546293",
+      "description": "Imported from settings.yaml"
+    },
+    {
+      "id": "07b92393",
+      "name": "Alibaba Cloud (DashScope) - qwen-plus",
+      "provider": "dashscope",
+      "api_key": "sk-1fbd0fcfdaa94ba0972f9d60c1e9c7cb",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen-plus",
+      "temperature": 0.0,
+      "max_tokens": null,
+      "top_p": null,
+      "is_default": false,
+      "is_enabled": true,
+      "created_at": "2025-12-24T17:04:03.840451",
+      "updated_at": "2025-12-24T17:04:03.840451",
+      "description": null
+    }
+  ],
+  "default_provider_id": "demo",
+  "timeout_seconds": 120,
+  "retry_count": 3,
+  "updated_at": "2025-12-24T17:04:03.840451"
+}

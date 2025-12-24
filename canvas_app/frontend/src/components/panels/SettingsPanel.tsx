@@ -2,12 +2,14 @@
  * Settings Panel for execution configuration
  */
 
-import { useEffect } from 'react';
-import { Settings, RefreshCw, Save, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Settings, RefreshCw, Save, X, Bot, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { executionApi, projectApi } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
 import { useProjectStore } from '../../stores/projectStore';
+import { useLLMStore } from '../../stores/llmStore';
+import { LLMSettingsPanel } from './LLMSettingsPanel';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -35,6 +37,10 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
   } = useConfigStore();
 
   const { currentProject, setCurrentProject, projectPath } = useProjectStore();
+  
+  // LLM settings state
+  const [showLLMSettings, setShowLLMSettings] = useState(false);
+  const { providers, fetchProviders, defaultProviderId } = useLLMStore();
 
   // Fetch config options from API
   const { data: configData, isLoading, refetch } = useQuery({
@@ -43,10 +49,22 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     staleTime: 60000, // Cache for 1 minute
   });
 
+  // Fetch LLM providers on mount
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
   // Update store when config is fetched
   useEffect(() => {
     if (configData) {
-      setAvailableModels(configData.available_models);
+      // Merge available models from API with LLM providers
+      const apiModels = configData.available_models || [];
+      const providerNames = providers
+        .filter(p => p.is_enabled)
+        .map(p => p.name);
+      const allModels = [...new Set(['demo', ...apiModels, ...providerNames])];
+      
+      setAvailableModels(allModels);
       setDefaults({
         defaultMaxCycles: configData.default_max_cycles,
         defaultDbPath: configData.default_db_path,
@@ -60,7 +78,7 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
       }
       setLoaded(true);
     }
-  }, [configData, dbPath, maxCycles, setAvailableModels, setDefaults, setDbPath, setMaxCycles, setLoaded]);
+  }, [configData, dbPath, maxCycles, providers, setAvailableModels, setDefaults, setDbPath, setMaxCycles, setLoaded]);
 
   const handleReset = () => {
     setLlmModel('demo');
@@ -149,9 +167,19 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <>
             {/* LLM Model */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                LLM Model
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-slate-700">
+                  LLM Model
+                </label>
+                <button
+                  onClick={() => setShowLLMSettings(true)}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                >
+                  <Bot size={12} />
+                  Configure
+                  <ChevronRight size={12} />
+                </button>
+              </div>
               <select
                 value={llmModel}
                 onChange={(e) => setLlmModel(e.target.value)}
@@ -239,6 +267,16 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           </>
         )}
       </div>
+
+      {/* LLM Settings Panel Modal */}
+      <LLMSettingsPanel
+        isOpen={showLLMSettings}
+        onClose={() => {
+          setShowLLMSettings(false);
+          // Refresh providers after closing
+          fetchProviders();
+        }}
+      />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import {
   Wrench, FileCode, Code, MessageSquare, Cpu, Workflow, Repeat, Zap
 } from 'lucide-react';
 import { useAgentStore, AgentConfig, ToolCallEvent } from '../../stores/agentStore';
+import { useLLMStore } from '../../stores/llmStore';
+import { LLMSettingsPanel } from './LLMSettingsPanel';
 
 // ============================================================================
 // Capabilities Types
@@ -517,6 +519,9 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
   const agents = useAgentStore(s => s.agents);
   const existingAgent = agentId ? agents[agentId] : null;
   
+  // Get LLM providers from store
+  const { providers, fetchProviders } = useLLMStore();
+  
   const [config, setConfig] = useState<AgentConfig>(() => existingAgent || {
     id: '',
     name: '',
@@ -531,9 +536,20 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLLMSettings, setShowLLMSettings] = useState(false);
   
   const isNew = !existingAgent;
   const isDefault = agentId === 'default';
+  
+  // Fetch LLM providers on mount
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+  
+  // Build list of available models from providers
+  const availableModels = providers
+    .filter(p => p.is_enabled)
+    .map(p => ({ id: p.id, name: p.name, model: p.model }));
   
   const handleSave = async () => {
     if (!config.id.trim()) {
@@ -626,23 +642,50 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
             </summary>
             <div className="p-3 space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Model</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium">Model</label>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); setShowLLMSettings(true); }}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    <Bot size={12} />
+                    Configure
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
                 <select
                   value={config.llm_model}
                   onChange={(e) => setConfig({ ...config, llm_model: e.target.value })}
                   className="w-full px-3 py-2 border rounded text-sm"
                 >
-                  <option value="qwen-plus">qwen-plus</option>
-                  <option value="qwen-turbo">qwen-turbo</option>
-                  <option value="gpt-4o">gpt-4o</option>
-                  <option value="gpt-4o-mini">gpt-4o-mini</option>
-                  <option value="claude-3-opus">claude-3-opus</option>
-                  <option value="claude-3-sonnet">claude-3-sonnet</option>
-                  <option value="demo">demo (mock)</option>
+                  {availableModels.length > 0 ? (
+                    availableModels.map(m => (
+                      <option key={m.id} value={m.name}>
+                        {m.name} ({m.model})
+                      </option>
+                    ))
+                  ) : (
+                    // Fallback options if no providers configured
+                    <>
+                      <option value="demo">demo (mock)</option>
+                      <option value="qwen-plus">qwen-plus</option>
+                      <option value="gpt-4o">gpt-4o</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
           </details>
+
+          {/* LLM Settings Panel */}
+          <LLMSettingsPanel
+            isOpen={showLLMSettings}
+            onClose={() => {
+              setShowLLMSettings(false);
+              fetchProviders();  // Refresh providers after closing
+            }}
+          />
           
           {/* Tools Config */}
           <details className="border rounded">
