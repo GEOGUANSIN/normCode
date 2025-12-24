@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Psylens.AI 心镜智 - NormCode 规范码 - 让专属逻辑驱动AI">
+    <meta name="description" content="NormCode: Structured AI Planning That You Can Audit - A language for building multi-step AI workflows with explicit data isolation and full auditability.">
     <link rel="icon" type="image/png" href="Psylensai_log_raw.png">
-    <title>NormCode 规范码 - Coming Soon</title>
+    <title>NormCode 规范码 - Structured AI Planning That You Can Audit</title>
     <style>
         * {
             margin: 0;
@@ -13,169 +13,1058 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #5a67d8;
+            --primary-dark: #4c51bf;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --bg-light: #f7fafc;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
             background: #ffffff;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #2d3748;
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        .container {
-            text-align: center;
-            max-width: 800px;
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
             width: 100%;
-            padding: 20px;
-            animation: fadeIn 0.8s ease-in;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 1rem 2rem;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        nav .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav .logo-small {
+            height: 40px;
+        }
+
+        nav .company-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-left: 0.75rem;
+            white-space: nowrap;
+        }
+
+        nav .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-left: 1rem;
+        }
+
+        .lang-btn {
+            padding: 0.4rem 0.8rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: var(--bg-light);
+            color: var(--primary);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(180deg, #ffffff 0%, var(--bg-light) 100%);
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .logo {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .logo img {
-            width: 280px;
-            height: auto;
+            height: 80px;
+            width: auto;
         }
 
-        .coming-soon-badge {
+        .badge {
             display: inline-block;
-            padding: 0.4rem 1.2rem;
-            background: #f7fafc;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 1px;
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, rgba(90, 103, 216, 0.1), rgba(76, 81, 191, 0.15));
+            border-radius: 24px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-            margin-bottom: 1rem;
-            color: #5a67d8;
-            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            border: 1.5px solid rgba(90, 103, 216, 0.3);
+            box-shadow: 0 2px 8px rgba(90, 103, 216, 0.15);
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-            color: #1a202c;
+            font-size: 3.5rem;
+            margin-bottom: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.15;
+            letter-spacing: -0.03em;
         }
 
         .subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 1.5rem;
-            font-weight: 400;
-            color: #4a5568;
+            font-size: 1.6rem;
+            margin-bottom: 2.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: -0.01em;
         }
 
-        .description {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-            max-width: 650px;
+        .hero-description {
+            font-size: 1.15rem;
+            line-height: 1.85;
+            margin-bottom: 3rem;
+            max-width: 850px;
             margin-left: auto;
             margin-right: auto;
-            color: #718096;
+            color: var(--text-muted);
+        }
+
+        /* Video Demo Section */
+        .video-demo {
+            max-width: 1200px;
+            margin: 0 auto 4rem;
+            padding: 5rem 2rem 0;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 2rem auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+            background: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .video-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-label {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Section Styles */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section h2 {
+            font-size: 2.75rem;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .section-description {
+            text-align: center;
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 3.5rem;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.75;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(90, 103, 216, 0.15);
+            border-color: var(--primary);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.25rem;
+            display: block;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 0.75rem;
+            font-size: 1.35rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* Code Example */
+        .code-example {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #e2e8f0;
+            padding: 2.5rem;
+            border-radius: 16px;
+            overflow-x: auto;
+            margin: 3rem 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 2;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .code-example::before {
+            content: 'NormCode';
+            position: absolute;
+            top: 0.75rem;
+            right: 1.25rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .code-example code {
+            color: #68d391;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3rem 0;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1.25rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .comparison-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .comparison-table tbody tr:hover {
+            background-color: #fafbfc;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table td {
+            font-size: 0.98rem;
+        }
+
+        .comparison-table td strong {
+            font-weight: 600;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            text-align: center;
+            padding: 5rem 2rem;
+            border-radius: 20px;
+            margin: 5rem auto;
+            box-shadow: 0 20px 60px rgba(90, 103, 216, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.05), transparent 50%);
+            pointer-events: none;
+        }
+
+        .cta-section h2 {
+            color: white;
+            margin-bottom: 1.25rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .cta-button {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background-color: #5a67d8;
-            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.1rem 3rem;
+            background-color: white;
+            color: var(--primary);
             text-decoration: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.15rem;
             font-weight: 600;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
         }
 
         .cta-button:hover {
-            background-color: #4c51bf;
-            transform: translateY(-1px);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            background-color: #fafafa;
         }
 
         .github-icon {
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
+            width: 26px;
+            height: 26px;
         }
 
-        .footer {
-            margin-top: 2rem;
-            font-size: 0.85rem;
-            color: #a0aec0;
+        /* Footer */
+        footer {
+            background: linear-gradient(180deg, #ffffff 0%, var(--bg-light) 100%);
+            padding: 4rem 2rem 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+
+        footer p {
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        footer a {
+            transition: color 0.2s ease;
+            font-weight: 500;
+        }
+
+        footer a:hover {
+            color: var(--primary-dark);
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
+            nav {
+                padding: 1rem;
             }
 
-            .subtitle {
-                font-size: 1rem;
-            }
-
-            .description {
+            nav .nav-links {
+                gap: 1rem;
                 font-size: 0.9rem;
             }
 
-            .logo img {
-                width: 220px;
+            nav .company-name {
+                font-size: 0.95rem;
+                margin-left: 0.5rem;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .subtitle {
+                font-size: 1.3rem;
+            }
+
+            .hero-description {
+                font-size: 1.05rem;
+            }
+
+            section h2 {
+                font-size: 2.25rem;
+            }
+
+            .features-grid {
+                gap: 1.5rem;
+            }
+
+            .feature-card {
+                padding: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .video-container {
+                border-radius: 8px;
             }
         }
 
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.7rem;
+                font-size: 1.75rem;
             }
 
             .subtitle {
-                font-size: 0.95rem;
+                font-size: 1.1rem;
             }
 
             .logo img {
-                width: 200px;
+                height: 60px;
             }
+
+            nav .logo-small {
+                height: 30px;
+            }
+
+            nav .company-name {
+                font-size: 0.85rem;
+                margin-left: 0.4rem;
+            }
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <div style="display: flex; align-items: center;">
+                <img src="psylens_logo_caption.png" alt="Psylens.AI" class="logo-small">
+                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features" data-i18n="nav.features">Features</a>
+                <a href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
+                <a href="#demo" data-i18n="nav.demo">Demo</a>
+                <a href="https://github.com/GEOGUANSIN/normCode" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
         <div class="logo">
             <img src="psylens_logo_caption.png" alt="Psylens.AI 心镜智 Logo">
         </div>
         
-        <div class="coming-soon-badge">Coming Soon</div>
-        
-        <h1>NormCode 规范码</h1>
-        
-        <p class="subtitle">让专属逻辑驱动AI</p>
-        
-            <p class="description">
-            A revolutionary framework that translates instructive natural language for AI into formal contract of inferences,
-            by revealing the underlying instruction patterns and logic. Making AI systems' development
-            transparent, accountable and sustainable.
+            <div class="badge" data-i18n="hero.badge">Structured AI Planning</div>
+            
+            <h1>NormCode 规范码</h1>
+            
+            <p class="subtitle" data-i18n="hero.subtitle">Structured AI Planning That You Can Audit</p>
+            
+            <p class="hero-description" data-i18n="hero.description">
+                NormCode is a language for building multi-step AI workflows where you can see exactly what each step receives and produces—no hidden context, no debugging in the dark.
+            </p>
+        </div>
+    </section>
+
+    <!-- Video Demo Section -->
+    <section id="demo" class="video-demo fade-in">
+        <h2 data-i18n="demo.title">See NormCode in Action</h2>
+        <p class="section-description" data-i18n="demo.description">
+            Watch the Canvas App visual debugger in action, showing how NormCode plans execute with full transparency and auditability.
+        </p>
+        <div class="video-container">
+            <video id="demo-video" controls autoplay muted loop playsinline>
+                <source src="normcode_canvas_demo_vid1.mp4" type="video/mp4">
+                <span data-i18n="demo.videoNotSupported">Your browser does not support the video tag.</span>
+            </video>
+        </div>
+        <p class="video-label" data-i18n="demo.label">Canvas App Demo - Visual Debugger for NormCode Plans</p>
+    </section>
+
+    <!-- Key Features -->
+    <section id="features" class="fade-in">
+        <h2 data-i18n="features.title">Key Features</h2>
+        <p class="section-description" data-i18n="features.description">
+            NormCode enforces explicit data isolation as a language-level constraint, making AI workflows auditable by construction.
         </p>
         
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 data-i18n="features.dataIsolation.title">Data Isolation</h3>
+                <p data-i18n="features.dataIsolation.text">Each step only sees what you explicitly pass to it. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 data-i18n="features.auditability.title">Full Auditability</h3>
+                <p data-i18n="features.auditability.text">Inspect what each step saw and produced. Complete state tracking with SQLite checkpointing—pause, resume, or fork from any cycle.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 data-i18n="features.efficiency.title">Efficient Execution</h3>
+                <p data-i18n="features.efficiency.text">Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3 data-i18n="features.visualDebugger.title">Visual Debugger</h3>
+                <p data-i18n="features.visualDebugger.text">The Canvas App provides a visual graph view with breakpoints and real-time execution monitoring. See your workflows come to life.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 data-i18n="features.resumable.title">Resumable Workflows</h3>
+                <p data-i18n="features.resumable.text">Long-running workflows can be paused and resumed. Fork from any checkpoint to experiment with different approaches.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 data-i18n="features.automatable.title">Automatable</h3>
+                <p data-i18n="features.automatable.text">AI can directly derive plans from your natural language instructions. The compiler transforms natural language into formal NormCode plans.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="fade-in">
+        <h2 data-i18n="howItWorks.title">How It Works</h2>
+        <p class="section-description" data-i18n="howItWorks.description">
+            NormCode makes data flow explicit and isolated. Here's a simple example:
+        </p>
+        
+        <div class="code-example">
+            <code>
+&lt;- executive summary<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check for mismatches<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- extracted figures<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract financial data<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- database results
+            </code>
+        </div>
+        
+        <p style="text-align: center; color: var(--text-muted); margin-top: 1rem;" data-i18n="howItWorks.explanation">
+            Reading bottom-up: The extraction step sees only the <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">raw document</code>. 
+            The mismatch check sees only <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">extracted figures</code> + <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">database results</code>. 
+            The summary step sees only <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">discrepancy flags</code>.
+        </p>
+
+        <h3 style="margin-top: 3rem; text-align: center;" data-i18n="howItWorks.comparisonTitle">Semantic vs. Syntactic Steps</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th data-i18n="table.type">Type</th>
+                    <th data-i18n="table.llm">LLM?</th>
+                    <th data-i18n="table.cost">Cost</th>
+                    <th data-i18n="table.determinism">Determinism</th>
+                    <th data-i18n="table.examples">Examples</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong data-i18n="table.semantic">Semantic</strong></td>
+                    <td data-i18n="table.yes">✅ Yes</td>
+                    <td data-i18n="table.tokens">Tokens</td>
+                    <td data-i18n="table.nonDeterministic">Non-deterministic</td>
+                    <td data-i18n="table.semanticExamples">Reasoning, generating, analyzing</td>
+                </tr>
+                <tr>
+                    <td><strong data-i18n="table.syntactic">Syntactic</strong></td>
+                    <td data-i18n="table.no">❌ No</td>
+                    <td data-i18n="table.free">Free</td>
+                    <td data-i18n="table.deterministic">100% Deterministic</td>
+                    <td data-i18n="table.syntacticExamples">Collecting, selecting, routing</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="fade-in">
+        <h2 data-i18n="useCases.title">When to Use NormCode</h2>
+        <p class="section-description" data-i18n="useCases.description">
+            NormCode shines in complex, multi-step workflows where transparency and auditability matter.
+        </p>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3 data-i18n="useCases.multiStep.title">✅ Multi-step Workflows</h3>
+                <p data-i18n="useCases.multiStep.text">Perfect for workflows with 5+ LLM calls where isolation and debuggability pay off.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3 data-i18n="useCases.auditable.title">✅ Auditable AI</h3>
+                <p data-i18n="useCases.auditable.text">Essential for legal, medical, and finance applications where you must prove what each step saw.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3 data-i18n="useCases.longRunning.title">✅ Long-running Tasks</h3>
+                <p data-i18n="useCases.longRunning.text">Built-in checkpointing makes long-running workflows resumable and forkable.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section fade-in">
+        <h2 data-i18n="cta.title">Get Started with NormCode</h2>
+        <p data-i18n="cta.description">Explore the code, try the Canvas App, and start building auditable AI workflows.</p>
         <a href="https://github.com/GEOGUANSIN/normCode" class="cta-button" target="_blank" rel="noopener noreferrer">
-            <svg class="github-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
             </svg>
-            View on GitHub
+            <span data-i18n="cta.button">View on GitHub</span>
         </a>
+    </section>
         
-        <div class="footer">
+    <!-- Footer -->
+    <footer>
+        <p><strong>NormCode 规范码</strong> - <span data-i18n="footer.tagline">Structured AI Planning That You Can Audit</span></p>
             <p>广州心镜智科技工作室 Copyright © 2025</p>
-        </div>
-    </div>
+        <p style="margin-top: 1rem; font-size: 0.9rem;">
+            <a href="https://arxiv.org/abs/2512.10563" target="_blank" rel="noopener noreferrer" style="color: var(--primary);" data-i18n="footer.researchPaper">Research Paper</a> | 
+            <a href="https://github.com/GEOGUANSIN/normCode" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">GitHub</a>
+        </p>
+    </footer>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                nav: {
+                    companyName: 'Psylens.AI',
+                    features: 'Features',
+                    howItWorks: 'How It Works',
+                    demo: 'Demo'
+                },
+                hero: {
+                    badge: 'Structured AI Planning',
+                    subtitle: 'Structured AI Planning That You Can Audit',
+                    description: 'NormCode is a language for building multi-step AI workflows where you can see exactly what each step receives and produces—no hidden context, no debugging in the dark.'
+                },
+                demo: {
+                    title: 'See NormCode in Action',
+                    description: 'Watch the Canvas App visual debugger in action, showing how NormCode plans execute with full transparency and auditability.',
+                    videoNotSupported: 'Your browser does not support the video tag.',
+                    label: 'Canvas App Demo - Visual Debugger for NormCode Plans'
+                },
+                features: {
+                    title: 'Key Features',
+                    description: 'NormCode enforces explicit data isolation as a language-level constraint, making AI workflows auditable by construction.',
+                    dataIsolation: {
+                        title: 'Data Isolation',
+                        text: 'Each step only sees what you explicitly pass to it. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.'
+                    },
+                    auditability: {
+                        title: 'Full Auditability',
+                        text: 'Inspect what each step saw and produced. Complete state tracking with SQLite checkpointing—pause, resume, or fork from any cycle.'
+                    },
+                    efficiency: {
+                        title: 'Efficient Execution',
+                        text: 'Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.'
+                    },
+                    visualDebugger: {
+                        title: 'Visual Debugger',
+                        text: 'The Canvas App provides a visual graph view with breakpoints and real-time execution monitoring. See your workflows come to life.'
+                    },
+                    resumable: {
+                        title: 'Resumable Workflows',
+                        text: 'Long-running workflows can be paused and resumed. Fork from any checkpoint to experiment with different approaches.'
+                    },
+                    automatable: {
+                        title: 'Automatable',
+                        text: 'AI can directly derive plans from your natural language instructions. The compiler transforms natural language into formal NormCode plans.'
+                    }
+                },
+                howItWorks: {
+                    title: 'How It Works',
+                    description: 'NormCode makes data flow explicit and isolated. Here\'s a simple example:',
+                    explanation: 'Reading bottom-up: The extraction step sees only the <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">raw document</code>. The mismatch check sees only <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">extracted figures</code> + <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">database results</code>. The summary step sees only <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">discrepancy flags</code>.',
+                    comparisonTitle: 'Semantic vs. Syntactic Steps'
+                },
+                table: {
+                    type: 'Type',
+                    llm: 'LLM?',
+                    cost: 'Cost',
+                    determinism: 'Determinism',
+                    examples: 'Examples',
+                    yes: '✅ Yes',
+                    no: '❌ No',
+                    tokens: 'Tokens',
+                    free: 'Free',
+                    semantic: 'Semantic',
+                    syntactic: 'Syntactic',
+                    nonDeterministic: 'Non-deterministic',
+                    deterministic: '100% Deterministic',
+                    semanticExamples: 'Reasoning, generating, analyzing',
+                    syntacticExamples: 'Collecting, selecting, routing'
+                },
+                useCases: {
+                    title: 'When to Use NormCode',
+                    description: 'NormCode shines in complex, multi-step workflows where transparency and auditability matter.',
+                    multiStep: {
+                        title: '✅ Multi-step Workflows',
+                        text: 'Perfect for workflows with 5+ LLM calls where isolation and debuggability pay off.'
+                    },
+                    auditable: {
+                        title: '✅ Auditable AI',
+                        text: 'Essential for legal, medical, and finance applications where you must prove what each step saw.'
+                    },
+                    longRunning: {
+                        title: '✅ Long-running Tasks',
+                        text: 'Built-in checkpointing makes long-running workflows resumable and forkable.'
+                    }
+                },
+                cta: {
+                    title: 'Get Started with NormCode',
+                    description: 'Explore the code, try the Canvas App, and start building auditable AI workflows.',
+                    button: 'View on GitHub'
+                },
+                footer: {
+                    tagline: 'Structured AI Planning That You Can Audit',
+                    researchPaper: 'Research Paper'
+                }
+            },
+            zh: {
+                nav: {
+                    companyName: '心镜智',
+                    features: '核心功能',
+                    howItWorks: '工作原理',
+                    demo: '演示'
+                },
+                hero: {
+                    badge: '结构化AI规划',
+                    subtitle: '可审计的结构化AI规划',
+                    description: 'NormCode是一种用于构建多步骤AI工作流的语言，您可以清楚地看到每个步骤接收和产生的内容——没有隐藏的上下文，不再在黑暗中调试。'
+                },
+                demo: {
+                    title: '观看NormCode演示',
+                    description: '观看Canvas App可视化调试器的实际运行，展示NormCode计划如何以完全透明和可审计的方式执行。',
+                    videoNotSupported: '您的浏览器不支持视频标签。',
+                    label: 'Canvas App演示 - NormCode计划的可视化调试器'
+                },
+                features: {
+                    title: '核心功能',
+                    description: 'NormCode将显式数据隔离作为语言级约束，使AI工作流在构建时即可审计。',
+                    dataIsolation: {
+                        title: '数据隔离',
+                        text: '每个步骤只能看到您明确传递给它的内容。没有隐藏的上下文，没有上下文污染。如果出现问题，您可以准确看到该步骤接收的内容。'
+                    },
+                    auditability: {
+                        title: '完全可审计',
+                        text: '检查每个步骤看到和产生的内容。完整的状态跟踪，支持SQLite检查点——可以从任何周期暂停、恢复或分叉。'
+                    },
+                    efficiency: {
+                        title: '高效执行',
+                        text: '许多步骤只是数据路由——不需要LLM。只有"思考"步骤需要消耗token。依赖驱动的调度确保最佳性能。'
+                    },
+                    visualDebugger: {
+                        title: '可视化调试器',
+                        text: 'Canvas App提供可视化图形视图，支持断点和实时执行监控。让您的工作流栩栩如生。'
+                    },
+                    resumable: {
+                        title: '可恢复的工作流',
+                        text: '长时间运行的工作流可以暂停和恢复。从任何检查点分叉，以尝试不同的方法。'
+                    },
+                    automatable: {
+                        title: '可自动化',
+                        text: 'AI可以直接从您的自然语言指令中推导计划。编译器将自然语言转换为正式的NormCode计划。'
+                    }
+                },
+                howItWorks: {
+                    title: '工作原理',
+                    description: 'NormCode使数据流显式且隔离。以下是一个简单示例：',
+                    explanation: '自下而上阅读：提取步骤只能看到<code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">原始文档</code>。不匹配检查只能看到<code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">提取的数值</code> + <code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">数据库结果</code>。摘要步骤只能看到<code style="background: var(--bg-light); padding: 0.2rem 0.4rem; border-radius: 4px;">差异标志</code>。',
+                    comparisonTitle: '语义步骤 vs. 语法步骤'
+                },
+                table: {
+                    type: '类型',
+                    llm: '需要LLM？',
+                    cost: '成本',
+                    determinism: '确定性',
+                    examples: '示例',
+                    yes: '✅ 是',
+                    no: '❌ 否',
+                    tokens: 'Token',
+                    free: '免费',
+                    semantic: '语义',
+                    syntactic: '语法',
+                    nonDeterministic: '非确定性',
+                    deterministic: '100% 确定性',
+                    semanticExamples: '推理、生成、分析',
+                    syntacticExamples: '收集、选择、路由'
+                },
+                useCases: {
+                    title: '何时使用NormCode',
+                    description: 'NormCode在需要透明度和可审计性的复杂多步骤工作流中表现出色。',
+                    multiStep: {
+                        title: '✅ 多步骤工作流',
+                        text: '非常适合包含5+ LLM调用的工作流，隔离和可调试性会带来回报。'
+                    },
+                    auditable: {
+                        title: '✅ 可审计的AI',
+                        text: '对于法律、医疗和金融应用至关重要，您必须证明每个步骤看到的内容。'
+                    },
+                    longRunning: {
+                        title: '✅ 长时间运行的任务',
+                        text: '内置检查点使长时间运行的工作流可恢复和可分叉。'
+                    }
+                },
+                cta: {
+                    title: '开始使用NormCode',
+                    description: '探索代码，尝试Canvas App，开始构建可审计的AI工作流。',
+                    button: '在GitHub上查看'
+                },
+                footer: {
+                    tagline: '可审计的结构化AI规划',
+                    researchPaper: '研究论文'
+                }
+            }
+        };
+
+        // Language management
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.value = value;
+                    } else if (value.includes('<code') || value.includes('<span') || value.includes('<strong')) {
+                        // Use innerHTML for content that contains HTML tags
+                        el.innerHTML = value;
+                    } else {
+                        el.textContent = value;
+                    }
+                }
+            });
+
+            // Update active language button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        // Initialize language
+        setLanguage(currentLang);
+
+        // Language switcher buttons
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.getAttribute('data-lang');
+                setLanguage(lang);
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Fade in on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // Set video playback speed to 1.35x
+        const video = document.getElementById('demo-video');
+        if (video) {
+            video.addEventListener('loadedmetadata', () => {
+                video.playbackRate = 1.35;
+            });
+            // Also set it when video can play (in case metadata loads before this script runs)
+            video.addEventListener('canplay', () => {
+                video.playbackRate = 1.35;
+            });
+            // Set it immediately if video is already loaded
+            if (video.readyState >= 1) {
+                video.playbackRate = 1.35;
+            }
+        }
+    </script>
 </body>
 </html>
-
