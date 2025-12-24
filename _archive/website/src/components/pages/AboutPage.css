@@ -1,0 +1,20 @@
+.about-page section {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.about-page h2 {
+  font-size: 1.8rem;
+  margin-top: 0;
+  border-bottom: 2px solid #007aff;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.about-page p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #555;
+}

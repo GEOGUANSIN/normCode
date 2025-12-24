@@ -1,0 +1,8 @@
+/* App-level styles */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Additional app-wide utility styles can be added here */
