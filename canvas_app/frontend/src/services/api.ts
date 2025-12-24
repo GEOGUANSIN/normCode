@@ -160,6 +160,21 @@ export const executionApi = {
   
   getDescendants: (flowIndex: string): Promise<DescendantsResponse> =>
     fetchJson(`${API_BASE}/execution/descendants/${encodeURIComponent(flowIndex)}`),
+
+  // User input (human-in-the-loop) endpoints
+  getPendingUserInputs: (): Promise<UserInputsResponse> =>
+    fetchJson(`${API_BASE}/execution/user-input/pending`),
+
+  submitUserInput: (requestId: string, response: unknown): Promise<UserInputSubmitResponse> =>
+    fetchJson(`${API_BASE}/execution/user-input/${encodeURIComponent(requestId)}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ response }),
+    }),
+
+  cancelUserInput: (requestId: string): Promise<UserInputSubmitResponse> =>
+    fetchJson(`${API_BASE}/execution/user-input/${encodeURIComponent(requestId)}/cancel`, {
+      method: 'POST',
+    }),
 };
 
 // Step progress response type
@@ -219,6 +234,24 @@ export interface DescendantsResponse {
   flow_index: string;
   descendants: string[];
   count: number;
+}
+
+// User input types
+export interface UserInputsResponse {
+  requests: {
+    request_id: string;
+    prompt: string;
+    interaction_type: string;
+    options?: Record<string, unknown>;
+    created_at?: number;
+  }[];
+  count: number;
+}
+
+export interface UserInputSubmitResponse {
+  success: boolean;
+  request_id: string;
+  message: string;
 }
 
 // Project endpoints

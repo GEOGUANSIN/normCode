@@ -1,48 +1,83 @@
-# NormCode: Context-Isolated AI Planning
+# NormCode: Structured AI Planning That You Can Audit
 
-**NormCode is a semi-formal language for building auditable, multi-step AI workflows where each step sees only what you explicitly pass to it.**
-
----
-
-## The Problem: Context Pollution
-
-When you chain multiple LLM calls together, **context pollution** causes failures:
-
-```
-Step 1: Read a 50-page document
-Step 2: Extract key entities  
-Step 3: Cross-reference with database
-Step 4: Generate summary
-        ↑ Why is this hallucinating names that don't exist?
-```
-
-By step 4, the model has 50 pages of document, raw database results, and extraction metadata all swimming in context. It hallucinates because it's drowning in noise.
-
-**Current approaches offer limited defense:**
-- Direct prompting bundles everything into one context window → cognitive overload
-- Chain-of-Thought extends interaction but doesn't isolate context → errors leak forward
-- Agent frameworks like LangChain provide orchestration but leave data flow implicit → debugging in the dark
+**NormCode is a language for building multi-step AI workflows where you can see exactly what each step receives and produces—no hidden context, no debugging in the dark.**
 
 ---
 
-## The Solution: The Alignment Stack
+## From Chat to Reliable Workflows
 
-NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals:
+### You Know ChatGPT. That's Step 1.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  NormCode                    (Alignment Layer)          │
-│  Semi-formal contracts between humans and AI            │
-├─────────────────────────────────────────────────────────┤
-│  Shared Workspace            (Contextualization Layer)  │
-│  Data, tools, and constraints for specific tasks        │
-├─────────────────────────────────────────────────────────┤
-│  Foundation Models           (Intelligence Layer)       │
-│  General-purpose reasoning and generation               │
-└─────────────────────────────────────────────────────────┘
+You: "Summarize this document about Q3 earnings"
+AI: [reads entire document, produces summary]
 ```
 
-**NormCode's core guarantee:** Each inference is a sealed room. It only sees what you explicitly pass in.
+Simple. Works great. But limited to single-shot tasks.
+
+### Step 2: Chaining Prompts Together
+
+What if you need something more complex?
+
+```
+Step 1: "Extract all financial figures from this document"
+Step 2: "Cross-reference these figures with our database"
+Step 3: "Flag any discrepancies"
+Step 4: "Generate an executive summary"
+```
+
+Now you're building a **workflow**. And this is where things can break.
+
+### The Hidden Problem
+
+By Step 4, your AI has:
+- The entire original document (50+ pages)
+- All extracted figures (hundreds of numbers)
+- Raw database query results
+- Internal processing notes from earlier steps
+
+**Problems you may encounter** The AI can hallucinate. It confuses a number from page 47 with a database entry. It references entities that don't exist. When it fails, you can't tell which input caused the problem. You may also encounter issues with the accuracy of the results, such as the figures being incorrect or the database entries being outdated.
+
+**This is what practitioners call "debugging in the dark."**
+
+### What NormCode Does Differently
+
+**Each step is a sealed room.** It only sees what you explicitly pass in.
+
+```ncds
+<- executive summary
+    <= generate summary from flagged items
+    <- discrepancy flags
+        <= check for mismatches
+        <- extracted figures
+            <= extract financial data
+            <- raw document
+        <- database results
+```
+
+Read bottom-up:
+- Step 1 sees only: `raw document`
+- Step 2 sees only: `extracted figures` + `database results` (not the raw document)
+- Step 3 sees only: `discrepancy flags` (not the raw figures or database)
+
+**When Step 3 fails, you know exactly what it saw.** No guessing. No hidden state.
+
+---
+
+## Bigger Picture:The Alignment Stack
+
+NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals of users:
+
+```
+flowchart TB
+    A["🧭 NormCode<br/><sub>Authority Layer</sub><br/>Semi-formal contracts between humans and AI"]
+    B["🛠 Shared Workspace<br/><sub>Execution Layer</sub><br/>Data, tools, and task constraints"]
+    C["🧠 Foundation Models<br/><sub>Understanding Layer</sub><br/>General-purpose reasoning and generation"]
+
+    A --> B --> C
+```
+
+NormCode, with its explicit data and step construction, acts as a guarantee for the execution of the tasks by the AI agents, it's aim is to provide a way for human users to maintain their authority over the AI agents.
 
 ---
 

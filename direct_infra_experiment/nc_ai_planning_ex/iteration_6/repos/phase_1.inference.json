@@ -1,0 +1,120 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{1.1_instruction_block.md}",
+        "function_concept": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "value_concepts": [
+            "{instruction distillation prompt}",
+            "{input files}",
+            "{output file location of instruction distillation}"
+        ],
+        "context_concepts": [],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocation",
+            "value_order": {
+                "{instruction distillation prompt}": 0,
+                "input_files_as_dict": 1,
+                "{output file location of instruction distillation}": 2,
+                "other_input_files": 3
+            },
+            "value_selectors": {
+                "input_files_as_dict": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{original prompt}"
+                },
+                "other_input_files": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{other input files}",
+                    "unpack": true
+                }
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.3"
+        },
+        "inference_sequence": "grouping",
+        "concept_to_infer": "{input files}",
+        "function_concept": "&in",
+        "value_concepts": [
+            "{original prompt}",
+            "{other input files}"
+        ],
+        "context_concepts": [],
+        "working_interpretation": {
+            "syntax": {
+                "marker": "in"
+            }
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "1.3.3"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{other input files}",
+        "function_concept": "::{%(composition)}({prompt}<$({location of related files prompt})%>)",
+        "value_concepts": [
+            "{location of related files prompt}"
+        ],
+        "context_concepts": [],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForMultipleFiles-o_FileLocationList",
+            "value_order": {
+                "{location of related files prompt}": 0
+            },
+            "value_selectors": {}
+        }
+    },
+    {
+        "flow_info": {
+            "flow_index": "2"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "[{1.2_initial_context_registered.json}<*1>/{file_mapping.json}<*2>]",
+        "function_concept": "::{%(composition)}({prompt}<$({context file registration prompt})%>: {1}<$%={normal/location_string}>; {output}<$({output directory of context file registration})>)",
+        "value_concepts": [
+            "{context file registration prompt}",
+            "{input files}",
+            "{output directory of context file registration}"
+        ],
+        "context_concepts": [],
+        "working_interpretation": {
+            "paradigm": "h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocationList",
+            "create_axis_on_list_output": false,
+            "value_order": {
+                "{context file registration prompt}": 0,
+                "input_files_as_dict": 1,
+                "{output directory of context file registration}": 2,
+                "other_input_files": 3
+            },
+            "value_selectors": {
+                "input_files_as_dict": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{original prompt}",
+                    "branch": {
+                        "path": "NULL",
+                        "content": "file_location"
+                    }
+                },
+                "other_input_files": {
+                    "source_concept": "{input files}",
+                    "index": 0,
+                    "key": "{other input files}",
+                    "unpack": true,
+                    "branch": {
+                        "path": "NULL",
+                        "content": "file_location"
+                    }
+                }
+            }
+        }
+    }
+]

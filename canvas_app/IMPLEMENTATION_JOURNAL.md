@@ -6,6 +6,121 @@
 
 ---
 
+## December 22, 2024 - User Input Tool Integration (Human-in-the-Loop)
+
+### What Was Implemented
+
+**In-App User Input Modal**
+The orchestrator can now request user input during execution, displaying a modal dialog within the Canvas app instead of requiring external input.
+
+- [x] **Backend `CanvasUserInputTool` integration**:
+  - Tool is now automatically injected into Body during `load_repositories()`
+  - Uses `_emit_sync()` callback for thread-safe WebSocket event emission
+  - Interface matches `infra._agent._models._user_input_tool.UserInputTool` exactly
+  - Main entry point is `create_interaction(**config)` which returns a callable
+  - Supports multiple interaction types: `simple_text`/`text_input`, `text_editor`, `confirm`, `select`, `multi_file_input`
+  
+- [x] **REST API endpoints** for user input:
+  - `GET /execution/user-input/pending` - List all pending input requests
+  - `POST /execution/user-input/{request_id}/submit` - Submit user response
+  - `POST /execution/user-input/{request_id}/cancel` - Cancel a pending request
+  
+- [x] **WebSocket events** for real-time user input notifications:
+  - `user_input:request` - Emitted when input is needed
+  - `user_input:completed` - Emitted when input is submitted
+  - `user_input:cancelled` - Emitted when input is cancelled
+  
+- [x] **Frontend state management**:
+  - `userInputRequests` array added to `executionStore`
+  - Actions: `addUserInputRequest`, `removeUserInputRequest`, `clearUserInputRequests`
+  - WebSocket hook handles user input events
+  
+- [x] **`UserInputModal` component**:
+  - Displays automatically when there are pending input requests
+  - Supports all interaction types with appropriate UI:
+    - `text_input`/`simple_text`: Single-line text field
+    - `text_editor`: Multi-line textarea with initial content support
+    - `confirm`: Yes/No buttons
+    - `select`: Clickable option buttons
+    - `multi_file_input`: In-app file browser with directory navigation
+  - Enter key submits for text_input
+  - Cancel button available to skip input
+  - Error handling and loading states
+
+- [x] **File Browser for `multi_file_input`**:
+  - Navigate directories within the app
+  - Click folders to navigate, click files to select
+  - Manual path entry for files outside browsable area
+  - Selected files list with remove capability
+  - Directories shown first, alphabetically sorted
+  - Skips hidden folders (`.git`, `__pycache__`, etc.)
+  
+- [x] **API client methods**:
+  - `executionApi.getPendingUserInputs()`
+  - `executionApi.submitUserInput(requestId, response)`
+  - `executionApi.cancelUserInput(requestId)`
+
+### Technical Details
+
+**User Input Flow**:
+```
+Orchestrator execution reaches user input step
+    ↓
+Body.user_input.create_input_function() called
+    ↓
+CanvasUserInputTool._wait_for_input()
+    ↓ Emits "user_input:request" WebSocket event
+    ↓ Blocks on threading.Event
+Frontend receives event
+    ↓
+UserInputModal appears with prompt
+    ↓
+User enters response and submits
+    ↓ POST /execution/user-input/{id}/submit
+CanvasUserInputTool.submit_response()
+    ↓ Sets response, unblocks event
+Execution continues with user's response
+```
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/routers/execution_router.py`:
+  - Added `UserInputSubmitRequest` and `UserInputSubmitResponse` models
+  - Added `GET /user-input/pending` endpoint
+  - Added `POST /user-input/{request_id}/submit` endpoint
+  - Added `POST /user-input/{request_id}/cancel` endpoint
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `CanvasUserInputTool` import
+  - Added `user_input_tool` field to ExecutionController
+  - Added `_emit_sync()` helper method
+  - Created and injected user input tool during `load_repositories()`
+
+**Frontend**:
+- `canvas_app/frontend/src/stores/executionStore.ts`:
+  - Added `UserInputRequest` interface
+  - Added `userInputRequests` state
+  - Added `addUserInputRequest`, `removeUserInputRequest`, `clearUserInputRequests` actions
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`:
+  - Added handlers for `user_input:request`, `user_input:completed`, `user_input:cancelled`
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `UserInputsResponse`, `UserInputSubmitResponse` types
+  - Added `getPendingUserInputs()`, `submitUserInput()`, `cancelUserInput()` methods
+- `canvas_app/frontend/src/components/panels/UserInputModal.tsx` (NEW):
+  - Full modal component for user input interactions
+- `canvas_app/frontend/src/App.tsx`:
+  - Added `UserInputModal` import and render
+
+### Usage
+
+When a NormCode plan uses user input (e.g., `user_input.create_input_function()`), the Canvas app will:
+1. Pause execution at that point
+2. Display a modal dialog with the prompt
+3. Wait for user to enter and submit response
+4. Continue execution with the provided value
+
+---
+
 ## December 22, 2024 - Phase 4: Modification & Re-run Features
 
 ### What Was Implemented

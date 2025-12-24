@@ -4,7 +4,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { wsClient } from '../services/websocket';
-import { useExecutionStore } from '../stores/executionStore';
+import { useExecutionStore, type UserInputRequest } from '../stores/executionStore';
 import { useAgentStore } from '../stores/agentStore';
 import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
@@ -31,6 +31,10 @@ export function useWebSocket() {
   const addAgent = useAgentStore((s) => s.addAgent);
   const updateAgent = useAgentStore((s) => s.updateAgent);
   const deleteAgent = useAgentStore((s) => s.deleteAgent);
+
+  // User input actions
+  const addUserInputRequest = useExecutionStore((s) => s.addUserInputRequest);
+  const removeUserInputRequest = useExecutionStore((s) => s.removeUserInputRequest);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -336,11 +340,52 @@ export function useWebSocket() {
           }
           break;
 
+        // User input events (human-in-the-loop)
+        case 'user_input:request':
+          if (data.request_id) {
+            const request: UserInputRequest = {
+              request_id: data.request_id as string,
+              prompt: (data.prompt as string) || 'Please provide input:',
+              interaction_type: (data.interaction_type as UserInputRequest['interaction_type']) || 'text_input',
+              options: data.options as UserInputRequest['options'],
+              created_at: data.created_at as number,
+            };
+            addUserInputRequest(request);
+            addLog({
+              flowIndex: '',
+              level: 'info',
+              message: `User input requested: ${request.prompt.substring(0, 50)}${request.prompt.length > 50 ? '...' : ''}`,
+            });
+          }
+          break;
+
+        case 'user_input:completed':
+          if (data.request_id) {
+            removeUserInputRequest(data.request_id as string);
+            addLog({
+              flowIndex: '',
+              level: 'info',
+              message: `User input completed: ${data.request_id}`,
+            });
+          }
+          break;
+
+        case 'user_input:cancelled':
+          if (data.request_id) {
+            removeUserInputRequest(data.request_id as string);
+            addLog({
+              flowIndex: '',
+              level: 'warning',
+              message: `User input cancelled: ${data.request_id}`,
+            });
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest]
   );
 
   const [isConnected, setIsConnected] = useState(false);

@@ -12,6 +12,20 @@ interface LogEntry {
   timestamp: Date;
 }
 
+// User input request from backend
+export interface UserInputRequest {
+  request_id: string;
+  prompt: string;
+  interaction_type: 'text_input' | 'text_editor' | 'confirm' | 'select' | 'multi_file_input';
+  options?: {
+    initial_content?: string;
+    initial_directory?: string;
+    choices?: string[];
+    [key: string]: unknown;
+  };
+  created_at?: number;
+}
+
 interface ExecutionState {
   // Status
   status: ExecutionStatus;
@@ -38,6 +52,9 @@ interface ExecutionState {
   // Verbose logging mode
   verboseLogging: boolean;
 
+  // User input requests (human-in-the-loop)
+  userInputRequests: UserInputRequest[];
+
   // Actions
   setStatus: (status: ExecutionStatus) => void;
   setCurrentInference: (flowIndex: string | null) => void;
@@ -54,6 +71,10 @@ interface ExecutionState {
   updateStepProgress: (flowIndex: string, update: Partial<StepProgress>) => void;
   clearStepProgress: (flowIndex?: string) => void;
   setVerboseLogging: (enabled: boolean) => void;
+  // User input actions
+  addUserInputRequest: (request: UserInputRequest) => void;
+  removeUserInputRequest: (requestId: string) => void;
+  clearUserInputRequests: () => void;
   reset: () => void;
 }
 
@@ -69,6 +90,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   runId: null,
   stepProgress: {},
   verboseLogging: false,
+  userInputRequests: [],
 
   setStatus: (status) => set({ status }),
 
@@ -152,6 +174,19 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
 
   setVerboseLogging: (enabled) => set({ verboseLogging: enabled }),
 
+  // User input actions
+  addUserInputRequest: (request) =>
+    set((state) => ({
+      userInputRequests: [...state.userInputRequests, request],
+    })),
+
+  removeUserInputRequest: (requestId) =>
+    set((state) => ({
+      userInputRequests: state.userInputRequests.filter((r) => r.request_id !== requestId),
+    })),
+
+  clearUserInputRequests: () => set({ userInputRequests: [] }),
+
   reset: () =>
     set({
       status: 'idle',
@@ -163,5 +198,6 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
       logs: [],
       runId: null,
       stepProgress: {},
+      userInputRequests: [],
     }),
 }));
