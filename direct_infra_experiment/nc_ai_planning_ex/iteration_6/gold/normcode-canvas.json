@@ -1,8 +1,9 @@
 {
+  "id": "d2589157",
   "name": "\u9ec4\u91d1\u6295\u8d44\u5efa\u8bae",
   "description": "\u4e2d\u6587\u7248",
   "created_at": "2025-12-21T16:30:00.046487",
-  "updated_at": "2025-12-21T16:30:00.046487",
+  "updated_at": "2025-12-24T17:07:45.921900",
   "repositories": {
     "concepts": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos\\gold_chinese.concept.json",
     "inferences": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos\\gold_chinese.inference.json",
@@ -12,10 +13,9 @@
     "llm_model": "qwen-plus",
     "max_cycles": 50,
     "db_path": "orchestration.db",
-    "base_dir": null,
+    "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos",
     "paradigm_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\provision\\paradigm"
   },
   "breakpoints": [],
-  "ui_preferences": {},
-  "id": "d2589157"
+  "ui_preferences": {}
 }

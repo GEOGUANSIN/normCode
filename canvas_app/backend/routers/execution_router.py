@@ -177,10 +177,25 @@ async def get_logs(
 async def get_config():
     """Get execution configuration options and defaults.
     
-    Returns available LLM models, default values, and current config if loaded.
+    Returns available LLM models (from both settings.yaml and LLM settings service),
+    default values, and current config if loaded.
     """
+    # Start with models from settings.yaml
+    all_models = list(LLM_MODELS)
+    
+    # Add models from LLM settings service
+    try:
+        from services.llm_settings_service import llm_settings_service
+        provider_names = llm_settings_service.get_available_models()
+        for name in provider_names:
+            if name not in all_models:
+                all_models.append(name)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not get LLM providers: {e}")
+    
     return ExecutionConfig(
-        available_models=LLM_MODELS,
+        available_models=all_models,
         default_max_cycles=DEFAULT_MAX_CYCLES,
         default_db_path=DEFAULT_DB_PATH,
     )

@@ -203,36 +203,79 @@ class CustomParadigmTool:
             spec = importlib.util.spec_from_file_location("_paradigm", local_paradigm_py)
             paradigm_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(paradigm_module)
-            self._Paradigm = paradigm_module.Paradigm
+            LocalParadigmClass = paradigm_module.Paradigm
             # Override PARADIGMS_DIR in the module to point to our custom dir
             paradigm_module.PARADIGMS_DIR = self.paradigm_dir
             logger.info(f"Loaded custom Paradigm class from {local_paradigm_py}")
-        else:
-            # Fallback: Import from infra but override the directory
+            
+            # Wrap with fallback to default paradigms
             try:
-                from infra._agent._models._paradigms._paradigm import Paradigm
-                # Create a wrapper that loads from custom directory
-                class LocalParadigm:
-                    """Wrapper to load paradigms from custom directory."""
+                from infra._agent._models._paradigms._paradigm import Paradigm as DefaultParadigm, PARADIGMS_DIR
+                custom_dir = self.paradigm_dir
+                
+                class WrappedLocalParadigm:
+                    """Wrapper that tries local paradigm first, then falls back to default."""
                     @classmethod
                     def load(cls, paradigm_name: str):
+                        # Try local paradigm directory first
+                        paradigm_file = custom_dir / f"{paradigm_name}.json"
+                        if paradigm_file.exists():
+                            logger.debug(f"Loading paradigm '{paradigm_name}' from custom directory")
+                            return LocalParadigmClass.load(paradigm_name)
+                        
+                        # Fall back to default paradigms
+                        default_paradigm_file = PARADIGMS_DIR / f"{paradigm_name}.json"
+                        if default_paradigm_file.exists():
+                            logger.info(f"Paradigm '{paradigm_name}' not in custom dir, loading from default")
+                            return DefaultParadigm.load(paradigm_name)
+                        
+                        # Not found in either location
+                        raise FileNotFoundError(
+                            f"Paradigm '{paradigm_name}' not found in custom ({custom_dir}) or default ({PARADIGMS_DIR})"
+                        )
+                
+                self._Paradigm = WrappedLocalParadigm
+                logger.info(f"Wrapped local Paradigm with fallback to default paradigms")
+            except ImportError as e:
+                # If infra not available, just use local paradigm without fallback
+                logger.warning(f"Could not import default paradigms for fallback: {e}")
+                self._Paradigm = LocalParadigmClass
+        else:
+            # Fallback: Import from infra but check custom directory first
+            try:
+                from infra._agent._models._paradigms._paradigm import Paradigm, PARADIGMS_DIR
+                # Create a wrapper that loads from custom directory first, then falls back to default
+                class LocalParadigm:
+                    """Wrapper to load paradigms from custom directory, falling back to default."""
+                    @classmethod
+                    def load(cls, paradigm_name: str):
+                        # Try custom directory first
                         paradigm_file = paradigm_dir / f"{paradigm_name}.json"
-                        if not paradigm_file.exists():
-                            raise FileNotFoundError(
-                                f"Paradigm '{paradigm_name}' not found at {paradigm_file}"
-                            )
-                        with open(paradigm_file, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                        # Create Paradigm instance with loaded data
-                        paradigm = Paradigm.__new__(Paradigm)
-                        paradigm.name = paradigm_name
-                        paradigm.data = data
-                        paradigm.metadata = data.get('metadata', {})
-                        paradigm.env_spec = data.get('env_spec', {})
-                        paradigm.sequence_spec = data.get('sequence_spec', {})
-                        return paradigm
+                        if paradigm_file.exists():
+                            with open(paradigm_file, 'r', encoding='utf-8') as f:
+                                data = json.load(f)
+                            # Create Paradigm instance with loaded data
+                            paradigm = Paradigm.__new__(Paradigm)
+                            paradigm.name = paradigm_name
+                            paradigm.data = data
+                            paradigm.metadata = data.get('metadata', {})
+                            paradigm.env_spec = data.get('env_spec', {})
+                            paradigm.sequence_spec = data.get('sequence_spec', {})
+                            logger.debug(f"Loaded paradigm '{paradigm_name}' from custom directory")
+                            return paradigm
+                        
+                        # Fall back to default paradigms directory
+                        default_paradigm_file = PARADIGMS_DIR / f"{paradigm_name}.json"
+                        if default_paradigm_file.exists():
+                            logger.debug(f"Paradigm '{paradigm_name}' not in custom dir, loading from default")
+                            return Paradigm.load(paradigm_name)
+                        
+                        # Not found in either location
+                        raise FileNotFoundError(
+                            f"Paradigm '{paradigm_name}' not found in custom ({paradigm_dir}) or default ({PARADIGMS_DIR})"
+                        )
                 self._Paradigm = LocalParadigm
-                logger.info(f"Using infra Paradigm with custom directory: {paradigm_dir}")
+                logger.info(f"Using infra Paradigm with custom directory fallback: {paradigm_dir}")
             except ImportError as e:
                 logger.error(f"Failed to import Paradigm from infra: {e}")
                 raise
