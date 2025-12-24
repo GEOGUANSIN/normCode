@@ -4,20 +4,20 @@
 
 ---
 
-## From Chat to Reliable Workflows
+## From Chat to Workflows
 
-### You Know ChatGPT. That's Step 1.
+### Single prompts are easy
 
 ```
 You: "Summarize this document about Q3 earnings"
-AI: [reads entire document, produces summary]
+AI: [reads document, produces summary]
 ```
 
-Simple. Works great. But limited to single-shot tasks.
+This works well for one-shot tasks.
 
-### Step 2: Chaining Prompts Together
+### Multi-step tasks get trickier
 
-What if you need something more complex?
+For more complex work, you might chain several steps:
 
 ```
 Step 1: "Extract all financial figures from this document"
@@ -26,23 +26,23 @@ Step 3: "Flag any discrepancies"
 Step 4: "Generate an executive summary"
 ```
 
-Now you're building a **workflow**. And this is where things can break.
+This is a **workflow**—and it can get messy.
 
-### The Hidden Problem
+### What can go wrong
 
-By Step 4, your AI has:
+By Step 4, your AI might be juggling:
 - The entire original document (50+ pages)
 - All extracted figures (hundreds of numbers)
 - Raw database query results
-- Internal processing notes from earlier steps
+- Notes from earlier steps
 
-**Problems you may encounter** The AI can hallucinate. It confuses a number from page 47 with a database entry. It references entities that don't exist. When it fails, you can't tell which input caused the problem. You may also encounter issues with the accuracy of the results, such as the figures being incorrect or the database entries being outdated.
+Sometimes the AI confuses a number from page 47 with a database entry, or references something that doesn't exist. When things go wrong, it's hard to tell which input caused the issue.
 
-**This is what practitioners call "debugging in the dark."**
+Some people call this "debugging in the dark."
 
-### What NormCode Does Differently
+### How NormCode helps
 
-**Each step is a sealed room.** It only sees what you explicitly pass in.
+In NormCode, each step only sees what you explicitly pass to it:
 
 ```ncds
 <- executive summary
@@ -55,20 +55,20 @@ By Step 4, your AI has:
         <- database results
 ```
 
-Read bottom-up:
-- Step 1 sees only: `raw document`
-- Step 2 sees only: `extracted figures` + `database results` (not the raw document)
-- Step 3 sees only: `discrepancy flags` (not the raw figures or database)
+Reading bottom-up:
+- The extraction step sees only the `raw document`
+- The mismatch check sees only `extracted figures` + `database results`
+- The summary step sees only `discrepancy flags`
 
-**When Step 3 fails, you know exactly what it saw.** No guessing. No hidden state.
+If something goes wrong at a step, you can see exactly what that step received.
 
 ---
 
-## Bigger Picture:The Alignment Stack
+## Bigger Picture: The Alignment Stack
 
-NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals of users:
+NormCode fits into a three-layer approach for building AI systems that stay aligned with what users actually want:
 
-```
+```mermaid
 flowchart TB
     A["🧭 NormCode<br/><sub>Authority Layer</sub><br/>Semi-formal contracts between humans and AI"]
     B["🛠 Shared Workspace<br/><sub>Execution Layer</sub><br/>Data, tools, and task constraints"]
@@ -77,13 +77,13 @@ flowchart TB
     A --> B --> C
 ```
 
-NormCode, with its explicit data and step construction, acts as a guarantee for the execution of the tasks by the AI agents, it's aim is to provide a way for human users to maintain their authority over the AI agents.
+By making data flow and steps explicit, NormCode helps users stay in control of what their AI agents are doing.
 
 ---
 
-## What Makes NormCode Different
+## Key Ideas
 
-### 1. Data Isolation by Construction
+### Data isolation
 
 ```ncds
 <- risk assessment
@@ -93,24 +93,24 @@ NormCode, with its explicit data and step construction, acts as a guarantee for 
         <- full contract
 ```
 
-The risk assessment **cannot see the full contract**. Only the extracted clauses. No confusion, reduced hallucination, fully auditable.
+Here, the risk assessment step only sees the extracted clauses—not the full contract. This keeps things focused and easier to audit.
 
-### 2. Semantic vs. Syntactic Separation
+### Semantic vs. syntactic steps
 
 | Type | LLM? | Cost | Determinism | Examples |
 |------|------|------|-------------|----------|
 | **Semantic** | ✅ Yes | Tokens | Non-deterministic | Reasoning, generating, analyzing |
 | **Syntactic** | ❌ No | Free | 100% Deterministic | Collecting, selecting, routing |
 
-A typical 20-step plan might only call an LLM 8 times. The rest are instant, free data operations.
+In a typical plan, many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens.
 
-### 3. Three Properties for Trust
+### Three properties
 
-| Property | Description |
-|----------|-------------|
-| **Readable** | Humans can understand and audit every step |
-| **Executable** | AI can act on plans consistently and reliably |
-| **Accountable** | Every action is traceable with unique flow indices |
+| Property | What it means |
+|----------|---------------|
+| **Readable** | You can understand what each step does |
+| **Executable** | The AI can follow the plan reliably |
+| **Accountable** | Every step has a unique ID for tracing |
 
 ---
 
@@ -128,14 +128,14 @@ graph TD
     F --> I["Final Result + Audit Trail"]
 ```
 
-### Core Components
+### Main components
 
-| Component | Purpose |
-|-----------|---------|
-| **`infra/`** | The NormCode execution engine (Orchestrator, Blackboard, Agent Sequences) |
-| **`canvas_app/`** | Visual graph debugger with React Flow, breakpoints, and real-time execution |
-| **`cli_orchestrator.py`** | Command-line interface for running and managing orchestrations |
-| **`documentation/`** | Comprehensive guides, grammar reference, and API documentation |
+| Component | What it does |
+|-----------|--------------|
+| **`infra/`** | The execution engine (Orchestrator, Blackboard, Agent Sequences) |
+| **`canvas_app/`** | Visual debugger with graph view, breakpoints, and real-time execution |
+| **`cli_orchestrator.py`** | Command-line tool for running orchestrations |
+| **`documentation/`** | Guides and reference docs |
 
 ---
 
