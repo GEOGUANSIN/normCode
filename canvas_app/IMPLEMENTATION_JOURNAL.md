@@ -6,6 +6,100 @@
 
 ---
 
+## December 22, 2024 - Auto-Discovery of Repository Paths
+
+### What Was Implemented
+
+**Auto-Discovery Feature for Project Creation**
+When creating or opening a project, the canvas app now automatically searches for repository files and paradigm directories within the project directory and its subdirectories.
+
+- [x] **Backend Discovery Functions** (`project_service.py`):
+  - `discover_files_recursive()`: Recursively searches for files matching glob patterns
+  - `discover_paradigm_directories()`: Finds directories containing paradigm JSON files
+  - `discover_project_paths()`: Main discovery function that finds concepts, inferences, inputs, and paradigm directories
+  - Searches common patterns:
+    - Concepts: `*.concept.json`, `concepts.json`, `*_concept.json`
+    - Inferences: `*.inference.json`, `inferences.json`, `*_inference.json`
+    - Inputs: `*.inputs.json`, `inputs.json`, `*_inputs.json`
+    - Paradigms: directories named `paradigm`/`paradigms` or containing paradigm-like files (e.g., `h_*-c_*.json`)
+  - Prefers files in `repos/`, `repo/`, `repository/` subdirectories
+  - Skips common non-project directories (`.git`, `node_modules`, `__pycache__`, etc.)
+  - Limited to 5 levels of recursion for performance
+
+- [x] **Integration with Project Service**:
+  - `create_project()`: Auto-discovers paths if not explicitly provided
+  - `open_project()`: Updates project config with discovered paths if configured paths don't exist
+  - New public method `discover_paths()` for on-demand discovery
+
+- [x] **REST API Endpoint**:
+  - `POST /api/project/discover` - Discover repository files in a directory
+  - Returns `DiscoveredPathsResponse` with discovered paths and existence status
+
+- [x] **Frontend Discovery UI** (`ProjectPanel.tsx`):
+  - "Discover" button next to project directory field when creating a project
+  - Auto-populates form fields with discovered paths
+  - Visual indicators showing which fields contain discovered values (green border/background)
+  - Discovery results panel showing what was found
+
+### Technical Details
+
+**Discovery Priority**:
+1. Files in `repos/`, `repo/`, `repository/` directories are preferred
+2. If concepts found, inferences in same directory are preferred
+3. Shallower files are preferred over deeper ones
+4. First match used when multiple candidates exist
+
+**Paradigm Detection**:
+Directories are identified as paradigm directories if:
+1. Named `paradigm` or `paradigms`
+2. OR contain at least 2 files matching paradigm naming patterns:
+   - `h_*-c_*.json` (horizontal-compose pattern)
+   - `v_*-h_*.json` (vertical-horizontal pattern)
+   - `*-c_*-o_*.json` (compose-output pattern)
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/project_service.py`:
+  - Added `SKIP_DIRS`, `MAX_SEARCH_DEPTH` constants
+  - Added `discover_files_recursive()` function
+  - Added `discover_paradigm_directories()` function
+  - Added `DiscoveredPaths` class
+  - Added `discover_project_paths()` function
+  - Updated `create_project()` with `auto_discover` parameter
+  - Updated `open_project()` to auto-fill missing paths
+  - Added `discover_paths()` public method
+- `canvas_app/backend/schemas/project_schemas.py`:
+  - Added `DiscoverPathsRequest` model
+  - Added `DiscoveredPathsResponse` model
+- `canvas_app/backend/routers/project_router.py`:
+  - Added `POST /discover` endpoint
+
+**Frontend**:
+- `canvas_app/frontend/src/types/project.ts`:
+  - Added `DiscoverPathsRequest` type
+  - Added `DiscoveredPathsResponse` type
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `projectApi.discoverPaths()` method
+- `canvas_app/frontend/src/components/panels/ProjectPanel.tsx`:
+  - Added discovery state (`isDiscovering`, `discoveredPaths`)
+  - Added `handleDiscoverPaths()` function
+  - Added "Discover" button to Create tab
+  - Added discovery results panel
+  - Added visual indicators for discovered field values
+
+### Usage
+
+1. In the "Create Project" tab, enter a directory path
+2. Click "Discover" to search for repository files
+3. Form fields are auto-populated with found paths
+4. Fields with discovered values show green highlighting
+5. Modify paths if needed, then create the project
+
+Alternatively, when opening an existing project where the configured paths don't exist, the app will automatically search for alternative paths and update the config.
+
+---
+
 ## December 22, 2024 - User Input Tool Integration (Human-in-the-Loop)
 
 ### What Was Implemented

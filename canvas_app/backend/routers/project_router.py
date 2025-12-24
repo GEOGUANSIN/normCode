@@ -17,6 +17,8 @@ from schemas.project_schemas import (
     ScanDirectoryRequest,
     ExecutionSettings,
     UpdateRepositoriesRequest,
+    DiscoverPathsRequest,
+    DiscoveredPathsResponse,
 )
 from services.project_service import project_service
 from services.execution_service import execution_controller
@@ -201,6 +203,54 @@ async def scan_directory_for_projects(request: ScanDirectoryRequest):
         register=request.register,
     )
     return DirectoryProjectsResponse(directory=request.directory, projects=projects)
+
+
+@router.post("/discover", response_model=DiscoveredPathsResponse)
+async def discover_paths(request: DiscoverPathsRequest):
+    """
+    Auto-discover repository files and paradigm directory in a directory.
+    
+    Searches for:
+    - Concept files: *.concept.json, concepts.json
+    - Inference files: *.inference.json, inferences.json
+    - Input files: *.inputs.json, inputs.json
+    - Paradigm directories: directories named 'paradigm' or containing paradigm files
+    
+    Returns relative paths that can be used for project creation.
+    This is useful for populating default values when creating a new project.
+    """
+    from pathlib import Path
+    
+    directory = Path(request.directory)
+    discovered = project_service.discover_paths(request.directory)
+    
+    # Check which discovered paths actually exist
+    concepts_exists = False
+    inferences_exists = False
+    inputs_exists = False
+    paradigm_dir_exists = False
+    
+    if directory.exists():
+        if discovered['concepts']:
+            concepts_exists = (directory / discovered['concepts']).exists()
+        if discovered['inferences']:
+            inferences_exists = (directory / discovered['inferences']).exists()
+        if discovered['inputs']:
+            inputs_exists = (directory / discovered['inputs']).exists()
+        if discovered['paradigm_dir']:
+            paradigm_dir_exists = (directory / discovered['paradigm_dir']).exists()
+    
+    return DiscoveredPathsResponse(
+        directory=request.directory,
+        concepts=discovered['concepts'],
+        inferences=discovered['inferences'],
+        inputs=discovered['inputs'],
+        paradigm_dir=discovered['paradigm_dir'],
+        concepts_exists=concepts_exists,
+        inferences_exists=inferences_exists,
+        inputs_exists=inputs_exists,
+        paradigm_dir_exists=paradigm_dir_exists,
+    )
 
 
 @router.delete("/registry/{project_id}")
