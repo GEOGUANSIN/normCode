@@ -104,13 +104,13 @@ Here, the risk assessment step only sees the extracted clauses—not the full co
 
 In a typical plan, many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens.
 
-### Three properties
+### Three Principles of Design
 
 | Property | What it means |
 |----------|---------------|
-| **Readable** | You can understand what each step does |
+| **Automatable** | AI can directly derive plan from your natural language instructions |
 | **Executable** | The AI can follow the plan reliably |
-| **Accountable** | Every step has a unique ID for tracing |
+| **Accountable** | You can understand what each step does for tracing |
 
 ---
 
