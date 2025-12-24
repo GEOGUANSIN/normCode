@@ -39,9 +39,13 @@ export function ProjectPanel() {
     fetchAllProjects,
     scanDirectory,
     openProject,
+    openProjectAsTab,
     createProject,
     removeProjectFromRegistry,
   } = useProjectStore();
+  
+  // Use openProjectAsTab when a project is already open (multi-project mode)
+  const openProjectAction = currentProject ? openProjectAsTab : openProject;
 
   const [activeTab, setActiveTab] = useState<TabType>('recent');
   const [openPath, setOpenPath] = useState('');
@@ -142,7 +146,7 @@ export function ProjectPanel() {
         setError('No project configs found in this directory');
       } else if (projects.length === 1) {
         // Auto-open if only one project found
-        await openProject(undefined, undefined, projects[0].id);
+        await openProjectAction(undefined, undefined, projects[0].id);
       }
     } finally {
       setIsScanning(false);
@@ -151,7 +155,7 @@ export function ProjectPanel() {
 
   // Open a specific project from scanned list
   const handleOpenScannedProject = async (project: RegisteredProject) => {
-    const success = await openProject(project.directory, project.config_file, project.id);
+    const success = await openProjectAction(project.directory, project.config_file, project.id);
     if (success) {
       setOpenPath('');
       setScannedProjects([]);
@@ -180,7 +184,7 @@ export function ProjectPanel() {
   };
 
   const handleOpenRecent = async (project: RegisteredProject) => {
-    await openProject(undefined, undefined, project.id);
+    await openProjectAction(undefined, undefined, project.id);
   };
   
   const handleRemoveFromRegistry = async (e: React.MouseEvent, projectId: string) => {

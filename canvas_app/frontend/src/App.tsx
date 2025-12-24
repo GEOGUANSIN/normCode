@@ -20,6 +20,7 @@ import {
   Bot,
   AlertTriangle,
   Save,
+  Sparkles,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -32,10 +33,13 @@ import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { AgentPanel } from './components/panels/AgentPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
+import { ProjectTabs } from './components/panels/ProjectTabs';
+import { ChatPanel } from './components/panels/ChatPanel';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
 import { useProjectStore } from './stores/projectStore';
+import { useChatStore } from './stores/chatStore';
 
 // View modes for the main content area
 type ViewMode = 'canvas' | 'editor';
@@ -170,6 +174,9 @@ function App() {
   const status = useExecutionStore((s) => s.status);
   const wsConnected = useWebSocket();
   
+  // Chat state
+  const { isOpen: isChatOpen, togglePanel: toggleChatPanel, compilerStatus } = useChatStore();
+  
   // Project state
   const {
     currentProject,
@@ -177,8 +184,10 @@ function App() {
     isLoaded,
     repositoriesExist,
     isLoading: projectLoading,
+    openTabs,
     fetchCurrentProject,
     fetchRecentProjects,
+    fetchOpenTabs,
     loadProjectRepositories,
     closeProject,
     setProjectPanelOpen,
@@ -189,7 +198,8 @@ function App() {
   useEffect(() => {
     fetchCurrentProject();
     fetchRecentProjects();
-  }, [fetchCurrentProject, fetchRecentProjects]);
+    fetchOpenTabs();
+  }, [fetchCurrentProject, fetchRecentProjects, fetchOpenTabs]);
 
   // If no project is open, show project welcome screen
   if (!currentProject) {
@@ -366,6 +376,25 @@ function App() {
             <HelpCircle size={18} />
           </button>
           
+          <div className="w-px h-6 bg-slate-200 mx-1" />
+          
+          {/* Chat Panel Toggle - compiler-driven chat */}
+          <button
+            onClick={toggleChatPanel}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+              isChatOpen
+                ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+            }`}
+            title="Compiler Chat"
+          >
+            <Sparkles size={18} />
+            <span className="text-sm font-medium">Chat</span>
+            {compilerStatus === 'running' && (
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            )}
+          </button>
+          
           {/* Close project */}
           <button
             onClick={closeProject}
@@ -377,32 +406,41 @@ function App() {
         </div>
       </header>
 
+      {/* Project Tabs Bar - shows when multiple projects are open */}
+      {openTabs.length > 1 && (
+        <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
+      )}
+
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={showSettingsPanel} 
         onToggle={() => setShowSettingsPanel(!showSettingsPanel)} 
       />
 
-      {/* Control Panel - only show in canvas mode when graph is loaded */}
-      {graphData && viewMode === 'canvas' && (
-        <ControlPanel 
-          onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
-          checkpointPanelOpen={showCheckpointPanel}
-        />
-      )}
+      {/* Main Content Area with Chat Panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left side: Main Content (includes ControlPanel when in canvas mode) */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Control Panel - only show in canvas mode when graph is loaded */}
+          {graphData && viewMode === 'canvas' && (
+            <ControlPanel 
+              onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
+              checkpointPanelOpen={showCheckpointPanel}
+            />
+          )}
 
-      {/* Checkpoint Panel - dropdown below control panel */}
-      <CheckpointPanel 
-        isOpen={showCheckpointPanel && viewMode === 'canvas'} 
-        onToggle={() => setShowCheckpointPanel(!showCheckpointPanel)} 
-      />
+          {/* Checkpoint Panel - dropdown below control panel */}
+          <CheckpointPanel 
+            isOpen={showCheckpointPanel && viewMode === 'canvas'} 
+            onToggle={() => setShowCheckpointPanel(!showCheckpointPanel)} 
+          />
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative z-0">
-        {viewMode === 'editor' ? (
-          // Editor View
-          <EditorPanel />
-        ) : !isLoaded ? (
+          {/* Main Content */}
+          <main className="flex-1 flex flex-col overflow-hidden relative z-0">
+            {viewMode === 'editor' ? (
+              // Editor View
+              <EditorPanel />
+            ) : !isLoaded ? (
           // Show message when repositories not loaded yet (Canvas mode)
           <div className="flex-1 flex items-center justify-center bg-white">
             <div className="text-center p-8">
@@ -455,7 +493,12 @@ function App() {
             {graphData && showLogPanel && <LogPanel />}
           </>
         )}
-      </main>
+          </main>
+        </div>
+
+        {/* Chat Panel - appears on right side, independent of view mode */}
+        <ChatPanel />
+      </div>
 
       {/* Fullscreen Detail Panel */}
       {graphData && detailPanelFullscreen && (

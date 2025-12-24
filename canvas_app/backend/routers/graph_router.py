@@ -1,9 +1,13 @@
 """Graph data endpoints with layout mode support."""
 from typing import Optional, Dict, Any
+import logging
 from fastapi import APIRouter, HTTPException
 
 from services.graph_service import graph_service
+from services.project_service import project_service
 from schemas.graph_schemas import GraphData, GraphNode
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -14,6 +18,36 @@ async def get_graph():
     if graph_service.current_graph is None:
         raise HTTPException(status_code=404, detail="No graph loaded. Load repositories first.")
     return graph_service.current_graph
+
+
+@router.post("/reload", response_model=GraphData)
+async def reload_graph():
+    """
+    Reload the graph for the current project.
+    
+    This is used when switching between project tabs to ensure the graph
+    matches the current project's repository files.
+    """
+    if not project_service.is_project_open:
+        raise HTTPException(status_code=400, detail="No project is currently open")
+    
+    if not project_service.check_repositories_exist():
+        raise HTTPException(
+            status_code=404,
+            detail="Repository files not found for current project"
+        )
+    
+    try:
+        paths = project_service.get_absolute_repo_paths()
+        graph_service.load_from_files(
+            paths['concepts'],
+            paths['inferences']
+        )
+        logger.info(f"Reloaded graph for project '{project_service.current_config.name}'")
+        return graph_service.current_graph
+    except Exception as e:
+        logger.exception(f"Failed to reload graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/node/{node_id}")

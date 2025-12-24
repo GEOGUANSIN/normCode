@@ -41,7 +41,7 @@
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             z-index: 1000;
-            padding: 1rem 2rem;
+            padding: 0.35rem 2rem;
         }
 
         nav .nav-content {
@@ -53,7 +53,7 @@
         }
 
         nav .logo-small {
-            height: 40px;
+            height: 32px;
         }
 
         nav .company-name {
@@ -68,6 +68,58 @@
             display: flex;
             gap: 2rem;
             align-items: center;
+        }
+
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* Mobile menu overlay */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-overlay.active {
+            display: block;
+            opacity: 1;
         }
 
         nav a {
@@ -113,7 +165,7 @@
 
         /* Hero Section */
         .hero {
-            margin-top: 80px;
+            margin-top: 48px;
             padding: 4rem 2rem;
             text-align: center;
             background: linear-gradient(180deg, #ffffff 0%, var(--bg-light) 100%);
@@ -332,6 +384,10 @@
         }
 
         /* Comparison Table */
+        .table-wrapper {
+            width: 100%;
+        }
+
         .comparison-table {
             width: 100%;
             border-collapse: collapse;
@@ -480,10 +536,47 @@
                 padding: 1rem;
             }
 
+            .menu-toggle {
+                display: flex;
+            }
+
             nav .nav-links {
-                gap: 0.75rem;
-                font-size: 0.85rem;
-                flex-wrap: wrap;
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                max-width: 300px;
+                height: 100vh;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+                padding: 2rem;
+                transition: right 0.3s ease;
+                box-shadow: -5px 0 30px rgba(0, 0, 0, 0.1);
+            }
+
+            nav .nav-links.active {
+                right: 0;
+            }
+
+            nav .nav-links a {
+                font-size: 1.2rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .lang-switcher {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+
+            .lang-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 1rem;
+                min-width: 50px;
+                min-height: 44px;
             }
 
             nav .company-name {
@@ -492,45 +585,112 @@
             }
 
             h1 {
-                font-size: 2.25rem;
+                font-size: clamp(1.75rem, 6vw, 2.5rem);
             }
 
             .subtitle {
-                font-size: 1.3rem;
+                font-size: clamp(1.1rem, 4vw, 1.4rem);
             }
 
             .hero-description {
                 font-size: 1.05rem;
+                padding: 0 0.5rem;
+            }
+
+            section {
+                padding: 3rem 1.25rem;
             }
 
             section h2 {
-                font-size: 2.25rem;
+                font-size: clamp(1.75rem, 5vw, 2.25rem);
+            }
+
+            .section-description {
+                font-size: 1rem;
             }
 
             .features-grid {
-                gap: 1.5rem;
+                gap: 1.25rem;
+                grid-template-columns: 1fr;
             }
 
             .feature-card {
-                padding: 2rem;
+                padding: 1.75rem;
             }
 
-            .features-grid {
-                grid-template-columns: 1fr;
+            .video-demo {
+                padding: 3rem 1rem 0;
             }
 
             .video-container {
                 border-radius: 8px;
+                margin: 1.5rem auto;
+            }
+
+            .code-example {
+                padding: 1.5rem;
+                font-size: 0.8rem;
+                line-height: 1.8;
+                border-radius: 12px;
+            }
+
+            /* Make table scrollable on mobile */
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 2rem -1rem;
+                padding: 0 1rem;
+            }
+
+            .comparison-table {
+                min-width: 500px;
+                font-size: 0.9rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 1rem;
+            }
+
+            .cta-section {
+                padding: 3rem 1.5rem;
+                border-radius: 16px;
+                margin: 3rem 1rem;
+            }
+
+            .cta-section h2 {
+                font-size: 1.75rem;
+            }
+
+            .cta-section p {
+                font-size: 1rem;
+            }
+
+            .cta-button {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+
+            footer {
+                padding: 3rem 1.5rem 2rem;
             }
         }
 
         @media (max-width: 480px) {
+            .hero {
+                padding: 3rem 1rem;
+            }
+
             h1 {
-                font-size: 1.75rem;
+                font-size: clamp(1.5rem, 7vw, 2rem);
             }
 
             .subtitle {
-                font-size: 1.1rem;
+                font-size: 1rem;
+            }
+
+            .hero-description {
+                font-size: 0.95rem;
             }
 
             .logo img {
@@ -544,6 +704,43 @@
             nav .company-name {
                 font-size: 0.85rem;
                 margin-left: 0.4rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem;
+            }
+
+            .feature-icon {
+                font-size: 2.5rem;
+            }
+
+            .feature-card h3 {
+                font-size: 1.15rem;
+            }
+
+            .code-example {
+                font-size: 0.7rem;
+                padding: 1.25rem;
+            }
+
+            .video-label {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Landscape phone orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .hero {
+                padding: 2rem 1rem;
+                margin-top: 48px;
+            }
+
+            nav .nav-links {
+                padding-top: 60px;
+            }
+
+            section {
+                padding: 2rem 1.5rem;
             }
         }
 
@@ -570,6 +767,9 @@
     </style>
 </head>
 <body>
+    <!-- Mobile menu overlay -->
+    <div class="menu-overlay"></div>
+
     <!-- Navigation -->
     <nav>
         <div class="nav-content">
@@ -577,6 +777,11 @@
                 <img src="psylens_logo_caption.png" alt="Psylens.AI" class="logo-small">
                 <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
             </div>
+            <button class="menu-toggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <div class="nav-links">
                 <a href="#features" data-i18n="nav.features">Features</a>
                 <a href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
@@ -695,6 +900,7 @@
         </p>
 
         <h3 style="margin-top: 3rem; text-align: center;" data-i18n="howItWorks.comparisonTitle">Semantic vs. Syntactic Steps</h3>
+        <div class="table-wrapper">
         <table class="comparison-table">
             <thead>
                 <tr>
@@ -722,6 +928,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </section>
 
     <!-- Use Cases -->
@@ -1036,6 +1243,22 @@
             });
         });
 
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        const menuOverlay = document.querySelector('.menu-overlay');
+
+        function toggleMenu(open) {
+            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
+            menuToggle.classList.toggle('active', isOpen);
+            navLinks.classList.toggle('active', isOpen);
+            menuOverlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', () => toggleMenu());
+        menuOverlay.addEventListener('click', () => toggleMenu(false));
+
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -1047,6 +1270,8 @@
                         block: 'start'
                     });
                 }
+                // Close mobile menu after clicking a link
+                toggleMenu(false);
             });
         });
 

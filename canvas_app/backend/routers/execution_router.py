@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, Any, List
 
-from services.execution_service import execution_controller
+from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
 from services.project_service import project_service
 from schemas.execution_schemas import (
     ExecutionState, BreakpointRequest, LogsResponse, LogEntry,

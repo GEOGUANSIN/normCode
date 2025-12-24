@@ -14,6 +14,7 @@ from schemas.project_schemas import (
     ProjectRegistry,
     RecentProject,
     RecentProjectsConfig,
+    OpenProjectInstance,
     PROJECT_CONFIG_SUFFIX,
     LEGACY_PROJECT_CONFIG_FILE,
     PROJECT_REGISTRY_FILE,
@@ -272,6 +273,10 @@ class ProjectService:
         self.current_config_file: Optional[str] = None  # The filename of current project config
         self._app_data_dir = get_app_data_dir()
         self._registry: Optional[ProjectRegistry] = None
+        
+        # Multi-project (tabs) support
+        self._open_projects: Dict[str, OpenProjectInstance] = {}  # project_id -> instance
+        self._active_project_id: Optional[str] = None  # Currently focused project
     
     @property
     def is_project_open(self) -> bool:
@@ -967,6 +972,190 @@ class ProjectService:
             
         except Exception as e:
             logger.warning(f"Failed to migrate legacy projects: {e}")
+    
+    # =========================================================================
+    # Multi-Project (Tabs) Support
+    # =========================================================================
+    
+    def open_project_as_tab(
+        self, 
+        project_path: Optional[str] = None,
+        config_file: Optional[str] = None,
+        project_id: Optional[str] = None,
+        make_active: bool = True,
+        is_read_only: bool = False,
+    ) -> OpenProjectInstance:
+        """
+        Open a project as a new tab (keeping other tabs open).
+        
+        Args:
+            project_path: Path to project directory
+            config_file: Specific config file name
+            project_id: Project ID (from registry)
+            make_active: Whether to switch to this tab after opening
+            is_read_only: Whether the project is read-only (view/execute only)
+            
+        Returns:
+            OpenProjectInstance representing the opened tab
+            
+        Raises:
+            FileNotFoundError: If project doesn't exist
+            ValueError: If project is already open
+        """
+        # First, open the project using existing logic (this also registers it)
+        config, config_filename = self.open_project(
+            project_path=project_path,
+            config_file=config_file,
+            project_id=project_id,
+        )
+        
+        # Check if already open as a tab
+        if config.id in self._open_projects:
+            # Already open - just switch to it if requested
+            if make_active:
+                self._active_project_id = config.id
+                # Update the "current" project references
+                instance = self._open_projects[config.id]
+                self.current_project_path = Path(instance.directory)
+                self.current_config = instance.config
+                self.current_config_file = instance.config_file
+            return self._open_projects[config.id]
+        
+        # Create a new open project instance
+        instance = OpenProjectInstance(
+            id=config.id,
+            name=config.name,
+            directory=str(self.current_project_path.absolute()),
+            config_file=config_filename,
+            config=config,
+            is_loaded=False,  # Not loaded until repositories are loaded
+            repositories_exist=self.check_repositories_exist(),
+            is_active=make_active,
+            is_read_only=is_read_only,
+        )
+        
+        # Add to open projects
+        self._open_projects[config.id] = instance
+        
+        # Set as active if requested
+        if make_active:
+            # Mark previous active as not active
+            if self._active_project_id and self._active_project_id in self._open_projects:
+                self._open_projects[self._active_project_id].is_active = False
+            self._active_project_id = config.id
+            instance.is_active = True
+        
+        logger.info(f"Opened project '{config.name}' as tab (id={config.id}, active={make_active})")
+        
+        return instance
+    
+    def switch_to_project(self, project_id: str) -> OpenProjectInstance:
+        """
+        Switch to a different open project tab.
+        
+        Args:
+            project_id: ID of the project to switch to
+            
+        Returns:
+            OpenProjectInstance of the newly active project
+            
+        Raises:
+            KeyError: If project is not currently open
+        """
+        if project_id not in self._open_projects:
+            raise KeyError(f"Project {project_id} is not currently open as a tab")
+        
+        # Mark previous active as not active
+        if self._active_project_id and self._active_project_id in self._open_projects:
+            self._open_projects[self._active_project_id].is_active = False
+        
+        # Set new active
+        self._active_project_id = project_id
+        instance = self._open_projects[project_id]
+        instance.is_active = True
+        
+        # Update "current" project references
+        self.current_project_path = Path(instance.directory)
+        self.current_config = instance.config
+        self.current_config_file = instance.config_file
+        
+        logger.info(f"Switched to project tab '{instance.name}' (id={project_id})")
+        
+        return instance
+    
+    def close_project_tab(self, project_id: str) -> Optional[str]:
+        """
+        Close a specific project tab.
+        
+        Args:
+            project_id: ID of the project to close
+            
+        Returns:
+            The ID of the new active project (if any), or None if no tabs remain
+        """
+        if project_id not in self._open_projects:
+            logger.warning(f"Cannot close project {project_id}: not open as a tab")
+            return self._active_project_id
+        
+        closed_project = self._open_projects.pop(project_id)
+        logger.info(f"Closed project tab '{closed_project.name}' (id={project_id})")
+        
+        # If we closed the active project, switch to another tab
+        new_active_id = None
+        if self._active_project_id == project_id:
+            self._active_project_id = None
+            
+            # Switch to another open project if any
+            if self._open_projects:
+                # Pick the first available
+                new_active_id = next(iter(self._open_projects.keys()))
+                self.switch_to_project(new_active_id)
+            else:
+                # No more open projects - clear current project state
+                self.current_project_path = None
+                self.current_config = None
+                self.current_config_file = None
+        else:
+            new_active_id = self._active_project_id
+        
+        return new_active_id
+    
+    def get_open_projects(self) -> List[OpenProjectInstance]:
+        """
+        Get all currently open project instances (tabs).
+        
+        Returns:
+            List of OpenProjectInstance objects
+        """
+        return list(self._open_projects.values())
+    
+    def get_active_project_id(self) -> Optional[str]:
+        """Get the ID of the currently active project."""
+        return self._active_project_id
+    
+    def get_active_project(self) -> Optional[OpenProjectInstance]:
+        """Get the currently active project instance."""
+        if self._active_project_id and self._active_project_id in self._open_projects:
+            return self._open_projects[self._active_project_id]
+        return None
+    
+    def update_open_project_loaded_state(self, project_id: str, is_loaded: bool):
+        """
+        Update the is_loaded state for an open project.
+        
+        Called after repositories are loaded/unloaded.
+        """
+        if project_id in self._open_projects:
+            self._open_projects[project_id].is_loaded = is_loaded
+    
+    def close_all_project_tabs(self):
+        """Close all open project tabs."""
+        self._open_projects.clear()
+        self._active_project_id = None
+        self.current_project_path = None
+        self.current_config = None
+        self.current_config_file = None
+        logger.info("Closed all project tabs")
 
 
 # Global project service instance

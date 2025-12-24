@@ -28,6 +28,12 @@ import type {
   ExecutionSettings,
   DiscoverPathsRequest,
   DiscoveredPathsResponse,
+  // Multi-project (tabs) support
+  OpenProjectInstance,
+  OpenProjectsResponse,
+  SwitchProjectRequest,
+  CloseProjectRequest,
+  OpenProjectInTabRequest,
 } from '../types/project';
 
 const API_BASE = '/api';
@@ -81,6 +87,14 @@ export const graphApi = {
   
   getStats: (): Promise<GraphStats> =>
     fetchJson(`${API_BASE}/graph/stats`),
+  
+  /**
+   * Reload the graph for the current project.
+   * Used when switching between project tabs to ensure the graph matches
+   * the current project's repository files.
+   */
+  reload: (): Promise<GraphData> =>
+    fetchJson(`${API_BASE}/graph/reload`, { method: 'POST' }),
 };
 
 // Execution endpoints
@@ -329,6 +343,34 @@ export const projectApi = {
       method: 'PUT',
       body: JSON.stringify(paths),
     }),
+  
+  // Multi-project (tabs) endpoints
+  getOpenTabs: (): Promise<OpenProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/tabs`),
+  
+  openAsTab: (request: OpenProjectInTabRequest): Promise<OpenProjectInstance> =>
+    fetchJson(`${API_BASE}/project/tabs/open`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  switchTab: (request: SwitchProjectRequest): Promise<OpenProjectInstance> =>
+    fetchJson(`${API_BASE}/project/tabs/switch`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  closeTab: (request: CloseProjectRequest): Promise<OpenProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/tabs/close`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  closeAllTabs: (): Promise<{ status: string; message: string }> =>
+    fetchJson(`${API_BASE}/project/tabs/close-all`, { method: 'POST' }),
+  
+  getActiveTab: (): Promise<OpenProjectInstance | null> =>
+    fetchJson(`${API_BASE}/project/tabs/active`),
 };
 
 // Agent endpoints
@@ -485,6 +527,127 @@ export const checkpointApi = {
 
   deleteRun: (runId: string, dbPath: string): Promise<{ success: boolean; message: string }> =>
     fetchJson(`${API_BASE}/checkpoints/runs/${encodeURIComponent(runId)}?db_path=${encodeURIComponent(dbPath)}`, {
+      method: 'DELETE',
+    }),
+};
+
+// ============================================================================
+// Chat API - Compiler-driven chat interface
+// ============================================================================
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system' | 'compiler';
+  content: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CompilerState {
+  compiler: {
+    project_id: string | null;
+    project_name: string;
+    status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'error';
+    is_loaded: boolean;
+    is_read_only: boolean;
+    current_step: string | null;
+    error_message: string | null;
+  };
+  pending_input: {
+    id: string;
+    prompt: string;
+    input_type: 'text' | 'code' | 'confirm' | 'select';
+    options?: string[];
+    placeholder?: string;
+  } | null;
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  message_id?: string;
+  error?: string;
+}
+
+export interface GetMessagesResponse {
+  messages: ChatMessage[];
+  has_more: boolean;
+  total_count: number;
+}
+
+export interface StartCompilerResponse {
+  success: boolean;
+  project_id?: string;
+  project_path?: string;
+  project_config_file?: string;
+  status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'error';
+  error?: string;
+}
+
+export const chatApi = {
+  /**
+   * Get the current state of the compiler meta project.
+   */
+  getState: (): Promise<CompilerState> =>
+    fetchJson(`${API_BASE}/chat/state`),
+  
+  /**
+   * Start/connect the compiler meta project.
+   * This initializes the compiler and makes it ready to receive user input.
+   */
+  startCompiler: (autoRun = true): Promise<StartCompilerResponse> =>
+    fetchJson(`${API_BASE}/chat/start`, {
+      method: 'POST',
+      body: JSON.stringify({ auto_run: autoRun }),
+    }),
+  
+  /**
+   * Stop the compiler execution (but keep it connected).
+   */
+  stopCompiler: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/stop`, { method: 'POST' }),
+  
+  /**
+   * Disconnect the compiler completely.
+   */
+  disconnectCompiler: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/disconnect`, { method: 'POST' }),
+  
+  /**
+   * Get chat message history.
+   */
+  getMessages: (limit = 100, offset = 0): Promise<GetMessagesResponse> =>
+    fetchJson(`${API_BASE}/chat/messages?limit=${limit}&offset=${offset}`),
+  
+  /**
+   * Send a message to the compiler.
+   * This is the main endpoint for user chat input.
+   */
+  sendMessage: (content: string, metadata?: Record<string, unknown>): Promise<SendMessageResponse> =>
+    fetchJson(`${API_BASE}/chat/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content, metadata }),
+    }),
+  
+  /**
+   * Clear all chat messages.
+   */
+  clearMessages: (): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/chat/messages`, { method: 'DELETE' }),
+  
+  /**
+   * Submit a response to a pending input request.
+   */
+  submitInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ request_id: requestId, value }),
+    }),
+  
+  /**
+   * Cancel a pending input request.
+   */
+  cancelInput: (requestId: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {
       method: 'DELETE',
     }),
 };

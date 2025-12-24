@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from services.graph_service import graph_service
-from services.execution_service import execution_controller
+from services.execution_service import execution_controller, get_execution_controller
 from schemas.execution_schemas import LoadRepositoryRequest
 
 router = APIRouter()
