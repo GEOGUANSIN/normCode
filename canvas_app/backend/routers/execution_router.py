@@ -422,3 +422,89 @@ async def get_descendants(flow_index: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# User Input Endpoints (Human-in-the-loop)
+# =============================================================================
+
+class UserInputSubmitRequest(BaseModel):
+    """Request to submit user input response."""
+    response: Any
+
+
+class UserInputSubmitResponse(BaseModel):
+    """Response for user input submission."""
+    success: bool
+    request_id: str
+    message: str
+
+
+@router.get("/user-input/pending")
+async def get_pending_user_inputs():
+    """Get all pending user input requests.
+    
+    Returns list of pending input requests that need user response.
+    """
+    if execution_controller.user_input_tool is None:
+        return {"requests": [], "count": 0}
+    
+    requests = execution_controller.user_input_tool.get_pending_requests()
+    return {
+        "requests": requests,
+        "count": len(requests)
+    }
+
+
+@router.post("/user-input/{request_id}/submit", response_model=UserInputSubmitResponse)
+async def submit_user_input(request_id: str, request: UserInputSubmitRequest):
+    """Submit a response for a pending user input request.
+    
+    Args:
+        request_id: The ID of the pending request
+        request.response: The user's response (string, bool, etc.)
+    """
+    if execution_controller.user_input_tool is None:
+        raise HTTPException(status_code=400, detail="User input tool not initialized")
+    
+    success = execution_controller.user_input_tool.submit_response(
+        request_id, 
+        request.response
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending request found with ID: {request_id}"
+        )
+    
+    return UserInputSubmitResponse(
+        success=True,
+        request_id=request_id,
+        message="Response submitted successfully"
+    )
+
+
+@router.post("/user-input/{request_id}/cancel", response_model=UserInputSubmitResponse)
+async def cancel_user_input(request_id: str):
+    """Cancel a pending user input request.
+    
+    Args:
+        request_id: The ID of the request to cancel
+    """
+    if execution_controller.user_input_tool is None:
+        raise HTTPException(status_code=400, detail="User input tool not initialized")
+    
+    success = execution_controller.user_input_tool.cancel_request(request_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending request found with ID: {request_id}"
+        )
+    
+    return UserInputSubmitResponse(
+        success=True,
+        request_id=request_id,
+        message="Request cancelled"
+    )

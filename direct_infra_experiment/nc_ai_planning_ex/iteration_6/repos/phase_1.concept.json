@@ -1,0 +1,232 @@
+[
+    {
+        "id": "c-original-prompt",
+        "concept_name": "{original prompt}",
+        "type": "{}",
+        "flow_indices": ["1.3.2"],
+        "description": "Original user prompt to be processed",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{user_input}(original user prompt to be processed)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "original prompt"
+    },
+    {
+        "id": "c-other-input-files",
+        "concept_name": "{other input files}",
+        "type": "{}",
+        "flow_indices": ["1.3.3"],
+        "description": "Additional input files provided by user",
+        "is_ground_concept": false,
+        "is_final_concept": false,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "other input files"
+    },
+    {
+        "id": "c-input-files",
+        "concept_name": "{input files}",
+        "type": "{}",
+        "flow_indices": ["1.3", "2.3"],
+        "description": "Grouped collection of original prompt and other input files",
+        "is_ground_concept": false,
+        "is_final_concept": false,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "input files"
+    },
+    {
+        "id": "c-instruction-distillation-prompt",
+        "concept_name": "{instruction distillation prompt}",
+        "type": "{}",
+        "flow_indices": ["1.2"],
+        "description": "Prompt template for instruction distillation",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/1.1_instruction_distillation.md)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "instruction distillation prompt"
+    },
+    {
+        "id": "c-output-file-location-instruction",
+        "concept_name": "{output file location of instruction distillation}",
+        "type": "{}",
+        "flow_indices": ["1.4"],
+        "description": "Directory path for saving instruction distillation output",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{save_dir}(gold/)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "output file location of instruction distillation"
+    },
+    {
+        "id": "c-location-related-files-prompt",
+        "concept_name": "{location of related files prompt}",
+        "type": "{}",
+        "flow_indices": ["1.3.3.2"],
+        "description": "Prompt for asking user to provide related file locations",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/related_files_prompt.md)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "location of related files prompt"
+    },
+    {
+        "id": "fc-instruction-distillation",
+        "concept_name": "::{%(composition)}({prompt}<$({instruction distillation prompt})%>: {1}<$({input files})%>)",
+        "type": "::({})",
+        "flow_indices": ["1.1"],
+        "description": "Functional: distill instructions from prompt and input files",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": ["_"],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "distill instructions from prompt and input files"
+    },
+    {
+        "id": "c-instruction-block",
+        "concept_name": "{1.1_instruction_block.md}",
+        "type": "{}",
+        "flow_indices": ["1"],
+        "description": "Distilled instruction block output file",
+        "is_ground_concept": false,
+        "is_final_concept": false,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "instruction block"
+    },
+    {
+        "id": "fc-group-input-files",
+        "concept_name": "&in",
+        "type": "&[{}]",
+        "flow_indices": ["1.3.1"],
+        "description": "Functional: group original prompt and other input files into dictionary",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": ["_"],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "group input files"
+    },
+    {
+        "id": "fc-get-related-files",
+        "concept_name": "::{%(composition)}({prompt}<$({location of related files prompt})%>)",
+        "type": "::({})",
+        "flow_indices": ["1.3.3.1"],
+        "description": "Functional: ask user for related file locations",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": ["_"],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "get related files from user"
+    },
+    {
+        "id": "c-context-file-registration-prompt",
+        "concept_name": "{context file registration prompt}",
+        "type": "{}",
+        "flow_indices": ["2.2"],
+        "description": "Prompt template for context file registration",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/1.2_context_registration.md)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "context file registration prompt"
+    },
+    {
+        "id": "c-output-directory-context-registration",
+        "concept_name": "{output directory of context file registration}",
+        "type": "{}",
+        "flow_indices": ["2.4"],
+        "description": "Directory path for saving context registration output",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{save_dir}(gold/context_store/)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "output directory of context file registration"
+    },
+    {
+        "id": "fc-context-file-registration",
+        "concept_name": "::{%(composition)}({prompt}<$({context file registration prompt})%>: {1}<$%={normal/location_string}>; {output}<$({output directory of context file registration})>)",
+        "type": "::({})",
+        "flow_indices": ["2.1"],
+        "description": "Functional: register context files from input",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": ["_"],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "register context files"
+    },
+    {
+        "id": "c-context-registered-files",
+        "concept_name": "[{1.2_initial_context_registered.json}<*1>/{file_mapping.json}<*2>]",
+        "type": "[]",
+        "flow_indices": ["2"],
+        "description": "List of registered context files and file mapping",
+        "is_ground_concept": false,
+        "is_final_concept": false,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "context registered files"
+    },
+    {
+        "id": "c-context-file-copying-script",
+        "concept_name": "{context file copying script}",
+        "type": "{}",
+        "flow_indices": ["3.3"],
+        "description": "Python script for copying context files",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{script_location}(scripts/1.2a_context_file_copying.py)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "context file copying script"
+    },
+    {
+        "id": "c-context-file-copying-prompt",
+        "concept_name": "{context file copying prompt}",
+        "type": "{}",
+        "flow_indices": ["3.2"],
+        "description": "Prompt template for context file copying",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{prompt_location}(prompts/context_file_copying.md)"
+        ],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "context file copying prompt"
+    },
+    {
+        "id": "fc-context-file-copying",
+        "concept_name": "::{%(composition)}({prompt}<$({context file copying prompt})%>, {script}<$({context file copying script})%>: {1}>)",
+        "type": "::({})",
+        "flow_indices": ["3.1"],
+        "description": "Functional: copy context files using script",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": ["_"],
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "copy context files"
+    },
+    {
+        "id": "c-context-store-raw",
+        "concept_name": "{context_store/raw--*.md}",
+        "type": "{}",
+        "flow_indices": ["3"],
+        "description": "Raw markdown files in context store",
+        "is_ground_concept": false,
+        "is_final_concept": true,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "context store raw files"
+    },
+    {
+        "id": "c-final-output",
+        "concept_name": "[{1.2_initial_context_registered.json}, {context_store/raw--*.md}]",
+        "type": "[]",
+        "flow_indices": ["4"],
+        "description": "Final output: registered context and raw files",
+        "is_ground_concept": false,
+        "is_final_concept": true,
+        "reference_axis_names": ["_none_axis"],
+        "natural_name": "phase 1 final output"
+    }
+]

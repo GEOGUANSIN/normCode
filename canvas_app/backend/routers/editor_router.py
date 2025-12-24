@@ -26,6 +26,7 @@ class FileInfo(BaseModel):
     format: str
     size: int
     modified: float
+    is_dir: bool = False  # True if this is a directory
 
 
 class FileSaveRequest(BaseModel):
@@ -37,11 +38,12 @@ class FileSaveRequest(BaseModel):
 class FileListRequest(BaseModel):
     """Request to list files in a directory"""
     directory: str
-    extensions: List[str] = [
+    extensions: Optional[List[str]] = [
         ".ncd", ".ncn", ".ncdn", ".nc.json", ".nci.json", ".json",
         ".py", ".md", ".txt", ".yaml", ".yml", ".toml",
         ".concept.json", ".inference.json"
     ]
+    recursive: bool = False  # Whether to list recursively
 
 
 class FileListResponse(BaseModel):
@@ -139,7 +141,11 @@ async def save_file(request: FileSaveRequest) -> dict:
 
 @router.post("/list")
 async def list_files(request: FileListRequest) -> FileListResponse:
-    """List files in a directory matching extensions"""
+    """List files and directories in a directory matching extensions.
+    
+    If extensions is None or empty, returns all files and all directories.
+    Otherwise, only returns files matching the extensions and all directories.
+    """
     try:
         dir_path = Path(request.directory)
         
@@ -151,23 +157,45 @@ async def list_files(request: FileListRequest) -> FileListResponse:
         
         files = []
         
+        # Skip hidden directories
+        skip_patterns = {'.git', '__pycache__', 'node_modules', '.venv', 'venv', '.conda', '.idea'}
+        
         # Walk through directory (non-recursive for now)
         for item in dir_path.iterdir():
-            if item.is_file():
-                # Check if extension matches
-                matches = any(item.name.endswith(ext) for ext in request.extensions)
-                if matches:
-                    stat = item.stat()
-                    files.append(FileInfo(
-                        name=item.name,
-                        path=str(item.absolute()),
-                        format=get_file_format(item.name),
-                        size=stat.st_size,
-                        modified=stat.st_mtime
-                    ))
+            # Skip hidden files/directories
+            if item.name.startswith('.') or item.name in skip_patterns:
+                continue
+                
+            if item.is_dir():
+                # Always include directories for navigation
+                stat = item.stat()
+                files.append(FileInfo(
+                    name=item.name,
+                    path=str(item.absolute()),
+                    format='directory',
+                    size=0,
+                    modified=stat.st_mtime,
+                    is_dir=True
+                ))
+            elif item.is_file():
+                # Check if extension matches (if extensions provided)
+                if request.extensions:
+                    matches = any(item.name.endswith(ext) for ext in request.extensions)
+                    if not matches:
+                        continue
+                
+                stat = item.stat()
+                files.append(FileInfo(
+                    name=item.name,
+                    path=str(item.absolute()),
+                    format=get_file_format(item.name),
+                    size=stat.st_size,
+                    modified=stat.st_mtime,
+                    is_dir=False
+                ))
         
-        # Sort by name
-        files.sort(key=lambda f: f.name)
+        # Sort: directories first, then by name
+        files.sort(key=lambda f: (not f.is_dir, f.name.lower()))
         
         return FileListResponse(
             directory=str(dir_path.absolute()),

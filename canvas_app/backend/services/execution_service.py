@@ -17,6 +17,7 @@ from schemas.execution_schemas import (
 )
 from core.events import event_emitter
 from services.agent_service import agent_registry, agent_mapping, ToolCallEvent
+from tools.user_input_tool import CanvasUserInputTool
 
 # Add project root to path for infra imports
 project_root = Path(__file__).parent.parent.parent.parent
@@ -307,6 +308,9 @@ class ExecutionController:
     # Store load configuration for restart functionality
     _load_config: Optional[Dict[str, Any]] = None
     
+    # User input tool for human-in-the-loop interactions
+    user_input_tool: Optional[CanvasUserInputTool] = None
+    
     def __post_init__(self):
         self._pause_event.set()  # Not paused by default
         self._attached_loggers = []
@@ -523,6 +527,11 @@ class ExecutionController:
             base_dir=base_dir,
             paradigm_tool=custom_paradigm_tool
         )
+        
+        # Create and inject the canvas user input tool for human-in-the-loop interactions
+        self.user_input_tool = CanvasUserInputTool(emit_callback=self._emit_sync)
+        self.body.user_input = self.user_input_tool
+        logger.info("Injected CanvasUserInputTool for human-in-the-loop interactions")
         
         # Wrap body tools with monitoring proxies for real-time tool call tracking
         self._wrap_body_with_monitoring(self.body)
@@ -1005,6 +1014,14 @@ class ExecutionController:
             else:
                 # Fallback: just log without emitting (shouldn't happen often)
                 logger.debug(f"Could not emit event {event_type}: no event loop available")
+    
+    def _emit_sync(self, event_type: str, data: Dict[str, Any]):
+        """Synchronous emit callback for tools like CanvasUserInputTool.
+        
+        This is a wrapper around _emit_threadsafe that can be passed as a 
+        callback function to synchronous code.
+        """
+        self._emit_threadsafe(event_type, data)
     
     async def _run_loop(self):
         """Main execution loop with inference-by-inference control.

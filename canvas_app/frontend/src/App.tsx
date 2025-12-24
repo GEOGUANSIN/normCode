@@ -31,6 +31,7 @@ import { ProjectPanel } from './components/panels/ProjectPanel';
 import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { AgentPanel } from './components/panels/AgentPanel';
+import { UserInputModal } from './components/panels/UserInputModal';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
@@ -488,6 +489,9 @@ function App() {
           onClose={() => setShowRepoPathsModal(false)}
         />
       )}
+
+      {/* User Input Modal (human-in-the-loop) */}
+      <UserInputModal />
 
       {/* Status Bar */}
       <footer className="bg-white border-t border-slate-200 px-4 py-1 flex items-center justify-between text-xs text-slate-500">

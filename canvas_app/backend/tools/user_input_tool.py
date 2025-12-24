@@ -6,6 +6,8 @@ allowing the orchestrator to pause and wait for user input through the UI.
 
 Unlike the Streamlit version which uses threading.Event, this version
 uses asyncio.Event for async compatibility with FastAPI.
+
+Interface matches infra._agent._models._user_input_tool.UserInputTool
 """
 
 import asyncio
@@ -24,7 +26,7 @@ class UserInputRequest:
     """A pending user input request."""
     id: str
     prompt: str
-    interaction_type: str  # text_input, text_editor, confirm, select
+    interaction_type: str  # simple_text, text_editor, confirm, select, multi_file_input
     options: Optional[Dict[str, Any]] = None
     response: Optional[Any] = None
     completed: bool = False
@@ -34,6 +36,8 @@ class UserInputRequest:
 class CanvasUserInputTool:
     """
     A user input tool that integrates with the Canvas app via WebSocket.
+    
+    Interface matches infra._agent._models._user_input_tool.UserInputTool
     
     When user input is needed:
     1. Tool creates a request and emits a WebSocket event
@@ -71,86 +75,100 @@ class CanvasUserInputTool:
             except Exception as e:
                 logger.error(f"Failed to emit event {event_type}: {e}")
     
-    def create_input_function(
-        self, 
-        prompt_key: str = "prompt_text", 
-        interaction_type: str = "text_input"
-    ) -> Callable:
-        """
-        Creates a function that prompts the user for text input.
-        
-        This mimics the interface of UserInputTool.create_input_function()
-        but blocks the worker thread until the UI provides an answer.
-        
-        Args:
-            prompt_key: The key in kwargs that contains the prompt text
-            interaction_type: Type of interaction (text_input, text_editor, etc.)
-            
-        Returns:
-            A callable that takes **kwargs and returns user input string
-        """
-        def request_input(**kwargs) -> str:
-            prompt = kwargs.get(prompt_key, "Please provide input:")
-            return self._wait_for_input(prompt, interaction_type, kwargs)
-        
-        return request_input
+    # =========================================================================
+    # Main Interface (matches infra UserInputTool)
+    # =========================================================================
+    
+    def create_input_function(self, prompt_key: str = "prompt_text") -> Callable:
+        """Creates a function that prompts the user for simple text input."""
+        config = {"interaction_type": "simple_text", "prompt_key": prompt_key}
+        return self.create_interaction(**config)
     
     def create_text_editor_function(
-        self,
-        prompt_key: str = "prompt_text",
-        initial_content_key: str = "initial_content"
+        self, 
+        prompt_key: str = "prompt_text", 
+        initial_text_key: str = "initial_text"
     ) -> Callable:
+        """Creates a function that opens a text editor for the user."""
+        config = {
+            "interaction_type": "text_editor",
+            "prompt_key": prompt_key,
+            "initial_text_key": initial_text_key
+        }
+        return self.create_interaction(**config)
+    
+    def create_interaction(self, **config: Any) -> Callable:
         """
-        Creates a function that opens a text editor for the user.
+        Create an interaction function based on the provided configuration.
+        
+        This is the main entry point that matches the infra UserInputTool interface.
         
         Args:
-            prompt_key: Key for the prompt/instructions
-            initial_content_key: Key for initial content to edit
+            **config: Configuration including:
+                - interaction_type: Type of interaction (simple_text, text_editor, 
+                                    confirm, multi_file_input, etc.)
+                - prompt_key: Key in kwargs containing the prompt text
+                - initial_text_key: Key for initial text (for text_editor)
+                - initial_directory: Initial directory (for multi_file_input)
+                - non_interactive_default: Default value if non-interactive
+                
+        Returns:
+            A callable that takes **kwargs and returns user input
+        """
+        def interaction_fn(**kwargs: Any) -> Any:
+            prompt_key = config.get("prompt_key", "prompt_text")
+            prompt_text = kwargs.get(prompt_key, "Enter input: ")
+            interaction_type = config.get("interaction_type", "simple_text")
             
-        Returns:
-            A callable that returns the edited text
-        """
-        def request_editor(**kwargs) -> str:
-            prompt = kwargs.get(prompt_key, "Edit the content:")
-            initial_content = kwargs.get(initial_content_key, "")
-            return self._wait_for_input(
-                prompt, 
-                "text_editor", 
-                {"initial_content": initial_content, **kwargs}
-            )
+            # Build options to pass to frontend
+            options = config.copy()
+            
+            # Handle text_editor initial text
+            if interaction_type == "text_editor":
+                initial_text_key = config.get("initial_text_key", "initial_text")
+                initial_text = kwargs.get(initial_text_key, "")
+                options["initial_content"] = initial_text
+            
+            # Handle multi_file_input initial directory
+            if interaction_type == "multi_file_input":
+                initial_directory = config.get("initial_directory", "")
+                options["initial_directory"] = initial_directory
+            
+            # Map interaction types to frontend types
+            frontend_type = self._map_interaction_type(interaction_type)
+            
+            return self._wait_for_input(prompt_text, frontend_type, options)
         
-        return request_editor
+        return interaction_fn
     
-    def create_confirm_function(self, prompt_key: str = "prompt_text") -> Callable:
-        """
-        Creates a function that asks for yes/no confirmation.
-        
-        Returns:
-            A callable that returns True for yes, False for no
-        """
-        def request_confirm(**kwargs) -> bool:
-            prompt = kwargs.get(prompt_key, "Confirm?")
-            response = self._wait_for_input(prompt, "confirm", kwargs)
-            return response.lower() in ("yes", "y", "true", "1", "confirm")
-        
-        return request_confirm
+    def _map_interaction_type(self, interaction_type: str) -> str:
+        """Map infra interaction types to frontend types."""
+        type_map = {
+            "simple_text": "text_input",
+            "text_editor": "text_editor",
+            "confirm": "confirm",
+            "multi_file_input": "multi_file_input",
+            "validated_text": "text_input",
+            "select": "select",
+        }
+        return type_map.get(interaction_type, "text_input")
     
     def _wait_for_input(
         self, 
         prompt: str, 
         interaction_type: str,
         options: Optional[Dict[str, Any]] = None
-    ) -> str:
+    ) -> Any:
         """
         Block and wait for user input from the frontend.
         
         Args:
             prompt: The prompt to show the user
-            interaction_type: Type of input (text_input, text_editor, confirm)
+            interaction_type: Type of input (text_input, text_editor, confirm, etc.)
             options: Additional options for the interaction
             
         Returns:
-            The user's response as a string
+            The user's response (string, list, bool, etc.)
         """
         request_id = str(uuid.uuid4())[:8]
         event = threading.Event()
@@ -185,13 +203,41 @@ class CanvasUserInputTool:
             del self._pending_requests[request_id]
             del self._events[request_id]
         
-        logger.info(f"Received user input for {request_id}")
+        logger.info(f"Received user input for {request_id}: {type(response)}")
         
         # Emit completion event
         self._emit("user_input:completed", {
             "request_id": request_id,
         })
         
+        # Parse response based on interaction type
+        return self._parse_response(response, interaction_type)
+    
+    def _parse_response(self, response: Any, interaction_type: str) -> Any:
+        """Parse the response based on interaction type."""
+        if response is None:
+            # Return appropriate default for type
+            if interaction_type == "confirm":
+                return False
+            elif interaction_type == "multi_file_input":
+                return []
+            return ""
+        
+        if interaction_type == "confirm":
+            if isinstance(response, bool):
+                return response
+            return str(response).lower() in ("yes", "y", "true", "1", "confirm")
+        
+        if interaction_type == "multi_file_input":
+            # Response should be a list of file paths
+            if isinstance(response, list):
+                return response
+            if isinstance(response, str):
+                # Parse as newline-separated paths
+                return [p.strip() for p in response.split('\n') if p.strip()]
+            return []
+        
+        # Default: return as string
         return str(response) if response is not None else ""
     
     def submit_response(self, request_id: str, response: Any) -> bool:
