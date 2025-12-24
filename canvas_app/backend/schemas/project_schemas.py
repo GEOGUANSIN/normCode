@@ -206,3 +206,46 @@ class DiscoveredPathsResponse(BaseModel):
     inferences_exists: bool = False
     inputs_exists: bool = False
     paradigm_dir_exists: bool = False
+
+
+# =============================================================================
+# Multi-Project (Tabs) Support
+# =============================================================================
+
+class OpenProjectInstance(BaseModel):
+    """
+    Represents an open project instance (a tab).
+    Each open project has its own execution state.
+    """
+    id: str  # Project ID (same as ProjectConfig.id)
+    name: str
+    directory: str
+    config_file: str
+    config: ProjectConfig
+    is_loaded: bool = False  # Whether repositories are loaded
+    repositories_exist: bool = False
+    is_active: bool = False  # Whether this is the currently focused tab
+
+
+class OpenProjectsResponse(BaseModel):
+    """Response containing all open project instances."""
+    projects: List[OpenProjectInstance]
+    active_project_id: Optional[str] = None
+
+
+class SwitchProjectRequest(BaseModel):
+    """Request to switch to a different open project tab."""
+    project_id: str
+
+
+class CloseProjectRequest(BaseModel):
+    """Request to close a specific project tab."""
+    project_id: str
+    
+    
+class OpenProjectInTabRequest(BaseModel):
+    """Request to open a project as a new tab (keeping other tabs open)."""
+    project_id: Optional[str] = None  # Open by project ID
+    project_path: Optional[str] = None  # Or by path
+    config_file: Optional[str] = None  # Specific config file
+    make_active: bool = True  # Whether to switch to this tab

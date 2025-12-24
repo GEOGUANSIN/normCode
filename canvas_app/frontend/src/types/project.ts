@@ -115,3 +115,42 @@ export interface DiscoveredPathsResponse {
   inputs_exists: boolean;
   paradigm_dir_exists: boolean;
 }
+
+// =============================================================================
+// Multi-Project (Tabs) Support
+// =============================================================================
+
+/**
+ * Represents an open project instance (a tab).
+ * Each open project has its own execution state.
+ */
+export interface OpenProjectInstance {
+  id: string;  // Project ID (same as ProjectConfig.id)
+  name: string;
+  directory: string;
+  config_file: string;
+  config: ProjectConfig;
+  is_loaded: boolean;  // Whether repositories are loaded
+  repositories_exist: boolean;
+  is_active: boolean;  // Whether this is the currently focused tab
+}
+
+export interface OpenProjectsResponse {
+  projects: OpenProjectInstance[];
+  active_project_id: string | null;
+}
+
+export interface SwitchProjectRequest {
+  project_id: string;
+}
+
+export interface CloseProjectRequest {
+  project_id: string;
+}
+
+export interface OpenProjectInTabRequest {
+  project_id?: string;  // Open by project ID
+  project_path?: string;  // Or by path
+  config_file?: string;  // Specific config file
+  make_active?: boolean;  // Whether to switch to this tab
+}

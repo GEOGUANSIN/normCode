@@ -2,7 +2,7 @@
  * Project state management with Zustand
  */
 import { create } from 'zustand';
-import type { ProjectConfig, RegisteredProject } from '../types/project';
+import type { ProjectConfig, RegisteredProject, OpenProjectInstance } from '../types/project';
 import { projectApi, graphApi, executionApi } from '../services/api';
 import { useGraphStore } from './graphStore';
 import { useExecutionStore } from './executionStore';
@@ -15,6 +15,10 @@ interface ProjectState {
   projectConfigFile: string | null;  // The config filename
   isLoaded: boolean;  // Whether repositories are loaded
   repositoriesExist: boolean;
+  
+  // Multi-project (tabs) state
+  openTabs: OpenProjectInstance[];  // All open project tabs
+  activeTabId: string | null;  // Currently active tab
   
   // All registered projects and recent projects
   allProjects: RegisteredProject[];
@@ -36,6 +40,10 @@ interface ProjectState {
   setProjectPanelOpen: (open: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  
+  // Multi-project tab actions
+  setOpenTabs: (tabs: OpenProjectInstance[]) => void;
+  setActiveTabId: (tabId: string | null) => void;
   
   // Async actions
   fetchCurrentProject: () => Promise<void>;
@@ -63,6 +71,13 @@ interface ProjectState {
   removeProjectFromRegistry: (projectId: string) => Promise<void>;
   updateRepositories: (paths: { concepts?: string; inferences?: string; inputs?: string }) => Promise<boolean>;
   
+  // Multi-project tab async actions
+  fetchOpenTabs: () => Promise<void>;
+  openProjectAsTab: (projectPath?: string, configFile?: string, projectId?: string, makeActive?: boolean) => Promise<boolean>;
+  switchTab: (projectId: string) => Promise<boolean>;
+  closeTab: (projectId: string) => Promise<void>;
+  closeAllTabs: () => Promise<void>;
+  
   // Reset
   reset: () => void;
 }
@@ -74,6 +89,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   projectConfigFile: null,
   isLoaded: false,
   repositoriesExist: false,
+  
+  // Multi-project tabs initial state
+  openTabs: [],
+  activeTabId: null,
+  
   allProjects: [],
   recentProjects: [],
   directoryProjects: [],
@@ -95,6 +115,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   setProjectPanelOpen: (open) => set({ isProjectPanelOpen: open }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
+  
+  // Multi-project tab setters
+  setOpenTabs: (tabs) => set({ openTabs: tabs }),
+  setActiveTabId: (tabId) => set({ activeTabId: tabId }),
   
   // Fetch current project from backend
   fetchCurrentProject: async () => {
@@ -359,11 +383,321 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }
       
       set({ isLoaded: true, isLoading: false });
+      
+      // Update the loaded state in the open tabs if using tabs
+      const { activeTabId, openTabs } = get();
+      if (activeTabId) {
+        const updatedTabs = openTabs.map(tab => 
+          tab.id === activeTabId ? { ...tab, is_loaded: true } : tab
+        );
+        set({ openTabs: updatedTabs });
+      }
+      
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load repositories';
       set({ error: message, isLoading: false });
       return false;
+    }
+  },
+  
+  // ==========================================================================
+  // Multi-project tab async actions
+  // ==========================================================================
+  
+  // Fetch all open tabs from backend
+  fetchOpenTabs: async () => {
+    try {
+      const response = await projectApi.getOpenTabs();
+      set({
+        openTabs: response.projects,
+        activeTabId: response.active_project_id,
+      });
+      
+      // If there's an active tab, sync its config to current project state
+      const activeTab = response.projects.find(t => t.id === response.active_project_id);
+      if (activeTab) {
+        set({
+          currentProject: activeTab.config,
+          projectPath: activeTab.directory,
+          projectConfigFile: activeTab.config_file,
+          isLoaded: activeTab.is_loaded,
+          repositoriesExist: activeTab.repositories_exist,
+        });
+        // Sync execution settings
+        const configStore = useConfigStore.getState();
+        const exec = activeTab.config.execution;
+        configStore.setLlmModel(exec.llm_model);
+        configStore.setMaxCycles(exec.max_cycles);
+        configStore.setDbPath(exec.db_path);
+        configStore.setBaseDir(exec.base_dir || '');
+        configStore.setParadigmDir(exec.paradigm_dir || '');
+      }
+    } catch (err) {
+      console.error('Failed to fetch open tabs:', err);
+    }
+  },
+  
+  // Open a project as a new tab
+  openProjectAsTab: async (projectPath?: string, configFile?: string, projectId?: string, makeActive: boolean = true) => {
+    set({ isLoading: true, error: null });
+    try {
+      const instance = await projectApi.openAsTab({
+        project_path: projectPath,
+        config_file: configFile,
+        project_id: projectId,
+        make_active: makeActive,
+      });
+      
+      // Add to tabs if not already present, or update existing
+      const { openTabs } = get();
+      const existingIndex = openTabs.findIndex(t => t.id === instance.id);
+      let updatedTabs: OpenProjectInstance[];
+      
+      if (existingIndex >= 0) {
+        // Update existing tab
+        updatedTabs = [...openTabs];
+        updatedTabs[existingIndex] = instance;
+      } else {
+        // Add new tab
+        updatedTabs = [...openTabs, instance];
+      }
+      
+      // Mark all tabs as not active, then mark the new one if makeActive
+      if (makeActive) {
+        updatedTabs = updatedTabs.map(t => ({
+          ...t,
+          is_active: t.id === instance.id,
+        }));
+      }
+      
+      set({
+        openTabs: updatedTabs,
+        activeTabId: makeActive ? instance.id : get().activeTabId,
+        isLoading: false,
+        isProjectPanelOpen: false,
+      });
+      
+      // If making active, update current project state
+      if (makeActive) {
+        set({
+          currentProject: instance.config,
+          projectPath: instance.directory,
+          projectConfigFile: instance.config_file,
+          isLoaded: instance.is_loaded,
+          repositoriesExist: instance.repositories_exist,
+        });
+        // Sync execution settings
+        const configStore = useConfigStore.getState();
+        const exec = instance.config.execution;
+        configStore.setLlmModel(exec.llm_model);
+        configStore.setMaxCycles(exec.max_cycles);
+        configStore.setDbPath(exec.db_path);
+        configStore.setBaseDir(exec.base_dir || '');
+        configStore.setParadigmDir(exec.paradigm_dir || '');
+      }
+      
+      // Refresh recent projects
+      get().fetchRecentProjects();
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to open project as tab';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+  
+  // Switch to a different tab
+  switchTab: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const instance = await projectApi.switchTab({ project_id: projectId });
+      
+      // Update tabs state
+      const { openTabs } = get();
+      const updatedTabs = openTabs.map(t => ({
+        ...t,
+        is_active: t.id === projectId,
+      }));
+      
+      set({
+        openTabs: updatedTabs,
+        activeTabId: projectId,
+        currentProject: instance.config,
+        projectPath: instance.directory,
+        projectConfigFile: instance.config_file,
+        isLoaded: instance.is_loaded,
+        repositoriesExist: instance.repositories_exist,
+        isLoading: false,
+      });
+      
+      // Sync execution settings
+      const configStore = useConfigStore.getState();
+      const exec = instance.config.execution;
+      configStore.setLlmModel(exec.llm_model);
+      configStore.setMaxCycles(exec.max_cycles);
+      configStore.setDbPath(exec.db_path);
+      configStore.setBaseDir(exec.base_dir || '');
+      configStore.setParadigmDir(exec.paradigm_dir || '');
+      
+      // If the project was loaded, we need to reload the graph and sync execution state
+      // Each project has its own ExecutionController on the backend, so we just need
+      // to reload the graph (graph_service is shared) and sync the execution state
+      if (instance.is_loaded) {
+        // Reset execution state first
+        const executionStore = useExecutionStore.getState();
+        executionStore.reset();
+        
+        try {
+          // Reload graph from the current project's files
+          const graphData = await graphApi.reload();
+          useGraphStore.getState().setGraphData(graphData);
+          
+          // Update execution store with initial counts
+          executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+          
+          // Fetch and sync breakpoints from backend (from the project's controller)
+          try {
+            const breakpointsResponse = await executionApi.getBreakpoints();
+            breakpointsResponse.breakpoints.forEach(bp => executionStore.addBreakpoint(bp));
+            console.log(`Tab switch: synced ${breakpointsResponse.breakpoints.length} breakpoints`);
+          } catch (bpErr) {
+            console.warn('Failed to fetch breakpoints for switched tab:', bpErr);
+          }
+          
+          // Sync execution state from the project's controller
+          try {
+            const execState = await executionApi.getState();
+            executionStore.setStatus(execState.status);
+            if (execState.node_statuses) {
+              executionStore.setNodeStatuses(execState.node_statuses);
+            }
+          } catch (stateErr) {
+            console.warn('Failed to sync execution state for switched tab:', stateErr);
+          }
+        } catch (graphErr) {
+          console.warn('Failed to reload graph for switched tab:', graphErr);
+        }
+      } else {
+        // Clear graph if not loaded
+        useGraphStore.getState().reset();
+        useExecutionStore.getState().reset();
+      }
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to switch tab';
+      set({ error: message, isLoading: false });
+      return false;
+    }
+  },
+  
+  // Close a tab
+  closeTab: async (projectId: string) => {
+    try {
+      const response = await projectApi.closeTab({ project_id: projectId });
+      
+      set({
+        openTabs: response.projects,
+        activeTabId: response.active_project_id,
+      });
+      
+      // If there's still an active project, update current state
+      const activeTab = response.projects.find(t => t.id === response.active_project_id);
+      if (activeTab) {
+        set({
+          currentProject: activeTab.config,
+          projectPath: activeTab.directory,
+          projectConfigFile: activeTab.config_file,
+          isLoaded: activeTab.is_loaded,
+          repositoriesExist: activeTab.repositories_exist,
+        });
+        
+        // Sync execution settings
+        const configStore = useConfigStore.getState();
+        const exec = activeTab.config.execution;
+        configStore.setLlmModel(exec.llm_model);
+        configStore.setMaxCycles(exec.max_cycles);
+        configStore.setDbPath(exec.db_path);
+        configStore.setBaseDir(exec.base_dir || '');
+        configStore.setParadigmDir(exec.paradigm_dir || '');
+        
+        // If the new active tab was loaded, reload graph and execution state
+        if (activeTab.is_loaded) {
+          // Reset execution state first
+          const executionStore = useExecutionStore.getState();
+          executionStore.reset();
+          
+          try {
+            // Reload graph from the new active project's files
+            const graphData = await graphApi.reload();
+            useGraphStore.getState().setGraphData(graphData);
+            
+            // Update execution store with initial counts
+            executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+            
+            // Fetch and sync breakpoints from backend
+            try {
+              const breakpointsResponse = await executionApi.getBreakpoints();
+              breakpointsResponse.breakpoints.forEach(bp => executionStore.addBreakpoint(bp));
+              console.log(`Tab close: synced ${breakpointsResponse.breakpoints.length} breakpoints`);
+            } catch (bpErr) {
+              console.warn('Failed to fetch breakpoints for new active tab:', bpErr);
+            }
+            
+            // Sync execution state from the project's controller
+            try {
+              const execState = await executionApi.getState();
+              executionStore.setStatus(execState.status);
+              if (execState.node_statuses) {
+                executionStore.setNodeStatuses(execState.node_statuses);
+              }
+            } catch (stateErr) {
+              console.warn('Failed to sync execution state for new active tab:', stateErr);
+            }
+          } catch (graphErr) {
+            console.warn('Failed to reload graph for new active tab:', graphErr);
+          }
+        } else {
+          // New active tab is not loaded, clear state
+          useGraphStore.getState().reset();
+          useExecutionStore.getState().reset();
+        }
+      } else {
+        // No more tabs - reset state
+        set({
+          currentProject: null,
+          projectPath: null,
+          projectConfigFile: null,
+          isLoaded: false,
+          repositoriesExist: false,
+        });
+        useGraphStore.getState().reset();
+        useExecutionStore.getState().reset();
+      }
+    } catch (err) {
+      console.error('Failed to close tab:', err);
+    }
+  },
+  
+  // Close all tabs
+  closeAllTabs: async () => {
+    try {
+      await projectApi.closeAllTabs();
+      set({
+        openTabs: [],
+        activeTabId: null,
+        currentProject: null,
+        projectPath: null,
+        projectConfigFile: null,
+        isLoaded: false,
+        repositoriesExist: false,
+      });
+      useGraphStore.getState().reset();
+      useExecutionStore.getState().reset();
+    } catch (err) {
+      console.error('Failed to close all tabs:', err);
     }
   },
   
@@ -374,6 +708,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     projectConfigFile: null,
     isLoaded: false,
     repositoriesExist: false,
+    openTabs: [],
+    activeTabId: null,
     directoryProjects: [],
     isLoading: false,
     error: null,

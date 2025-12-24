@@ -1,0 +1,16 @@
+{
+  "name": "canvas_load_plan",
+  "description": "Load a compiled plan into the canvas graph view",
+  "vertical_inputs": {
+    "concepts": "List of concept definitions",
+    "inferences": "List of inference definitions"
+  },
+  "horizontal_inputs": {},
+  "sequence": ["python_execute"],
+  "execution": {
+    "type": "python",
+    "script": "Body.canvas.load_plan(concepts, inferences)\nresult = {'concepts': len(concepts), 'inferences': len(inferences)}"
+  },
+  "output_type": "dict"
+}
+

@@ -28,6 +28,12 @@ import type {
   ExecutionSettings,
   DiscoverPathsRequest,
   DiscoveredPathsResponse,
+  // Multi-project (tabs) support
+  OpenProjectInstance,
+  OpenProjectsResponse,
+  SwitchProjectRequest,
+  CloseProjectRequest,
+  OpenProjectInTabRequest,
 } from '../types/project';
 
 const API_BASE = '/api';
@@ -81,6 +87,14 @@ export const graphApi = {
   
   getStats: (): Promise<GraphStats> =>
     fetchJson(`${API_BASE}/graph/stats`),
+  
+  /**
+   * Reload the graph for the current project.
+   * Used when switching between project tabs to ensure the graph matches
+   * the current project's repository files.
+   */
+  reload: (): Promise<GraphData> =>
+    fetchJson(`${API_BASE}/graph/reload`, { method: 'POST' }),
 };
 
 // Execution endpoints
@@ -329,6 +343,34 @@ export const projectApi = {
       method: 'PUT',
       body: JSON.stringify(paths),
     }),
+  
+  // Multi-project (tabs) endpoints
+  getOpenTabs: (): Promise<OpenProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/tabs`),
+  
+  openAsTab: (request: OpenProjectInTabRequest): Promise<OpenProjectInstance> =>
+    fetchJson(`${API_BASE}/project/tabs/open`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  switchTab: (request: SwitchProjectRequest): Promise<OpenProjectInstance> =>
+    fetchJson(`${API_BASE}/project/tabs/switch`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  closeTab: (request: CloseProjectRequest): Promise<OpenProjectsResponse> =>
+    fetchJson(`${API_BASE}/project/tabs/close`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  closeAllTabs: (): Promise<{ status: string; message: string }> =>
+    fetchJson(`${API_BASE}/project/tabs/close-all`, { method: 'POST' }),
+  
+  getActiveTab: (): Promise<OpenProjectInstance | null> =>
+    fetchJson(`${API_BASE}/project/tabs/active`),
 };
 
 // Agent endpoints

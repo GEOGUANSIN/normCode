@@ -207,10 +207,87 @@ WebSocket Events:
 - `prompt:substitute`: Variable substitution occurred
 - `prompt:cache_cleared`: Cache was cleared
 
+### CanvasChatTool
+
+A chat interface tool for compiler-user interaction. Allows NormCode plans to drive conversations.
+
+Features:
+- Write messages, code blocks, and structured artifacts to chat
+- Read text or code input from user
+- Ask questions with optional button choices
+- Confirm dialogs (yes/no)
+- Blocking reads that wait for user response
+
+```python
+from tools import CanvasChatTool
+
+chat = CanvasChatTool(emit_callback=event_emitter)
+body.chat = chat
+
+# Write to chat
+chat.write("Analyzing your input...")
+chat.write_code(derived_code, language="ncd")
+chat.write_artifact(structure, artifact_type="tree")
+
+# Read from chat (blocks until user responds)
+draft = chat.read_code("Paste your NormCode draft:")
+answer = chat.ask("Is this semantic?", ["Yes", "No"])
+confirmed = chat.confirm("Proceed with compilation?")
+```
+
+WebSocket Events:
+- `chat:message`: Text message added
+- `chat:code_block`: Code block added
+- `chat:artifact`: Structured artifact added
+- `chat:input_request`: Requesting user input
+- `chat:input_response`: User responded
+- `chat:input_cancelled`: User cancelled input
+
+### CanvasDisplayTool
+
+A display tool for showing artifacts on the Canvas (source, structure, graphs).
+
+Features:
+- Show source code in a viewer panel
+- Display concept/inference structures as trees
+- Load compiled plans into the graph view
+- Highlight nodes with different styles
+- Add/remove annotations on nodes
+
+```python
+from tools import CanvasDisplayTool
+
+canvas = CanvasDisplayTool(emit_callback=event_emitter)
+body.canvas = canvas
+
+# Display source code
+canvas.show_source(draft_code, language="ncds", title="Input Draft")
+
+# Show structure
+canvas.show_structure(derived_concepts, title="Derived Concepts")
+
+# Load compiled plan into graph
+canvas.load_plan(concepts, inferences)
+
+# Highlight nodes
+canvas.highlight_node("1.1", style="focus")
+canvas.add_annotation("1.1", "This is the output concept", type="info")
+```
+
+WebSocket Events:
+- `canvas:show_source`: Display source code
+- `canvas:show_structure`: Display structure tree
+- `canvas:load_plan`: Load plan into graph
+- `canvas:highlight_node`: Highlight a node
+- `canvas:add_annotation`: Add annotation to node
+- `canvas:clear`: Clear all displays
+
 ## Future Enhancements
 
 - [x] LLM tool with WebSocket events
 - [x] Python interpreter tool wrapper
+- [x] Chat tool for compiler-user interaction
+- [x] Canvas display tool for artifacts
 - [ ] Code editor integration for user input
 - [ ] File diff visualization
 - [ ] Approval workflows for sensitive operations

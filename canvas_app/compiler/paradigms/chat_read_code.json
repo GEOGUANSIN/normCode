@@ -1,0 +1,17 @@
+{
+  "name": "chat_read_code",
+  "description": "Request code input from user via chat interface",
+  "vertical_inputs": {
+    "prompt": "The prompt to display before waiting for input"
+  },
+  "horizontal_inputs": {
+    "language": "The expected code language (default: ncds)"
+  },
+  "sequence": ["python_execute"],
+  "execution": {
+    "type": "python",
+    "script": "lang = horizontal.get('language', 'ncds')\nresult = Body.chat.read_code(prompt, language=lang)"
+  },
+  "output_type": "string"
+}
+

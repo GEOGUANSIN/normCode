@@ -1,11 +1,15 @@
 /**
  * Hook for WebSocket connection and event handling
+ * 
+ * Supports multi-project execution by filtering events based on project_id.
+ * Events from inactive projects are logged but not processed for UI updates.
  */
 
 import { useEffect, useCallback, useState } from 'react';
 import { wsClient } from '../services/websocket';
 import { useExecutionStore, type UserInputRequest } from '../stores/executionStore';
 import { useAgentStore } from '../stores/agentStore';
+import { useProjectStore } from '../stores/projectStore';
 import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
@@ -35,10 +39,23 @@ export function useWebSocket() {
   // User input actions
   const addUserInputRequest = useExecutionStore((s) => s.addUserInputRequest);
   const removeUserInputRequest = useExecutionStore((s) => s.removeUserInputRequest);
+  
+  // Get current active project ID for event filtering
+  const activeProjectId = useProjectStore((s) => s.activeTabId);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
       const { type, data } = event;
+      
+      // Check if this event is for the active project
+      // Events without project_id are assumed to be for the active project (backward compat)
+      const eventProjectId = data.project_id as string | undefined;
+      if (eventProjectId && activeProjectId && eventProjectId !== activeProjectId) {
+        // Event is for a different project - log it but don't update UI
+        // This allows background projects to run without disturbing the active view
+        console.debug(`[WS] Event for background project ${eventProjectId}: ${type}`);
+        return;
+      }
 
       switch (type) {
         case 'connection:established':
@@ -385,7 +402,7 @@ export function useWebSocket() {
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId]
   );
 
   const [isConnected, setIsConnected] = useState(false);

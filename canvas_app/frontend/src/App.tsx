@@ -32,6 +32,7 @@ import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { AgentPanel } from './components/panels/AgentPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
+import { ProjectTabs, ProjectTabsCompact } from './components/panels/ProjectTabs';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
@@ -177,8 +178,10 @@ function App() {
     isLoaded,
     repositoriesExist,
     isLoading: projectLoading,
+    openTabs,
     fetchCurrentProject,
     fetchRecentProjects,
+    fetchOpenTabs,
     loadProjectRepositories,
     closeProject,
     setProjectPanelOpen,
@@ -189,7 +192,8 @@ function App() {
   useEffect(() => {
     fetchCurrentProject();
     fetchRecentProjects();
-  }, [fetchCurrentProject, fetchRecentProjects]);
+    fetchOpenTabs();
+  }, [fetchCurrentProject, fetchRecentProjects, fetchOpenTabs]);
 
   // If no project is open, show project welcome screen
   if (!currentProject) {
@@ -376,6 +380,11 @@ function App() {
           </button>
         </div>
       </header>
+
+      {/* Project Tabs Bar - shows when multiple projects are open */}
+      {openTabs.length > 1 && (
+        <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
+      )}
 
       {/* Settings Panel */}
       <SettingsPanel 

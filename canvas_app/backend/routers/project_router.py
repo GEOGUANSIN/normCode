@@ -19,10 +19,17 @@ from schemas.project_schemas import (
     UpdateRepositoriesRequest,
     DiscoverPathsRequest,
     DiscoveredPathsResponse,
+    # Multi-project (tabs) support
+    OpenProjectInstance,
+    OpenProjectsResponse,
+    SwitchProjectRequest,
+    CloseProjectRequest,
+    OpenProjectInTabRequest,
 )
 from services.project_service import project_service
-from services.execution_service import execution_controller
+from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
 from services.graph_service import graph_service
+from schemas.execution_schemas import ExecutionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +280,8 @@ async def load_project_repositories():
     Load repositories for the currently open project.
     
     This is a convenience endpoint that uses the project's configured paths
-    and settings to load the repositories.
+    and settings to load the repositories. Each project gets its own
+    ExecutionController instance.
     """
     if not project_service.is_project_open:
         raise HTTPException(status_code=400, detail="No project is currently open")
@@ -288,6 +296,7 @@ async def load_project_repositories():
         paths = project_service.get_absolute_repo_paths()
         config = project_service.current_config
         exec_settings = config.execution
+        project_id = config.id
         
         # Load graph for visualization (must be done first!)
         graph_service.load_from_files(
@@ -296,8 +305,14 @@ async def load_project_repositories():
         )
         logger.info(f"Graph loaded with {len(graph_service.current_graph.nodes)} nodes")
         
-        # Load repositories using execution controller
-        await execution_controller.load_repositories(
+        # Get or create the ExecutionController for this project
+        controller = get_execution_controller(project_id)
+        
+        # Ensure the registry knows this is the active project
+        execution_controller_registry.set_active(project_id)
+        
+        # Load repositories using project-specific execution controller
+        await controller.load_repositories(
             concepts_path=paths['concepts'],
             inferences_path=paths['inferences'],
             inputs_path=paths.get('inputs'),
@@ -310,12 +325,16 @@ async def load_project_repositories():
         
         # Restore breakpoints from project config
         for bp in config.breakpoints:
-            execution_controller.set_breakpoint(bp)
+            controller.set_breakpoint(bp)
         
-        logger.info(f"Loaded repositories for project '{config.name}'")
+        # Update the loaded state in project service
+        project_service.update_open_project_loaded_state(project_id, True)
+        
+        logger.info(f"Loaded repositories for project '{config.name}' (id={project_id})")
         
         return {
             "status": "loaded",
+            "project_id": project_id,
             "concepts_path": paths['concepts'],
             "inferences_path": paths['inferences'],
             "breakpoints_restored": len(config.breakpoints),
@@ -385,3 +404,143 @@ async def update_repository_paths(request: UpdateRepositoriesRequest):
     except Exception as e:
         logger.exception(f"Failed to update repository paths: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Multi-Project (Tabs) Support
+# =============================================================================
+
+@router.get("/tabs", response_model=OpenProjectsResponse)
+async def get_open_projects():
+    """
+    Get all currently open project tabs.
+    
+    Returns a list of all open project instances and the active project ID.
+    """
+    open_projects = project_service.get_open_projects()
+    active_id = project_service.get_active_project_id()
+    
+    return OpenProjectsResponse(
+        projects=open_projects,
+        active_project_id=active_id,
+    )
+
+
+@router.post("/tabs/open", response_model=OpenProjectInstance)
+async def open_project_as_tab(request: OpenProjectInTabRequest):
+    """
+    Open a project as a new tab (keeping other tabs open).
+    
+    This differs from /open in that it:
+    - Keeps other project tabs open
+    - Tracks the project in the tabs list
+    - Creates an ExecutionController for the project
+    - Can optionally not make it the active tab
+    """
+    try:
+        instance = project_service.open_project_as_tab(
+            project_path=request.project_path,
+            config_file=request.config_file,
+            project_id=request.project_id,
+            make_active=request.make_active,
+        )
+        
+        # Ensure an ExecutionController exists for this project
+        get_execution_controller(instance.id)
+        
+        # If making active, update the registry
+        if request.make_active:
+            execution_controller_registry.set_active(instance.id)
+        
+        return instance
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to open project as tab: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/tabs/switch", response_model=OpenProjectInstance)
+async def switch_project_tab(request: SwitchProjectRequest):
+    """
+    Switch to a different open project tab.
+    
+    This changes which project is "active" without closing others.
+    Each project has its own ExecutionController, so switching tabs
+    just changes which controller is "active" for backward-compatible APIs.
+    """
+    try:
+        # Switch the project in project_service
+        instance = project_service.switch_to_project(request.project_id)
+        
+        # Update the active project in the execution controller registry
+        execution_controller_registry.set_active(request.project_id)
+        
+        logger.info(f"Switched to project tab '{instance.name}' (id={request.project_id})")
+        
+        return instance
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to switch project tab: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/tabs/close", response_model=OpenProjectsResponse)
+async def close_project_tab(request: CloseProjectRequest):
+    """
+    Close a specific project tab.
+    
+    If the closed tab was active, automatically switches to another tab.
+    Also stops execution and removes the controller for the closed project.
+    """
+    try:
+        # Stop execution for the project being closed
+        controller = get_execution_controller(request.project_id)
+        if controller.status == ExecutionStatus.RUNNING:
+            await controller.stop()
+        
+        # Remove the controller for this project
+        execution_controller_registry.remove_controller(request.project_id)
+        
+        # Close the project tab
+        new_active_id = project_service.close_project_tab(request.project_id)
+        
+        # Update the active project in the registry
+        execution_controller_registry.set_active(new_active_id)
+        
+        return OpenProjectsResponse(
+            projects=project_service.get_open_projects(),
+            active_project_id=new_active_id,
+        )
+    except Exception as e:
+        logger.exception(f"Failed to close project tab: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/tabs/close-all")
+async def close_all_project_tabs():
+    """
+    Close all open project tabs.
+    
+    Stops any running execution and clears all project state.
+    """
+    try:
+        await execution_controller.stop()
+        project_service.close_all_project_tabs()
+        return {"status": "closed", "message": "All project tabs closed"}
+    except Exception as e:
+        logger.exception(f"Failed to close all project tabs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tabs/active", response_model=Optional[OpenProjectInstance])
+async def get_active_project_tab():
+    """
+    Get the currently active project tab.
+    
+    Returns None if no project is currently active.
+    """
+    return project_service.get_active_project()
