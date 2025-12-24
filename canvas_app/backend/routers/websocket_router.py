@@ -6,12 +6,16 @@ import logging
 import asyncio
 
 from core.events import event_emitter
+from services.compiler_service import get_compiler_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # Active WebSocket connections
 active_connections: Set[WebSocket] = set()
+
+# Flag to track if compiler service has been wired up
+_compiler_wired = False
 
 
 async def broadcast_event(event: dict):
@@ -36,6 +40,33 @@ async def broadcast_event(event: dict):
 event_emitter.add_listener(broadcast_event)
 
 
+def _setup_compiler_service():
+    """Set up the compiler service with the WebSocket emit callback."""
+    global _compiler_wired
+    if not _compiler_wired:
+        def emit_sync(event_type: str, data: dict):
+            """Synchronous emit wrapper that schedules the async broadcast."""
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.ensure_future(broadcast_event({
+                        "type": event_type,
+                        "data": data
+                    }))
+                else:
+                    loop.run_until_complete(broadcast_event({
+                        "type": event_type,
+                        "data": data
+                    }))
+            except Exception as e:
+                logger.error(f"Failed to emit event {event_type}: {e}")
+        
+        compiler_service = get_compiler_service()
+        compiler_service.set_emit_callback(emit_sync)
+        _compiler_wired = True
+        logger.info("Compiler service wired to WebSocket")
+
+
 @router.websocket("/events")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time execution events.
@@ -56,6 +87,11 @@ async def websocket_endpoint(websocket: WebSocket):
     - breakpoint:hit
     - breakpoint:set
     - breakpoint:cleared
+    - chat:message
+    - chat:code_block
+    - chat:artifact
+    - chat:input_request
+    - chat:compiler_status
     
     Commands accepted from client:
     - ping: Returns pong
@@ -63,6 +99,9 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     active_connections.add(websocket)
     logger.info(f"WebSocket connected. Total connections: {len(active_connections)}")
+    
+    # Set up compiler service with emit callback on first connection
+    _setup_compiler_service()
     
     try:
         # Send initial connection confirmation

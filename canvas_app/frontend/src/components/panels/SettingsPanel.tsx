@@ -36,7 +36,10 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     setLoaded,
   } = useConfigStore();
 
-  const { currentProject, setCurrentProject, projectPath } = useProjectStore();
+  const { currentProject, setCurrentProject, projectPath, openTabs, activeTabId } = useProjectStore();
+  
+  // Check if current project is read-only (e.g., compiler project)
+  const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
   
   // LLM settings state
   const [showLLMSettings, setShowLLMSettings] = useState(false);
@@ -132,7 +135,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <span>Execution Settings</span>
         </div>
         <div className="flex items-center gap-2">
-          {currentProject && hasUnsavedChanges && (
+          {/* Save button - hidden for read-only projects */}
+          {!isReadOnly && currentProject && hasUnsavedChanges && (
             <button
               onClick={handleSaveToProject}
               className="px-2 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors flex items-center gap-1"

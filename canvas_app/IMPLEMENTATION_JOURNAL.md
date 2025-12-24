@@ -1,8 +1,373 @@
 # NormCode Canvas Tool - Implementation Journal
 
 **Project Start**: December 18, 2024  
-**Current Phase**: Phase 4 - Modification & Re-run  
-**Status**: ✅ Phase 4 Core Features Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Core)
+**Current Phase**: Phase 6 - Self-Hosted Compiler  
+**Status**: ✅ Chat Backend Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Phase 5 ✅ Core)
+
+---
+
+## December 25, 2024 - Compiler Chat Backend (Self-Hosting Foundation)
+
+### What Was Implemented
+
+**Full Chat Backend Integration**
+Completed the backend infrastructure for the compiler-driven chat interface. The chat is now fully functional with backend API, WebSocket events, and tool support for future NormCode integration.
+
+#### Backend: Chat Schemas (`schemas/chat_schemas.py`)
+- [x] `ChatMessage`, `MessageRole` - Chat message structure
+- [x] `CodeBlock`, `ChatArtifact` - Rich content types
+- [x] `ChatInputRequest`, `ChatInputResponse` - Input request/response models
+- [x] `CompilerStatus`, `CompilerProjectInfo` - Compiler state models
+- [x] `ChatEventType`, `ChatEvent` - WebSocket event types
+- [x] Request/Response models for all API endpoints
+
+#### Backend: Chat Tool (`tools/chat_tool.py`)
+- [x] `CanvasChatTool` - Tool for NormCode plans to interact with chat
+- [x] **Write methods**: `write()`, `write_code()`, `write_artifact()`, `update_status()`
+- [x] **Read methods**: `read_input()`, `read_code()`, `ask()`, `confirm()`
+- [x] **Input handling**: `submit_response()`, `cancel_request()`, `get_pending_request()`
+- [x] **Factory methods**: `create_write_function()`, `create_read_function()`, `create_ask_function()`
+- [x] Thread-safe input blocking with `threading.Event`
+
+#### Backend: Canvas Tool (`tools/canvas_tool.py`)
+- [x] `CanvasDisplayTool` - Tool for displaying artifacts on canvas
+- [x] `display_source()` - Show source code with syntax highlighting
+- [x] `show_derived_structure()` - Display derived concept tree
+- [x] `show_inference_structure()` - Display inference graph
+- [x] `load_compiled_plan()` - Load compiled repositories onto canvas
+- [x] `highlight_node()`, `highlight_nodes()`, `clear_highlights()`
+- [x] `show_compilation_step()` - Show compilation progress
+
+#### Backend: Compiler Service (`services/compiler_service.py`)
+- [x] `CompilerService` singleton - Manages compiler meta project
+- [x] `start()`, `stop()`, `disconnect()` - Compiler lifecycle
+- [x] `send_message()` - Process user messages
+- [x] `get_state()`, `get_messages()`, `clear_messages()`
+- [x] `submit_input_response()`, `cancel_input_request()`
+- [x] WebSocket emit callback integration
+- [x] Basic message processing with helpful responses
+
+#### Backend: Chat Router (`routers/chat_router.py`)
+- [x] `GET /api/chat/state` - Get compiler state and pending input
+- [x] `POST /api/chat/start` - Start/connect compiler
+- [x] `POST /api/chat/stop` - Stop compiler execution
+- [x] `POST /api/chat/disconnect` - Disconnect compiler
+- [x] `GET /api/chat/messages` - Get message history with pagination
+- [x] `POST /api/chat/messages` - Send message to compiler
+- [x] `DELETE /api/chat/messages` - Clear messages
+- [x] `POST /api/chat/input/{request_id}` - Submit input response
+- [x] `DELETE /api/chat/input/{request_id}` - Cancel input request
+
+#### Frontend: API Integration (`services/api.ts`)
+- [x] `chatApi` object with all endpoints
+- [x] TypeScript types for all request/response models
+
+#### Frontend: Chat Store Updates (`stores/chatStore.ts`)
+- [x] Backend API integration for all actions
+- [x] `startCompiler()` - Connect to compiler on panel open
+- [x] `loadMessages()` - Fetch message history
+- [x] `submitInput()` - Send to backend, handle pending requests
+- [x] `isSending` state for loading indicators
+
+#### Frontend: WebSocket Integration (`hooks/useWebSocket.ts`)
+- [x] `chat:message` - Add messages from compiler
+- [x] `chat:compiler_status` - Update compiler status
+- [x] `chat:input_request` - Handle input requests
+- [x] `chat:input_cancelled` - Clear pending input
+
+### Architecture
+
+**Under-Chat Compiler Pattern**:
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           USER INTERFACE                             │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                         CHAT PANEL                             │  │
+│  │   [User] Compile my plan...                                    │  │
+│  │   [Compiler] Analyzing structure...                            │  │
+│  │   [Compiler] Found 5 concepts. Confirm? [Yes] [No]            │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              ↑↓                                      │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                    COMPILER NORMCODE PLAN                      │  │
+│  │              (runs "under" the chat, driving it)               │  │
+│  │                                                                 │  │
+│  │   Uses: ChatTool (read/write messages, get user input)         │  │
+│  │   Uses: CanvasTool (display graph, show artifacts)             │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                              ↑↓                                      │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                    BACKEND SERVICES                             │  │
+│  │   CompilerService → ChatTool → WebSocket → Frontend            │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Files Created
+
+**Backend**:
+- `canvas_app/backend/schemas/chat_schemas.py` - Chat Pydantic models
+- `canvas_app/backend/tools/chat_tool.py` - Chat tool for NormCode
+- `canvas_app/backend/tools/canvas_tool.py` - Canvas display tool
+- `canvas_app/backend/services/compiler_service.py` - Compiler manager
+- `canvas_app/backend/routers/chat_router.py` - Chat REST API
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/routers/__init__.py` - Added chat_router
+- `canvas_app/backend/main.py` - Included chat_router
+- `canvas_app/backend/routers/websocket_router.py` - Added compiler service wiring
+
+**Frontend**:
+- `canvas_app/frontend/src/services/api.ts` - Added chatApi
+- `canvas_app/frontend/src/stores/chatStore.ts` - Backend integration
+- `canvas_app/frontend/src/hooks/useWebSocket.ts` - Chat event handling
+- `canvas_app/frontend/src/components/panels/ChatPanel.tsx` - Async submit
+
+### API Endpoints Summary
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chat/state` | Get compiler state |
+| POST | `/api/chat/start` | Start compiler |
+| POST | `/api/chat/stop` | Stop execution |
+| POST | `/api/chat/disconnect` | Disconnect compiler |
+| GET | `/api/chat/messages` | Get message history |
+| POST | `/api/chat/messages` | Send message |
+| DELETE | `/api/chat/messages` | Clear messages |
+| POST | `/api/chat/input/{id}` | Submit input response |
+| DELETE | `/api/chat/input/{id}` | Cancel input request |
+
+### WebSocket Events
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `chat:message` | Server → Client | New message from compiler |
+| `chat:code_block` | Server → Client | Code block to display |
+| `chat:artifact` | Server → Client | Structured artifact |
+| `chat:input_request` | Server → Client | Request user input |
+| `chat:compiler_status` | Server → Client | Status update |
+| `chat:input_cancelled` | Server → Client | Input request cancelled |
+
+### Next Steps
+
+1. **Compiler NormCode Plan** - Write the compilation pipeline as a NormCode plan
+2. **Canvas Integration** - Handle canvas:* events in frontend
+3. **Meta Project Loading** - Load compiler project for transparency (read-only)
+4. **LLM Integration** - Connect compiler to LLM for intelligent responses
+
+### Usage
+
+1. Click "Chat" button in header (right side, with Sparkles icon)
+2. Compiler auto-starts when panel opens
+3. Type a message and press Enter to send
+4. Compiler responds with helpful messages
+5. Panel works in both Canvas and Editor views
+6. Clear messages with trash icon in header
+
+---
+
+## December 24, 2024 - Multi-Project Simultaneous Execution
+
+### What Was Implemented
+
+**Simultaneous Execution of Multiple Projects**
+Implemented a comprehensive multi-project execution architecture that allows multiple NormCode projects to run simultaneously in separate tabs, each with independent execution state.
+
+#### Core Architecture Changes
+
+- [x] **ExecutionControllerRegistry** (`services/execution_service.py`):
+  - Registry pattern for managing multiple `ExecutionController` instances
+  - Each project gets its own controller with isolated execution state
+  - `get_controller(project_id)` - Get or create controller for a project
+  - `set_active(project_id)` - Set active project for backward-compatible APIs
+  - `get_running_projects()` - List all projects currently executing
+  - `stop_all()` - Stop execution on all controllers
+  - `remove_controller(project_id)` - Clean up controller when project closes
+
+- [x] **ExecutionController Updates**:
+  - Added `project_id: Optional[str]` field to associate controller with project
+  - Updated `_emit()` to include `project_id` in all WebSocket events
+  - Each controller maintains independent state:
+    - Orchestrator instance
+    - Node statuses
+    - Breakpoints
+    - Logs
+    - Step progress
+    - Run configuration
+
+- [x] **Backward Compatibility**:
+  - `_ExecutionControllerProxy` delegates to active controller
+  - Existing code using `execution_controller` directly continues to work
+  - `get_execution_controller(project_id)` helper for explicit project access
+
+#### Backend Integration
+
+- [x] **Project Management** (`routers/project_router.py`):
+  - `load_project_repositories` creates project-specific controller
+  - `open_project_as_tab` ensures controller exists for new project
+  - `switch_project_tab` updates active project in registry (no reload needed)
+  - `close_project_tab` stops and removes controller for closed project
+  - Each project tracks `is_loaded` state independently
+
+- [x] **Graph Service Integration** (`routers/graph_router.py`):
+  - New `POST /graph/reload` endpoint to reload graph for current project
+  - Graph service is shared singleton, reloaded when switching projects
+  - Ensures graph data matches the active project's repository files
+
+- [x] **Execution Router**:
+  - All execution commands operate on active controller (backward compatible)
+  - WebSocket events include `project_id` for multi-project filtering
+
+#### Frontend Event Filtering
+
+- [x] **WebSocket Event Filtering** (`hooks/useWebSocket.ts`):
+  - All events now checked for `project_id` field
+  - Events from inactive projects are logged but not processed for UI updates
+  - Background projects can continue executing without affecting active view
+  - Events without `project_id` assumed to be for active project (backward compat)
+
+- [x] **Tab Switching** (`stores/projectStore.ts`):
+  - `switchTab` updates active project ID
+  - Calls `graphApi.reload()` to load graph for switched project
+  - Syncs execution state from project's controller
+  - Fetches and restores breakpoints from project config
+
+- [x] **Graph API** (`services/api.ts`):
+  - Added `graphApi.reload()` method
+  - Used when switching tabs to ensure correct graph is displayed
+
+### Technical Details
+
+**Multi-Project State Isolation**:
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                 ExecutionControllerRegistry                          │
+├─────────────────────────────────────────────────────────────────────┤
+│  _controllers: {                                                     │
+│    "project-a-id": ExecutionController(                             │
+│      project_id="project-a-id",                                     │
+│      orchestrator=Orchestrator(...),                                │
+│      node_statuses={...},                                           │
+│      breakpoints={...}                                              │
+│    ),                                                               │
+│    "project-b-id": ExecutionController(                             │
+│      project_id="project-b-id",                                     │
+│      orchestrator=Orchestrator(...),                                │
+│      node_statuses={...},                                           │
+│      breakpoints={...}                                              │
+│    ),                                                               │
+│  }                                                                   │
+│  _active_project_id: "project-a-id"                                │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Event Flow**:
+```
+Project A running → ExecutionController(project_a) → _emit()
+                                                       ↓
+                                    WebSocket event with project_id="project_a"
+                                                       ↓
+Frontend: useWebSocket → Filter by activeProjectId
+                          ↓                    ↓
+                    Match: Update UI    No Match: Log only
+```
+
+### Usage Flow
+
+1. **Open Project A as tab**:
+   - Creates `ExecutionController` for Project A
+   - Sets as active project
+   
+2. **Load and run Project A**:
+   - Project A executes on its own controller
+   - Events tagged with `project_id=project_a`
+   - UI updates reflect Project A state
+
+3. **Open Project B as new tab**:
+   - Creates `ExecutionController` for Project B
+   - Switches active project to B
+   - Registry keeps both controllers alive
+
+4. **Load and run Project B**:
+   - Project B executes independently
+   - Events tagged with `project_id=project_b`
+   - UI updates reflect Project B state
+   - Project A continues running in background
+
+5. **Switch back to Project A tab**:
+   - Sets active project to A
+   - Reloads graph from Project A's files
+   - Syncs execution state from Project A's controller
+   - UI shows current state of Project A
+   - Events from Project B are filtered out
+
+### Files Modified
+
+**Backend**:
+- `canvas_app/backend/services/execution_service.py`:
+  - Added `project_id` field to `ExecutionController`
+  - Created `ExecutionControllerRegistry` class
+  - Created `get_execution_controller()` helper function
+  - Created `_ExecutionControllerProxy` for backward compatibility
+  - Updated `_emit()` to include `project_id` in events
+
+- `canvas_app/backend/routers/project_router.py`:
+  - Updated imports to include registry functions
+  - Modified `load_project_repositories` to use project-specific controller
+  - Modified `open_project_as_tab` to create controller for new project
+  - Simplified `switch_project_tab` (no reload, just set active)
+  - Modified `close_project_tab` to remove controller
+  - Added `ExecutionStatus` import
+
+- `canvas_app/backend/routers/execution_router.py`:
+  - Updated imports to include registry functions
+
+- `canvas_app/backend/routers/repository_router.py`:
+  - Updated imports to include `get_execution_controller`
+
+- `canvas_app/backend/routers/graph_router.py`:
+  - Added `POST /graph/reload` endpoint
+  - Added logging and project service imports
+
+**Frontend**:
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`:
+  - Added `activeProjectId` from `projectStore`
+  - Added event filtering by `project_id`
+  - Events from inactive projects are logged but ignored
+  - Updated dependency array to include `activeProjectId`
+
+- `canvas_app/frontend/src/stores/projectStore.ts`:
+  - Updated `switchTab` to use `graphApi.reload()`
+  - Added execution state syncing on tab switch
+  - Updated `closeTab` with same improvements
+  - Both functions now sync full execution state from controller
+
+- `canvas_app/frontend/src/services/api.ts`:
+  - Added `graphApi.reload()` method with documentation
+
+### Benefits
+
+1. **True Multi-Tasking**: Run multiple NormCode plans simultaneously
+2. **Independent State**: Each project maintains its own execution state, breakpoints, and progress
+3. **Background Execution**: Projects continue running when not visible
+4. **No Data Pollution**: Switching tabs shows correct graph and state for each project
+5. **Backward Compatible**: Existing code using `execution_controller` directly continues to work
+
+### Known Limitations
+
+- Graph service is still a singleton (reloaded on tab switch)
+- Agent registry is shared across projects (could be isolated per-project in future)
+- WebSocket connection is shared (single connection for all projects)
+
+### Future Enhancements
+
+- Per-project graph service instances (eliminate reload on switch)
+- Per-project agent registries
+- Multiple WebSocket connections (one per project)
+- Visual indicator showing which projects are currently running
+- Project execution status in tab label
 
 ---
 

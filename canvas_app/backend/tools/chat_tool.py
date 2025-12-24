@@ -1,93 +1,53 @@
 """
-Canvas-native chat tool for compiler-user interaction.
+Canvas Chat Tool for compiler-driven chat interface.
 
-This tool allows NormCode plans to interact with users through a chat interface.
-The chat is both an output (display messages) and an input (receive user responses).
+This tool allows NormCode plans (specifically the compiler meta-project)
+to interact with the chat panel in the Canvas app.
 
-The compiler NormCode plan runs "under" the chat, driving the conversation:
-- Plan writes messages → appear in chat UI
-- Plan reads input → waits for user to respond in chat UI
+The tool supports:
+- Writing messages to chat (write, write_code, write_artifact)
+- Reading user input from chat (read_input, read_code, ask, confirm)
+- Status updates and progress display
 
-Interface similar to CanvasUserInputTool but specialized for conversational flow.
+This is the backend counterpart to the ChatPanel frontend component.
 """
 
 import logging
 import threading
 import time
 import uuid
-from typing import Callable, Any, Dict, List, Optional
 from dataclasses import dataclass, field
-from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
-class MessageRole(str, Enum):
-    """Role of a chat message."""
-    USER = "user"
-    ASSISTANT = "assistant"
-    SYSTEM = "system"
-    ERROR = "error"
-    SUCCESS = "success"
-
-
-class InputType(str, Enum):
-    """Type of input request."""
-    TEXT = "text"
-    CODE = "code"
-    QUESTION = "question"
-    CONFIRM = "confirm"
-    SELECT = "select"
-
-
 @dataclass
-class ChatMessage:
-    """A message in the chat history."""
+class ChatInputRequest:
+    """A pending chat input request."""
     id: str
-    role: MessageRole
-    content: str
-    timestamp: float = field(default_factory=time.time)
-    # For code blocks
-    code: Optional[str] = None
-    language: Optional[str] = None
-    # For artifacts
-    artifact: Optional[Any] = None
-    artifact_type: Optional[str] = None
-    title: Optional[str] = None
-
-
-@dataclass
-class PendingInput:
-    """A pending input request from the chat."""
-    id: str
-    input_type: InputType
     prompt: str
+    input_type: str  # text, code, confirm, select
     options: Optional[List[str]] = None
-    language: Optional[str] = None
-    response: Optional[Any] = None
+    placeholder: Optional[str] = None
+    initial_value: Optional[str] = None
+    response: Optional[str] = None
     completed: bool = False
     created_at: float = field(default_factory=time.time)
 
 
 class CanvasChatTool:
     """
-    Tool for NormCode plans to interact with the chat interface.
+    A tool for NormCode plans to interact with the Canvas chat interface.
     
-    The chat is both an output (display messages) and input (receive user responses).
+    This tool is designed to be used by the compiler meta-project to:
+    1. Display messages, code blocks, and artifacts in the chat
+    2. Request input from the user through the chat
+    3. Show compilation progress and status updates
     
-    Usage in NormCode plan:
-        # Write to chat
-        Body.chat.write("Analyzing your input...")
-        
-        # Read from chat
-        code = Body.chat.read_code("Paste your NormCode draft:")
-        
-        # Ask a question
-        answer = Body.chat.ask("Is this correct?", ["Yes", "No"])
-        
-        # Confirm
-        if Body.chat.confirm("Proceed with compilation?"):
-            ...
+    The tool uses WebSocket events to communicate with the frontend.
+    Similar to CanvasUserInputTool, it uses threading.Event for blocking
+    input operations to be compatible with synchronous orchestrator code.
     """
     
     def __init__(self, emit_callback: Optional[Callable[[str, Dict], None]] = None):
@@ -99,8 +59,7 @@ class CanvasChatTool:
                           Signature: (event_type: str, data: dict) -> None
         """
         self._emit_callback = emit_callback
-        self._messages: List[ChatMessage] = []
-        self._pending_inputs: Dict[str, PendingInput] = {}
+        self._pending_requests: Dict[str, ChatInputRequest] = {}
         self._events: Dict[str, threading.Event] = {}
         self._lock = threading.Lock()
     
@@ -114,43 +73,41 @@ class CanvasChatTool:
             try:
                 self._emit_callback(event_type, data)
             except Exception as e:
-                logger.error(f"Failed to emit event {event_type}: {e}")
+                logger.error(f"Failed to emit chat event {event_type}: {e}")
     
     def _generate_id(self) -> str:
-        """Generate a unique ID."""
+        """Generate a unique ID for messages/requests."""
         return str(uuid.uuid4())[:8]
     
     # =========================================================================
-    # Output Methods (write to chat)
+    # Writing to Chat
     # =========================================================================
     
-    def write(self, message: str, role: str = "assistant") -> None:
+    def write(self, message: str, role: str = "compiler", metadata: Optional[Dict] = None):
         """
-        Write a plain text message to the chat.
+        Write a message to the chat.
         
         Args:
             message: The message content
-            role: Message role (assistant, system, error, success)
+            role: Message role ('compiler', 'system', 'assistant')
+            metadata: Optional metadata (flowIndex, nodeLink, etc.)
         """
-        msg = ChatMessage(
-            id=self._generate_id(),
-            role=MessageRole(role) if role in MessageRole.__members__.values() else MessageRole.ASSISTANT,
-            content=message,
-        )
-        
-        with self._lock:
-            self._messages.append(msg)
-        
+        msg_id = self._generate_id()
         self._emit("chat:message", {
-            "id": msg.id,
-            "role": msg.role.value,
-            "content": msg.content,
-            "timestamp": msg.timestamp,
+            "id": msg_id,
+            "role": role,
+            "content": message,
+            "metadata": metadata or {},
         })
-        
-        logger.debug(f"Chat message [{msg.role.value}]: {message[:50]}...")
+        logger.debug(f"Chat message [{role}]: {message[:100]}...")
     
-    def write_code(self, code: str, language: str = "ncd", title: str = None) -> None:
+    def write_code(
+        self, 
+        code: str, 
+        language: str = "ncd", 
+        title: Optional[str] = None,
+        collapsible: bool = True
+    ):
         """
         Write a code block to the chat.
         
@@ -158,124 +115,113 @@ class CanvasChatTool:
             code: The code content
             language: Programming language for syntax highlighting
             title: Optional title for the code block
+            collapsible: Whether the code block can be collapsed
         """
-        msg = ChatMessage(
-            id=self._generate_id(),
-            role=MessageRole.ASSISTANT,
-            content=f"```{language}\n{code}\n```",
-            code=code,
-            language=language,
-            title=title,
-        )
-        
-        with self._lock:
-            self._messages.append(msg)
-        
+        block_id = self._generate_id()
         self._emit("chat:code_block", {
-            "id": msg.id,
+            "id": block_id,
             "code": code,
             "language": language,
             "title": title,
-            "timestamp": msg.timestamp,
+            "collapsible": collapsible,
         })
-        
         logger.debug(f"Chat code block [{language}]: {len(code)} chars")
     
-    def write_artifact(self, data: Any, artifact_type: str = "json", title: str = None) -> None:
+    def write_artifact(
+        self, 
+        data: Any, 
+        artifact_type: str = "json",
+        title: Optional[str] = None
+    ):
         """
-        Write a structured artifact (collapsible JSON, table, tree, etc.).
+        Write a structured artifact to the chat.
         
         Args:
-            data: The artifact data (will be JSON serialized)
-            artifact_type: Type of artifact (json, tree, table, diff)
+            data: The artifact data (will be serialized to JSON)
+            artifact_type: Type of artifact ('json', 'table', 'tree', 'graph-preview')
             title: Optional title for the artifact
         """
-        msg = ChatMessage(
-            id=self._generate_id(),
-            role=MessageRole.ASSISTANT,
-            content=f"[Artifact: {title or artifact_type}]",
-            artifact=data,
-            artifact_type=artifact_type,
-            title=title,
-        )
-        
-        with self._lock:
-            self._messages.append(msg)
-        
+        artifact_id = self._generate_id()
         self._emit("chat:artifact", {
-            "id": msg.id,
-            "data": data,
+            "id": artifact_id,
             "type": artifact_type,
+            "data": data,
             "title": title,
-            "timestamp": msg.timestamp,
         })
-        
         logger.debug(f"Chat artifact [{artifact_type}]: {title or 'untitled'}")
     
-    def write_error(self, message: str) -> None:
-        """Write an error message to the chat."""
-        self.write(message, role="error")
-    
-    def write_success(self, message: str) -> None:
-        """Write a success message to the chat."""
-        self.write(message, role="success")
-    
-    # =========================================================================
-    # Input Methods (read from chat)
-    # =========================================================================
-    
-    def read(self, prompt: str = None) -> str:
+    def update_status(self, status: str, step: Optional[str] = None):
         """
-        Wait for user's next text message.
+        Update the compiler status displayed in the chat header.
         
         Args:
-            prompt: Optional prompt to display before waiting
+            status: Status string ('connecting', 'connected', 'running', 'error')
+            step: Optional current step description
+        """
+        self._emit("chat:compiler_status", {
+            "status": status,
+            "step": step,
+        })
+    
+    # =========================================================================
+    # Reading from Chat (User Input)
+    # =========================================================================
+    
+    def read_input(self, prompt: Optional[str] = None) -> str:
+        """
+        Wait for and return user's next text message.
+        
+        Args:
+            prompt: Optional prompt to show the user
             
         Returns:
-            The user's text response
+            The user's text input
         """
-        if prompt:
-            self.write(prompt)
-        
-        return self._wait_for_input(InputType.TEXT, prompt or "Enter text:")
+        return self._wait_for_input(
+            prompt=prompt or "Enter your response:",
+            input_type="text",
+        )
     
-    def read_code(self, prompt: str = None, language: str = "ncd") -> str:
+    def read_code(
+        self, 
+        prompt: Optional[str] = None,
+        language: str = "ncd",
+        initial_value: Optional[str] = None
+    ) -> str:
         """
         Request code input from user (opens code editor in chat).
         
         Args:
-            prompt: Optional prompt to display
-            language: Expected code language for syntax highlighting
+            prompt: Optional prompt to show the user
+            language: Expected language for syntax hints
+            initial_value: Initial code to show in editor
             
         Returns:
             The user's code input
         """
-        if prompt:
-            self.write(prompt)
-        
         return self._wait_for_input(
-            InputType.CODE, 
-            prompt or "Enter code:",
-            language=language
+            prompt=prompt or "Enter your code:",
+            input_type="code",
+            initial_value=initial_value,
+            options={"language": language},
         )
     
-    def ask(self, question: str, options: List[str] = None) -> str:
+    def ask(self, question: str, options: Optional[List[str]] = None) -> str:
         """
-        Ask a question and wait for response.
+        Ask user a question and wait for response.
         
         Args:
             question: The question to ask
-            options: Optional list of options to display as buttons
+            options: Optional list of options for selection
             
         Returns:
             The user's response (selected option or free text)
         """
-        self.write(question)
-        
+        input_type = "select" if options else "text"
         return self._wait_for_input(
-            InputType.QUESTION,
-            question,
-            options=options
+            prompt=question,
+            input_type=input_type,
+            options=options,
         )
     
     def confirm(self, message: str) -> bool:
@@ -288,50 +234,35 @@ class CanvasChatTool:
         Returns:
             True if user confirmed, False otherwise
         """
-        self.write(message)
-        
         response = self._wait_for_input(
-            InputType.CONFIRM,
-            message,
-            options=["Yes", "No"]
+            prompt=message,
+            input_type="confirm",
+            options=["Yes", "No"],
         )
-        
         return response.lower() in ("yes", "y", "true", "1", "confirm")
-    
-    def select(self, prompt: str, choices: List[str]) -> str:
-        """
-        Show a selection dropdown/list.
-        
-        Args:
-            prompt: The prompt message
-            choices: List of choices to select from
-            
-        Returns:
-            The selected choice
-        """
-        self.write(prompt)
-        
-        return self._wait_for_input(
-            InputType.SELECT,
-            prompt,
-            options=choices
-        )
     
     def _wait_for_input(
         self,
-        input_type: InputType,
         prompt: str,
-        options: List[str] = None,
-        language: str = None
+        input_type: str,
+        options: Optional[Any] = None,
+        placeholder: Optional[str] = None,
+        initial_value: Optional[str] = None,
     ) -> str:
         """
-        Block and wait for user input from the frontend.
+        Block and wait for user input from the chat.
+        
+        This method:
+        1. Creates a pending request and emits a WebSocket event
+        2. Blocks on a threading.Event until response is received
+        3. Returns the user's response
         
         Args:
-            input_type: Type of input expected
-            prompt: The prompt shown to user
-            options: Optional list of options
-            language: Optional language for code input
+            prompt: The prompt to show the user
+            input_type: Type of input (text, code, confirm, select)
+            options: Options for select type, or additional config for code
+            placeholder: Placeholder text for input
+            initial_value: Initial value for code editor
             
         Returns:
             The user's response as a string
@@ -339,59 +270,54 @@ class CanvasChatTool:
         request_id = self._generate_id()
         event = threading.Event()
         
-        pending = PendingInput(
+        # Handle options - could be list for select or dict for code config
+        option_list = None
+        if isinstance(options, list):
+            option_list = options
+        
+        request = ChatInputRequest(
             id=request_id,
-            input_type=input_type,
             prompt=prompt,
-            options=options,
-            language=language,
+            input_type=input_type,
+            options=option_list,
+            placeholder=placeholder,
+            initial_value=initial_value,
         )
         
         with self._lock:
-            self._pending_inputs[request_id] = pending
+            self._pending_requests[request_id] = request
             self._events[request_id] = event
         
         # Emit WebSocket event to notify frontend
         self._emit("chat:input_request", {
-            "request_id": request_id,
-            "type": input_type.value,
+            "id": request_id,
             "prompt": prompt,
-            "options": options,
-            "language": language,
+            "input_type": input_type,
+            "options": option_list,
+            "placeholder": placeholder,
+            "initial_value": initial_value,
         })
         
-        logger.info(f"Waiting for chat input: {request_id} ({input_type.value})")
+        logger.info(f"Waiting for chat input: {request_id} ({input_type})")
         
         # Block until response is received
         event.wait()
         
         # Get response and clean up
         with self._lock:
-            response = self._pending_inputs[request_id].response
-            del self._pending_inputs[request_id]
+            response = self._pending_requests[request_id].response
+            del self._pending_requests[request_id]
             del self._events[request_id]
         
         logger.info(f"Received chat input for {request_id}")
         
-        # Store user's response as a message
-        user_msg = ChatMessage(
-            id=self._generate_id(),
-            role=MessageRole.USER,
-            content=str(response) if response else "",
-            code=response if input_type == InputType.CODE else None,
-            language=language if input_type == InputType.CODE else None,
-        )
-        
-        with self._lock:
-            self._messages.append(user_msg)
-        
-        return str(response) if response is not None else ""
+        return response or ""
     
     # =========================================================================
     # Response Handling (called by REST API)
     # =========================================================================
     
-    def submit_response(self, request_id: str, response: Any) -> bool:
+    def submit_response(self, request_id: str, value: str) -> bool:
         """
         Submit a response for a pending input request.
         
@@ -399,24 +325,19 @@ class CanvasChatTool:
         
         Args:
             request_id: The request ID
-            response: The user's response
+            value: The user's response
             
         Returns:
             True if request was found and completed, False otherwise
         """
         with self._lock:
-            if request_id not in self._pending_inputs:
-                logger.warning(f"No pending chat input found: {request_id}")
+            if request_id not in self._pending_requests:
+                logger.warning(f"No pending chat request found: {request_id}")
                 return False
             
-            self._pending_inputs[request_id].response = response
-            self._pending_inputs[request_id].completed = True
+            self._pending_requests[request_id].response = value
+            self._pending_requests[request_id].completed = True
             self._events[request_id].set()
-        
-        self._emit("chat:input_response", {
-            "request_id": request_id,
-            "response": response,
-        })
         
         return True
     
@@ -431,11 +352,11 @@ class CanvasChatTool:
             True if request was found and cancelled
         """
         with self._lock:
-            if request_id not in self._pending_inputs:
+            if request_id not in self._pending_requests:
                 return False
             
-            self._pending_inputs[request_id].response = None
-            self._pending_inputs[request_id].completed = True
+            self._pending_requests[request_id].response = None
+            self._pending_requests[request_id].completed = True
             self._events[request_id].set()
         
         self._emit("chat:input_cancelled", {
@@ -444,86 +365,68 @@ class CanvasChatTool:
         
         return True
     
-    def get_pending_requests(self) -> List[Dict]:
-        """Get all pending input requests."""
+    def get_pending_request(self) -> Optional[Dict[str, Any]]:
+        """Get the current pending input request, if any."""
         with self._lock:
-            return [
-                {
-                    "request_id": req.id,
-                    "type": req.input_type.value,
-                    "prompt": req.prompt,
-                    "options": req.options,
-                    "language": req.language,
-                    "created_at": req.created_at,
-                }
-                for req in self._pending_inputs.values()
-                if not req.completed
-            ]
+            for req in self._pending_requests.values():
+                if not req.completed:
+                    return {
+                        "id": req.id,
+                        "prompt": req.prompt,
+                        "input_type": req.input_type,
+                        "options": req.options,
+                        "placeholder": req.placeholder,
+                        "initial_value": req.initial_value,
+                    }
+        return None
     
-    def has_pending_requests(self) -> bool:
-        """Check if there are any pending input requests."""
+    def has_pending_request(self) -> bool:
+        """Check if there is a pending request."""
         with self._lock:
-            return any(not req.completed for req in self._pending_inputs.values())
+            return any(not req.completed for req in self._pending_requests.values())
     
     # =========================================================================
-    # History Management
+    # Factory Methods for NormCode Integration
     # =========================================================================
     
-    def get_messages(self, limit: int = None) -> List[Dict]:
+    def create_write_function(self, role: str = "compiler") -> Callable:
         """
-        Get chat message history.
+        Create a function for writing messages to chat.
         
-        Args:
-            limit: Optional limit on number of messages (most recent)
-            
         Returns:
-            List of message dictionaries
+            A callable that takes (message: str, **kwargs) and writes to chat
         """
-        with self._lock:
-            messages = self._messages[-limit:] if limit else self._messages
-            return [
-                {
-                    "id": msg.id,
-                    "role": msg.role.value,
-                    "content": msg.content,
-                    "timestamp": msg.timestamp,
-                    "code": msg.code,
-                    "language": msg.language,
-                    "artifact": msg.artifact,
-                    "artifact_type": msg.artifact_type,
-                    "title": msg.title,
-                }
-                for msg in messages
-            ]
+        def write_fn(message: str = "", **kwargs) -> None:
+            # Support both positional and keyword arguments
+            content = message or kwargs.get("content", "")
+            metadata = kwargs.get("metadata", {})
+            self.write(content, role=role, metadata=metadata)
+        
+        return write_fn
     
-    def clear_messages(self) -> None:
-        """Clear all chat messages."""
-        with self._lock:
-            self._messages.clear()
+    def create_read_function(self) -> Callable:
+        """
+        Create a function for reading user input from chat.
         
-        self._emit("chat:cleared", {})
-        logger.info("Chat history cleared")
+        Returns:
+            A callable that takes (**kwargs) and returns user input
+        """
+        def read_fn(**kwargs) -> str:
+            prompt = kwargs.get("prompt_text", kwargs.get("prompt", "Enter input:"))
+            return self.read_input(prompt)
+        
+        return read_fn
     
-    def add_user_message(self, content: str) -> None:
+    def create_ask_function(self) -> Callable:
         """
-        Add a user message to history (for messages sent directly, not via read()).
+        Create a function for asking questions in chat.
         
-        Args:
-            content: The message content
+        Returns:
+            A callable that takes (question: str, options: list) and returns response
         """
-        msg = ChatMessage(
-            id=self._generate_id(),
-            role=MessageRole.USER,
-            content=content,
-        )
+        def ask_fn(**kwargs) -> str:
+            question = kwargs.get("question", kwargs.get("prompt", ""))
+            options = kwargs.get("options", None)
+            return self.ask(question, options)
         
-        with self._lock:
-            self._messages.append(msg)
-        
-        self._emit("chat:message", {
-            "id": msg.id,
-            "role": msg.role.value,
-            "content": msg.content,
-            "timestamp": msg.timestamp,
-        })
-
+        return ask_fn

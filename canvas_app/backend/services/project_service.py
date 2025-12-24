@@ -983,6 +983,7 @@ class ProjectService:
         config_file: Optional[str] = None,
         project_id: Optional[str] = None,
         make_active: bool = True,
+        is_read_only: bool = False,
     ) -> OpenProjectInstance:
         """
         Open a project as a new tab (keeping other tabs open).
@@ -992,6 +993,7 @@ class ProjectService:
             config_file: Specific config file name
             project_id: Project ID (from registry)
             make_active: Whether to switch to this tab after opening
+            is_read_only: Whether the project is read-only (view/execute only)
             
         Returns:
             OpenProjectInstance representing the opened tab
@@ -1029,6 +1031,7 @@ class ProjectService:
             is_loaded=False,  # Not loaded until repositories are loaded
             repositories_exist=self.check_repositories_exist(),
             is_active=make_active,
+            is_read_only=is_read_only,
         )
         
         # Add to open projects

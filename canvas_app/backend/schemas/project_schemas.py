@@ -225,6 +225,7 @@ class OpenProjectInstance(BaseModel):
     is_loaded: bool = False  # Whether repositories are loaded
     repositories_exist: bool = False
     is_active: bool = False  # Whether this is the currently focused tab
+    is_read_only: bool = False  # Read-only projects can be viewed and executed, but not modified
 
 
 class OpenProjectsResponse(BaseModel):
@@ -249,3 +250,4 @@ class OpenProjectInTabRequest(BaseModel):
     project_path: Optional[str] = None  # Or by path
     config_file: Optional[str] = None  # Specific config file
     make_active: bool = True  # Whether to switch to this tab
+    is_read_only: bool = False  # Read-only projects can be viewed and executed, but not modified

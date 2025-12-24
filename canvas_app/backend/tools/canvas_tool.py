@@ -1,92 +1,49 @@
 """
-Canvas-native display tool for showing artifacts on the Canvas.
+Canvas Display Tool - Display artifacts on the Canvas.
 
-This tool allows NormCode plans to display artifacts on the Canvas UI:
-- Source code viewer
-- Structure trees
-- Compiled plan graphs
-- Node highlights and annotations
+This tool allows NormCode plans (specifically the compiler) to display
+artifacts on the Canvas graph view:
+- Source code with syntax highlighting
+- Derived concept structures
+- Compiled inference structures
+- Graph previews
 
-Unlike ChatTool (interactive), CanvasDisplayTool is primarily for display.
+The tool emits WebSocket events that the frontend handles to update
+the canvas display.
 """
 
 import logging
-from typing import Callable, Any, Dict, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
-class HighlightStyle(str, Enum):
-    """Style for node highlighting."""
-    FOCUS = "focus"         # Primary focus (blue glow)
-    SUCCESS = "success"     # Success state (green)
-    WARNING = "warning"     # Warning state (yellow)
-    ERROR = "error"         # Error state (red)
-    INFO = "info"           # Informational (gray)
-
-
-class ArtifactType(str, Enum):
-    """Type of artifact to display."""
-    SOURCE = "source"       # Source code
-    STRUCTURE = "structure" # Concept/inference structure
-    GRAPH = "graph"         # Graph preview
-    JSON = "json"           # Raw JSON
-    TREE = "tree"           # Tree view
-    TABLE = "table"         # Table view
-
-
-@dataclass
-class Annotation:
-    """An annotation attached to a node."""
-    id: str
-    flow_index: str
-    text: str
-    annotation_type: str = "info"
-
-
 class CanvasDisplayTool:
     """
-    Tool for NormCode plans to display artifacts on the Canvas.
+    A tool for displaying artifacts on the Canvas graph view.
     
-    Usage in NormCode plan:
-        # Show source code
-        Body.canvas.show_source(draft_code, language="ncds")
-        
-        # Show derived structure
-        Body.canvas.show_structure(concepts, title="Derived Concepts")
-        
-        # Load compiled plan into graph
-        Body.canvas.load_plan(concepts, inferences)
-        
-        # Highlight a specific node
-        Body.canvas.highlight_node("1.1", style="focus")
+    This tool is used by the compiler to show:
+    1. Source code being compiled
+    2. Derived concept structures
+    3. Compiled inference graphs
+    4. Intermediate compilation results
+    
+    All displays are non-blocking and purely for visualization.
     """
     
-    def __init__(
-        self, 
-        emit_callback: Optional[Callable[[str, Dict], None]] = None,
-        project_context: Optional[Dict] = None
-    ):
+    def __init__(self, emit_callback: Optional[Callable[[str, Dict], None]] = None):
         """
         Initialize the Canvas display tool.
         
         Args:
             emit_callback: Callback to emit WebSocket events.
-            project_context: Optional context about the current project.
+                          Signature: (event_type: str, data: dict) -> None
         """
         self._emit_callback = emit_callback
-        self._project_context = project_context or {}
-        self._annotations: Dict[str, Annotation] = {}
     
     def set_emit_callback(self, callback: Callable[[str, Dict], None]):
         """Set the callback for emitting WebSocket events."""
         self._emit_callback = callback
-    
-    def set_project_context(self, context: Dict):
-        """Set the project context."""
-        self._project_context = context
     
     def _emit(self, event_type: str, data: Dict[str, Any]):
         """Emit a WebSocket event if callback is set."""
@@ -94,285 +51,181 @@ class CanvasDisplayTool:
             try:
                 self._emit_callback(event_type, data)
             except Exception as e:
-                logger.error(f"Failed to emit event {event_type}: {e}")
+                logger.error(f"Failed to emit canvas event {event_type}: {e}")
     
     # =========================================================================
     # Display Methods
     # =========================================================================
     
-    def show_source(
+    def display_source(
         self, 
-        code: str, 
-        language: str = "ncds", 
-        title: str = None,
-        line_numbers: bool = True
-    ) -> None:
+        source: str, 
+        language: str = "ncds",
+        title: Optional[str] = None,
+        highlight_lines: Optional[List[int]] = None
+    ):
         """
-        Display source code in a source viewer panel.
+        Display source code on the canvas.
         
         Args:
-            code: The source code to display
-            language: Programming language for syntax highlighting
-            title: Optional title for the viewer
-            line_numbers: Whether to show line numbers
+            source: The source code content
+            language: Language for syntax highlighting (ncds, ncd, ncn, json, python)
+            title: Optional title for the source display
+            highlight_lines: Optional list of line numbers to highlight
         """
-        self._emit("canvas:show_source", {
-            "code": code,
+        self._emit("canvas:display_source", {
+            "source": source,
             "language": language,
-            "title": title or f"Source ({language})",
-            "line_numbers": line_numbers,
+            "title": title,
+            "highlight_lines": highlight_lines or [],
         })
-        
-        logger.debug(f"Canvas show source [{language}]: {len(code)} chars")
+        logger.debug(f"Display source [{language}]: {len(source)} chars")
     
-    def show_structure(
+    def show_derived_structure(
         self, 
-        structure: Dict, 
-        title: str = None,
-        view_type: str = "tree"
-    ) -> None:
+        concepts: List[Dict[str, Any]],
+        title: Optional[str] = None
+    ):
         """
-        Display a concept/inference structure as a tree or graph.
+        Display a derived concept structure on the canvas.
         
         Args:
-            structure: The structure data (concepts, inferences, etc.)
-            title: Optional title for the viewer
-            view_type: How to display (tree, json, graph)
+            concepts: List of derived concept definitions
+            title: Optional title for the structure view
         """
         self._emit("canvas:show_structure", {
-            "structure": structure,
-            "title": title or "Structure",
-            "view_type": view_type,
+            "type": "derived",
+            "concepts": concepts,
+            "title": title or "Derived Structure",
         })
-        
-        logger.debug(f"Canvas show structure [{view_type}]: {title or 'untitled'}")
+        logger.debug(f"Show derived structure: {len(concepts)} concepts")
     
-    def load_plan(
-        self, 
-        concepts: List[Dict], 
-        inferences: List[Dict],
-        auto_layout: bool = True
-    ) -> None:
+    def show_inference_structure(
+        self,
+        inferences: List[Dict[str, Any]],
+        title: Optional[str] = None
+    ):
         """
-        Load a compiled plan into the graph view.
-        
-        This replaces the current graph with the new plan.
+        Display an inference structure (flow graph) on the canvas.
         
         Args:
-            concepts: List of concept dictionaries
-            inferences: List of inference dictionaries
-            auto_layout: Whether to auto-layout the graph
+            inferences: List of inference definitions
+            title: Optional title for the structure view
+        """
+        self._emit("canvas:show_structure", {
+            "type": "inference",
+            "inferences": inferences,
+            "title": title or "Inference Structure",
+        })
+        logger.debug(f"Show inference structure: {len(inferences)} inferences")
+    
+    def load_compiled_plan(
+        self,
+        concepts_json: Dict[str, Any],
+        inferences_json: Dict[str, Any],
+        title: Optional[str] = None
+    ):
+        """
+        Load a fully compiled plan onto the canvas for visualization.
+        
+        Args:
+            concepts_json: The concepts.json content
+            inferences_json: The inferences.json content
+            title: Optional title for the loaded plan
         """
         self._emit("canvas:load_plan", {
-            "concepts": concepts,
-            "inferences": inferences,
-            "auto_layout": auto_layout,
+            "concepts": concepts_json,
+            "inferences": inferences_json,
+            "title": title or "Compiled Plan",
         })
-        
-        logger.info(f"Canvas load plan: {len(concepts)} concepts, {len(inferences)} inferences")
+        logger.debug(f"Load compiled plan: {len(concepts_json)} concepts")
     
-    def update_node(self, flow_index: str, data: Dict) -> None:
+    def highlight_node(self, flow_index: str, style: str = "focus"):
         """
-        Update data for a specific node.
+        Highlight a specific node in the current graph.
         
         Args:
-            flow_index: The node's flow index
-            data: Data to merge into the node
+            flow_index: The flow index of the node to highlight
+            style: Highlight style ('focus', 'success', 'error', 'warning')
         """
-        self._emit("canvas:update_node", {
-            "flow_index": flow_index,
-            "data": data,
-        })
-        
-        logger.debug(f"Canvas update node {flow_index}")
-    
-    # =========================================================================
-    # Highlighting & Annotations
-    # =========================================================================
-    
-    def highlight_node(
-        self, 
-        flow_index: str, 
-        style: str = "focus",
-        duration: float = None
-    ) -> None:
-        """
-        Highlight a specific node in the graph.
-        
-        Args:
-            flow_index: The node's flow index
-            style: Highlight style (focus, success, warning, error, info)
-            duration: Optional duration in seconds (None = permanent until cleared)
-        """
-        self._emit("canvas:highlight_node", {
+        self._emit("canvas:highlight", {
             "flow_index": flow_index,
             "style": style,
-            "duration": duration,
         })
-        
-        logger.debug(f"Canvas highlight node {flow_index} [{style}]")
     
-    def clear_highlight(self, flow_index: str = None) -> None:
+    def highlight_nodes(self, flow_indices: List[str], style: str = "focus"):
         """
-        Clear node highlighting.
+        Highlight multiple nodes in the current graph.
         
         Args:
-            flow_index: Specific node to clear, or None to clear all
+            flow_indices: List of flow indices to highlight
+            style: Highlight style ('focus', 'success', 'error', 'warning')
         """
-        self._emit("canvas:clear_highlight", {
-            "flow_index": flow_index,
+        self._emit("canvas:highlight_multiple", {
+            "flow_indices": flow_indices,
+            "style": style,
         })
-        
-        logger.debug(f"Canvas clear highlight: {flow_index or 'all'}")
     
-    def add_annotation(
-        self, 
-        flow_index: str, 
-        text: str, 
-        annotation_type: str = "info"
-    ) -> str:
+    def clear_highlights(self):
+        """Clear all node highlights."""
+        self._emit("canvas:clear_highlights", {})
+    
+    def show_compilation_step(
+        self,
+        step_name: str,
+        step_index: int,
+        total_steps: int,
+        data: Optional[Dict[str, Any]] = None
+    ):
         """
-        Add an annotation to a node.
+        Display a compilation step progress indicator.
         
         Args:
-            flow_index: The node's flow index
-            text: The annotation text
-            annotation_type: Type of annotation (info, warning, error, success)
-            
-        Returns:
-            The annotation ID
+            step_name: Name of the current step (e.g., 'derivation', 'formalization')
+            step_index: Current step index (1-based)
+            total_steps: Total number of steps
+            data: Optional data associated with this step
         """
-        import uuid
-        annotation_id = str(uuid.uuid4())[:8]
-        
-        annotation = Annotation(
-            id=annotation_id,
-            flow_index=flow_index,
-            text=text,
-            annotation_type=annotation_type,
-        )
-        
-        self._annotations[annotation_id] = annotation
-        
-        self._emit("canvas:add_annotation", {
-            "id": annotation_id,
-            "flow_index": flow_index,
-            "text": text,
-            "type": annotation_type,
+        self._emit("canvas:compilation_step", {
+            "step_name": step_name,
+            "step_index": step_index,
+            "total_steps": total_steps,
+            "data": data or {},
         })
-        
-        logger.debug(f"Canvas add annotation to {flow_index}: {text[:30]}...")
-        
-        return annotation_id
-    
-    def remove_annotation(self, annotation_id: str) -> bool:
-        """
-        Remove an annotation.
-        
-        Args:
-            annotation_id: The annotation ID
-            
-        Returns:
-            True if annotation was found and removed
-        """
-        if annotation_id not in self._annotations:
-            return False
-        
-        del self._annotations[annotation_id]
-        
-        self._emit("canvas:remove_annotation", {
-            "id": annotation_id,
-        })
-        
-        return True
-    
-    def clear_annotations(self, flow_index: str = None) -> None:
-        """
-        Clear annotations.
-        
-        Args:
-            flow_index: Specific node to clear, or None to clear all
-        """
-        if flow_index:
-            # Clear annotations for specific node
-            to_remove = [
-                aid for aid, ann in self._annotations.items()
-                if ann.flow_index == flow_index
-            ]
-            for aid in to_remove:
-                del self._annotations[aid]
-        else:
-            # Clear all
-            self._annotations.clear()
-        
-        self._emit("canvas:clear_annotations", {
-            "flow_index": flow_index,
-        })
-        
-        logger.debug(f"Canvas clear annotations: {flow_index or 'all'}")
+        logger.info(f"Compilation step {step_index}/{total_steps}: {step_name}")
     
     # =========================================================================
-    # Navigation
+    # Factory Methods for NormCode Integration
     # =========================================================================
     
-    def focus_node(self, flow_index: str, zoom: bool = True) -> None:
+    def create_display_source_function(self, language: str = "ncds") -> Callable:
         """
-        Focus and optionally zoom to a specific node.
-        
-        Args:
-            flow_index: The node's flow index
-            zoom: Whether to zoom to the node
-        """
-        self._emit("canvas:focus_node", {
-            "flow_index": flow_index,
-            "zoom": zoom,
-        })
-        
-        logger.debug(f"Canvas focus node {flow_index}")
-    
-    def fit_view(self, padding: float = 0.1) -> None:
-        """
-        Fit all nodes in the view.
-        
-        Args:
-            padding: Padding around the nodes (0.0 - 1.0)
-        """
-        self._emit("canvas:fit_view", {
-            "padding": padding,
-        })
-    
-    # =========================================================================
-    # State Methods
-    # =========================================================================
-    
-    def clear(self) -> None:
-        """Clear all canvas displays (source viewer, structure, highlights, annotations)."""
-        self._annotations.clear()
-        
-        self._emit("canvas:clear", {})
-        
-        logger.info("Canvas cleared")
-    
-    def get_selected_node(self) -> Optional[Dict]:
-        """
-        Get information about the currently selected node.
-        
-        Note: This is synchronous and returns cached state.
-        For real-time state, the frontend should emit selection events.
+        Create a function for displaying source code.
         
         Returns:
-            Node info dict or None if no selection
+            A callable that takes (source: str, **kwargs) and displays on canvas
         """
-        # This would typically be updated via WebSocket events from frontend
-        return self._project_context.get("selected_node")
+        def display_fn(source: str = "", **kwargs) -> None:
+            title = kwargs.get("title")
+            highlight_lines = kwargs.get("highlight_lines")
+            self.display_source(source, language=language, title=title, highlight_lines=highlight_lines)
+        
+        return display_fn
     
-    def get_graph_state(self) -> Dict:
+    def create_show_structure_function(self, structure_type: str = "derived") -> Callable:
         """
-        Get current graph state.
+        Create a function for showing structure on canvas.
         
         Returns:
-            Dict with nodes, edges, viewport info
+            A callable that takes (data: dict, **kwargs) and shows on canvas
         """
-        # This would typically be updated via WebSocket events from frontend
-        return self._project_context.get("graph_state", {})
-
+        def show_fn(data: Any = None, **kwargs) -> None:
+            title = kwargs.get("title")
+            if structure_type == "derived":
+                concepts = data if isinstance(data, list) else []
+                self.show_derived_structure(concepts, title=title)
+            elif structure_type == "inference":
+                inferences = data if isinstance(data, list) else []
+                self.show_inference_structure(inferences, title=title)
+        
+        return show_fn

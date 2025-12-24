@@ -9,6 +9,7 @@ import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Work
 import { useSelectionStore } from '../../stores/selectionStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
+import { useProjectStore } from '../../stores/projectStore';
 import { executionApi, ReferenceData } from '../../services/api';
 import { TensorInspector } from './TensorInspector';
 import { StepPipeline } from './StepPipeline';
@@ -34,6 +35,11 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
   const removeBreakpoint = useExecutionStore((s) => s.removeBreakpoint);
   const status = useExecutionStore((s) => s.status);
   const stepProgress = useExecutionStore((s) => s.stepProgress);
+  
+  // Check if current project is read-only (e.g., compiler project)
+  const openTabs = useProjectStore((s) => s.openTabs);
+  const activeTabId = useProjectStore((s) => s.activeTabId);
+  const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
 
   // Reference data state
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null);
@@ -358,7 +364,8 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   )}
                   
                   {/* Phase 4: Value Override button (for value nodes with reference) */}
-                  {node.node_type === 'value' && status !== 'running' && (
+                  {/* Hidden for read-only projects */}
+                  {!isReadOnly && node.node_type === 'value' && status !== 'running' && (
                     <button
                       onClick={() => setShowValueOverride(true)}
                       className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
@@ -370,7 +377,8 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   )}
                   
                   {/* Phase 4: Function Modify button (for function nodes) */}
-                  {node.node_type === 'function' && status !== 'running' && (
+                  {/* Hidden for read-only projects */}
+                  {!isReadOnly && node.node_type === 'function' && status !== 'running' && (
                     <button
                       onClick={() => setShowFunctionModify(true)}
                       className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
@@ -382,7 +390,8 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   )}
                   
                   {/* Phase 4: Re-run From button (for completed nodes) */}
-                  {status !== 'running' && nodeStatus === 'completed' && (
+                  {/* Hidden for read-only projects */}
+                  {!isReadOnly && status !== 'running' && nodeStatus === 'completed' && (
                     <button
                       onClick={() => setShowRerunConfirm(true)}
                       className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"

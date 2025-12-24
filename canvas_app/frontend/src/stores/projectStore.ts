@@ -73,7 +73,7 @@ interface ProjectState {
   
   // Multi-project tab async actions
   fetchOpenTabs: () => Promise<void>;
-  openProjectAsTab: (projectPath?: string, configFile?: string, projectId?: string, makeActive?: boolean) => Promise<boolean>;
+  openProjectAsTab: (projectPath?: string, configFile?: string, projectId?: string, makeActive?: boolean, isReadOnly?: boolean) => Promise<boolean>;
   switchTab: (projectId: string) => Promise<boolean>;
   closeTab: (projectId: string) => Promise<void>;
   closeAllTabs: () => Promise<void>;
@@ -439,7 +439,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
   
   // Open a project as a new tab
-  openProjectAsTab: async (projectPath?: string, configFile?: string, projectId?: string, makeActive: boolean = true) => {
+  openProjectAsTab: async (projectPath?: string, configFile?: string, projectId?: string, makeActive: boolean = true, isReadOnly: boolean = false) => {
     set({ isLoading: true, error: null });
     try {
       const instance = await projectApi.openAsTab({
@@ -447,6 +447,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         config_file: configFile,
         project_id: projectId,
         make_active: makeActive,
+        is_read_only: isReadOnly,
       });
       
       // Add to tabs if not already present, or update existing

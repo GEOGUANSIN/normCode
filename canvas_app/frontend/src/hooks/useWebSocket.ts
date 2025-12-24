@@ -10,6 +10,7 @@ import { wsClient } from '../services/websocket';
 import { useExecutionStore, type UserInputRequest } from '../stores/executionStore';
 import { useAgentStore } from '../stores/agentStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useChatStore } from '../stores/chatStore';
 import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
@@ -42,6 +43,11 @@ export function useWebSocket() {
   
   // Get current active project ID for event filtering
   const activeProjectId = useProjectStore((s) => s.activeTabId);
+  
+  // Chat store actions
+  const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
+  const setCompilerStatus = useChatStore((s) => s.setCompilerStatus);
+  const setInputRequest = useChatStore((s) => s.setInputRequest);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -398,11 +404,46 @@ export function useWebSocket() {
           }
           break;
 
+        // Chat events (compiler-driven chat)
+        case 'chat:message':
+          if (data.id && data.content) {
+            addMessageFromApi({
+              id: data.id as string,
+              role: (data.role as 'user' | 'assistant' | 'system' | 'compiler') || 'compiler',
+              content: data.content as string,
+              timestamp: (data.timestamp as string) || new Date().toISOString(),
+              metadata: data.metadata as Record<string, unknown>,
+            });
+          }
+          break;
+
+        case 'chat:compiler_status':
+          if (data.status) {
+            setCompilerStatus(data.status as 'disconnected' | 'connecting' | 'connected' | 'running');
+          }
+          break;
+
+        case 'chat:input_request':
+          if (data.id && data.prompt) {
+            setInputRequest({
+              id: data.id as string,
+              prompt: data.prompt as string,
+              inputType: (data.input_type as 'text' | 'code' | 'confirm' | 'select') || 'text',
+              options: data.options as string[] | undefined,
+              placeholder: data.placeholder as string | undefined,
+            });
+          }
+          break;
+
+        case 'chat:input_cancelled':
+          setInputRequest(null);
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setCompilerStatus, setInputRequest]
   );
 
   const [isConnected, setIsConnected] = useState(false);

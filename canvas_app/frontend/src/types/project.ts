@@ -133,6 +133,7 @@ export interface OpenProjectInstance {
   is_loaded: boolean;  // Whether repositories are loaded
   repositories_exist: boolean;
   is_active: boolean;  // Whether this is the currently focused tab
+  is_read_only: boolean;  // Read-only projects can be viewed and executed, but not modified
 }
 
 export interface OpenProjectsResponse {
@@ -153,4 +154,5 @@ export interface OpenProjectInTabRequest {
   project_path?: string;  // Or by path
   config_file?: string;  // Specific config file
   make_active?: boolean;  // Whether to switch to this tab
+  is_read_only?: boolean;  // Read-only projects can be viewed and executed, but not modified
 }

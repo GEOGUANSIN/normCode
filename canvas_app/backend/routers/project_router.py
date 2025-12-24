@@ -36,11 +36,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# Run migration on startup
-@router.on_event("startup")
-async def startup_migrate():
-    """Migrate legacy recent projects on startup."""
+# Migration is called when the module is first loaded
+# This replaces the deprecated @router.on_event("startup") decorator
+try:
     project_service.migrate_recent_projects()
+except Exception as e:
+    logger.warning(f"Failed to migrate recent projects: {e}")
 
 
 @router.get("/current", response_model=Optional[ProjectResponse])
@@ -443,6 +444,7 @@ async def open_project_as_tab(request: OpenProjectInTabRequest):
             config_file=request.config_file,
             project_id=request.project_id,
             make_active=request.make_active,
+            is_read_only=request.is_read_only,
         )
         
         # Ensure an ExecutionController exists for this project

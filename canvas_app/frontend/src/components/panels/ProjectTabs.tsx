@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react';
-import { X, FolderOpen, Loader2, Plus } from 'lucide-react';
+import { X, FolderOpen, Loader2, Plus, Lock } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import type { OpenProjectInstance } from '../../types/project';
 
@@ -40,6 +40,11 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
       <span className="text-sm font-medium truncate max-w-[120px]" title={tab.name}>
         {tab.name}
       </span>
+      
+      {/* Read-only indicator */}
+      {tab.is_read_only && (
+        <Lock size={12} className="text-slate-400" title="Read-only project" />
+      )}
       
       {/* Close button */}
       <button
@@ -161,6 +166,11 @@ export function ProjectTabsCompact() {
           <span className="truncate max-w-[80px]" title={tab.name}>
             {tab.name}
           </span>
+          
+          {/* Read-only indicator */}
+          {tab.is_read_only && (
+            <Lock size={10} className="text-slate-400" title="Read-only" />
+          )}
           
           {/* Close */}
           <button
