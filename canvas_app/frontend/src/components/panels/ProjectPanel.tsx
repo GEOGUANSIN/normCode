@@ -208,7 +208,7 @@ export function ProjectPanel() {
             </div>
           )}
 
-          {/* Recent Projects */}
+          {/* Recent Projects - Show only the 2 most recent */}
           {recentProjects.length > 0 && (
             <div className="mb-6">
               <h2 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
@@ -216,7 +216,7 @@ export function ProjectPanel() {
                 Recent Projects
               </h2>
               <div className="space-y-2">
-                {recentProjects.slice(0, 5).map((project) => (
+                {recentProjects.slice(0, 2).map((project) => (
                   <button
                     key={project.id}
                     onClick={() => handleOpenRecent(project)}
