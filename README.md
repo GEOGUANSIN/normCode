@@ -70,9 +70,9 @@ NormCode fits into a three-layer approach for building AI systems that stay alig
 
 ```mermaid
 flowchart TB
-    A["🧭 NormCode<br/><sub>Authority Layer</sub><br/>Semi-formal contracts between humans and AI"]
-    B["🛠 Shared Workspace<br/><sub>Execution Layer</sub><br/>Data, tools, and task constraints"]
-    C["🧠 Foundation Models<br/><sub>Understanding Layer</sub><br/>General-purpose reasoning and generation"]
+    A["🧭 NormCode<br/>Authority Layer<br/>Semi-formal contracts<br/>between humans and AI"]
+    B["🛠 Shared Workspace<br/>Execution Layer<br/>Data, tools, and<br/>task constraints"]
+    C["🧠 Foundation Models<br/>Understanding Layer<br/>General-purpose reasoning<br/>and generation"]
 
     A --> B --> C
 ```
