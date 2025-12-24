@@ -26,7 +26,7 @@ Step 3: "Flag any discrepancies"
 Step 4: "Generate an executive summary"
 ```
 
-Now you're building a **workflow**. And this is where things break.
+Now you're building a **workflow**. And this is where things can break.
 
 ### The Hidden Problem
 
@@ -36,7 +36,7 @@ By Step 4, your AI has:
 - Raw database query results
 - Internal processing notes from earlier steps
 
-**Result?** The AI hallucinates. It confuses a number from page 47 with a database entry. It references entities that don't exist. When it fails, you can't tell which input caused the problem.
+**Problems you may encounter** The AI can hallucinate. It confuses a number from page 47 with a database entry. It references entities that don't exist. When it fails, you can't tell which input caused the problem. You may also encounter issues with the accuracy of the results, such as the figures being incorrect or the database entries being outdated.
 
 **This is what practitioners call "debugging in the dark."**
 
@@ -64,24 +64,20 @@ Read bottom-up:
 
 ---
 
-## The Alignment Stack
+## Bigger Picture:The Alignment Stack
 
-NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals:
+NormCode is part of a three-layer framework that bridges AI capabilities with real-world goals of users:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  NormCode                    (Alignment Layer)          │
-│  Semi-formal contracts between humans and AI            │
-├─────────────────────────────────────────────────────────┤
-│  Shared Workspace            (Contextualization Layer)  │
-│  Data, tools, and constraints for specific tasks        │
-├─────────────────────────────────────────────────────────┤
-│  Foundation Models           (Intelligence Layer)       │
-│  General-purpose reasoning and generation               │
-└─────────────────────────────────────────────────────────┘
+flowchart TB
+    A["🧭 NormCode<br/><sub>Authority Layer</sub><br/>Semi-formal contracts between humans and AI"]
+    B["🛠 Shared Workspace<br/><sub>Execution Layer</sub><br/>Data, tools, and task constraints"]
+    C["🧠 Foundation Models<br/><sub>Understanding Layer</sub><br/>General-purpose reasoning and generation"]
+
+    A --> B --> C
 ```
 
-**NormCode's core guarantee:** Each inference is a sealed room. It only sees what you explicitly pass in.
+NormCode, with its explicit data and step construction, acts as a guarantee for the execution of the tasks by the AI agents, it's aim is to provide a way for human users to maintain their authority over the AI agents.
 
 ---
 
