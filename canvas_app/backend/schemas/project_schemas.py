@@ -186,3 +186,23 @@ class UpdateRepositoriesRequest(BaseModel):
     concepts: Optional[str] = None
     inferences: Optional[str] = None
     inputs: Optional[str] = None
+
+
+class DiscoverPathsRequest(BaseModel):
+    """Request to discover repository files in a directory."""
+    directory: str
+
+
+class DiscoveredPathsResponse(BaseModel):
+    """Response containing auto-discovered repository paths."""
+    directory: str
+    concepts: Optional[str] = None  # Relative path to concepts file
+    inferences: Optional[str] = None  # Relative path to inferences file
+    inputs: Optional[str] = None  # Relative path to inputs file
+    paradigm_dir: Optional[str] = None  # Relative path to paradigm directory
+    
+    # Additional info
+    concepts_exists: bool = False
+    inferences_exists: bool = False
+    inputs_exists: bool = False
+    paradigm_dir_exists: bool = False

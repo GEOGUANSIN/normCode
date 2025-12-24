@@ -18,9 +18,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
-import { executionApi } from '../../services/api';
+import { executionApi, projectApi } from '../../services/api';
 import type { ExecutionConfig } from '../../types/execution';
-import type { RegisteredProject } from '../../types/project';
+import type { RegisteredProject, DiscoveredPathsResponse } from '../../types/project';
 
 type TabType = 'open' | 'create' | 'recent' | 'all';
 
@@ -60,6 +60,10 @@ export function ProjectPanel() {
   const [maxCycles, setMaxCycles] = useState(50);
   const [showAdvanced, setShowAdvanced] = useState(false);
   
+  // Discovery state
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveredPaths, setDiscoveredPaths] = useState<DiscoveredPathsResponse | null>(null);
+  
   // Available models
   const [availableModels, setAvailableModels] = useState<string[]>(['demo']);
 
@@ -71,6 +75,57 @@ export function ProjectPanel() {
       setAvailableModels(config.available_models);
     }).catch(console.error);
   }, [fetchRecentProjects, fetchAllProjects]);
+
+  // Discover paths in directory
+  const handleDiscoverPaths = async () => {
+    if (!createPath.trim()) {
+      setError('Please enter a directory path first');
+      return;
+    }
+    setIsDiscovering(true);
+    setError(null);
+    try {
+      const discovered = await projectApi.discoverPaths({ directory: createPath.trim() });
+      setDiscoveredPaths(discovered);
+      
+      // Auto-populate form fields with discovered paths
+      if (discovered.concepts) {
+        setConceptsPath(discovered.concepts);
+      }
+      if (discovered.inferences) {
+        setInferencesPath(discovered.inferences);
+      }
+      if (discovered.inputs) {
+        setInputsPath(discovered.inputs);
+      }
+      if (discovered.paradigm_dir) {
+        setParadigmDir(discovered.paradigm_dir);
+        // Show advanced settings if paradigm dir was discovered
+        setShowAdvanced(true);
+      }
+      
+      // Show message about what was discovered
+      const foundItems = [];
+      if (discovered.concepts) foundItems.push('concepts');
+      if (discovered.inferences) foundItems.push('inferences');
+      if (discovered.inputs) foundItems.push('inputs');
+      if (discovered.paradigm_dir) foundItems.push('paradigm dir');
+      
+      if (foundItems.length === 0) {
+        setError('No repository files or paradigm directories found in this directory');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to discover paths');
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
+
+  // Clear discovered paths when create path changes
+  const handleCreatePathChange = (value: string) => {
+    setCreatePath(value);
+    setDiscoveredPaths(null);
+  };
 
   // Scan directory for projects
   const handleScanDirectory = async () => {
@@ -357,14 +412,50 @@ export function ProjectPanel() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Project Directory *
                 </label>
-                <input
-                  type="text"
-                  value={createPath}
-                  onChange={(e) => setCreatePath(e.target.value)}
-                  placeholder="C:\path\to\new-project"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={createPath}
+                    onChange={(e) => handleCreatePathChange(e.target.value)}
+                    placeholder="C:\path\to\project"
+                    className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleDiscoverPaths()}
+                  />
+                  <button
+                    onClick={handleDiscoverPaths}
+                    disabled={isDiscovering || !createPath.trim()}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    title="Auto-discover repository files and paradigm directory"
+                  >
+                    {isDiscovering ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    Discover
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Click "Discover" to auto-detect concepts, inferences, and paradigm directory
+                </p>
               </div>
+              
+              {/* Discovery results indicator */}
+              {discoveredPaths && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm">
+                  <div className="font-medium text-purple-700 mb-2">Auto-discovered paths:</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className={discoveredPaths.concepts_exists ? 'text-green-600' : 'text-slate-400'}>
+                      ✓ Concepts: {discoveredPaths.concepts || '(not found)'}
+                    </div>
+                    <div className={discoveredPaths.inferences_exists ? 'text-green-600' : 'text-slate-400'}>
+                      ✓ Inferences: {discoveredPaths.inferences || '(not found)'}
+                    </div>
+                    <div className={discoveredPaths.inputs_exists ? 'text-green-600' : 'text-slate-400'}>
+                      {discoveredPaths.inputs ? `✓ Inputs: ${discoveredPaths.inputs}` : '○ Inputs: (optional, not found)'}
+                    </div>
+                    <div className={discoveredPaths.paradigm_dir_exists ? 'text-green-600' : 'text-slate-400'}>
+                      {discoveredPaths.paradigm_dir ? `✓ Paradigm: ${discoveredPaths.paradigm_dir}` : '○ Paradigm: (optional, not found)'}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Project Name *
@@ -393,27 +484,41 @@ export function ProjectPanel() {
               {/* Repository paths */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
                     Concepts File
+                    {discoveredPaths?.concepts_exists && conceptsPath === discoveredPaths.concepts && (
+                      <span className="text-xs text-green-600 font-normal">(discovered)</span>
+                    )}
                   </label>
                   <input
                     type="text"
                     value={conceptsPath}
                     onChange={(e) => setConceptsPath(e.target.value)}
                     placeholder="concepts.json"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                      discoveredPaths?.concepts_exists && conceptsPath === discoveredPaths.concepts 
+                        ? 'border-green-400 bg-green-50' 
+                        : 'border-slate-300'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
                     Inferences File
+                    {discoveredPaths?.inferences_exists && inferencesPath === discoveredPaths.inferences && (
+                      <span className="text-xs text-green-600 font-normal">(discovered)</span>
+                    )}
                   </label>
                   <input
                     type="text"
                     value={inferencesPath}
                     onChange={(e) => setInferencesPath(e.target.value)}
                     placeholder="inferences.json"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                      discoveredPaths?.inferences_exists && inferencesPath === discoveredPaths.inferences 
+                        ? 'border-green-400 bg-green-50' 
+                        : 'border-slate-300'
+                    }`}
                   />
                 </div>
               </div>
@@ -430,27 +535,41 @@ export function ProjectPanel() {
               {showAdvanced && (
                 <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
                       Inputs File (optional)
+                      {discoveredPaths?.inputs_exists && inputsPath === discoveredPaths.inputs && (
+                        <span className="text-xs text-green-600 font-normal">(discovered)</span>
+                      )}
                     </label>
                     <input
                       type="text"
                       value={inputsPath}
                       onChange={(e) => setInputsPath(e.target.value)}
                       placeholder="inputs.json"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                        discoveredPaths?.inputs_exists && inputsPath === discoveredPaths.inputs 
+                          ? 'border-green-400 bg-green-50' 
+                          : 'border-slate-300'
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
                       Paradigm Directory (optional)
+                      {discoveredPaths?.paradigm_dir_exists && paradigmDir === discoveredPaths.paradigm_dir && (
+                        <span className="text-xs text-green-600 font-normal">(discovered)</span>
+                      )}
                     </label>
                     <input
                       type="text"
                       value={paradigmDir}
                       onChange={(e) => setParadigmDir(e.target.value)}
                       placeholder="provision/paradigm"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                        discoveredPaths?.paradigm_dir_exists && paradigmDir === discoveredPaths.paradigm_dir 
+                          ? 'border-green-400 bg-green-50' 
+                          : 'border-slate-300'
+                      }`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">

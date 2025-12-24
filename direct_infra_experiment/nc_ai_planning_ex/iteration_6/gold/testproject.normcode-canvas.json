@@ -1,0 +1,21 @@
+{
+  "id": "b1fdfd5b",
+  "name": "testproject",
+  "description": null,
+  "created_at": "2025-12-24T13:19:48.291624",
+  "updated_at": "2025-12-24T13:19:48.291624",
+  "repositories": {
+    "concepts": "repos\\gold_chinese.concept.json",
+    "inferences": "repos\\gold_chinese.inference.json",
+    "inputs": null
+  },
+  "execution": {
+    "llm_model": "demo",
+    "max_cycles": 50,
+    "db_path": "orchestration.db",
+    "base_dir": null,
+    "paradigm_dir": "provision\\paradigm"
+  },
+  "breakpoints": [],
+  "ui_preferences": {}
+}

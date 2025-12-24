@@ -99,3 +99,19 @@ export interface ScanDirectoryRequest {
   directory: string;
   register?: boolean;
 }
+
+export interface DiscoverPathsRequest {
+  directory: string;
+}
+
+export interface DiscoveredPathsResponse {
+  directory: string;
+  concepts: string | null;
+  inferences: string | null;
+  inputs: string | null;
+  paradigm_dir: string | null;
+  concepts_exists: boolean;
+  inferences_exists: boolean;
+  inputs_exists: boolean;
+  paradigm_dir_exists: boolean;
+}

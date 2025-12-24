@@ -26,6 +26,8 @@ import type {
   SaveProjectRequest,
   ScanDirectoryRequest,
   ExecutionSettings,
+  DiscoverPathsRequest,
+  DiscoveredPathsResponse,
 } from '../types/project';
 
 const API_BASE = '/api';
@@ -292,6 +294,12 @@ export const projectApi = {
   
   scanDirectory: (request: ScanDirectoryRequest): Promise<DirectoryProjectsResponse> =>
     fetchJson(`${API_BASE}/project/scan`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  discoverPaths: (request: DiscoverPathsRequest): Promise<DiscoveredPathsResponse> =>
+    fetchJson(`${API_BASE}/project/discover`, {
       method: 'POST',
       body: JSON.stringify(request),
     }),
