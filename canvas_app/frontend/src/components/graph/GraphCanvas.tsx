@@ -21,6 +21,8 @@ import ReactFlow, {
   type EdgeTypes,
   BackgroundVariant,
   Panel,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { 
@@ -31,7 +33,8 @@ import {
   Rows3,
   Network,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Map,
 } from 'lucide-react';
 import { shallow } from 'zustand/shallow';
 
@@ -101,8 +104,11 @@ function getMiniMapNodeColor(node: Node): string {
   }
 }
 
-export function GraphCanvas() {
+// Inner component that uses useReactFlow (must be inside ReactFlowProvider)
+function GraphCanvasInner() {
   const [showControlsPanel, setShowControlsPanel] = useState(true);
+  const [showMinimap, setShowMinimap] = useState(true);
+  const { setCenter, getViewport } = useReactFlow();
   
   // OPTIMIZED: Batch related state into single subscriptions with shallow comparison
   const { graphData, collapsedNodes, layoutMode, isLoading } = useGraphStore(
@@ -192,6 +198,16 @@ export function GraphCanvas() {
     return Math.max(...graphData.nodes.map((n) => n.level));
   }, [graphData]);
 
+  // Handle minimap click to teleport view
+  const handleMinimapClick = useCallback(
+    (event: React.MouseEvent, position: { x: number; y: number }) => {
+      // setCenter moves the viewport to center on the clicked position
+      const { zoom } = getViewport();
+      setCenter(position.x, position.y, { zoom, duration: 300 });
+    },
+    [setCenter, getViewport]
+  );
+
   // Show empty state if no graph
   if (!graphData) {
     return (
@@ -236,14 +252,39 @@ export function GraphCanvas() {
       >
         <Background color="#e2e8f0" gap={16} variant={BackgroundVariant.Dots} />
         <Controls className="bg-white rounded-lg shadow-md" />
-        <MiniMap
-          nodeColor={getMiniMapNodeColor}
-          maskColor="rgba(0, 0, 0, 0.1)"
-          className="bg-white rounded-lg shadow-md"
-          // PERFORMANCE: Reduce minimap update frequency
-          pannable={false}
-          zoomable={false}
-        />
+        
+        {/* Minimap with click-to-teleport and integrated toggle */}
+        <Panel position="bottom-right" className="!p-0">
+          {showMinimap ? (
+            <div className="relative bg-white rounded-lg shadow-md">
+              <MiniMap
+                nodeColor={getMiniMapNodeColor}
+                maskColor="rgba(0, 0, 0, 0.1)"
+                className="!relative !m-0 cursor-crosshair"
+                pannable={true}
+                zoomable={false}
+                onClick={handleMinimapClick}
+                style={{ position: 'relative', margin: 0 }}
+              />
+              {/* Close button overlaid on minimap corner */}
+              <button
+                onClick={() => setShowMinimap(false)}
+                className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 border border-slate-200 shadow z-10 transition-colors"
+                title="Hide minimap"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowMinimap(true)}
+              className="p-2 rounded-lg shadow-md bg-white text-slate-600 hover:bg-slate-100"
+              title="Show minimap"
+            >
+              <Map className="w-4 h-4" />
+            </button>
+          )}
+        </Panel>
         
         {/* Stats and Controls panel */}
         <Panel position="top-left" className="bg-white rounded-lg shadow-md text-xs" style={{ zIndex: 10 }}>
@@ -379,5 +420,14 @@ export function GraphCanvas() {
         )}
       </ReactFlow>
     </div>
+  );
+}
+
+// Wrapper component that provides ReactFlowProvider for useReactFlow hook
+export function GraphCanvas() {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner />
+    </ReactFlowProvider>
   );
 }
