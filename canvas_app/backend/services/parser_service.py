@@ -8,9 +8,16 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-# Add streamlit_app to path for importing unified_parser
+# Add _archive/editor_subapp to path for importing unified_parser
+# Try multiple paths for flexibility
+archive_path = Path(__file__).parent.parent.parent.parent / "_archive" / "editor_subapp"
 streamlit_app_path = Path(__file__).parent.parent.parent.parent / "streamlit_app" / "editor_subapp"
-sys.path.insert(0, str(streamlit_app_path))
+
+# Try archive first, then streamlit_app as fallback
+if archive_path.exists():
+    sys.path.insert(0, str(archive_path))
+elif streamlit_app_path.exists():
+    sys.path.insert(0, str(streamlit_app_path))
 
 try:
     from unified_parser import UnifiedParser

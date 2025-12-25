@@ -594,3 +594,190 @@ async def get_parser_status() -> dict:
             "available": False,
             "message": f"Error loading parser: {str(e)}"
         }
+
+
+# ============================================================================
+# Line-level editing endpoints - For structured inline editing
+# ============================================================================
+
+class UpdateLineRequest(BaseModel):
+    """Request to update a single line in parsed content"""
+    lines: List[dict]  # The full lines array
+    line_index: int    # Index of line to update
+    field: str         # Field to update: 'nc_main', 'nc_comment', 'ncn_content', 'flow_index'
+    value: str         # New value
+
+
+class AddLineRequest(BaseModel):
+    """Request to add a new line after specified index"""
+    lines: List[dict]  # The full lines array
+    after_index: int   # Index after which to insert (-1 for beginning)
+    line_type: str = "main"  # 'main' or 'comment'
+
+
+class DeleteLineRequest(BaseModel):
+    """Request to delete a line at specified index"""
+    lines: List[dict]  # The full lines array
+    line_index: int    # Index of line to delete
+
+
+class BatchUpdateRequest(BaseModel):
+    """Request to update multiple lines at once"""
+    lines: List[dict]  # The modified lines array to validate/serialize
+
+
+class SerializeRequest(BaseModel):
+    """Request to serialize lines to specific format"""
+    lines: List[dict]  # The lines array to serialize
+    format: str        # Target format: 'ncd', 'ncn', 'ncdn', 'json', 'nci'
+
+
+@router.post("/lines/update")
+async def update_line(request: UpdateLineRequest) -> dict:
+    """Update a field in a specific line"""
+    try:
+        if request.line_index < 0 or request.line_index >= len(request.lines):
+            raise HTTPException(status_code=400, detail="Invalid line index")
+        
+        lines = request.lines.copy()
+        line = lines[request.line_index].copy()
+        
+        # Update the specified field
+        if request.field == 'flow_index':
+            line['flow_index'] = request.value
+        elif request.field == 'nc_main':
+            line['nc_main'] = request.value
+        elif request.field == 'nc_comment':
+            line['nc_comment'] = request.value
+        elif request.field == 'ncn_content':
+            line['ncn_content'] = request.value
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown field: {request.field}")
+        
+        lines[request.line_index] = line
+        
+        return {
+            "success": True,
+            "lines": lines
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating line: {str(e)}")
+
+
+@router.post("/lines/add")
+async def add_line(request: AddLineRequest) -> dict:
+    """Add a new line after the specified index"""
+    try:
+        lines = request.lines.copy()
+        insert_index = request.after_index + 1
+        
+        if insert_index < 0:
+            insert_index = 0
+        elif insert_index > len(lines):
+            insert_index = len(lines)
+        
+        # Determine flow index and depth from context
+        ref_line = None
+        if request.after_index >= 0 and request.after_index < len(lines):
+            ref_line = lines[request.after_index]
+        elif len(lines) > 0:
+            ref_line = lines[-1]
+        
+        ref_depth = ref_line.get('depth', 0) if ref_line else 0
+        ref_flow = ref_line.get('flow_index', '1') if ref_line else '0'
+        
+        # Calculate new flow index (increment last part)
+        if ref_flow:
+            parts = ref_flow.split('.')
+            try:
+                parts[-1] = str(int(parts[-1]) + 1)
+            except ValueError:
+                parts[-1] = '1'
+            new_flow = '.'.join(parts)
+        else:
+            new_flow = '1'
+        
+        # Create new line
+        new_line = {
+            'flow_index': new_flow,
+            'type': request.line_type,
+            'depth': ref_depth
+        }
+        
+        if request.line_type == 'main':
+            new_line['nc_main'] = ''
+            new_line['ncn_content'] = ''
+        else:
+            new_line['nc_comment'] = ''
+        
+        lines.insert(insert_index, new_line)
+        
+        return {
+            "success": True,
+            "lines": lines,
+            "inserted_index": insert_index
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding line: {str(e)}")
+
+
+@router.post("/lines/delete")
+async def delete_line(request: DeleteLineRequest) -> dict:
+    """Delete a line at the specified index"""
+    try:
+        if request.line_index < 0 or request.line_index >= len(request.lines):
+            raise HTTPException(status_code=400, detail="Invalid line index")
+        
+        lines = request.lines.copy()
+        deleted = lines.pop(request.line_index)
+        
+        return {
+            "success": True,
+            "lines": lines,
+            "deleted_line": deleted
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting line: {str(e)}")
+
+
+@router.post("/lines/serialize")
+async def serialize_lines(request: SerializeRequest) -> dict:
+    """Serialize lines array to specified format"""
+    try:
+        from services.parser_service import get_parser_service
+        
+        parser = get_parser_service()
+        
+        if not parser.is_available:
+            raise HTTPException(status_code=503, detail="Parser not available")
+        
+        parsed_data = {"lines": request.lines}
+        
+        if request.format == 'ncd':
+            result = parser.serialize_to_ncd_ncn(parsed_data)
+            return {"success": True, "content": result.get('ncd', '')}
+        elif request.format == 'ncn':
+            result = parser.serialize_to_ncd_ncn(parsed_data)
+            return {"success": True, "content": result.get('ncn', '')}
+        elif request.format == 'ncdn':
+            content = parser.serialize_to_ncdn(parsed_data)
+            return {"success": True, "content": content}
+        elif request.format == 'json':
+            return {"success": True, "content": json.dumps(parsed_data, indent=2, ensure_ascii=False)}
+        elif request.format == 'nci':
+            nci = parser.to_nci(parsed_data)
+            return {"success": True, "content": json.dumps(nci, indent=2, ensure_ascii=False)}
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown format: {request.format}")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serializing: {str(e)}")
