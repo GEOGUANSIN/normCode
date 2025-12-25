@@ -221,11 +221,10 @@ export function ProjectPanel() {
               </h2>
               <div className="space-y-2">
                 {recentProjects.slice(0, 2).map((project) => (
-                  <button
+                  <div
                     key={project.id}
-                    onClick={() => handleOpenRecent(project)}
-                    disabled={isLoading}
-                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
+                    onClick={() => !isLoading && handleOpenRecent(project)}
+                    className={`w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 group cursor-pointer ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <Folder className="w-5 h-5 text-blue-500" />
                     <div className="flex-1 min-w-0">
@@ -247,7 +246,7 @@ export function ProjectPanel() {
                     >
                       <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -626,11 +625,10 @@ export function ProjectPanel() {
                 <p className="text-slate-500 text-center py-8">No recent projects</p>
               ) : (
                 recentProjects.map((project) => (
-                  <button
+                  <div
                     key={project.id}
-                    onClick={() => handleOpenRecent(project)}
-                    disabled={isLoading}
-                    className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
+                    onClick={() => !isLoading && handleOpenRecent(project)}
+                    className={`w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 group cursor-pointer ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <Folder className="w-5 h-5 text-blue-500" />
                     <div className="flex-1 min-w-0">
@@ -652,7 +650,7 @@ export function ProjectPanel() {
                     >
                       <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
                     </button>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
@@ -669,11 +667,10 @@ export function ProjectPanel() {
                     {allProjects.length} project{allProjects.length !== 1 ? 's' : ''} registered
                   </p>
                   {allProjects.map((project) => (
-                    <button
+                    <div
                       key={project.id}
-                      onClick={() => handleOpenRecent(project)}
-                      disabled={isLoading}
-                      className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 disabled:opacity-50 group"
+                      onClick={() => !isLoading && handleOpenRecent(project)}
+                      className={`w-full text-left p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-3 group cursor-pointer ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                     >
                       <Folder className="w-5 h-5 text-blue-500" />
                       <div className="flex-1 min-w-0">
@@ -691,7 +688,7 @@ export function ProjectPanel() {
                       >
                         <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
                       </button>
-                    </button>
+                    </div>
                   ))}
                 </>
               )}

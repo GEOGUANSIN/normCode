@@ -406,11 +406,6 @@ function App() {
         </div>
       </header>
 
-      {/* Project Tabs Bar - shows when multiple projects are open */}
-      {openTabs.length > 1 && (
-        <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
-      )}
-
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={showSettingsPanel} 
@@ -419,8 +414,12 @@ function App() {
 
       {/* Main Content Area with Chat Panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left side: Main Content (includes ControlPanel when in canvas mode) */}
+        {/* Left side: Tabs + Main Content (includes ControlPanel when in canvas mode) */}
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Project Tabs Bar - shows when multiple projects are open */}
+          {openTabs.length > 1 && (
+            <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
+          )}
           {/* Control Panel - only show in canvas mode when graph is loaded */}
           {graphData && viewMode === 'canvas' && (
             <ControlPanel 
