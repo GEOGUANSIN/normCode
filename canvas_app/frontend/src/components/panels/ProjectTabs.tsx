@@ -24,8 +24,8 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
       className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-all border-b-2 ${
         isCompiler
           ? isActive
-            ? 'bg-purple-50 border-purple-500 text-purple-800 shadow-sm'
-            : 'bg-purple-100/50 border-transparent text-purple-600 hover:bg-purple-100 hover:text-purple-800'
+            ? 'bg-purple-50 border-purple-500 text-slate-800 shadow-sm'
+            : 'bg-purple-100/50 border-transparent text-slate-700 hover:bg-purple-100 hover:text-slate-800'
           : isActive
             ? 'bg-white border-blue-500 text-slate-800 shadow-sm'
             : 'bg-slate-100 border-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800'

@@ -185,6 +185,7 @@ function App() {
     repositoriesExist,
     isLoading: projectLoading,
     openTabs,
+    activeTabId,
     fetchCurrentProject,
     fetchRecentProjects,
     fetchOpenTabs,
@@ -193,6 +194,10 @@ function App() {
     setProjectPanelOpen,
     updateRepositories,
   } = useProjectStore();
+  
+  // Check if current project is read-only (compiler project)
+  const activeTab = openTabs.find(tab => tab.id === activeTabId);
+  const isReadOnlyProject = activeTab?.is_read_only ?? false;
 
   // Fetch project state on startup
   useEffect(() => {
@@ -420,8 +425,8 @@ function App() {
           {openTabs.length > 1 && (
             <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
           )}
-          {/* Control Panel - only show in canvas mode when graph is loaded */}
-          {graphData && viewMode === 'canvas' && (
+          {/* Control Panel - only show in canvas mode when graph is loaded, hide for read-only projects */}
+          {graphData && viewMode === 'canvas' && !isReadOnlyProject && (
             <ControlPanel 
               onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
               checkpointPanelOpen={showCheckpointPanel}
