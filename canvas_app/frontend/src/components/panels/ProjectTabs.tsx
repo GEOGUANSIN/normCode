@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react';
-import { X, FolderOpen, Loader2, Plus, Lock } from 'lucide-react';
+import { X, Loader2, Plus, Lock, Sparkles } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import type { OpenProjectInstance } from '../../types/project';
 
@@ -16,35 +16,41 @@ interface ProjectTabProps {
 }
 
 function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
+  // Read-only tabs (compiler) get purple styling
+  const isCompiler = tab.is_read_only;
+  
   return (
     <div
       className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-all border-b-2 ${
-        isActive
-          ? 'bg-white border-blue-500 text-slate-800 shadow-sm'
-          : 'bg-slate-100 border-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+        isCompiler
+          ? isActive
+            ? 'bg-purple-50 border-purple-500 text-slate-800 shadow-sm'
+            : 'bg-purple-100/50 border-transparent text-slate-700 hover:bg-purple-100 hover:text-slate-800'
+          : isActive
+            ? 'bg-white border-blue-500 text-slate-800 shadow-sm'
+            : 'bg-slate-100 border-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800'
       }`}
       onClick={() => onSwitch(tab.id)}
     >
-      {/* Status indicator */}
-      <div className="flex items-center gap-1.5">
-        {tab.is_loaded ? (
-          <span className="w-2 h-2 bg-green-500 rounded-full" title="Loaded" />
-        ) : tab.repositories_exist ? (
-          <span className="w-2 h-2 bg-yellow-500 rounded-full" title="Not loaded" />
-        ) : (
-          <span className="w-2 h-2 bg-red-500 rounded-full" title="Missing files" />
-        )}
-      </div>
+      {/* Compiler icon for read-only tabs, status indicator for others */}
+      {isCompiler ? (
+        <Sparkles size={14} className="text-purple-500" />
+      ) : (
+        <div className="flex items-center gap-1.5">
+          {tab.is_loaded ? (
+            <span className="w-2 h-2 bg-green-500 rounded-full" title="Loaded" />
+          ) : tab.repositories_exist ? (
+            <span className="w-2 h-2 bg-yellow-500 rounded-full" title="Not loaded" />
+          ) : (
+            <span className="w-2 h-2 bg-red-500 rounded-full" title="Missing files" />
+          )}
+        </div>
+      )}
       
       {/* Tab name */}
       <span className="text-sm font-medium truncate max-w-[120px]" title={tab.name}>
         {tab.name}
       </span>
-      
-      {/* Read-only indicator */}
-      {tab.is_read_only && (
-        <Lock size={12} className="text-slate-400" title="Read-only project" />
-      )}
       
       {/* Close button */}
       <button
@@ -52,9 +58,11 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
           e.stopPropagation();
           onClose(tab.id);
         }}
-        className={`p-0.5 rounded hover:bg-slate-300/50 transition-colors ${
-          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        }`}
+        className={`p-0.5 rounded transition-colors ${
+          isCompiler
+            ? 'hover:bg-purple-200/50'
+            : 'hover:bg-slate-300/50'
+        } ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         title="Close tab"
       >
         <X size={14} />
@@ -92,10 +100,19 @@ export function ProjectTabs({ onOpenProjectPanel }: ProjectTabsProps) {
     return null;
   }
 
+  // Sort tabs: read-only (pinned) tabs first, then by name
+  const sortedTabs = [...openTabs].sort((a, b) => {
+    // Read-only tabs come first (pinned to left)
+    if (a.is_read_only && !b.is_read_only) return -1;
+    if (!a.is_read_only && b.is_read_only) return 1;
+    // Within same category, maintain order
+    return 0;
+  });
+
   return (
     <div className="bg-slate-200 border-b border-slate-300 px-2 flex items-end gap-0.5">
       {/* Tabs */}
-      {openTabs.map((tab) => (
+      {sortedTabs.map((tab) => (
         <ProjectTab
           key={tab.id}
           tab={tab}
@@ -139,9 +156,16 @@ export function ProjectTabsCompact() {
     return null;
   }
 
+  // Sort tabs: read-only (pinned) tabs first
+  const sortedTabs = [...openTabs].sort((a, b) => {
+    if (a.is_read_only && !b.is_read_only) return -1;
+    if (!a.is_read_only && b.is_read_only) return 1;
+    return 0;
+  });
+
   return (
     <div className="flex items-center gap-1 ml-2">
-      {openTabs.map((tab) => (
+      {sortedTabs.map((tab) => (
         <div
           key={tab.id}
           onClick={() => switchTab(tab.id)}
@@ -169,7 +193,9 @@ export function ProjectTabsCompact() {
           
           {/* Read-only indicator */}
           {tab.is_read_only && (
-            <Lock size={10} className="text-slate-400" title="Read-only" />
+            <span title="Read-only">
+              <Lock size={10} className="text-slate-400" />
+            </span>
           )}
           
           {/* Close */}

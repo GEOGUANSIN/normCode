@@ -447,8 +447,10 @@ async def open_project_as_tab(request: OpenProjectInTabRequest):
             is_read_only=request.is_read_only,
         )
         
-        # Ensure an ExecutionController exists for this project
-        get_execution_controller(instance.id)
+        # Ensure ExecutionControllers exist for ALL open projects
+        # This handles the case where a project was retroactively added to tabs
+        for open_project in project_service.get_open_projects():
+            get_execution_controller(open_project.id)
         
         # If making active, update the registry
         if request.make_active:

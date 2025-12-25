@@ -450,31 +450,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         is_read_only: isReadOnly,
       });
       
-      // Add to tabs if not already present, or update existing
-      const { openTabs } = get();
-      const existingIndex = openTabs.findIndex(t => t.id === instance.id);
-      let updatedTabs: OpenProjectInstance[];
-      
-      if (existingIndex >= 0) {
-        // Update existing tab
-        updatedTabs = [...openTabs];
-        updatedTabs[existingIndex] = instance;
-      } else {
-        // Add new tab
-        updatedTabs = [...openTabs, instance];
-      }
-      
-      // Mark all tabs as not active, then mark the new one if makeActive
-      if (makeActive) {
-        updatedTabs = updatedTabs.map(t => ({
-          ...t,
-          is_active: t.id === instance.id,
-        }));
-      }
+      // IMPORTANT: Fetch the full tabs list from backend instead of locally managing it.
+      // This ensures we get ALL tabs including any that were retroactively added
+      // (e.g., when the first project was opened via openProject, not openProjectAsTab).
+      const tabsResponse = await projectApi.getOpenTabs();
       
       set({
-        openTabs: updatedTabs,
-        activeTabId: makeActive ? instance.id : get().activeTabId,
+        openTabs: tabsResponse.projects,
+        activeTabId: tabsResponse.active_project_id,
         isLoading: false,
         isProjectPanelOpen: false,
       });

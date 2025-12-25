@@ -1002,6 +1002,27 @@ class ProjectService:
             FileNotFoundError: If project doesn't exist
             ValueError: If project is already open
         """
+        # IMPORTANT: If there's a current project that's NOT in _open_projects,
+        # we need to add it first. This handles the case where the first project
+        # was opened via the old open_project API (not as a tab).
+        if (self.current_config is not None and 
+            self.current_project_path is not None and
+            self.current_config.id not in self._open_projects):
+            
+            existing_instance = OpenProjectInstance(
+                id=self.current_config.id,
+                name=self.current_config.name,
+                directory=str(self.current_project_path.absolute()),
+                config_file=self.current_config_file or "normcode-canvas.json",
+                config=self.current_config,
+                is_loaded=True,  # Assume loaded since we're working with it
+                repositories_exist=self.check_repositories_exist(),
+                is_active=False,  # Will be deactivated when new project opens
+                is_read_only=False,
+            )
+            self._open_projects[self.current_config.id] = existing_instance
+            logger.info(f"Added existing project '{self.current_config.name}' to tabs (id={self.current_config.id})")
+        
         # First, open the project using existing logic (this also registers it)
         config, config_filename = self.open_project(
             project_path=project_path,

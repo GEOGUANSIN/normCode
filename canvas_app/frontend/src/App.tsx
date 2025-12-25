@@ -185,6 +185,7 @@ function App() {
     repositoriesExist,
     isLoading: projectLoading,
     openTabs,
+    activeTabId,
     fetchCurrentProject,
     fetchRecentProjects,
     fetchOpenTabs,
@@ -193,6 +194,10 @@ function App() {
     setProjectPanelOpen,
     updateRepositories,
   } = useProjectStore();
+  
+  // Check if current project is read-only (compiler project)
+  const activeTab = openTabs.find(tab => tab.id === activeTabId);
+  const isReadOnlyProject = activeTab?.is_read_only ?? false;
 
   // Fetch project state on startup
   useEffect(() => {
@@ -406,11 +411,6 @@ function App() {
         </div>
       </header>
 
-      {/* Project Tabs Bar - shows when multiple projects are open */}
-      {openTabs.length > 1 && (
-        <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
-      )}
-
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={showSettingsPanel} 
@@ -419,10 +419,14 @@ function App() {
 
       {/* Main Content Area with Chat Panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left side: Main Content (includes ControlPanel when in canvas mode) */}
+        {/* Left side: Tabs + Main Content (includes ControlPanel when in canvas mode) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Control Panel - only show in canvas mode when graph is loaded */}
-          {graphData && viewMode === 'canvas' && (
+          {/* Project Tabs Bar - shows when multiple projects are open */}
+          {openTabs.length > 1 && (
+            <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
+          )}
+          {/* Control Panel - only show in canvas mode when graph is loaded, hide for read-only projects */}
+          {graphData && viewMode === 'canvas' && !isReadOnlyProject && (
             <ControlPanel 
               onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
               checkpointPanelOpen={showCheckpointPanel}
