@@ -1,0 +1,223 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Canvas Command Schema",
+  "description": "Schema for NormCode Canvas application commands",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "create_node",
+        "delete_node",
+        "move_node",
+        "edit_node",
+        "select_node",
+        "create_edge",
+        "delete_edge",
+        "edit_edge",
+        "zoom_in",
+        "zoom_out",
+        "fit_view",
+        "center_on",
+        "run",
+        "step",
+        "pause",
+        "stop",
+        "set_breakpoint",
+        "clear_breakpoint",
+        "save",
+        "load",
+        "export",
+        "import",
+        "help",
+        "status",
+        "undo",
+        "redo",
+        "quit",
+        "compile",
+        "validate",
+        "formalize",
+        "activate",
+        "clarify",
+        "chat"
+      ]
+    },
+    "params": {
+      "type": "object"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "node_operations": {
+      "create_node": {
+        "params": {
+          "node_type": {
+            "type": "string",
+            "enum": ["value", "function", "context"]
+          },
+          "label": { "type": "string" },
+          "concept_type": {
+            "type": "string",
+            "enum": ["object", "proposition", "relation", "imperative", "judgement"]
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          }
+        }
+      },
+      "delete_node": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "force": { "type": "boolean", "default": false }
+        }
+      },
+      "move_node": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          },
+          "relative": { "type": "boolean", "default": false }
+        }
+      },
+      "edit_node": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "label": { "type": "string" },
+          "properties": { "type": "object" }
+        }
+      },
+      "select_node": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" }
+        }
+      }
+    },
+    "edge_operations": {
+      "create_edge": {
+        "params": {
+          "source_id": { "type": "string" },
+          "target_id": { "type": "string" },
+          "source_hint": { "type": "string" },
+          "target_hint": { "type": "string" },
+          "edge_type": {
+            "type": "string",
+            "enum": ["value", "function", "context"]
+          }
+        }
+      },
+      "delete_edge": {
+        "params": {
+          "edge_id": { "type": "string" },
+          "source_hint": { "type": "string" },
+          "target_hint": { "type": "string" }
+        }
+      }
+    },
+    "execution_operations": {
+      "run": {
+        "params": {
+          "from_start": { "type": "boolean", "default": true }
+        }
+      },
+      "step": {
+        "params": {
+          "count": { "type": "integer", "default": 1 }
+        }
+      },
+      "set_breakpoint": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "flow_index": { "type": "string" }
+        }
+      },
+      "clear_breakpoint": {
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "flow_index": { "type": "string" },
+          "all": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "file_operations": {
+      "save": {
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "json"]
+          }
+        }
+      },
+      "load": {
+        "params": {
+          "path": { "type": "string" }
+        }
+      },
+      "export": {
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "ncn", "ncdn", "json", "png", "svg"]
+          }
+        }
+      },
+      "import": {
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "json"]
+          }
+        }
+      }
+    },
+    "compilation_operations": {
+      "compile": {
+        "params": {
+          "target": {
+            "type": "string",
+            "enum": ["ncd", "json", "all"]
+          }
+        }
+      },
+      "validate": {
+        "params": {
+          "strict": { "type": "boolean", "default": false }
+        }
+      },
+      "formalize": {
+        "params": {}
+      },
+      "activate": {
+        "params": {
+          "output_dir": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+

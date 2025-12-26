@@ -430,3 +430,71 @@ class CanvasChatTool:
             return self.ask(question, options)
         
         return ask_fn
+    
+    # =========================================================================
+    # Paradigm Affordances - Functions for composition (MFP → TVA pattern)
+    # These return callables that the paradigm's composition_tool uses
+    # =========================================================================
+    
+    def read_message(self) -> Callable:
+        """
+        Affordance: Return a function that blocks and reads user message.
+        
+        Used by paradigm: c_ChatRead-o_Literal
+        
+        The returned function:
+        - Blocks until user sends a message
+        - Returns dict with {role: str, content: str}
+        """
+        def _read_message_fn(**kwargs) -> Dict[str, Any]:
+            # Block and wait for user message
+            content = self.read_input(kwargs.get("prompt", ""))
+            return {
+                "role": "user",
+                "content": content,
+            }
+        
+        return _read_message_fn
+    
+    @property
+    def write_message(self) -> Callable:
+        """
+        Affordance: Return a function that sends a message to the user.
+        
+        Used by paradigm: h_Response-c_ChatWrite-o_Status
+        
+        The returned function:
+        - Takes message text
+        - Sends to chat
+        - Returns status dict
+        """
+        def _write_message_fn(message: str = "", **kwargs) -> Dict[str, Any]:
+            import time
+            content = message or kwargs.get("message", kwargs.get("content", ""))
+            self.write(content, role="compiler")
+            return {
+                "sent": True,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        
+        return _write_message_fn
+    
+    def close_session(self) -> Callable:
+        """
+        Affordance: Return a function that closes the chat session.
+        
+        Used by paradigm: c_ChatSessionClose-o_Status
+        
+        The returned function:
+        - Closes the session gracefully
+        - Returns status dict
+        """
+        def _close_session_fn(**kwargs) -> Dict[str, Any]:
+            # Emit session close event
+            self._emit("chat:session_closed", {})
+            self.write("Session ended. Goodbye!", role="system")
+            return {
+                "status": "closed",
+            }
+        
+        return _close_session_fn

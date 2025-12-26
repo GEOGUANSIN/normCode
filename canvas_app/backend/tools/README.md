@@ -282,12 +282,67 @@ WebSocket Events:
 - `canvas:add_annotation`: Add annotation to node
 - `canvas:clear`: Clear all displays
 
+## Paradigm Execution Model
+
+The tools follow the **MFP → TVA** pattern from NormCode's agent sequences:
+
+### MFP (Model Function Perception)
+
+During MFP, paradigms use tool **affordances** to create functions:
+
+```python
+# Paradigm step acquires function from tool affordance
+"call_code": "result = tool.generate"  # LLM generate function
+"call_code": "result = tool.wrap"       # Formatter wrap function
+"call_code": "result = tool.read_message()"  # Chat read function
+```
+
+Affordances are either:
+- **Properties** that return callables: `tool.wrap`, `tool.parse`
+- **Methods** that return callables: `tool.read_message()`, `tool.close_session()`
+
+### TVA (Tool Value Actuation)
+
+During TVA, the `CompositionTool` executes a plan using those functions:
+
+```python
+composition_tool = CanvasCompositionTool()
+
+# Plan from paradigm's sequence_spec
+plan = [
+    {"output_key": "prompt", "function": template_fn, "params": {"__positional__": "__initial_input__"}},
+    {"output_key": "response", "function": generate_fn, "params": {"__positional__": "prompt"}},
+    {"output_key": "wrapped", "function": wrap_fn, "params": {"__positional__": "response"}},
+]
+
+composed_fn = composition_tool.compose(plan, return_key="wrapped")
+result = composed_fn({"input_1": user_message})
+```
+
+### Tool Affordances Summary
+
+| Tool | Affordance | Returns | Purpose |
+|------|------------|---------|---------|
+| **chat** | `read_message()` | function | Block and read user message |
+| **chat** | `write_message` | function | Send message to user |
+| **chat** | `close_session()` | function | Close chat session |
+| **canvas** | `execute_command` | function | Execute canvas command |
+| **llm** | `generate` | method | LLM text generation |
+| **formatter** | `parse` | function | Parse JSON |
+| **formatter** | `wrap` | function | Wrap as perceptual sign |
+| **formatter** | `get` | function | Get dict value |
+| **formatter** | `clean_code` | function | Extract code from markdown |
+| **formatter** | `parse_boolean` | function | Parse boolean from text |
+| **composition** | `compose` | function | Create composed function from plan |
+
 ## Future Enhancements
 
 - [x] LLM tool with WebSocket events
 - [x] Python interpreter tool wrapper
 - [x] Chat tool for compiler-user interaction
 - [x] Canvas display tool for artifacts
+- [x] Formatter tool for paradigm composition
+- [x] Composition tool for function pipelines
 - [ ] Code editor integration for user input
 - [ ] File diff visualization
 - [ ] Approval workflows for sensitive operations

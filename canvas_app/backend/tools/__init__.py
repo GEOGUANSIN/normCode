@@ -12,6 +12,8 @@ Tools:
 - CanvasPromptTool: Prompt template tool with WebSocket notifications
 - CanvasChatTool: Chat interface for compiler-user interaction
 - CanvasDisplayTool: Display artifacts on the Canvas (source, structure, graph)
+- CanvasFormatterTool: Data formatting and parsing for paradigm composition
+- CanvasCompositionTool: Function composition for paradigm execution
 """
 
 from .user_input_tool import CanvasUserInputTool
@@ -21,6 +23,8 @@ from .python_interpreter_tool import CanvasPythonInterpreterTool
 from .prompt_tool import CanvasPromptTool
 from .chat_tool import CanvasChatTool
 from .canvas_tool import CanvasDisplayTool
+from .formatter_tool import CanvasFormatterTool
+from .composition_tool import CanvasCompositionTool
 
 __all__ = [
     "CanvasUserInputTool",
@@ -30,5 +34,7 @@ __all__ = [
     "CanvasPromptTool",
     "CanvasChatTool",
     "CanvasDisplayTool",
+    "CanvasFormatterTool",
+    "CanvasCompositionTool",
     "get_available_llm_models",
 ]
