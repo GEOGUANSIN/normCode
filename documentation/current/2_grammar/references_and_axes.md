@@ -91,10 +91,13 @@ For **Functional concepts (`({})`, `<{}>`)**, the Reference holds the **norm**�
 - **Direct Prompts**: `%{prompt}...` — Raw text of a prompt (norm: composition)
 - **Prompt Locations**: `%{prompt_location}...` — Pointer to a template file
 - **Script Locations**: `%{script_location}...` — Pointer to a Python script (norm: python_script)
+- **Literal Values**: `%{literal}...` — Direct computed values (no transmutation needed)
 
 **Key insight**: The **norm** is what makes functional concepts "functional"—it specifies the paradigm (e.g., `sequence: imperative`, `paradigm: python_script`) that bridges the Subject (agent/tools) and Object (data).
 
 Read during the **MFP** (Model Function Perception) step, the norm configures how the agent will process the functional input.
+
+> **Legacy Note**: Older code may use `normal` to refer to literal values. This has been deprecated in favor of `literal`.
 
 #### D. Subject Reference Elements (Agents)
 

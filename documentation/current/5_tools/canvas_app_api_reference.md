@@ -376,8 +376,8 @@ Get agent capabilities.
   ],
   "paradigms": [
     {
-      "name": "h_Data-c_PassThrough-o_Normal",
-      "description": "Pass data through",
+      "name": "h_Data-c_PassThrough-o_Literal",
+      "description": "Pass data through (returns literal value)",
       "is_custom": true,
       "source": "provision/paradigm"
     }

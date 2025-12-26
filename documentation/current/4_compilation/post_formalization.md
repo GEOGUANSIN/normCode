@@ -86,13 +86,15 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 - `h_`: Horizontal input (runtime value)
 - `v_`: Vertical input (setup metadata)
 - `c_`: Composition steps
-- `o_`: Output format
+- `o_`: Output format (e.g., `o_Literal`, `o_FileLocation`, `o_Memo`)
 
 **Purpose**:
 - Define execution logic without hardcoding
 - Reusable across plans
 - Configurable via JSON
 - Enable vertical (setup) vs horizontal (runtime) separation
+
+> **Legacy Note**: Older paradigm names and documentation may use `o_Normal` for literal/direct value outputs. This has been replaced by `o_Literal` for clarity.
 
 ### Perception Norms
 
@@ -134,7 +136,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```ncd
 :<:{document summary} | ?{flow_index}: 1
     <= ::(summarize this text) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{h_input_norm}: in-memory
         |%{body_faculty}: llm
@@ -143,7 +145,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```
 
 **What was added**:
-- **Paradigm**: `h_PromptTemplate-c_GenerateThinkJson-o_Normal` (specifies how to execute)
+- **Paradigm**: `h_PromptTemplate-c_GenerateThinkJson-o_Literal` (specifies how to execute)
 - **Vertical norm**: `{prompt_location}` (prompt comes from file)
 - **Horizontal norm**: `in-memory` (input is already in memory)
 - **Body faculty**: `llm` (uses language model)
@@ -170,7 +172,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 |-------------------|----------------|-----------|
 | "generate X" | `h_PromptTemplate-c_Generate-...` | Text generation |
 | "analyze X" | `h_Data-c_ThinkJSON-...` | Structured analysis |
-| "validate X" | `v_Prompt-h_Data-c_ThinkJSON-o_Normal` | Judgement |
+| "validate X" | `v_Prompt-h_Data-c_ThinkJSON-o_Literal` | Judgement |
 | "execute script" | `h_ScriptLocation-c_Execute-o_Result` | Python execution |
 | "load file" | `h_FileLocation-c_LoadParse-o_Struct` | File I/O |
 
@@ -209,7 +211,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```ncd
 :<:{sentiment analysis} | ?{flow_index}: 1
     <= ::(analyze sentiment) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{h_input_norm}: {file_location}
     <- {customer reviews} | ?{flow_index}: 1.2
@@ -219,7 +221,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```ncd
 :<:{sentiment analysis} | ?{flow_index}: 1
     <= ::(analyze sentiment) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{v_input_provision}: provision/prompts/sentiment_extraction.md
         |%{h_input_norm}: {file_location}
@@ -428,7 +430,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
     |%{ref_shape}: (1,)
     |%{ref_element}: dict(decision: str, confidence: float, reasoning: str)
     <= ::(synthesize recommendation from {1} and {2}) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{v_input_provision}: provision/prompts/investment_synthesis.md
         |%{h_input_norm}: in-memory
@@ -439,7 +441,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
         |%{ref_shape}: (1,)
         |%{ref_element}: dict(risk_level: str, factors: list)
         <= ::(analyze risk based on {1}) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
-            |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+            |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
             |%{v_input_norm}: {prompt_location}
             |%{v_input_provision}: provision/prompts/risk_analysis.md
             |%{h_input_norm}: {file_location}
@@ -453,7 +455,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
         |%{ref_shape}: (1,)
         |%{ref_element}: float
         <= ::(analyze sentiment) | ?{flow_index}: 1.3.1 | ?{sequence}: imperative
-            |%{norm_input}: h_Data-c_ThinkJSON-o_Normal
+            |%{norm_input}: h_Data-c_ThinkJSON-o_Literal
             |%{h_input_norm}: {file_location}
             |%{body_faculty}: llm
         <- {news articles} | ?{flow_index}: 1.3.1.1
