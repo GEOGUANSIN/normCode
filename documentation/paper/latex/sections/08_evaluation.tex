@@ -1,44 +1,48 @@
 \section{Evaluation}
 
-We validate NormCode through two complementary demonstrations: a \textbf{self-hosted compiler pipeline} (demonstrating expressive completeness) and a \textbf{base-X addition algorithm} (demonstrating correctness and debuggability).
+We validate NormCode through two complementary demonstrations: a \textbf{self-hosted compiler pipeline} demonstrating expressive completeness and a \textbf{base-X addition algorithm} demonstrating correctness and debuggability. Additionally, we describe the working implementation of the Canvas App as evidence of practical viability.
 
-\subsection{Case Study 1: The Self-Hosted Derivation Pipeline}
+\subsection{Case Study 1: The Self-Hosted Compiler Pipeline}
 
-The most significant validation of NormCode is that \textbf{its own compiler pipeline is implemented as a NormCode plan}.
+The most significant validation of NormCode is that its own compiler pipeline can be expressed and executed as a NormCode plan.
 
-The task was to transform a high-level natural language instruction into an executable NormCode plan. The plan used a five-phase, \textasciitilde50-inference NormCode structure. The orchestrator successfully executed this plan, producing the JSON repositories and runner scripts.
+The task was to transform a high-level natural language instruction into an executable NormCode plan, complete with context distribution and prompt generation. The plan consisted of approximately 50 inferences organized across the four compilation phases: Derivation to extract structure from natural language, Formalization to add flow indices and sequence types, Post-Formalization to enrich with paradigms and resources, and Activation to generate executable JSON repositories.
 
-This self-hosting demonstrates: (1) \textbf{Expressive Completeness} (handling loops, conditionals, human-in-the-loop); (2) \textbf{Practical Viability} of the orchestrator/checkpointing system; and (3) \textbf{Recursive Validation} (testing NormCode by running its own pipeline).
+The orchestrator successfully executed this plan, producing the concept and inference repositories along with all intermediate artifacts. Checkpointing allowed the compilation to be paused and resumed across multiple sessions, and the Canvas App enabled visual inspection of intermediate states.
 
-\subsection{Case Study 2: Base-X Addition (Correctness Validation)}
+This self-hosting demonstrates three key properties. First, \textbf{Expressive Completeness}: NormCode can represent complex, multi-phase workflows with loops, conditionals, and human-in-the-loop steps. Second, \textbf{Practical Viability}: The orchestrator, checkpointing, paradigm systems, and visual debugger work together to execute real plans. Third, \textbf{Recursive Validation}: Any improvement to NormCode can be tested by re-running its own compilation pipeline.
 
-To validate correctness, we implemented a base-X addition algorithm.
+\subsection{Case Study 2: Base-X Addition Algorithm}
 
-The task was adding two arbitrary-base numbers digit-by-digit. The NormCode plan decomposed into \textasciitilde25 inferences organized around three nested loops (outer loop over number pairs, inner loops for unit-place extraction and appending). The Concept Repository covered 50+ ground and intermediate concepts. Key mechanisms demonstrated include \textbf{Loop Quantification}, \textbf{Conditional Branching}, \textbf{Grouping}, and \textbf{Timing Dependencies}.
+To validate the correctness of NormCode-orchestrated execution, we implemented a base-X addition algorithm. This serves as a controlled benchmark where correctness can be unambiguously verified against known mathematical results.
 
-\textbf{The Result}: The orchestrator achieves **100\% accuracy** on the addition task across test suites of varying digit lengths.
+The task was adding two arbitrary-base numbers (base-10, base-12, etc.) digit-by-digit, handling carry-over correctly across arbitrary digit lengths. The NormCode plan decomposed into approximately 25 inferences organized around three nested loops: an outer loop over number pairs in the collection, an inner loop extracting unit-place digits from each number, and a parallel loop generating the shifted number pairs for the next iteration.
 
-Because NormCode ultimately generates code (via paradigms), the final output is deterministic. NormCode structures the \textit{derivation} of that code. Full repository files are in \textbf{Appendix A}.
+The Concept Repository contained over 50 concepts covering ground data such as the initial number pairs, intermediate states such as digit sums and carry-over numbers and remainders, and control predicates such as whether all numbers are zero and whether the carry-over is zero.
 
-\subsection{Quantitative Observations}
+Key mechanisms demonstrated include \textbf{Loop Quantification} where the outer loop iterates until termination while carrying carry-over state between iterations; \textbf{Conditional Branching} with nested timing operators controlling when to stop appending based on whether numbers are exhausted and no carry remains; \textbf{Grouping} where digits from both numbers are collected into a single collection for summation; and \textbf{Timing Dependencies} ensuring quotient and remainder are computed only after the digit sum is available.
 
-Formal experiments are pending, but qualitative observations include:
+The orchestrator achieved 100\% accuracy on the addition task across test suites of varying digit lengths, validated up to 150-digit numbers. Because NormCode ultimately generates deterministic code via paradigms that invoke Python execution, the final output is deterministic. The role of NormCode is to structure the derivation of that code, ensuring each step receives exactly the correct context and the overall logic remains auditable.
 
-\begin{table}[t!]
-\centering
-\begin{tabular}{lp{0.6\linewidth}}
-\toprule
-\textbf{Dimension} & \textbf{Observation} \\ 
-\midrule
-\textbf{Debuggability} & Flow indices enable precise localization of failures (e.g., ``Step 1.3.2 failed because input X was empty''). \\ 
-\textbf{Token Efficiency} & Perceptual signs reduce token cost by passing pointers instead of full data. Syntactic operations are free. \\ 
-\textbf{Resumability} & Checkpointing allows runs to be paused and resumed, or forked for experimentation. \\ 
-\textbf{Auditability} & Every inference's inputs and outputs are logged, enabling post-hoc analysis of AI decisions. \\ 
-\bottomrule
-\end{tabular}
-\caption{Qualitative observations from case studies.}
-\label{tab:evaluation_observations}
-\end{table}
+\subsection{Implementation Evidence: The Canvas App}
 
-Comparative evaluation against direct prompting and other frameworks (LangChain, etc.) is planned for future work.
+Beyond the case studies, the working Canvas App implementation provides evidence of practical viability. The application was developed using React 18 with TypeScript for the frontend, Vite as the build tool, React Flow for graph visualization, Zustand for state management, and TailwindCSS for styling. The backend uses FastAPI with Python 3.11, WebSockets for real-time event streaming, and Pydantic for data validation.
+
+The Canvas App successfully demonstrates real-time graph visualization where inference graphs are rendered with appropriate node types and status indicators; WebSocket event streaming where execution events flow in real-time from backend to frontend; breakpoint debugging where execution pauses at specified flow indices; tensor inspection where N-dimensional reference data is viewable through multiple modes; multi-agent configuration where different agents can be registered with different LLM models and tool configurations; and checkpoint management where past states can be resumed or forked.
+
+% [ILLUSTRATION OPPORTUNITY: Screenshot of the Canvas App showing a partially executed plan with some nodes completed (green), one running (blue pulsing), and some pending (gray)]
+
+\subsection{Qualitative Observations}
+
+While formal experiments with statistical analysis are planned for future work, qualitative observations from using NormCode in practice support several claims.
+
+Regarding \textbf{Debuggability}, flow indices enable precise localization of failures. When an inference fails, the log identifies exactly which step (e.g., ``Step 1.3.2'') failed and what inputs it received. The Canvas App makes this visual, showing the failed node in red with its input connections highlighted.
+
+Regarding \textbf{Token Efficiency}, perceptual signs reduce token cost by passing lightweight pointers instead of full data. Only during the MVP step, when an inference actually needs to operate on data, are the signs transmuted into actual content. Syntactic operations are completely free, incurring no LLM costs regardless of the data volume they manipulate.
+
+Regarding \textbf{Resumability}, SQLite-backed checkpointing allows runs to be paused and resumed without loss of state. This is particularly valuable for long-running compilations or iterative development where you want to inspect intermediate states before continuing.
+
+Regarding \textbf{Auditability}, every inference's inputs and outputs are logged with their full tensor structure. Post-hoc analysis can reconstruct exactly what data each step saw and produced, enabling compliance reporting and debugging of unexpected results.
+
+Comparative evaluation against direct prompting, LangChain, and other frameworks on established benchmarks is planned for future work.
 

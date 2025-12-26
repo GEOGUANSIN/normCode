@@ -1,0 +1,115 @@
+/: ============================================================
+/: MINIMAL SELF-HOSTED COMPILER - FORMAL NCD
+/: A chat loop that processes canvas commands
+/: ============================================================
+:<:({session result})
+    /: Final output - the session completion status
+    | %{ref_axes}: [_none_axis]
+    | %{ref_element}: dict(status: str)
+    | %{norm_input}: c_SessionClose-o_Status
+    | %{body_faculty}: session
+    <= $. %>({session result})
+        /: Select session result when termination condition is met
+        <= @:'(<session should end>)
+        <* <session should end>
+    <- {session result}
+    <- [on-going messages]
+        /: Loop base - the message collection to iterate over
+        | %{ref_axes}: [message_index]
+        | %{ref_element}: dict(role: str, content: str)
+        <= $% %>([])
+            /: Initialize to empty array - ground concept
+            | %{provision}: literal empty array []
+    <- [all canvas statuses]
+        /: Collection of all iteration results
+        | %{ref_axes}: [message_index]
+        | %{ref_element}: dict(command_status, response_sent)
+        <= *. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)
+            /: Loop over messages - uses start_without_value_only_once=True
+            | %{loop_config}: start_without_value_only_once
+            <= $. %>({canvas status})
+            <- {canvas status}
+                /: Grouped result of command execution and response
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: dict(command_status, response_sent)
+                <= &[{}] %>[{command status}, {response sent}, {current message}]
+                <- {current message}
+                <- {command status}
+                    /: Result of executing the canvas command
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: dict(success: bool, data: any)
+                    <= ::(execute the canvas command based on parsed intent)
+                        | %{norm_input}: h_Command-c_CanvasExecute-o_Status
+                        | %{h_input_norm}: in-memory
+                        | %{body_faculty}: canvas
+                    <- {parsed command}
+                        /: The command extracted from user message
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict(type: str, params: dict)
+                        <= ::(understand the user message as a canvas command)
+                            | %{norm_input}: h_Message-v_Prompt-c_LLMClassify-o_Command
+                            | %{v_input_norm}: {prompt_location}
+                            | %{v_input_provision}: provision/prompts/classify_command.md
+                            | %{h_input_norm}: in-memory
+                            | %{body_faculty}: llm
+                        <- {current message}
+                            /: The user's input message - BLOCKS until received
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_element}: dict(role: str, content: str)
+                            <= :>:({current message})
+                                /: External input - waits for user
+                                | %{norm_input}: c_ChatRead-o_Message
+                                | %{body_faculty}: chat
+                        <- {canvas command schema}
+                            /: Ground concept - the schema for valid commands
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_element}: perceptual_sign
+                            | %{file_location}: provision/schemas/canvas_commands.json
+                            | %{h_input_norm}: {file_location}
+                <- {response sent}
+                    /: Confirmation that response was sent to user
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: dict(sent: bool, timestamp: str)
+                    <= ::(send the response message to the user)
+                        | %{norm_input}: h_Response-c_ChatWrite-o_Status
+                        | %{h_input_norm}: in-memory
+                        | %{body_faculty}: chat
+                    <- {response}
+                        /: The generated response text
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        <= ::(generate a helpful response for the user)
+                            | %{norm_input}: h_Message_Status-v_Prompt-c_LLMGenerate-o_Text
+                            | %{v_input_norm}: {prompt_location}
+                            | %{v_input_provision}: prompts/generate_response.md
+                            | %{h_input_norm}: in-memory
+                            | %{body_faculty}: llm
+                        <- {current message}<:{1}>
+                        <- {command status}<:{2}>
+            /: ============================================================
+            /: CONDITIONAL APPEND - Controls loop continuation
+            /: ============================================================
+            <- [on-going messages]<$({appended messages})=>
+                /: The message collection after conditional append
+                | %{ref_axes}: [message_index]
+                | %{ref_element}: dict(role: str, content: str)
+                <= $+ %>([on-going messages]) %<({current message}) %:({message})
+                    <= @:!(<session should end>)
+                    <* <session should end>
+            /: ============================================================
+            /: TERMINATION CHECK
+            /: ============================================================
+            <- <session should end>
+                /: Boolean: should the session terminate?
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: %{truth_value}
+                <= ::(the user wants to end the session)<FOR {current message} IS True>
+                    | %{norm_input}: h_History-v_Prompt-c_LLMJudge-o_Bool
+                    | %{v_input_norm}: {prompt_location}
+                    | %{v_input_provision}: prompts/judge_terminate.md
+                    | %{h_input_norm}: in-memory
+                    | %{body_faculty}: llm
+                <- {current message}<:{1}>
+                <- [on-going messages]<:{2}>
+        <- [on-going messages]
+        <* {message}<$([on-going messages])

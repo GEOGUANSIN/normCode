@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
@@ -13,6 +14,164 @@ def load_file(path: str) -> str:
 class UnifiedParser:
     def __init__(self):
         pass
+    
+    def _detect_concept_type(self, content: str) -> Dict[str, Any]:
+        """
+        Detect the concept type from content.
+        
+        Returns:
+            Dict with:
+                - inference_marker: '<-', '<=', '<*', ':<:', ':>:' or None
+                - concept_type: 'object', 'proposition', 'relation', 'subject', 
+                               'imperative', 'judgement', 'operator', 'comment', 'informal'
+                - operator_type: For operators - 'assigning', 'grouping', 'timing', 'looping'
+                - warnings: List of potential issues
+        """
+        result = {
+            'inference_marker': None,
+            'concept_type': None,
+            'operator_type': None,
+            'concept_name': None,
+            'warnings': []
+        }
+        
+        content = content.strip()
+        if not content:
+            return result
+        
+        # Extract inference marker first
+        inference_markers = [':<:', ':>:', '<=', '<-', '<*']
+        remaining = content
+        for marker in inference_markers:
+            if content.startswith(marker):
+                result['inference_marker'] = marker
+                remaining = content[len(marker):].strip()
+                break
+        
+        # Now analyze what comes after the inference marker
+        
+        # --- Syntactic Operators ---
+        # Assigning: $= $% $. $+ $- $::
+        if remaining.startswith('$='):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'identity'
+        elif remaining.startswith('$%'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'abstraction'
+        elif remaining.startswith('$.'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'specification'
+        elif remaining.startswith('$+'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'continuation'
+        elif remaining.startswith('$-'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'selection'
+        elif remaining.startswith('$::'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'nominalization'
+        # Grouping: &[{}] &[#]
+        elif remaining.startswith('&[{}]') or remaining.startswith('&[#]'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'grouping'
+        # Timing: @:' @:! @. @::
+        elif remaining.startswith("@:'") or remaining.startswith('@:!'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'timing_conditional'
+        elif remaining.startswith('@.'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'timing_completion'
+        elif remaining.startswith('@::'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'timing_action'
+        # Looping: *.
+        elif remaining.startswith('*.'):
+            result['concept_type'] = 'operator'
+            result['operator_type'] = 'looping'
+        
+        # --- Semantic Concepts ---
+        # Imperative/Judgement: ::(...) or ::(...)< >
+        elif remaining.startswith('::'):
+            # Check for judgement pattern: ::(...)< >
+            # Look for closing paren followed by <
+            if re.search(r'::\([^)]*\)\s*<', remaining):
+                result['concept_type'] = 'judgement'
+                # Extract concept name from inside parens
+                match = re.search(r'::\(([^)]*)\)', remaining)
+                if match:
+                    result['concept_name'] = match.group(1)
+            else:
+                result['concept_type'] = 'imperative'
+                match = re.search(r'::\(([^)]*)\)', remaining)
+                if match:
+                    result['concept_name'] = match.group(1)
+        
+        # Subject: :Name:
+        elif re.match(r'^:[A-Za-z_][A-Za-z0-9_]*:', remaining):
+            result['concept_type'] = 'subject'
+            match = re.match(r'^:([A-Za-z_][A-Za-z0-9_]*):', remaining)
+            if match:
+                result['concept_name'] = match.group(1)
+        
+        # Proposition: <name> (but not operator markers like <$, <:, etc.)
+        elif remaining.startswith('<') and not remaining.startswith(('<$', '<:', '<=', '<-', '<*')):
+            # Check if it's a valid proposition (ends with >)
+            if '>' in remaining:
+                result['concept_type'] = 'proposition'
+                match = re.match(r'^<([^>]+)>', remaining)
+                if match:
+                    result['concept_name'] = match.group(1)
+            else:
+                result['concept_type'] = 'informal'
+                result['warnings'].append('Unclosed proposition marker <')
+        
+        # Relation: [name] or [items, ...]
+        elif remaining.startswith('['):
+            if ']' in remaining:
+                result['concept_type'] = 'relation'
+                match = re.match(r'^\[([^\]]+)\]', remaining)
+                if match:
+                    result['concept_name'] = match.group(1)
+            else:
+                result['concept_type'] = 'informal'
+                result['warnings'].append('Unclosed relation marker [')
+        
+        # Object: {name}
+        elif remaining.startswith('{'):
+            if '}' in remaining:
+                result['concept_type'] = 'object'
+                match = re.match(r'^\{([^}]+)\}', remaining)
+                if match:
+                    result['concept_name'] = match.group(1)
+            else:
+                result['concept_type'] = 'informal'
+                result['warnings'].append('Unclosed object marker {')
+        
+        # Comment markers: /: ?: ...: %{...}:
+        elif remaining.startswith('/:') or remaining.startswith('?:') or remaining.startswith('...:'):
+            result['concept_type'] = 'comment'
+        elif remaining.startswith('%{') or remaining.startswith('?{'):
+            result['concept_type'] = 'comment'
+        
+        # If we have an inference marker but couldn't identify the concept type
+        elif result['inference_marker'] and not result['concept_type']:
+            # This might be informal NCD
+            result['concept_type'] = 'informal'
+            result['warnings'].append(f"Unrecognized concept format after {result['inference_marker']}")
+            # Try to extract a name if it looks like it might be one
+            if remaining:
+                result['concept_name'] = remaining.split()[0] if remaining.split() else remaining[:30]
+        
+        # No inference marker - might be a comment or metadata line
+        elif not result['inference_marker']:
+            if content.startswith('/') or content.startswith('?') or content.startswith('%'):
+                result['concept_type'] = 'comment'
+            else:
+                result['concept_type'] = 'informal'
+                if content and not content.startswith('|'):
+                    result['warnings'].append('Line without inference marker or comment prefix')
+        
+        return result
 
     def _calculate_depth(self, line: str) -> int:
         """Calculate indentation depth (4 spaces = 1 level)."""
@@ -35,10 +194,11 @@ class UnifiedParser:
             depth = self._calculate_depth(raw_line)
             content = raw_line.strip()
             
-            # Check if it's a concept line (starts with :<:, <=, <-)
+            # Check if it's a concept line (starts with concept prefixes)
             is_concept = False
             main_part = content
             inline_comment = None
+            explicit_flow_index = None  # For ?{flow_index}: X.Y.Z
             
             # Check if this is an NCN annotation line (starts with |?{natural language}:)
             # These should NOT be split on | - keep the full content
@@ -49,8 +209,16 @@ class UnifiedParser:
                 parts = content.split('|', 1)
                 main_part = parts[0].strip()
                 inline_comment = parts[1].strip()
+                
+                # Check for explicit flow_index in inline comment: ?{flow_index}: X.Y.Z
+                if inline_comment:
+                    flow_match = re.search(r'\?{flow_index}:\s*([\d.]+)', inline_comment)
+                    if flow_match:
+                        explicit_flow_index = flow_match.group(1)
             
-            for prefix in [':<:', '<=', '<-']:
+            # All concept prefixes - including <* for loop item references
+            concept_prefixes = [':<:', ':>:', '<=', '<-', '<*', '$%', '$.', '*.',  '$+', '&[', '@:', '@:!', '::']
+            for prefix in concept_prefixes:
                 if main_part.startswith(prefix):
                     is_concept = True
                     break
@@ -58,18 +226,25 @@ class UnifiedParser:
             flow_index = None
             
             if is_concept:
-                # Ensure indices list is long enough for current depth
-                while len(indices) <= depth:
-                    indices.append(0)
-                
-                # Remove deeper indices if we moved up or stayed same
-                indices = indices[:depth+1]
-                
-                # Increment counter at current depth
-                indices[depth] += 1
-                
-                # Generate flow index string (e.g., "1.2.1")
-                flow_index = ".".join(map(str, indices))
+                if explicit_flow_index:
+                    # Use the explicit flow_index from ?{flow_index}: X.Y.Z
+                    flow_index = explicit_flow_index
+                    # Update indices stack to match explicit flow index
+                    parts = [int(p) for p in explicit_flow_index.split('.')]
+                    indices = parts[:]
+                else:
+                    # Ensure indices list is long enough for current depth
+                    while len(indices) <= depth:
+                        indices.append(0)
+                    
+                    # Remove deeper indices if we moved up or stayed same
+                    indices = indices[:depth+1]
+                    
+                    # Increment counter at current depth
+                    indices[depth] += 1
+                    
+                    # Generate flow index string (e.g., "1.2.1")
+                    flow_index = ".".join(map(str, indices))
             else:
                 # For comments/annotations, inherit the flow index of the preceding concept
                 # Find the last concept line's flow index
@@ -78,6 +253,9 @@ class UnifiedParser:
                         if prev['type'] == 'main' and prev['flow_index']:
                             flow_index = prev['flow_index']
                             break
+            
+            # Detect concept type for main lines
+            concept_info = self._detect_concept_type(main_part) if is_concept else {}
             
             # Handle case where line starts with pipe (empty main part but has comment)
             # Treat as a single comment line preserving the pipe
@@ -92,13 +270,22 @@ class UnifiedParser:
             else:
                 # Add the main concept line
                 if is_concept or main_part:
-                    parsed_lines.append({
+                    line_entry = {
                         "raw_line": raw_line,
                         "content": main_part,
                         "depth": depth,
                         "flow_index": flow_index,
                         "type": "main" if is_concept else "comment"
-                    })
+                    }
+                    # Add concept type info for main lines
+                    if is_concept and concept_info:
+                        line_entry["inference_marker"] = concept_info.get("inference_marker")
+                        line_entry["concept_type"] = concept_info.get("concept_type")
+                        line_entry["operator_type"] = concept_info.get("operator_type")
+                        line_entry["concept_name"] = concept_info.get("concept_name")
+                        if concept_info.get("warnings"):
+                            line_entry["warnings"] = concept_info["warnings"]
+                    parsed_lines.append(line_entry)
                 
                 # Add separate line for inline comment if present
                 if inline_comment:
@@ -153,6 +340,19 @@ class UnifiedParser:
                 # Try to find matching ncn content
                 if line['flow_index'] in ncn_map:
                     merged_item['ncn_content'] = ncn_map[line['flow_index']]
+                
+                # Preserve concept type information
+                if 'inference_marker' in line:
+                    merged_item['inference_marker'] = line['inference_marker']
+                if 'concept_type' in line:
+                    merged_item['concept_type'] = line['concept_type']
+                if 'operator_type' in line:
+                    merged_item['operator_type'] = line['operator_type']
+                if 'concept_name' in line:
+                    merged_item['concept_name'] = line['concept_name']
+                if 'warnings' in line:
+                    merged_item['warnings'] = line['warnings']
+                    
             elif line['type'] == 'inline_comment':
                 merged_item['nc_comment'] = line['content']
             elif line['type'] == 'comment':
@@ -292,6 +492,18 @@ class UnifiedParser:
             # Map content based on type
             if line['type'] == 'main':
                 merged_item['nc_main'] = line['content']
+                
+                # Preserve concept type information
+                if 'inference_marker' in line:
+                    merged_item['inference_marker'] = line['inference_marker']
+                if 'concept_type' in line:
+                    merged_item['concept_type'] = line['concept_type']
+                if 'operator_type' in line:
+                    merged_item['operator_type'] = line['operator_type']
+                if 'concept_name' in line:
+                    merged_item['concept_name'] = line['concept_name']
+                if 'warnings' in line:
+                    merged_item['warnings'] = line['warnings']
                 
                 # Look ahead for inline_comment and NCN annotation
                 # The order after a main line could be:

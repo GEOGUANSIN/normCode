@@ -1,1 +1,88 @@
-[]
+{
+  "inferences": [
+    {
+      "flow_info": {
+        "flow_index": "1.2.2.2.2.1",
+        "depth": 5
+      },
+      "to_infer": "welcome",
+      "function_concept": "greet",
+      "value_concepts": [],
+      "context_concepts": [],
+      "working_interpretation": {
+        "paradigm": "chat_write",
+        "output_type": "string",
+        "value_order": [],
+        "horizontal_inputs": {
+          "message": "👋 Welcome to NormCode Compiler!\n\nI can help you:\n• Create a new project\n• Get help with NormCode\n\nWhat would you like to do?"
+        }
+      }
+    },
+    {
+      "flow_info": {
+        "flow_index": "1.2.2.2.1",
+        "depth": 4
+      },
+      "to_infer": "user_input",
+      "function_concept": "read",
+      "value_concepts": ["welcome"],
+      "context_concepts": [],
+      "working_interpretation": {
+        "paradigm": "chat_read",
+        "output_type": "string",
+        "value_order": ["welcome"],
+        "horizontal_inputs": {}
+      }
+    },
+    {
+      "flow_info": {
+        "flow_index": "1.2.2.1",
+        "depth": 3
+      },
+      "to_infer": "user_intent",
+      "function_concept": "classify",
+      "value_concepts": ["user_input"],
+      "context_concepts": [],
+      "working_interpretation": {
+        "paradigm": "llm_classify",
+        "output_type": "string",
+        "value_order": ["user_input"],
+        "horizontal_inputs": {
+          "categories": ["new_project", "help", "unknown"]
+        }
+      }
+    },
+    {
+      "flow_info": {
+        "flow_index": "1.2.1",
+        "depth": 2
+      },
+      "to_infer": "action_result",
+      "function_concept": "execute",
+      "value_concepts": ["user_intent"],
+      "context_concepts": [],
+      "working_interpretation": {
+        "paradigm": "project_create",
+        "output_type": "dict",
+        "value_order": ["user_intent"],
+        "horizontal_inputs": {}
+      }
+    },
+    {
+      "flow_info": {
+        "flow_index": "1.1",
+        "depth": 1
+      },
+      "to_infer": "result",
+      "function_concept": "report",
+      "value_concepts": ["action_result"],
+      "context_concepts": [],
+      "working_interpretation": {
+        "paradigm": "report_result",
+        "output_type": "dict",
+        "value_order": ["action_result"],
+        "horizontal_inputs": {}
+      }
+    }
+  ]
+}

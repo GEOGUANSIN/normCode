@@ -34,12 +34,12 @@ import {
   Plus,
   Trash2,
   Eye,
-  EyeOff,
-  Filter,
   Minus,
   RotateCw,
   MessageSquare,
-  Settings2,
+  Download,
+  Copy,
+  FileOutput,
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 
@@ -82,6 +82,12 @@ interface ParsedLine {
   nc_main?: string;
   nc_comment?: string;
   ncn_content?: string;
+  // Concept type info
+  inference_marker?: string;  // '<-', '<=', '<*', ':<:', ':>:'
+  concept_type?: string;      // 'object', 'proposition', 'relation', 'subject', 'imperative', 'judgement', 'operator', 'informal'
+  operator_type?: string;     // For operators: 'assigning', 'grouping', 'timing', 'looping'
+  concept_name?: string;      // Extracted concept name
+  warnings?: string[];        // Potential issues detected
 }
 
 interface ParseResponse {
@@ -251,6 +257,298 @@ const typeIcons: Record<string, { icon: React.ReactNode; label: string }> = {
   comment: { icon: <MessageSquare className="w-3 h-3 text-gray-400" />, label: 'Comment' },
   inline_comment: { icon: <MessageSquare className="w-3 h-3 text-yellow-500" />, label: 'Inline' },
 };
+
+// Concept type badges with colors
+const conceptTypeBadges: Record<string, { bg: string; text: string; label: string }> = {
+  object: { bg: 'bg-blue-100', text: 'text-blue-700', label: '{}' },
+  proposition: { bg: 'bg-purple-100', text: 'text-purple-700', label: '<>' },
+  relation: { bg: 'bg-green-100', text: 'text-green-700', label: '[]' },
+  subject: { bg: 'bg-pink-100', text: 'text-pink-700', label: ':S:' },
+  imperative: { bg: 'bg-orange-100', text: 'text-orange-700', label: '::()' },
+  judgement: { bg: 'bg-red-100', text: 'text-red-700', label: '::<>' },
+  operator: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'OP' },
+  informal: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: '⚠' },
+  comment: { bg: 'bg-gray-100', text: 'text-gray-500', label: '//' },
+};
+
+// Inference marker badges
+const inferenceMarkerBadges: Record<string, { bg: string; text: string }> = {
+  ':<:': { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  ':>:': { bg: 'bg-teal-100', text: 'text-teal-700' },
+  '<=': { bg: 'bg-amber-100', text: 'text-amber-700' },
+  '<-': { bg: 'bg-sky-100', text: 'text-sky-700' },
+  '<*': { bg: 'bg-violet-100', text: 'text-violet-700' },
+};
+
+// Export panel component for format conversion and downloads
+interface ExportPanelProps {
+  parsedLines: ParsedLine[];
+  selectedFile: string | null;
+  setError: (error: string | null) => void;
+  setSuccessMessage: (msg: string | null) => void;
+}
+
+function ExportPanel({ parsedLines, selectedFile, setError, setSuccessMessage }: ExportPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('ncd');
+  const [previewContent, setPreviewContent] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [exportPath, setExportPath] = useState('');
+  
+  // Generate previews when expanded or tab changes
+  useEffect(() => {
+    if (!isExpanded || parsedLines.length === 0) return;
+    
+    const generatePreview = async () => {
+      setIsLoading(true);
+      try {
+        const result = await editorApi.serializeLines(parsedLines, activeTab);
+        if (result.success) {
+          setPreviewContent(prev => ({ ...prev, [activeTab]: result.content }));
+        }
+      } catch (e) {
+        console.error('Failed to generate preview:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (!previewContent[activeTab]) {
+      generatePreview();
+    }
+  }, [isExpanded, activeTab, parsedLines, previewContent]);
+  
+  // Reset previews when parsedLines change
+  useEffect(() => {
+    setPreviewContent({});
+  }, [parsedLines]);
+  
+  // Initialize export path from selected file
+  useEffect(() => {
+    if (selectedFile && !exportPath) {
+      // Replace extension with new format
+      const basePath = selectedFile.replace(/\.[^/.]+$/, '');
+      setExportPath(basePath);
+    }
+  }, [selectedFile, exportPath]);
+  
+  // Copy to clipboard
+  const copyToClipboard = useCallback(async () => {
+    const content = previewContent[activeTab];
+    if (content) {
+      try {
+        await navigator.clipboard.writeText(content);
+        setSuccessMessage(`Copied ${activeTab.toUpperCase()} to clipboard`);
+      } catch {
+        setError('Failed to copy to clipboard');
+      }
+    }
+  }, [activeTab, previewContent, setSuccessMessage, setError]);
+  
+  // Download as file
+  const downloadFile = useCallback(() => {
+    const content = previewContent[activeTab];
+    if (!content) return;
+    
+    const extensions: Record<string, string> = {
+      ncd: '.ncd',
+      ncn: '.ncn',
+      ncdn: '.ncdn',
+      json: '.nc.json',
+      nci: '.nci.json',
+    };
+    
+    const fileName = selectedFile 
+      ? selectedFile.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') + extensions[activeTab]
+      : `export${extensions[activeTab]}`;
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    setSuccessMessage(`Downloaded ${fileName}`);
+  }, [activeTab, previewContent, selectedFile, setSuccessMessage]);
+  
+  // Save to server
+  const saveToServer = useCallback(async () => {
+    const content = previewContent[activeTab];
+    if (!content || !exportPath) return;
+    
+    const extensions: Record<string, string> = {
+      ncd: '.ncd',
+      ncn: '.ncn',
+      ncdn: '.ncdn',
+      json: '.nc.json',
+      nci: '.nci.json',
+    };
+    
+    const fullPath = exportPath + extensions[activeTab];
+    
+    try {
+      const result = await editorApi.saveFile(fullPath, content);
+      if (result.success) {
+        setSuccessMessage(`Saved to ${fullPath}`);
+      }
+    } catch (e) {
+      setError(`Failed to save: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    }
+  }, [activeTab, previewContent, exportPath, setSuccessMessage, setError]);
+  
+  const formats = ['ncd', 'ncn', 'ncdn', 'json', 'nci'];
+  
+  return (
+    <div className="border-t bg-gray-50">
+      {/* Header - always visible */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-4 py-2 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-100"
+      >
+        <div className="flex items-center gap-2">
+          <FileOutput className="w-4 h-4" />
+          Export & Format Conversion
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-4 pb-4 space-y-3">
+          {/* Format tabs */}
+          <div className="flex items-center gap-1 border-b">
+            {formats.map(fmt => (
+              <button
+                key={fmt}
+                onClick={() => setActiveTab(fmt)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-t border-t border-x -mb-px transition-colors ${
+                  activeTab === fmt
+                    ? 'bg-white border-gray-300 text-blue-600'
+                    : 'bg-gray-100 border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {fmt.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          
+          {/* Preview area */}
+          <div className="bg-white border rounded-lg">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b text-xs text-gray-500 rounded-t-lg">
+              <span>{activeTab.toUpperCase()} Preview</span>
+              <div className="flex items-center gap-1">
+                {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                <button
+                  onClick={copyToClipboard}
+                  disabled={!previewContent[activeTab]}
+                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-50"
+                  title="Copy to clipboard"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={downloadFile}
+                  disabled={!previewContent[activeTab]}
+                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-50"
+                  title="Download file"
+                >
+                  <Download className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto overflow-x-auto">
+              <pre className="p-3 font-mono text-xs text-gray-800 whitespace-pre min-w-max">
+                {previewContent[activeTab] || (isLoading ? 'Generating preview...' : 'Click to generate preview')}
+              </pre>
+            </div>
+          </div>
+          
+          {/* Export path and save button */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 whitespace-nowrap">Save as:</span>
+            <input
+              type="text"
+              value={exportPath}
+              onChange={(e) => setExportPath(e.target.value)}
+              placeholder="path/to/file (without extension)"
+              className="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <span className="text-xs text-gray-400">
+              {activeTab === 'json' ? '.nc.json' : activeTab === 'nci' ? '.nci.json' : `.${activeTab}`}
+            </span>
+            <button
+              onClick={saveToServer}
+              disabled={!previewContent[activeTab] || !exportPath}
+              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <Save className="w-3 h-3" />
+              Save
+            </button>
+          </div>
+          
+          {/* Quick export all formats */}
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-xs text-gray-500">Quick actions:</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  // Generate and download all formats
+                  for (const fmt of formats) {
+                    try {
+                      const result = await editorApi.serializeLines(parsedLines, fmt);
+                      if (result.success) {
+                        setPreviewContent(prev => ({ ...prev, [fmt]: result.content }));
+                      }
+                    } catch (e) {
+                      console.error(`Failed to generate ${fmt}:`, e);
+                    }
+                  }
+                  setSuccessMessage('Generated all format previews');
+                }}
+                className="px-2 py-1 text-xs border rounded hover:bg-white text-gray-600"
+              >
+                Generate All
+              </button>
+              <button
+                onClick={async () => {
+                  // Download all available formats
+                  let downloaded = 0;
+                  for (const [fmt, content] of Object.entries(previewContent)) {
+                    if (content) {
+                      const extensions: Record<string, string> = {
+                        ncd: '.ncd', ncn: '.ncn', ncdn: '.ncdn', json: '.nc.json', nci: '.nci.json',
+                      };
+                      const fileName = selectedFile 
+                        ? selectedFile.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') + extensions[fmt]
+                        : `export${extensions[fmt]}`;
+                      
+                      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = fileName;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      downloaded++;
+                    }
+                  }
+                  if (downloaded > 0) {
+                    setSuccessMessage(`Downloaded ${downloaded} file(s)`);
+                  }
+                }}
+                disabled={Object.keys(previewContent).length === 0}
+                className="px-2 py-1 text-xs border rounded hover:bg-white text-gray-600 disabled:opacity-50"
+              >
+                Download All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function EditorPanel() {
   // Get project path from store
@@ -633,35 +931,60 @@ export function EditorPanel() {
     );
   }, [parsedLines]);
 
-  // Handle Tab key in text areas
+  // Handle Tab key in text areas - with special handling for flow index separator
+  // The separator " │ " is used in pure text mode to prefix lines with flow indices
   const handleTextAreaKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== 'Tab') return;
     
     e.preventDefault();
+    e.stopPropagation();
+    
     const target = e.target as HTMLTextAreaElement;
     const start = target.selectionStart;
     const end = target.selectionEnd;
     const value = target.value;
     
+    // Flow index separator used in pure text mode
+    const SEP = ' │ ';
+    
+    // Find line boundaries
+    const beforeSel = value.substring(0, start);
+    const lineStart = beforeSel.lastIndexOf('\n') + 1;
+    const lineEnd = value.indexOf('\n', end);
+    const actualEnd = lineEnd === -1 ? value.length : lineEnd;
+    const selectedText = value.substring(lineStart, actualEnd);
+    const lines = selectedText.split('\n');
+    
+    let totalChange = 0;
+    let firstLineChange = 0;
+    
     if (e.shiftKey) {
-      // Shift+Tab: Unindent
-      const beforeSel = value.substring(0, start);
-      const lineStart = beforeSel.lastIndexOf('\n') + 1;
-      const lineEnd = value.indexOf('\n', end);
-      const actualEnd = lineEnd === -1 ? value.length : lineEnd;
-      const selectedText = value.substring(lineStart, actualEnd);
-      const lines = selectedText.split('\n');
-      
-      let totalChange = 0;
-      let firstLineChange = 0;
-      
+      // Shift+Tab: Unindent content after separator (or from beginning if no separator)
       const newLines = lines.map((line, idx) => {
         let change = 0;
-        if (line.startsWith('    ')) { line = line.substring(4); change = 4; }
-        else if (line.startsWith('\t')) { line = line.substring(1); change = 1; }
-        else if (line.startsWith('   ')) { line = line.substring(3); change = 3; }
-        else if (line.startsWith('  ')) { line = line.substring(2); change = 2; }
-        else if (line.startsWith(' ')) { line = line.substring(1); change = 1; }
+        const sepIdx = line.indexOf(SEP);
+        
+        if (sepIdx >= 0) {
+          // Has separator - unindent content after it
+          const prefix = line.substring(0, sepIdx + SEP.length);
+          let content = line.substring(sepIdx + SEP.length);
+          
+          // Remove leading spaces from content
+          if (content.startsWith('    ')) { content = content.substring(4); change = 4; }
+          else if (content.startsWith('\t')) { content = content.substring(1); change = 1; }
+          else if (content.startsWith('   ')) { content = content.substring(3); change = 3; }
+          else if (content.startsWith('  ')) { content = content.substring(2); change = 2; }
+          else if (content.startsWith(' ')) { content = content.substring(1); change = 1; }
+          
+          line = prefix + content;
+        } else {
+          // No separator - unindent from beginning
+          if (line.startsWith('    ')) { line = line.substring(4); change = 4; }
+          else if (line.startsWith('\t')) { line = line.substring(1); change = 1; }
+          else if (line.startsWith('   ')) { line = line.substring(3); change = 3; }
+          else if (line.startsWith('  ')) { line = line.substring(2); change = 2; }
+          else if (line.startsWith(' ')) { line = line.substring(1); change = 1; }
+        }
         
         if (idx === 0) firstLineChange = change;
         totalChange += change;
@@ -673,21 +996,27 @@ export function EditorPanel() {
       target.selectionStart = Math.max(lineStart, start - firstLineChange);
       target.selectionEnd = Math.max(target.selectionStart, end - totalChange);
     } else {
-      // Tab: Indent
+      // Tab: Indent content after separator (or at beginning if no separator)
       if (start === end) {
-        // No selection - insert spaces at cursor
+        // No selection - just insert 4 spaces at cursor
         target.value = value.substring(0, start) + '    ' + value.substring(end);
         target.selectionStart = target.selectionEnd = start + 4;
       } else {
-        // Selection - indent each line
-        const beforeSel = value.substring(0, start);
-        const lineStart = beforeSel.lastIndexOf('\n') + 1;
-        const lineEnd = value.indexOf('\n', end);
-        const actualEnd = lineEnd === -1 ? value.length : lineEnd;
-        const selectedText = value.substring(lineStart, actualEnd);
-        const lines = selectedText.split('\n');
+        // Selection - indent content after separator on each line
+        const newLines = lines.map((line) => {
+          const sepIdx = line.indexOf(SEP);
+          
+          if (sepIdx >= 0) {
+            // Has separator - add spaces after it
+            const prefix = line.substring(0, sepIdx + SEP.length);
+            const content = line.substring(sepIdx + SEP.length);
+            return prefix + '    ' + content;
+          } else {
+            // No separator - add spaces at beginning
+            return '    ' + line;
+          }
+        });
         
-        const newLines = lines.map(line => '    ' + line);
         target.value = value.substring(0, lineStart) + newLines.join('\n') + value.substring(actualEnd);
         target.selectionStart = start + 4;
         target.selectionEnd = end + (lines.length * 4);
@@ -697,6 +1026,24 @@ export function EditorPanel() {
     // Trigger React change
     const event = new Event('input', { bubbles: true });
     target.dispatchEvent(event);
+  }, []);
+
+  // Strip flow index prefixes from pure text before parsing
+  // Format: "flow_index │ content" -> "content"
+  const stripFlowPrefixes = useCallback((text: string): string => {
+    const SEP = ' │ ';
+    const lines = text.split('\n');
+    
+    const strippedLines = lines.map(line => {
+      const sepIdx = line.indexOf(SEP);
+      if (sepIdx >= 0) {
+        // Extract only the content after the separator
+        return line.substring(sepIdx + SEP.length);
+      }
+      return line;
+    });
+    
+    return strippedLines.join('\n');
   }, []);
 
   // Render a tree node recursively
@@ -1213,8 +1560,8 @@ export function EditorPanel() {
                         <thead className="bg-gray-50 sticky top-8">
                           <tr className="text-left text-xs text-gray-500">
                             <th className="px-2 py-2 w-20 border-b">Flow</th>
-                            <th className="px-2 py-2 w-12 border-b">Type</th>
-                            <th className="px-2 py-2 w-16 border-b">Actions</th>
+                            <th className="px-2 py-2 w-24 border-b">Concept</th>
+                            <th className="px-2 py-2 w-20 border-b">Actions</th>
                             <th className="px-2 py-2 border-b">Content</th>
                           </tr>
                         </thead>
@@ -1244,13 +1591,35 @@ export function EditorPanel() {
                                   />
                                 </td>
                                 
-                                {/* Type indicator */}
+                                {/* Type indicator with concept type badge */}
                                 <td className="px-2 py-1">
-                                  <div className="flex items-center gap-1">
-                                    {typeIcons[line.type]?.icon}
-                                    <span className="text-[10px] text-gray-400">
-                                      {line.type === 'main' ? '' : line.type.charAt(0).toUpperCase()}
-                                    </span>
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    {/* Inference marker badge */}
+                                    {line.inference_marker && inferenceMarkerBadges[line.inference_marker] && (
+                                      <span className={`px-1 py-0.5 rounded text-[9px] font-mono ${inferenceMarkerBadges[line.inference_marker].bg} ${inferenceMarkerBadges[line.inference_marker].text}`}>
+                                        {line.inference_marker}
+                                      </span>
+                                    )}
+                                    {/* Concept type badge */}
+                                    {line.concept_type && conceptTypeBadges[line.concept_type] && (
+                                      <span 
+                                        className={`px-1 py-0.5 rounded text-[9px] font-medium ${conceptTypeBadges[line.concept_type].bg} ${conceptTypeBadges[line.concept_type].text}`}
+                                        title={`${line.concept_type}${line.operator_type ? ` (${line.operator_type})` : ''}${line.concept_name ? `: ${line.concept_name}` : ''}`}
+                                      >
+                                        {conceptTypeBadges[line.concept_type].label}
+                                      </span>
+                                    )}
+                                    {/* Warning indicator */}
+                                    {line.warnings && line.warnings.length > 0 && (
+                                      <span 
+                                        className="text-yellow-600" 
+                                        title={line.warnings.join('\n')}
+                                      >
+                                        <AlertCircle className="w-3 h-3" />
+                                      </span>
+                                    )}
+                                    {/* Fallback type icon for non-main lines */}
+                                    {!line.concept_type && line.type !== 'main' && typeIcons[line.type]?.icon}
                                   </div>
                                 </td>
                                 
@@ -1378,9 +1747,13 @@ export function EditorPanel() {
                         <button
                           onClick={async () => {
                             if (pendingText) {
-                              // Re-parse the text
+                              // Strip flow index prefixes before parsing
+                              // The pure text mode adds "flow_idx │ content" prefixes for display
+                              const contentOnly = stripFlowPrefixes(pendingText);
+                              
+                              // Re-parse the stripped text
                               try {
-                                const result = await editorApi.parseContent(pendingText, 'ncdn');
+                                const result = await editorApi.parseContent(contentOnly, 'ncdn');
                                 setParsedLines(result.lines);
                                 setPendingText(null);
                                 setTextEditorKey(prev => prev + 1);
@@ -1454,6 +1827,16 @@ export function EditorPanel() {
                   </div>
                 )}
               </div>
+              
+              {/* Export Panel - collapsible */}
+              {isNormCodeFormat && parsedLines.length > 0 && (
+                <ExportPanel 
+                  parsedLines={parsedLines}
+                  selectedFile={selectedFile}
+                  setError={setError}
+                  setSuccessMessage={setSuccessMessage}
+                />
+              )}
               
               {/* Status bar */}
               <div className="bg-gray-100 px-4 py-1 border-t flex items-center justify-between text-xs text-gray-500">

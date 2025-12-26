@@ -1,0 +1,41 @@
+{
+  "articles": [
+    {
+      "date": "2025-12-12",
+      "source": "Reuters",
+      "headline": "Fed signals potential pause in rate hikes amid cooling inflation",
+      "summary": "Federal Reserve officials indicated they may hold rates steady in upcoming meetings as inflation shows signs of moderating.",
+      "sentiment_hint": "bullish_for_gold"
+    },
+    {
+      "date": "2025-12-11",
+      "source": "Bloomberg",
+      "headline": "Central banks continue gold accumulation trend",
+      "summary": "Global central banks added 35 tonnes of gold to reserves in November, extending the multi-year accumulation trend.",
+      "sentiment_hint": "bullish_for_gold"
+    },
+    {
+      "date": "2025-12-10",
+      "source": "Financial Times",
+      "headline": "Geopolitical tensions drive safe-haven demand",
+      "summary": "Escalating geopolitical concerns in multiple regions have investors seeking traditional safe-haven assets.",
+      "sentiment_hint": "bullish_for_gold"
+    },
+    {
+      "date": "2025-12-09",
+      "source": "CNBC",
+      "headline": "US Dollar weakens against major currencies",
+      "summary": "The dollar index fell 0.5% as traders reassess Fed policy trajectory, providing tailwind for gold prices.",
+      "sentiment_hint": "bullish_for_gold"
+    },
+    {
+      "date": "2025-12-08",
+      "source": "Wall Street Journal",
+      "headline": "ETF gold holdings see first weekly inflow in months",
+      "summary": "Gold-backed ETFs recorded net inflows of $1.2 billion last week, reversing recent outflow trend.",
+      "sentiment_hint": "bullish_for_gold"
+    }
+  ],
+  "_note": "Simulated news data with generally bullish sentiment for gold"
+}
+
