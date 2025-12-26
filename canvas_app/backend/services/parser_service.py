@@ -1,45 +1,48 @@
 """
-Parser Service - NormCode file parsing and format conversion
+Parser Service - File parsing and format conversion.
 
-Wraps the unified_parser from streamlit_app/editor_subapp
+This service provides a unified interface for parsing various file formats.
+It uses the parser registry to support multiple file types in a plugin-like manner.
+
+The service maintains backwards compatibility with the original API while
+delegating to the new parser infrastructure.
 """
 
-import sys
-from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-# Add _archive/editor_subapp to path for importing unified_parser
-# Try multiple paths for flexibility
-archive_path = Path(__file__).parent.parent.parent.parent / "_archive" / "editor_subapp"
-streamlit_app_path = Path(__file__).parent.parent.parent.parent / "streamlit_app" / "editor_subapp"
-
-# Try archive first, then streamlit_app as fallback
-if archive_path.exists():
-    sys.path.insert(0, str(archive_path))
-elif streamlit_app_path.exists():
-    sys.path.insert(0, str(streamlit_app_path))
-
-try:
-    from unified_parser import UnifiedParser
-    PARSER_AVAILABLE = True
-except ImportError:
-    PARSER_AVAILABLE = False
-    UnifiedParser = None
+from .parsers import ParserRegistry, get_parser, BaseParser
+from config.file_types import is_normcode_format, get_file_type_config
 
 
 class ParserService:
-    """Service for parsing and converting NormCode files."""
+    """
+    Service for parsing and converting files.
+    
+    Provides a unified interface for parsing different file formats.
+    Uses the parser registry to support extensible file type handling.
+    """
     
     def __init__(self):
-        if PARSER_AVAILABLE:
-            self.parser = UnifiedParser()
-        else:
-            self.parser = None
+        """Initialize the parser service."""
+        # Parser registry is auto-initialized when parsers module is imported
+        pass
     
     @property
     def is_available(self) -> bool:
-        """Check if the parser is available."""
-        return PARSER_AVAILABLE and self.parser is not None
+        """Check if any parser is available."""
+        return len(ParserRegistry.get_supported_formats()) > 0
+    
+    def get_supported_formats(self) -> List[str]:
+        """Get list of all supported format names."""
+        return ParserRegistry.get_supported_formats()
+    
+    def supports_format(self, format_name: str) -> bool:
+        """Check if a format is supported."""
+        return ParserRegistry.is_supported(format_name)
+    
+    # =========================================================================
+    # NormCode-specific Methods (Backwards Compatible)
+    # =========================================================================
     
     def parse_ncd(self, ncd_content: str, ncn_content: str = "") -> Dict[str, Any]:
         """
@@ -52,10 +55,15 @@ class ParserService:
         Returns:
             Dict with 'lines' key containing parsed line structures
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser('ncd')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
         
-        return self.parser.parse(ncd_content, ncn_content)
+        result = parser.parse(ncd_content, 'ncd', ncn_content=ncn_content)
+        if not result.success:
+            raise RuntimeError(f"Parse error: {', '.join(result.errors)}")
+        
+        return {"lines": result.lines}
     
     def parse_ncdn(self, ncdn_content: str) -> Dict[str, Any]:
         """
@@ -67,10 +75,15 @@ class ParserService:
         Returns:
             Dict with 'lines' key containing parsed line structures
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser('ncdn')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
         
-        return self.parser.parse_ncdn(ncdn_content)
+        result = parser.parse(ncdn_content, 'ncdn')
+        if not result.success:
+            raise RuntimeError(f"Parse error: {', '.join(result.errors)}")
+        
+        return {"lines": result.lines}
     
     def serialize_to_ncd_ncn(self, parsed_data: Dict[str, Any]) -> Dict[str, str]:
         """
@@ -82,10 +95,17 @@ class ParserService:
         Returns:
             Dict with 'ncd' and 'ncn' keys
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser('ncd')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
         
-        return self.parser.serialize(parsed_data)
+        ncd_result = parser.serialize(parsed_data, 'ncd')
+        ncn_result = parser.serialize(parsed_data, 'ncn')
+        
+        return {
+            "ncd": ncd_result.content if ncd_result.success else "",
+            "ncn": ncn_result.content if ncn_result.success else ""
+        }
     
     def serialize_to_ncdn(self, parsed_data: Dict[str, Any]) -> str:
         """
@@ -97,10 +117,15 @@ class ParserService:
         Returns:
             NCDN formatted string
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser('ncdn')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
         
-        return self.parser.serialize_ncdn(parsed_data)
+        result = parser.serialize(parsed_data, 'ncdn')
+        if not result.success:
+            raise RuntimeError(f"Serialize error: {', '.join(result.errors)}")
+        
+        return result.content
     
     def to_nci(self, parsed_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
@@ -112,10 +137,69 @@ class ParserService:
         Returns:
             List of inference groups
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser('ncd')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
         
-        return self.parser.to_nci(parsed_data)
+        result = parser.serialize(parsed_data, 'nci')
+        if not result.success:
+            raise RuntimeError(f"Serialize error: {', '.join(result.errors)}")
+        
+        # NCI is JSON, need to parse it
+        import json
+        return json.loads(result.content)
+    
+    # =========================================================================
+    # Generic Methods
+    # =========================================================================
+    
+    def parse(self, content: str, format: str, **kwargs) -> Dict[str, Any]:
+        """
+        Parse content of any supported format.
+        
+        Args:
+            content: File content
+            format: Format identifier (e.g., 'ncd', 'json', 'yaml')
+            **kwargs: Format-specific options
+            
+        Returns:
+            Dict with 'lines' key and format-specific data
+        """
+        parser = get_parser(format)
+        if not parser:
+            raise RuntimeError(f"No parser available for format: {format}")
+        
+        result = parser.parse(content, format, **kwargs)
+        if not result.success:
+            raise RuntimeError(f"Parse error: {', '.join(result.errors)}")
+        
+        return {
+            "lines": result.lines,
+            "warnings": result.warnings,
+            "metadata": result.metadata
+        }
+    
+    def serialize(self, parsed_data: Dict[str, Any], source_format: str, target_format: str) -> str:
+        """
+        Serialize parsed data to a target format.
+        
+        Args:
+            parsed_data: Parsed data structure
+            source_format: Original format (to find the right parser)
+            target_format: Target format
+            
+        Returns:
+            Serialized content string
+        """
+        parser = get_parser(source_format)
+        if not parser:
+            raise RuntimeError(f"No parser available for format: {source_format}")
+        
+        result = parser.serialize(parsed_data, target_format)
+        if not result.success:
+            raise RuntimeError(f"Serialize error: {', '.join(result.errors)}")
+        
+        return result.content
     
     def get_flow_indices(self, content: str, file_format: str = "ncd") -> List[Dict[str, Any]]:
         """
@@ -128,15 +212,12 @@ class ParserService:
         Returns:
             List of line dicts with flow_index, content, type, depth
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser(file_format)
+        if not parser:
+            raise RuntimeError(f"No parser available for format: {file_format}")
         
-        if file_format == "ncdn":
-            parsed = self.parser.parse_ncdn(content)
-        else:
-            parsed = self.parser.parse(content, "")
-        
-        return parsed.get('lines', [])
+        result = parser.parse(content, file_format)
+        return result.lines if result.success else []
     
     def convert_format(self, content: str, from_format: str, to_format: str) -> str:
         """
@@ -150,41 +231,51 @@ class ParserService:
         Returns:
             Converted content string
         """
-        if not self.is_available:
-            raise RuntimeError("Parser not available")
+        parser = get_parser(from_format)
+        if not parser:
+            raise RuntimeError(f"No parser available for format: {from_format}")
         
         # Parse the source content
-        if from_format == "ncdn":
-            parsed = self.parser.parse_ncdn(content)
-        elif from_format == "ncd":
-            parsed = self.parser.parse(content, "")
-        elif from_format == "ncn":
-            # NCN alone doesn't have structure, just return as-is or empty
-            parsed = {"lines": []}
-        else:
-            parsed = {"lines": []}
+        parse_result = parser.parse(content, from_format)
+        if not parse_result.success:
+            raise RuntimeError(f"Parse error: {', '.join(parse_result.errors)}")
         
-        # Convert to target format
-        if to_format == "ncd":
-            result = self.parser.serialize(parsed)
-            return result.get('ncd', '')
-        elif to_format == "ncn":
-            result = self.parser.serialize(parsed)
-            return result.get('ncn', '')
-        elif to_format == "ncdn":
-            return self.parser.serialize_ncdn(parsed)
-        elif to_format == "json":
-            import json
-            return json.dumps(parsed, indent=2, ensure_ascii=False)
-        elif to_format == "nci":
-            import json
-            nci = self.parser.to_nci(parsed)
-            return json.dumps(nci, indent=2, ensure_ascii=False)
-        else:
-            raise ValueError(f"Unknown target format: {to_format}")
+        parsed_data = {"lines": parse_result.lines}
+        
+        # Serialize to target format
+        serialize_result = parser.serialize(parsed_data, to_format)
+        if not serialize_result.success:
+            raise RuntimeError(f"Serialize error: {', '.join(serialize_result.errors)}")
+        
+        return serialize_result.content
+    
+    def validate(self, content: str, format: str) -> Dict[str, Any]:
+        """
+        Validate content against format rules.
+        
+        Args:
+            content: File content
+            format: Format identifier
+            
+        Returns:
+            Dict with 'valid', 'errors', 'warnings' keys
+        """
+        parser = get_parser(format)
+        if not parser:
+            return {
+                "valid": False,
+                "errors": [f"No parser available for format: {format}"],
+                "warnings": [],
+                "format": format
+            }
+        
+        return parser.validate(content, format)
 
 
-# Singleton instance
+# =============================================================================
+# Singleton Instance
+# =============================================================================
+
 _parser_service: Optional[ParserService] = None
 
 

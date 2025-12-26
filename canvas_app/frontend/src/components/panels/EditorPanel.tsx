@@ -10,545 +10,49 @@
  * - Tab handling for indentation
  */
 
-import React, { useState, useEffect, useCallback, useRef, KeyboardEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, KeyboardEvent } from 'react';
 import {
   FileText,
   FolderOpen,
-  FolderClosed,
   Save,
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  File,
-  Search,
   X,
-  Code,
-  FileCode,
   Loader2,
-  ChevronRight,
-  ChevronDown,
-  FileJson,
-  FileType,
-  Hash,
-  Database,
-  Plus,
-  Trash2,
   Eye,
-  Minus,
   RotateCw,
   MessageSquare,
-  Download,
-  Copy,
-  FileOutput,
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 
 // Types
-interface FileInfo {
-  name: string;
-  path: string;
-  format: string;
-  size: number;
-  modified: number;
-}
+import type {
+  FileInfo,
+  TreeNode,
+  ValidationResult,
+  ParsedLine,
+  PreviewResponse,
+  EditorMode,
+  ViewMode,
+  EditorViewMode,
+} from '../../types/editor';
 
-interface TreeNode {
-  name: string;
-  path: string;
-  type: 'file' | 'folder';
-  format?: string;
-  size?: number;
-  modified?: number;
-  children?: TreeNode[];
-}
+// API
+import { editorApi } from '../../services/editorApi';
 
-interface FileContent {
-  path: string;
-  content: string;
-  format: string;
-}
+// Config
+import { isNormCodeFormat as checkNormCodeFormat } from '../../config/fileTypes';
 
-interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-  format: string;
-}
+// Components
+import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor } from '../editor';
 
-interface ParsedLine {
-  flow_index: string | null;
-  type: 'main' | 'comment' | 'inline_comment';
-  depth: number;
-  nc_main?: string;
-  nc_comment?: string;
-  ncn_content?: string;
-  // Concept type info
-  inference_marker?: string;  // '<-', '<=', '<*', ':<:', ':>:'
-  concept_type?: string;      // 'object', 'proposition', 'relation', 'subject', 'imperative', 'judgement', 'operator', 'informal'
-  operator_type?: string;     // For operators: 'assigning', 'grouping', 'timing', 'looping'
-  concept_name?: string;      // Extracted concept name
-  warnings?: string[];        // Potential issues detected
-}
+// Paradigm types
+import type { Paradigm, ParsedParadigm } from '../../types/paradigm';
 
-interface ParseResponse {
-  lines: ParsedLine[];
-  parser_available: boolean;
-}
-
-interface PreviewResponse {
-  parser_available: boolean;
-  previews: {
-    ncd?: string;
-    ncn?: string;
-    ncdn?: string;
-    json?: string;
-    nci?: string;
-  };
-}
-
-// Editor modes
-type EditorMode = 'line_by_line' | 'pure_text';
-type ViewMode = 'ncd' | 'ncn';
-type EditorViewMode = 'raw' | 'parsed' | 'preview';
-
-// API functions
-const editorApi = {
-  async readFile(path: string): Promise<FileContent> {
-    const response = await fetch(`/api/editor/file?path=${encodeURIComponent(path)}`);
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to read file');
-    }
-    return response.json();
-  },
-
-  async saveFile(path: string, content: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch('/api/editor/file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, content }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to save file');
-    }
-    return response.json();
-  },
-
-  async listFiles(directory: string, recursive: boolean = false): Promise<{ files: FileInfo[] }> {
-    const endpoint = recursive ? '/api/editor/list-recursive' : '/api/editor/list';
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        directory,
-        extensions: [
-          '.ncd', '.ncn', '.ncdn', '.nc.json', '.nci.json', '.json',
-          '.py', '.md', '.txt', '.yaml', '.yml', '.toml',
-          '.concept.json', '.inference.json', '.ncds'
-        ],
-      }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to list files');
-    }
-    return response.json();
-  },
-
-  async listFilesTree(directory: string): Promise<{ tree: TreeNode[]; total_files: number }> {
-    const response = await fetch('/api/editor/list-tree', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        directory,
-        extensions: [
-          '.ncd', '.ncn', '.ncdn', '.nc.json', '.nci.json', '.json',
-          '.py', '.md', '.txt', '.yaml', '.yml', '.toml',
-          '.concept.json', '.inference.json', '.ncds'
-        ],
-      }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to list files');
-    }
-    return response.json();
-  },
-
-  async validateFile(path: string): Promise<ValidationResult> {
-    const response = await fetch(`/api/editor/validate?path=${encodeURIComponent(path)}`);
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to validate file');
-    }
-    return response.json();
-  },
-
-  async parseContent(content: string, format: string): Promise<ParseResponse> {
-    const response = await fetch('/api/editor/parse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, format }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to parse content');
-    }
-    return response.json();
-  },
-
-  async getPreviews(content: string, format: string): Promise<PreviewResponse> {
-    const response = await fetch('/api/editor/preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, format }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to get previews');
-    }
-    return response.json();
-  },
-
-  async serializeLines(lines: ParsedLine[], format: string): Promise<{ success: boolean; content: string }> {
-    const response = await fetch('/api/editor/lines/serialize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lines, format }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to serialize');
-    }
-    return response.json();
-  },
-
-  async getParserStatus(): Promise<{ available: boolean; message: string }> {
-    const response = await fetch('/api/editor/parser-status');
-    if (!response.ok) {
-      return { available: false, message: 'Failed to check parser status' };
-    }
-    return response.json();
-  },
-};
-
-// Format icon mapping
-const formatIcons: Record<string, React.ReactNode> = {
-  ncd: <FileCode className="w-4 h-4 text-blue-500" />,
-  ncn: <FileText className="w-4 h-4 text-green-500" />,
-  ncdn: <Code className="w-4 h-4 text-purple-500" />,
-  ncds: <Code className="w-4 h-4 text-indigo-500" />,
-  nci: <FileJson className="w-4 h-4 text-red-500" />,
-  'nc-json': <FileJson className="w-4 h-4 text-orange-500" />,
-  concept: <Database className="w-4 h-4 text-cyan-500" />,
-  inference: <Hash className="w-4 h-4 text-pink-500" />,
-  json: <FileJson className="w-4 h-4 text-yellow-500" />,
-  python: <FileType className="w-4 h-4 text-blue-400" />,
-  markdown: <FileText className="w-4 h-4 text-gray-600" />,
-  yaml: <File className="w-4 h-4 text-amber-500" />,
-  toml: <File className="w-4 h-4 text-orange-400" />,
-  text: <FileText className="w-4 h-4 text-gray-400" />,
-};
-
-// Type indicator icons
-const typeIcons: Record<string, { icon: React.ReactNode; label: string }> = {
-  main: { icon: <Code className="w-3 h-3 text-blue-500" />, label: 'Main' },
-  comment: { icon: <MessageSquare className="w-3 h-3 text-gray-400" />, label: 'Comment' },
-  inline_comment: { icon: <MessageSquare className="w-3 h-3 text-yellow-500" />, label: 'Inline' },
-};
-
-// Concept type badges with colors
-const conceptTypeBadges: Record<string, { bg: string; text: string; label: string }> = {
-  object: { bg: 'bg-blue-100', text: 'text-blue-700', label: '{}' },
-  proposition: { bg: 'bg-purple-100', text: 'text-purple-700', label: '<>' },
-  relation: { bg: 'bg-green-100', text: 'text-green-700', label: '[]' },
-  subject: { bg: 'bg-pink-100', text: 'text-pink-700', label: ':S:' },
-  imperative: { bg: 'bg-orange-100', text: 'text-orange-700', label: '::()' },
-  judgement: { bg: 'bg-red-100', text: 'text-red-700', label: '::<>' },
-  operator: { bg: 'bg-cyan-100', text: 'text-cyan-700', label: 'OP' },
-  informal: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: '⚠' },
-  comment: { bg: 'bg-gray-100', text: 'text-gray-500', label: '//' },
-};
-
-// Inference marker badges
-const inferenceMarkerBadges: Record<string, { bg: string; text: string }> = {
-  ':<:': { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  ':>:': { bg: 'bg-teal-100', text: 'text-teal-700' },
-  '<=': { bg: 'bg-amber-100', text: 'text-amber-700' },
-  '<-': { bg: 'bg-sky-100', text: 'text-sky-700' },
-  '<*': { bg: 'bg-violet-100', text: 'text-violet-700' },
-};
-
-// Export panel component for format conversion and downloads
-interface ExportPanelProps {
-  parsedLines: ParsedLine[];
-  selectedFile: string | null;
-  setError: (error: string | null) => void;
-  setSuccessMessage: (msg: string | null) => void;
-}
-
-function ExportPanel({ parsedLines, selectedFile, setError, setSuccessMessage }: ExportPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('ncd');
-  const [previewContent, setPreviewContent] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [exportPath, setExportPath] = useState('');
-  
-  // Generate previews when expanded or tab changes
-  useEffect(() => {
-    if (!isExpanded || parsedLines.length === 0) return;
-    
-    const generatePreview = async () => {
-      setIsLoading(true);
-      try {
-        const result = await editorApi.serializeLines(parsedLines, activeTab);
-        if (result.success) {
-          setPreviewContent(prev => ({ ...prev, [activeTab]: result.content }));
-        }
-      } catch (e) {
-        console.error('Failed to generate preview:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    if (!previewContent[activeTab]) {
-      generatePreview();
-    }
-  }, [isExpanded, activeTab, parsedLines, previewContent]);
-  
-  // Reset previews when parsedLines change
-  useEffect(() => {
-    setPreviewContent({});
-  }, [parsedLines]);
-  
-  // Initialize export path from selected file
-  useEffect(() => {
-    if (selectedFile && !exportPath) {
-      // Replace extension with new format
-      const basePath = selectedFile.replace(/\.[^/.]+$/, '');
-      setExportPath(basePath);
-    }
-  }, [selectedFile, exportPath]);
-  
-  // Copy to clipboard
-  const copyToClipboard = useCallback(async () => {
-    const content = previewContent[activeTab];
-    if (content) {
-      try {
-        await navigator.clipboard.writeText(content);
-        setSuccessMessage(`Copied ${activeTab.toUpperCase()} to clipboard`);
-      } catch {
-        setError('Failed to copy to clipboard');
-      }
-    }
-  }, [activeTab, previewContent, setSuccessMessage, setError]);
-  
-  // Download as file
-  const downloadFile = useCallback(() => {
-    const content = previewContent[activeTab];
-    if (!content) return;
-    
-    const extensions: Record<string, string> = {
-      ncd: '.ncd',
-      ncn: '.ncn',
-      ncdn: '.ncdn',
-      json: '.nc.json',
-      nci: '.nci.json',
-    };
-    
-    const fileName = selectedFile 
-      ? selectedFile.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') + extensions[activeTab]
-      : `export${extensions[activeTab]}`;
-    
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-    setSuccessMessage(`Downloaded ${fileName}`);
-  }, [activeTab, previewContent, selectedFile, setSuccessMessage]);
-  
-  // Save to server
-  const saveToServer = useCallback(async () => {
-    const content = previewContent[activeTab];
-    if (!content || !exportPath) return;
-    
-    const extensions: Record<string, string> = {
-      ncd: '.ncd',
-      ncn: '.ncn',
-      ncdn: '.ncdn',
-      json: '.nc.json',
-      nci: '.nci.json',
-    };
-    
-    const fullPath = exportPath + extensions[activeTab];
-    
-    try {
-      const result = await editorApi.saveFile(fullPath, content);
-      if (result.success) {
-        setSuccessMessage(`Saved to ${fullPath}`);
-      }
-    } catch (e) {
-      setError(`Failed to save: ${e instanceof Error ? e.message : 'Unknown error'}`);
-    }
-  }, [activeTab, previewContent, exportPath, setSuccessMessage, setError]);
-  
-  const formats = ['ncd', 'ncn', 'ncdn', 'json', 'nci'];
-  
-  return (
-    <div className="border-t bg-gray-50">
-      {/* Header - always visible */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-100"
-      >
-        <div className="flex items-center gap-2">
-          <FileOutput className="w-4 h-4" />
-          Export & Format Conversion
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-      </button>
-      
-      {/* Expanded content */}
-      {isExpanded && (
-        <div className="px-4 pb-4 space-y-3">
-          {/* Format tabs */}
-          <div className="flex items-center gap-1 border-b">
-            {formats.map(fmt => (
-              <button
-                key={fmt}
-                onClick={() => setActiveTab(fmt)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-t border-t border-x -mb-px transition-colors ${
-                  activeTab === fmt
-                    ? 'bg-white border-gray-300 text-blue-600'
-                    : 'bg-gray-100 border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {fmt.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          
-          {/* Preview area */}
-          <div className="bg-white border rounded-lg">
-            <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 border-b text-xs text-gray-500 rounded-t-lg">
-              <span>{activeTab.toUpperCase()} Preview</span>
-              <div className="flex items-center gap-1">
-                {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                <button
-                  onClick={copyToClipboard}
-                  disabled={!previewContent[activeTab]}
-                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-50"
-                  title="Copy to clipboard"
-                >
-                  <Copy className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={downloadFile}
-                  disabled={!previewContent[activeTab]}
-                  className="p-1 rounded hover:bg-gray-200 disabled:opacity-50"
-                  title="Download file"
-                >
-                  <Download className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-            <div className="max-h-64 overflow-y-auto overflow-x-auto">
-              <pre className="p-3 font-mono text-xs text-gray-800 whitespace-pre min-w-max">
-                {previewContent[activeTab] || (isLoading ? 'Generating preview...' : 'Click to generate preview')}
-              </pre>
-            </div>
-          </div>
-          
-          {/* Export path and save button */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 whitespace-nowrap">Save as:</span>
-            <input
-              type="text"
-              value={exportPath}
-              onChange={(e) => setExportPath(e.target.value)}
-              placeholder="path/to/file (without extension)"
-              className="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <span className="text-xs text-gray-400">
-              {activeTab === 'json' ? '.nc.json' : activeTab === 'nci' ? '.nci.json' : `.${activeTab}`}
-            </span>
-            <button
-              onClick={saveToServer}
-              disabled={!previewContent[activeTab] || !exportPath}
-              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              <Save className="w-3 h-3" />
-              Save
-            </button>
-          </div>
-          
-          {/* Quick export all formats */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-xs text-gray-500">Quick actions:</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={async () => {
-                  // Generate and download all formats
-                  for (const fmt of formats) {
-                    try {
-                      const result = await editorApi.serializeLines(parsedLines, fmt);
-                      if (result.success) {
-                        setPreviewContent(prev => ({ ...prev, [fmt]: result.content }));
-                      }
-                    } catch (e) {
-                      console.error(`Failed to generate ${fmt}:`, e);
-                    }
-                  }
-                  setSuccessMessage('Generated all format previews');
-                }}
-                className="px-2 py-1 text-xs border rounded hover:bg-white text-gray-600"
-              >
-                Generate All
-              </button>
-              <button
-                onClick={async () => {
-                  // Download all available formats
-                  let downloaded = 0;
-                  for (const [fmt, content] of Object.entries(previewContent)) {
-                    if (content) {
-                      const extensions: Record<string, string> = {
-                        ncd: '.ncd', ncn: '.ncn', ncdn: '.ncdn', json: '.nc.json', nci: '.nci.json',
-                      };
-                      const fileName = selectedFile 
-                        ? selectedFile.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') + extensions[fmt]
-                        : `export${extensions[fmt]}`;
-                      
-                      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = fileName;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                      downloaded++;
-                    }
-                  }
-                  if (downloaded > 0) {
-                    setSuccessMessage(`Downloaded ${downloaded} file(s)`);
-                  }
-                }}
-                disabled={Object.keys(previewContent).length === 0}
-                className="px-2 py-1 text-xs border rounded hover:bg-white text-gray-600 disabled:opacity-50"
-              >
-                Download All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+// =============================================================================
+// EditorPanel Component
+// =============================================================================
 
 export function EditorPanel() {
   // Get project path from store
@@ -592,9 +96,6 @@ export function EditorPanel() {
   const [showNaturalLanguage, setShowNaturalLanguage] = useState(true);
   const [collapsedIndices, setCollapsedIndices] = useState<Set<string>>(new Set());
   
-  // Delete confirmation state
-  const [deleteConfirmations, setDeleteConfirmations] = useState<Set<number>>(new Set());
-  
   // Preview state
   const [previews, setPreviews] = useState<PreviewResponse['previews']>({});
   const [previewTab, setPreviewTab] = useState<string>('ncd');
@@ -603,9 +104,20 @@ export function EditorPanel() {
   const [textEditorKey, setTextEditorKey] = useState(0);
   const [pendingText, setPendingText] = useState<string | null>(null);
   
+  // Paradigm editor state
+  const [isParadigmFile, setIsParadigmFile] = useState(false);
+  const [paradigm, setParadigm] = useState<Paradigm | null>(null);
+  const [parsedParadigm, setParsedParadigm] = useState<ParsedParadigm | null>(null);
+  
   const initialLoadDone = useRef(false);
 
-  // Clear messages after timeout
+  // Check if current file is NormCode format
+  const isNormCodeFormat = checkNormCodeFormat(fileFormat);
+
+  // ==========================================================================
+  // Message handling
+  // ==========================================================================
+  
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(null), 3000);
@@ -625,7 +137,10 @@ export function EditorPanel() {
     setIsModified(fileContent !== originalContent);
   }, [fileContent, originalContent]);
 
-  // Load files from directory
+  // ==========================================================================
+  // File browser operations
+  // ==========================================================================
+
   const loadFiles = useCallback(async (dir?: string) => {
     const targetDir = dir || directoryPath;
     if (!targetDir.trim()) return;
@@ -665,7 +180,22 @@ export function EditorPanel() {
     }
   }, [projectPath, loadFiles]);
 
-  // Load a specific file
+  const toggleFolder = useCallback((folderPath: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folderPath)) {
+        next.delete(folderPath);
+      } else {
+        next.add(folderPath);
+      }
+      return next;
+    });
+  }, []);
+
+  // ==========================================================================
+  // File operations
+  // ==========================================================================
+
   const loadFile = useCallback(async (path: string) => {
     setIsLoading(true);
     setError(null);
@@ -682,8 +212,87 @@ export function EditorPanel() {
       setCollapsedIndices(new Set());
       setTextEditorKey(prev => prev + 1);
       
-      // Auto-parse for NormCode files
-      if (['ncd', 'ncn', 'ncdn', 'ncds'].includes(result.format)) {
+      // Reset paradigm state
+      setIsParadigmFile(false);
+      setParadigm(null);
+      setParsedParadigm(null);
+      
+      // Check if this is a paradigm file
+      const isParadigm = editorApi.isParadigmFilename(path) || editorApi.isParadigmContent(result.content);
+      
+      if (isParadigm && result.format === 'json') {
+        setIsParadigmFile(true);
+        
+        try {
+          // Parse as paradigm
+          const paradigmData = JSON.parse(result.content) as Paradigm;
+          setParadigm(paradigmData);
+          
+          // Get parsed structure for editor
+          const parseResult = await editorApi.parseParadigm(result.content);
+          if (parseResult.success) {
+            // Build parsed paradigm structure from metadata
+            const meta = parseResult.metadata as {
+              description?: string;
+              inputs?: Array<{ name: string; description: string; type: 'vertical' | 'horizontal' }>;
+              output_type?: string;
+              output_description?: string;
+              tools?: Array<{
+                index: number;
+                tool_name: string;
+                affordances: Array<{
+                  index: number;
+                  tool_name: string;
+                  affordance_name: string;
+                  call_code: string;
+                  full_id: string;
+                }>;
+              }>;
+              all_affordances?: Array<{
+                index: number;
+                tool_name: string;
+                affordance_name: string;
+                call_code: string;
+                full_id: string;
+              }>;
+              steps?: Array<{
+                index: number;
+                step_index: number;
+                affordance: string;
+                tool_name: string;
+                affordance_name: string;
+                params: Record<string, unknown>;
+                result_key: string;
+                has_composition_plan: boolean;
+                composition_steps: Array<{
+                  index: number;
+                  output_key: string;
+                  function_ref: string;
+                  params: Array<{ name: string; value: string; is_literal: boolean }>;
+                }>;
+              }>;
+              composition_step_index?: number | null;
+            };
+            
+            setParsedParadigm({
+              description: meta.description || '',
+              inputs: meta.inputs || [],
+              output_type: meta.output_type || '',
+              output_description: meta.output_description || '',
+              tools: meta.tools || [],
+              all_affordances: meta.all_affordances || [],
+              steps: meta.steps || [],
+              composition_step_index: meta.composition_step_index ?? null,
+              errors: parseResult.errors,
+              warnings: parseResult.warnings,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to parse paradigm:', e);
+          setIsParadigmFile(false);
+        }
+      } else if (['ncd', 'ncn', 'ncdn', 'ncds'].includes(result.format)) {
+        // Auto-parse for NormCode files
         const parseResult = await editorApi.parseContent(result.content, result.format);
         setParsedLines(parseResult.lines);
         setParserAvailable(parseResult.parser_available);
@@ -695,7 +304,6 @@ export function EditorPanel() {
     }
   }, []);
 
-  // Parse current content
   const parseContent = useCallback(async () => {
     if (!fileContent) return;
     
@@ -712,7 +320,6 @@ export function EditorPanel() {
     }
   }, [fileContent, fileFormat]);
 
-  // Save current file
   const saveFile = useCallback(async () => {
     if (!selectedFile) return;
     
@@ -747,7 +354,17 @@ export function EditorPanel() {
     }
   }, [selectedFile, fileContent, parsedLines, fileFormat]);
 
-  // Validate current file
+  const reloadFile = useCallback(async () => {
+    if (!selectedFile) return;
+    
+    if (isModified) {
+      const confirm = window.confirm('You have unsaved changes. Discard them and reload?');
+      if (!confirm) return;
+    }
+    
+    await loadFile(selectedFile);
+  }, [selectedFile, isModified, loadFile]);
+
   const validateFile = useCallback(async () => {
     if (!selectedFile) return;
     
@@ -759,7 +376,6 @@ export function EditorPanel() {
     }
   }, [selectedFile]);
 
-  // Load previews
   const loadPreviews = useCallback(async () => {
     if (!fileContent) return;
     
@@ -785,56 +401,10 @@ export function EditorPanel() {
     }
   }, [editorViewMode, parseContent, loadPreviews, fileContent, parsedLines.length]);
 
-  // Reload current file
-  const reloadFile = useCallback(async () => {
-    if (!selectedFile) return;
-    
-    if (isModified) {
-      const confirm = window.confirm('You have unsaved changes. Discard them and reload?');
-      if (!confirm) return;
-    }
-    
-    await loadFile(selectedFile);
-  }, [selectedFile, isModified, loadFile]);
-
-  // Toggle folder expansion
-  const toggleFolder = useCallback((folderPath: string) => {
-    setExpandedFolders(prev => {
-      const next = new Set(prev);
-      if (next.has(folderPath)) {
-        next.delete(folderPath);
-      } else {
-        next.add(folderPath);
-      }
-      return next;
-    });
-  }, []);
-
-  // Filter tree nodes by search query
-  const filterTreeNodes = useCallback((nodes: TreeNode[], query: string): TreeNode[] => {
-    if (!query) return nodes;
-    
-    return nodes.reduce<TreeNode[]>((acc, node) => {
-      if (node.type === 'folder') {
-        const filteredChildren = filterTreeNodes(node.children || [], query);
-        if (filteredChildren.length > 0) {
-          acc.push({ ...node, children: filteredChildren });
-        }
-      } else {
-        if (node.name.toLowerCase().includes(query.toLowerCase())) {
-          acc.push(node);
-        }
-      }
-      return acc;
-    }, []);
-  }, []);
-
-  const filteredTree = filterTreeNodes(fileTree, searchQuery);
-  const filteredFiles = files.filter(f => 
-    f.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  // ==========================================================================
   // Line operations
+  // ==========================================================================
+
   const updateLine = useCallback((lineIndex: number, field: string, value: string) => {
     setParsedLines(prev => {
       const updated = [...prev];
@@ -883,15 +453,9 @@ export function EditorPanel() {
       updated.splice(lineIndex, 1);
       return updated;
     });
-    setDeleteConfirmations(prev => {
-      const next = new Set(prev);
-      next.delete(lineIndex);
-      return next;
-    });
     setIsModified(true);
   }, []);
 
-  // Toggle line view mode
   const toggleLineViewMode = useCallback((lineIndex: number) => {
     setLineViewModes(prev => ({
       ...prev,
@@ -899,7 +463,6 @@ export function EditorPanel() {
     }));
   }, []);
 
-  // Toggle collapse for a flow index
   const toggleCollapse = useCallback((flowIndex: string) => {
     setCollapsedIndices(prev => {
       const next = new Set(prev);
@@ -923,16 +486,120 @@ export function EditorPanel() {
     return false;
   }, [collapsedIndices]);
 
-  // Check if line has children
-  const hasChildren = useCallback((flowIndex: string | null): boolean => {
-    if (!flowIndex) return false;
-    return parsedLines.some(line => 
-      line.flow_index && line.flow_index.startsWith(flowIndex + '.') && line.type === 'main'
-    );
-  }, [parsedLines]);
+  // ==========================================================================
+  // Paradigm operations
+  // ==========================================================================
 
-  // Handle Tab key in text areas - with special handling for flow index separator
-  // The separator " │ " is used in pure text mode to prefix lines with flow indices
+  const handleParadigmUpdate = useCallback((updatedParadigm: Paradigm) => {
+    setParadigm(updatedParadigm);
+    setFileContent(JSON.stringify(updatedParadigm, null, 2));
+    setIsModified(true);
+  }, []);
+
+  const handleParsedParadigmUpdate = useCallback((updatedParsed: ParsedParadigm) => {
+    setParsedParadigm(updatedParsed);
+    setIsModified(true);
+    
+    // Reconstruct paradigm from parsed data
+    if (paradigm) {
+      const newParadigm: Paradigm = {
+        metadata: {
+          description: updatedParsed.description,
+          inputs: {
+            vertical: Object.fromEntries(
+              updatedParsed.inputs
+                .filter(i => i.type === 'vertical')
+                .map(i => [i.name, i.description])
+            ),
+            horizontal: Object.fromEntries(
+              updatedParsed.inputs
+                .filter(i => i.type === 'horizontal')
+                .map(i => [i.name, i.description])
+            ),
+          },
+          outputs: {
+            type: updatedParsed.output_type,
+            description: updatedParsed.output_description,
+          },
+        },
+        env_spec: {
+          tools: updatedParsed.tools.map(t => ({
+            tool_name: t.tool_name,
+            affordances: t.affordances.map(a => ({
+              affordance_name: a.affordance_name,
+              call_code: a.call_code,
+            })),
+          })),
+        },
+        sequence_spec: {
+          steps: updatedParsed.steps.map(s => {
+            const step: Record<string, unknown> = {
+              step_index: s.step_index,
+              affordance: s.affordance,
+              params: { ...s.params },
+              result_key: s.result_key,
+            };
+            
+            // Rebuild composition plan if present
+            if (s.has_composition_plan && s.composition_steps.length > 0) {
+              const plan = s.composition_steps.map(cs => {
+                const planStep: Record<string, unknown> = {
+                  output_key: cs.output_key,
+                  function: { __type__: 'MetaValue', key: cs.function_ref },
+                  params: {},
+                };
+                
+                const literalParams: Record<string, unknown> = {};
+                
+                for (const param of cs.params) {
+                  if (param.is_literal) {
+                    try {
+                      literalParams[param.name] = JSON.parse(param.value);
+                    } catch {
+                      literalParams[param.name] = param.value;
+                    }
+                  } else {
+                    (planStep.params as Record<string, string>)[param.name] = param.value;
+                  }
+                }
+                
+                if (Object.keys(literalParams).length > 0) {
+                  planStep.literal_params = literalParams;
+                }
+                
+                return planStep;
+              });
+              
+              (step.params as Record<string, unknown>).plan = plan;
+              (step.params as Record<string, unknown>).return_key = s.params.return_key || 'result';
+            }
+            
+            return step;
+          }),
+        },
+      };
+      
+      setParadigm(newParadigm as Paradigm);
+      setFileContent(JSON.stringify(newParadigm, null, 2));
+    }
+  }, [paradigm]);
+
+  // Get visible lines count
+  const getVisibleLinesCount = useCallback(() => {
+    let count = 0;
+    for (const line of parsedLines) {
+      if (!showComments && (line.type === 'comment' || line.type === 'inline_comment')) continue;
+      if (isLineCollapsed(line.flow_index)) continue;
+      count++;
+    }
+    return count;
+  }, [parsedLines, showComments, isLineCollapsed]);
+
+  // ==========================================================================
+  // Text editor helpers
+  // ==========================================================================
+
+  // Handle Tab key in text areas
   const handleTextAreaKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== 'Tab') return;
     
@@ -944,10 +611,8 @@ export function EditorPanel() {
     const end = target.selectionEnd;
     const value = target.value;
     
-    // Flow index separator used in pure text mode
     const SEP = ' │ ';
     
-    // Find line boundaries
     const beforeSel = value.substring(0, start);
     const lineStart = beforeSel.lastIndexOf('\n') + 1;
     const lineEnd = value.indexOf('\n', end);
@@ -959,17 +624,15 @@ export function EditorPanel() {
     let firstLineChange = 0;
     
     if (e.shiftKey) {
-      // Shift+Tab: Unindent content after separator (or from beginning if no separator)
+      // Unindent
       const newLines = lines.map((line, idx) => {
         let change = 0;
         const sepIdx = line.indexOf(SEP);
         
         if (sepIdx >= 0) {
-          // Has separator - unindent content after it
           const prefix = line.substring(0, sepIdx + SEP.length);
           let content = line.substring(sepIdx + SEP.length);
           
-          // Remove leading spaces from content
           if (content.startsWith('    ')) { content = content.substring(4); change = 4; }
           else if (content.startsWith('\t')) { content = content.substring(1); change = 1; }
           else if (content.startsWith('   ')) { content = content.substring(3); change = 3; }
@@ -978,7 +641,6 @@ export function EditorPanel() {
           
           line = prefix + content;
         } else {
-          // No separator - unindent from beginning
           if (line.startsWith('    ')) { line = line.substring(4); change = 4; }
           else if (line.startsWith('\t')) { line = line.substring(1); change = 1; }
           else if (line.startsWith('   ')) { line = line.substring(3); change = 3; }
@@ -996,23 +658,19 @@ export function EditorPanel() {
       target.selectionStart = Math.max(lineStart, start - firstLineChange);
       target.selectionEnd = Math.max(target.selectionStart, end - totalChange);
     } else {
-      // Tab: Indent content after separator (or at beginning if no separator)
+      // Indent
       if (start === end) {
-        // No selection - just insert 4 spaces at cursor
         target.value = value.substring(0, start) + '    ' + value.substring(end);
         target.selectionStart = target.selectionEnd = start + 4;
       } else {
-        // Selection - indent content after separator on each line
         const newLines = lines.map((line) => {
           const sepIdx = line.indexOf(SEP);
           
           if (sepIdx >= 0) {
-            // Has separator - add spaces after it
             const prefix = line.substring(0, sepIdx + SEP.length);
             const content = line.substring(sepIdx + SEP.length);
             return prefix + '    ' + content;
           } else {
-            // No separator - add spaces at beginning
             return '    ' + line;
           }
         });
@@ -1028,8 +686,7 @@ export function EditorPanel() {
     target.dispatchEvent(event);
   }, []);
 
-  // Strip flow index prefixes from pure text before parsing
-  // Format: "flow_index │ content" -> "content"
+  // Strip flow index prefixes from pure text
   const stripFlowPrefixes = useCallback((text: string): string => {
     const SEP = ' │ ';
     const lines = text.split('\n');
@@ -1037,7 +694,6 @@ export function EditorPanel() {
     const strippedLines = lines.map(line => {
       const sepIdx = line.indexOf(SEP);
       if (sepIdx >= 0) {
-        // Extract only the content after the separator
         return line.substring(sepIdx + SEP.length);
       }
       return line;
@@ -1045,89 +701,6 @@ export function EditorPanel() {
     
     return strippedLines.join('\n');
   }, []);
-
-  // Render a tree node recursively
-  const renderTreeNode = useCallback((node: TreeNode, depth: number = 0) => {
-    const isFolder = node.type === 'folder';
-    const isExpanded = expandedFolders.has(node.path);
-    const isSelected = selectedFile === node.path;
-    
-    return (
-      <div key={node.path}>
-        <button
-          onClick={() => isFolder ? toggleFolder(node.path) : loadFile(node.path)}
-          className={`w-full text-left flex items-center gap-1.5 py-1 px-2 hover:bg-gray-100 text-sm
-            ${isSelected ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
-          style={{ paddingLeft: `${8 + depth * 16}px` }}
-        >
-          {isFolder ? (
-            <>
-              {isExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-              )}
-              {isExpanded ? (
-                <FolderOpen className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              ) : (
-                <FolderClosed className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              )}
-            </>
-          ) : (
-            <>
-              <span className="w-3.5 flex-shrink-0" />
-              {formatIcons[node.format || 'text'] || formatIcons.text}
-            </>
-          )}
-          <span className="truncate flex-1" title={node.name}>
-            {node.name}
-          </span>
-          {!isFolder && node.size !== undefined && (
-            <span className="text-xs text-gray-400 flex-shrink-0">
-              {node.size < 1024 
-                ? `${node.size}B`
-                : `${(node.size / 1024).toFixed(1)}KB`
-              }
-            </span>
-          )}
-        </button>
-        {isFolder && isExpanded && node.children && (
-          <div>
-            {node.children.map(child => renderTreeNode(child, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
-  }, [expandedFolders, selectedFile, toggleFolder, loadFile]);
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 's') {
-          e.preventDefault();
-          saveFile();
-        }
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [saveFile]);
-
-  // Check if file is a NormCode format
-  const isNormCodeFormat = ['ncd', 'ncn', 'ncdn', 'ncds'].includes(fileFormat);
-
-  // Get visible lines count
-  const getVisibleLinesCount = useCallback(() => {
-    let count = 0;
-    for (const line of parsedLines) {
-      if (!showComments && (line.type === 'comment' || line.type === 'inline_comment')) continue;
-      if (isLineCollapsed(line.flow_index)) continue;
-      count++;
-    }
-    return count;
-  }, [parsedLines, showComments, isLineCollapsed]);
 
   // Generate pure text with flow prefixes
   const generatePureText = useCallback(() => {
@@ -1159,6 +732,28 @@ export function EditorPanel() {
     
     return lines.join('\n');
   }, [parsedLines, showComments, showNaturalLanguage, isLineCollapsed]);
+
+  // ==========================================================================
+  // Keyboard shortcuts
+  // ==========================================================================
+
+  useEffect(() => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 's') {
+          e.preventDefault();
+          saveFile();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [saveFile]);
+
+  // ==========================================================================
+  // Render
+  // ==========================================================================
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -1243,124 +838,23 @@ export function EditorPanel() {
       <div className="flex-1 flex min-h-0">
         {/* File browser sidebar */}
         {showFileBrowser && (
-          <div className="w-72 bg-white border-r flex flex-col">
-            <div className="p-3 border-b space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={directoryPath}
-                  onChange={(e) => setDirectoryPath(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && loadFiles()}
-                  placeholder="Enter directory path..."
-                  className="flex-1 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={() => loadFiles()}
-                  disabled={isLoading || !directoryPath.trim()}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Load
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setUseTreeView(!useTreeView)}
-                  className={`px-2 py-1 text-xs rounded border ${
-                    useTreeView 
-                      ? 'bg-blue-50 border-blue-300 text-blue-600'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                  }`}
-                  title={useTreeView ? 'Tree view' : 'Flat list view'}
-                >
-                  {useTreeView ? <FolderOpen className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-                </button>
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Filter files..."
-                    className="w-full pl-8 pr-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {searchQuery && (
-                    <button 
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto">
-              {isLoading && fileTree.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  Loading files...
-                </div>
-              ) : useTreeView ? (
-                filteredTree.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 text-sm">
-                    {fileTree.length === 0 
-                      ? 'Enter a directory path and click Load'
-                      : 'No matching files found'
-                    }
-                  </div>
-                ) : (
-                  <div className="py-1">
-                    {filteredTree.map(node => renderTreeNode(node, 0))}
-                  </div>
-                )
-              ) : (
-                filteredFiles.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 text-sm">
-                    {files.length === 0 
-                      ? 'Enter a directory path and click Load'
-                      : 'No matching files found'
-                    }
-                  </div>
-                ) : (
-                  <div className="py-1">
-                    {filteredFiles.map((file) => (
-                      <button
-                        key={file.path}
-                        onClick={() => loadFile(file.path)}
-                        className={`w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-gray-100 text-sm
-                          ${selectedFile === file.path ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
-                      >
-                        {formatIcons[file.format] || formatIcons.text}
-                        <span className="truncate flex-1 text-xs" title={file.name}>
-                          {file.name}
-                        </span>
-                        <span className="text-xs text-gray-400 flex-shrink-0">
-                          {(file.size / 1024).toFixed(1)}KB
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )
-              )}
-            </div>
-            
-            {totalFiles > 0 && (
-              <div className="p-2 border-t text-xs text-gray-500 text-center flex items-center justify-center gap-2">
-                <span>{searchQuery ? filteredFiles.length + ' matching /' : ''} {totalFiles} files</span>
-                {useTreeView && (
-                  <button
-                    onClick={() => setExpandedFolders(new Set())}
-                    className="text-blue-500 hover:underline"
-                    title="Collapse all folders"
-                  >
-                    collapse
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          <FileBrowser
+            directoryPath={directoryPath}
+            onDirectoryChange={setDirectoryPath}
+            onLoadFiles={() => loadFiles()}
+            fileTree={fileTree}
+            files={files}
+            totalFiles={totalFiles}
+            expandedFolders={expandedFolders}
+            onToggleFolder={toggleFolder}
+            selectedFile={selectedFile}
+            onSelectFile={loadFile}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            useTreeView={useTreeView}
+            onToggleTreeView={() => setUseTreeView(!useTreeView)}
+            isLoading={isLoading}
+          />
         )}
 
         {/* Editor area */}
@@ -1370,8 +864,12 @@ export function EditorPanel() {
               {/* Editor toolbar */}
               <div className="bg-gray-100 px-4 py-2 flex items-center justify-between border-b">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-200 text-gray-700 uppercase">
-                    {fileFormat}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded uppercase ${
+                    isParadigmFile 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {isParadigmFile ? 'paradigm' : fileFormat}
                   </span>
                   
                   {/* Editor mode toggle for NormCode files */}
@@ -1541,187 +1039,30 @@ export function EditorPanel() {
               
               {/* Editor content area */}
               <div className="flex-1 min-h-0 overflow-hidden">
-                {isNormCodeFormat && parsedLines.length > 0 ? (
+                {/* Paradigm Editor */}
+                {isParadigmFile && paradigm && parsedParadigm ? (
+                  <ParadigmEditor
+                    paradigm={paradigm}
+                    parsed={parsedParadigm}
+                    onUpdate={handleParadigmUpdate}
+                    onParsedUpdate={handleParsedParadigmUpdate}
+                  />
+                ) : isNormCodeFormat && parsedLines.length > 0 ? (
                   editorMode === 'line_by_line' ? (
                     /* Line-by-line editor */
-                    <div className="h-full overflow-auto bg-white">
-                      {/* Add line at top button */}
-                      <div className="sticky top-0 bg-gray-50 border-b px-3 py-1">
-                        <button
-                          onClick={() => addLineAfter(-1)}
-                          className="flex items-center gap-1 px-2 py-1 text-xs rounded border hover:bg-white text-gray-600"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add line at top
-                        </button>
-                      </div>
-                      
-                      <table className="w-full text-sm font-mono">
-                        <thead className="bg-gray-50 sticky top-8">
-                          <tr className="text-left text-xs text-gray-500">
-                            <th className="px-2 py-2 w-20 border-b">Flow</th>
-                            <th className="px-2 py-2 w-24 border-b">Concept</th>
-                            <th className="px-2 py-2 w-20 border-b">Actions</th>
-                            <th className="px-2 py-2 border-b">Content</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {parsedLines.map((line, idx) => {
-                            // Apply filters
-                            if (!showComments && (line.type === 'comment' || line.type === 'inline_comment')) {
-                              return null;
-                            }
-                            if (isLineCollapsed(line.flow_index)) {
-                              return null;
-                            }
-                            
-                            const lineViewMode = lineViewModes[idx] || defaultViewMode;
-                            const lineHasChildren = hasChildren(line.flow_index);
-                            const isCollapsed = line.flow_index ? collapsedIndices.has(line.flow_index) : false;
-                            
-                            return (
-                              <tr key={idx} className="hover:bg-gray-50 border-b border-gray-100 group">
-                                {/* Flow index */}
-                                <td className="px-2 py-1">
-                                  <input
-                                    type="text"
-                                    value={line.flow_index || ''}
-                                    onChange={(e) => updateLine(idx, 'flow_index', e.target.value)}
-                                    className="w-full px-1 py-0.5 text-xs text-blue-600 font-medium bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none rounded"
-                                  />
-                                </td>
-                                
-                                {/* Type indicator with concept type badge */}
-                                <td className="px-2 py-1">
-                                  <div className="flex items-center gap-1 flex-wrap">
-                                    {/* Inference marker badge */}
-                                    {line.inference_marker && inferenceMarkerBadges[line.inference_marker] && (
-                                      <span className={`px-1 py-0.5 rounded text-[9px] font-mono ${inferenceMarkerBadges[line.inference_marker].bg} ${inferenceMarkerBadges[line.inference_marker].text}`}>
-                                        {line.inference_marker}
-                                      </span>
-                                    )}
-                                    {/* Concept type badge */}
-                                    {line.concept_type && conceptTypeBadges[line.concept_type] && (
-                                      <span 
-                                        className={`px-1 py-0.5 rounded text-[9px] font-medium ${conceptTypeBadges[line.concept_type].bg} ${conceptTypeBadges[line.concept_type].text}`}
-                                        title={`${line.concept_type}${line.operator_type ? ` (${line.operator_type})` : ''}${line.concept_name ? `: ${line.concept_name}` : ''}`}
-                                      >
-                                        {conceptTypeBadges[line.concept_type].label}
-                                      </span>
-                                    )}
-                                    {/* Warning indicator */}
-                                    {line.warnings && line.warnings.length > 0 && (
-                                      <span 
-                                        className="text-yellow-600" 
-                                        title={line.warnings.join('\n')}
-                                      >
-                                        <AlertCircle className="w-3 h-3" />
-                                      </span>
-                                    )}
-                                    {/* Fallback type icon for non-main lines */}
-                                    {!line.concept_type && line.type !== 'main' && typeIcons[line.type]?.icon}
-                                  </div>
-                                </td>
-                                
-                                {/* Actions */}
-                                <td className="px-2 py-1">
-                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {line.type === 'main' && (
-                                      <button
-                                        onClick={() => toggleLineViewMode(idx)}
-                                        className={`p-0.5 rounded text-[10px] ${
-                                          lineViewMode === 'ncd' 
-                                            ? 'bg-blue-100 text-blue-600' 
-                                            : 'bg-green-100 text-green-600'
-                                        }`}
-                                        title={`Switch to ${lineViewMode === 'ncd' ? 'NCN' : 'NCD'}`}
-                                      >
-                                        {lineViewMode.toUpperCase()}
-                                      </button>
-                                    )}
-                                    {lineHasChildren && (
-                                      <button
-                                        onClick={() => line.flow_index && toggleCollapse(line.flow_index)}
-                                        className="p-0.5 rounded hover:bg-gray-200"
-                                        title={isCollapsed ? 'Expand' : 'Collapse'}
-                                      >
-                                        {isCollapsed ? (
-                                          <Plus className="w-3 h-3 text-gray-500" />
-                                        ) : (
-                                          <Minus className="w-3 h-3 text-gray-500" />
-                                        )}
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() => addLineAfter(idx)}
-                                      className="p-0.5 rounded hover:bg-gray-200"
-                                      title="Add line after"
-                                    >
-                                      <Plus className="w-3 h-3 text-green-600" />
-                                    </button>
-                                    {deleteConfirmations.has(idx) ? (
-                                      <button
-                                        onClick={() => deleteLine(idx)}
-                                        className="p-0.5 rounded bg-red-100 text-red-600"
-                                        title="Click again to confirm delete"
-                                      >
-                                        <AlertCircle className="w-3 h-3" />
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => setDeleteConfirmations(prev => new Set(prev).add(idx))}
-                                        className="p-0.5 rounded hover:bg-red-100"
-                                        title="Delete line"
-                                      >
-                                        <Trash2 className="w-3 h-3 text-red-500" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
-                                
-                                {/* Content */}
-                                <td className="px-2 py-1" style={{ paddingLeft: `${8 + line.depth * 16}px` }}>
-                                  {line.type === 'main' ? (
-                                    lineViewMode === 'ncd' ? (
-                                      <div className="space-y-1">
-                                        <input
-                                          type="text"
-                                          value={line.nc_main || ''}
-                                          onChange={(e) => updateLine(idx, 'nc_main', e.target.value)}
-                                          className="w-full px-2 py-1 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none rounded"
-                                          placeholder="(empty)"
-                                        />
-                                        {showNaturalLanguage && line.ncn_content && (
-                                          <div className="text-[10px] text-green-600 pl-4 italic">
-                                            → {line.ncn_content}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        value={line.ncn_content || ''}
-                                        onChange={(e) => updateLine(idx, 'ncn_content', e.target.value)}
-                                        className="w-full px-2 py-1 text-xs text-green-700 bg-green-50 border border-transparent hover:border-green-300 focus:border-green-500 focus:outline-none rounded"
-                                        placeholder="(no natural language)"
-                                      />
-                                    )
-                                  ) : (
-                                    <input
-                                      type="text"
-                                      value={line.nc_comment || ''}
-                                      onChange={(e) => updateLine(idx, 'nc_comment', e.target.value)}
-                                      className="w-full px-2 py-1 text-xs text-gray-500 bg-gray-50 border border-transparent hover:border-gray-300 focus:border-gray-400 focus:outline-none rounded italic"
-                                      placeholder="(comment)"
-                                    />
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    <NormCodeLineEditor
+                      parsedLines={parsedLines}
+                      defaultViewMode={defaultViewMode}
+                      lineViewModes={lineViewModes}
+                      showComments={showComments}
+                      showNaturalLanguage={showNaturalLanguage}
+                      collapsedIndices={collapsedIndices}
+                      onUpdateLine={updateLine}
+                      onAddLine={addLineAfter}
+                      onDeleteLine={deleteLine}
+                      onToggleLineViewMode={toggleLineViewMode}
+                      onToggleCollapse={toggleCollapse}
+                    />
                   ) : (
                     /* Pure text editor */
                     <div className="h-full flex flex-col">
@@ -1747,11 +1088,8 @@ export function EditorPanel() {
                         <button
                           onClick={async () => {
                             if (pendingText) {
-                              // Strip flow index prefixes before parsing
-                              // The pure text mode adds "flow_idx │ content" prefixes for display
                               const contentOnly = stripFlowPrefixes(pendingText);
                               
-                              // Re-parse the stripped text
                               try {
                                 const result = await editorApi.parseContent(contentOnly, 'ncdn');
                                 setParsedLines(result.lines);
@@ -1833,8 +1171,8 @@ export function EditorPanel() {
                 <ExportPanel 
                   parsedLines={parsedLines}
                   selectedFile={selectedFile}
-                  setError={setError}
-                  setSuccessMessage={setSuccessMessage}
+                  onError={setError}
+                  onSuccess={setSuccessMessage}
                 />
               )}
               

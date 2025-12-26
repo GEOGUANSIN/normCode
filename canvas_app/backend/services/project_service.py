@@ -1,10 +1,19 @@
-"""Project management service for project-based canvas."""
-import json
+"""
+Project management service for project-based canvas.
+
+This module provides the main ProjectService facade that delegates to
+modular sub-services for specific functionality:
+- ProjectConfigService: CRUD operations for project configs
+- ProjectRegistryService: Persistent registry of known projects
+- ProjectTabsService: Multi-project tab state management
+
+For backwards compatibility, this module exports the same API as before.
+"""
+
 import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Tuple
-import os
 
 from schemas.project_schemas import (
     ProjectConfig,
@@ -12,8 +21,6 @@ from schemas.project_schemas import (
     ExecutionSettings,
     RegisteredProject,
     ProjectRegistry,
-    RecentProject,
-    RecentProjectsConfig,
     OpenProjectInstance,
     PROJECT_CONFIG_SUFFIX,
     LEGACY_PROJECT_CONFIG_FILE,
@@ -22,308 +29,87 @@ from schemas.project_schemas import (
     generate_project_id,
 )
 
+# Import from modular sub-services
+from .project.discovery import (
+    SKIP_DIRS,
+    MAX_SEARCH_DEPTH,
+    DiscoveredPaths,
+    discover_files_recursive,
+    discover_paradigm_directories,
+    discover_project_paths,
+)
+from .project.config_service import ProjectConfigService
+from .project.registry_service import ProjectRegistryService, get_app_data_dir
+from .project.tabs_service import ProjectTabsService
+
 logger = logging.getLogger(__name__)
 
-# Directories to skip during file discovery
-SKIP_DIRS = {
-    '.git', '.svn', '.hg', '__pycache__', 'node_modules', '.venv', 'venv',
-    '.idea', '.vscode', '.cursor', 'dist', 'build', '.tox', '.pytest_cache',
-    '.mypy_cache', '.ruff_cache', 'egg-info', '.eggs', '.conda',
-}
-
-# Max depth for recursive file search
-MAX_SEARCH_DEPTH = 5
-
-
-def get_app_data_dir() -> Path:
-    """Get the application data directory for storing recent projects etc."""
-    # Use user's home directory / .normcode-canvas
-    app_data = Path.home() / ".normcode-canvas"
-    app_data.mkdir(parents=True, exist_ok=True)
-    return app_data
-
-
-def discover_files_recursive(
-    root_dir: Path,
-    patterns: List[str],
-    max_depth: int = MAX_SEARCH_DEPTH,
-    skip_dirs: set = SKIP_DIRS,
-) -> List[Path]:
-    """
-    Recursively search for files matching patterns within a directory.
-    
-    Args:
-        root_dir: Directory to start search from
-        patterns: List of glob patterns to match (e.g., ['*.concept.json', 'concepts.json'])
-        max_depth: Maximum directory depth to search
-        skip_dirs: Set of directory names to skip
-        
-    Returns:
-        List of matching file paths, sorted by depth (shallower first)
-    """
-    found = []
-    
-    def _search(current_dir: Path, depth: int):
-        if depth > max_depth:
-            return
-        
-        try:
-            for item in current_dir.iterdir():
-                if item.is_file():
-                    for pattern in patterns:
-                        if item.match(pattern):
-                            found.append(item)
-                            break
-                elif item.is_dir() and item.name not in skip_dirs:
-                    _search(item, depth + 1)
-        except PermissionError:
-            pass  # Skip directories we can't access
-    
-    _search(root_dir, 0)
-    
-    # Sort by path depth (shallower = better), then alphabetically
-    found.sort(key=lambda p: (len(p.relative_to(root_dir).parts), str(p)))
-    return found
-
-
-def discover_paradigm_directories(
-    root_dir: Path,
-    max_depth: int = MAX_SEARCH_DEPTH,
-    skip_dirs: set = SKIP_DIRS,
-) -> List[Path]:
-    """
-    Search for directories containing paradigm JSON files.
-    
-    Paradigm directories typically:
-    - Are named 'paradigm' or 'paradigms'
-    - OR contain files matching paradigm naming patterns (e.g., 'h_*-c_*.json', 'v_*-h_*.json')
-    
-    Args:
-        root_dir: Directory to start search from
-        max_depth: Maximum directory depth to search
-        skip_dirs: Set of directory names to skip
-        
-    Returns:
-        List of directory paths that appear to contain paradigms
-    """
-    found = []
-    
-    def _is_paradigm_file(filename: str) -> bool:
-        """Check if a filename looks like a paradigm file."""
-        name = filename.lower()
-        # Common paradigm file patterns
-        if name.endswith('.json'):
-            # Pattern: h_Something-c_Something.json or v_Something-h_Something.json
-            if ('-c_' in name and 'h_' in name) or ('-h_' in name and 'v_' in name):
-                return True
-            # Pattern: c_Something-o_Something.json
-            if '-c_' in name and '-o_' in name:
-                return True
-        return False
-    
-    def _search(current_dir: Path, depth: int):
-        if depth > max_depth:
-            return
-        
-        try:
-            # Check if this directory is a paradigm directory
-            is_paradigm_dir = False
-            
-            # Check by name
-            if current_dir.name.lower() in ('paradigm', 'paradigms'):
-                is_paradigm_dir = True
-            else:
-                # Check if contains paradigm-like files
-                paradigm_file_count = 0
-                for item in current_dir.iterdir():
-                    if item.is_file() and _is_paradigm_file(item.name):
-                        paradigm_file_count += 1
-                        if paradigm_file_count >= 2:  # At least 2 paradigm files
-                            is_paradigm_dir = True
-                            break
-            
-            if is_paradigm_dir:
-                found.append(current_dir)
-            
-            # Continue searching subdirectories
-            for item in current_dir.iterdir():
-                if item.is_dir() and item.name not in skip_dirs:
-                    _search(item, depth + 1)
-                    
-        except PermissionError:
-            pass
-    
-    _search(root_dir, 0)
-    
-    # Sort by path depth (shallower = better)
-    found.sort(key=lambda p: (len(p.relative_to(root_dir).parts), str(p)))
-    return found
-
-
-class DiscoveredPaths:
-    """Container for auto-discovered repository paths."""
-    
-    def __init__(
-        self,
-        concepts: Optional[str] = None,
-        inferences: Optional[str] = None,
-        inputs: Optional[str] = None,
-        paradigm_dir: Optional[str] = None,
-    ):
-        self.concepts = concepts
-        self.inferences = inferences
-        self.inputs = inputs
-        self.paradigm_dir = paradigm_dir
-    
-    def to_dict(self) -> Dict[str, Optional[str]]:
-        return {
-            'concepts': self.concepts,
-            'inferences': self.inferences,
-            'inputs': self.inputs,
-            'paradigm_dir': self.paradigm_dir,
-        }
-    
-    def __repr__(self):
-        return f"DiscoveredPaths({self.to_dict()})"
-
-
-def discover_project_paths(project_dir: Path) -> DiscoveredPaths:
-    """
-    Auto-discover repository files and paradigm directory within a project directory.
-    
-    Searches for:
-    - Concept files: *.concept.json, concepts.json
-    - Inference files: *.inference.json, inferences.json
-    - Input files: *.inputs.json, inputs.json
-    - Paradigm directories: directories named 'paradigm' or containing paradigm files
-    
-    Args:
-        project_dir: The project directory to search
-        
-    Returns:
-        DiscoveredPaths with relative paths to discovered files
-    """
-    discovered = DiscoveredPaths()
-    
-    # Search for concept files
-    concept_patterns = ['*.concept.json', 'concepts.json', '*_concept.json', 'concept_*.json']
-    concept_files = discover_files_recursive(project_dir, concept_patterns)
-    if concept_files:
-        # Prefer files in 'repos' or 'repository' subdirectories
-        for f in concept_files:
-            parent_name = f.parent.name.lower()
-            if parent_name in ('repos', 'repo', 'repository', 'repositories'):
-                discovered.concepts = str(f.relative_to(project_dir))
-                break
-        # If not found in preferred dirs, use first match
-        if not discovered.concepts:
-            discovered.concepts = str(concept_files[0].relative_to(project_dir))
-    
-    # Search for inference files
-    inference_patterns = ['*.inference.json', 'inferences.json', '*_inference.json', 'inference_*.json']
-    inference_files = discover_files_recursive(project_dir, inference_patterns)
-    if inference_files:
-        # Prefer files in same directory as concepts
-        if discovered.concepts:
-            concepts_dir = Path(discovered.concepts).parent
-            for f in inference_files:
-                if f.relative_to(project_dir).parent == concepts_dir:
-                    discovered.inferences = str(f.relative_to(project_dir))
-                    break
-        # If not found, prefer 'repos' directories
-        if not discovered.inferences:
-            for f in inference_files:
-                parent_name = f.parent.name.lower()
-                if parent_name in ('repos', 'repo', 'repository', 'repositories'):
-                    discovered.inferences = str(f.relative_to(project_dir))
-                    break
-        # Fallback to first match
-        if not discovered.inferences:
-            discovered.inferences = str(inference_files[0].relative_to(project_dir))
-    
-    # Search for input files (optional)
-    input_patterns = ['*.inputs.json', 'inputs.json', '*_inputs.json', 'input_*.json']
-    input_files = discover_files_recursive(project_dir, input_patterns)
-    if input_files:
-        # Prefer files in same directory as concepts
-        if discovered.concepts:
-            concepts_dir = Path(discovered.concepts).parent
-            for f in input_files:
-                if f.relative_to(project_dir).parent == concepts_dir:
-                    discovered.inputs = str(f.relative_to(project_dir))
-                    break
-        if not discovered.inputs:
-            discovered.inputs = str(input_files[0].relative_to(project_dir))
-    
-    # Search for paradigm directories
-    paradigm_dirs = discover_paradigm_directories(project_dir)
-    if paradigm_dirs:
-        discovered.paradigm_dir = str(paradigm_dirs[0].relative_to(project_dir))
-    
-    logger.info(f"Discovered paths in {project_dir}: {discovered}")
-    return discovered
+# Re-export for backwards compatibility
+__all__ = [
+    'ProjectService',
+    'project_service',
+    # Discovery exports
+    'SKIP_DIRS',
+    'MAX_SEARCH_DEPTH',
+    'DiscoveredPaths',
+    'discover_files_recursive',
+    'discover_paradigm_directories',
+    'discover_project_paths',
+    'get_app_data_dir',
+]
 
 
 class ProjectService:
-    """Service for managing NormCode Canvas projects."""
+    """
+    Service for managing NormCode Canvas projects.
+    
+    This is a facade that coordinates between:
+    - ProjectConfigService: Project config file operations
+    - ProjectRegistryService: Global project registry
+    - ProjectTabsService: Multi-tab UI state
+    
+    The API is maintained for backwards compatibility.
+    """
     
     def __init__(self):
+        # Sub-services
+        self._config_service = ProjectConfigService()
+        self._registry_service = ProjectRegistryService()
+        self._tabs_service = ProjectTabsService()
+        
+        # Current project state (for backwards compatibility)
         self.current_project_path: Optional[Path] = None
         self.current_config: Optional[ProjectConfig] = None
-        self.current_config_file: Optional[str] = None  # The filename of current project config
-        self._app_data_dir = get_app_data_dir()
-        self._registry: Optional[ProjectRegistry] = None
-        
-        # Multi-project (tabs) support
-        self._open_projects: Dict[str, OpenProjectInstance] = {}  # project_id -> instance
-        self._active_project_id: Optional[str] = None  # Currently focused project
+        self.current_config_file: Optional[str] = None
     
     @property
     def is_project_open(self) -> bool:
         """Check if a project is currently open."""
         return self.current_project_path is not None and self.current_config is not None
     
-    def get_project_config_path(self, project_dir: Path, config_file: Optional[str] = None) -> Path:
-        """
-        Get the path to a project config file.
-        
-        Args:
-            project_dir: The project directory
-            config_file: Specific config filename, or None to look for legacy file
-        """
-        if config_file:
-            return project_dir / config_file
-        # Legacy: single config file per directory
-        return project_dir / LEGACY_PROJECT_CONFIG_FILE
+    # =========================================================================
+    # Config Service Delegation
+    # =========================================================================
+    
+    def get_project_config_path(
+        self, 
+        project_dir: Path, 
+        config_file: Optional[str] = None
+    ) -> Path:
+        """Get the path to a project config file."""
+        return self._config_service.get_project_config_path(project_dir, config_file)
     
     def find_project_configs(self, project_dir: Path) -> List[str]:
-        """
-        Find all project config files in a directory.
-        Returns list of config filenames.
-        """
-        if not project_dir.exists():
-            return []
-        
-        configs = []
-        
-        # Check for new-style named configs
-        for f in project_dir.iterdir():
-            if f.is_file() and f.name.endswith(PROJECT_CONFIG_SUFFIX):
-                configs.append(f.name)
-        
-        # Check for legacy config (if not already captured by suffix match)
-        legacy_path = project_dir / LEGACY_PROJECT_CONFIG_FILE
-        if legacy_path.exists() and LEGACY_PROJECT_CONFIG_FILE not in configs:
-            configs.append(LEGACY_PROJECT_CONFIG_FILE)
-        
-        return sorted(configs)
+        """Find all project config files in a directory."""
+        return self._config_service.find_project_configs(project_dir)
     
-    def project_exists(self, project_dir: Path, config_file: Optional[str] = None) -> bool:
+    def project_exists(
+        self, 
+        project_dir: Path, 
+        config_file: Optional[str] = None
+    ) -> bool:
         """Check if a project config exists in the directory."""
-        if config_file:
-            return self.get_project_config_path(project_dir, config_file).exists()
-        # Check for any project config
-        return len(self.find_project_configs(project_dir)) > 0
+        return self._config_service.project_exists(project_dir, config_file)
     
     def create_project(
         self,
@@ -337,7 +123,7 @@ class ProjectService:
         max_cycles: int = 50,
         paradigm_dir: Optional[str] = None,
         auto_discover: bool = True,
-    ) -> tuple[ProjectConfig, str]:
+    ) -> Tuple[ProjectConfig, str]:
         """
         Create a new project configuration file.
         
@@ -356,66 +142,18 @@ class ProjectService:
         Returns:
             Tuple of (ProjectConfig, config_filename)
         """
-        project_dir = Path(project_path)
-        
-        # Create directory if it doesn't exist
-        project_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Auto-discover paths if not provided
-        if auto_discover:
-            discovered = discover_project_paths(project_dir)
-            
-            # Use discovered paths as defaults (but explicit params take precedence)
-            if concepts_path is None:
-                concepts_path = discovered.concepts or "concepts.json"
-            if inferences_path is None:
-                inferences_path = discovered.inferences or "inferences.json"
-            if inputs_path is None:
-                inputs_path = discovered.inputs  # Can remain None
-            if paradigm_dir is None:
-                paradigm_dir = discovered.paradigm_dir  # Can remain None
-        else:
-            # Use defaults if not auto-discovering
-            concepts_path = concepts_path or "concepts.json"
-            inferences_path = inferences_path or "inferences.json"
-        
-        # Generate config filename from project name
-        config_filename = get_project_config_filename(name)
-        
-        # Check if this config already exists
-        config_path = project_dir / config_filename
-        if config_path.exists():
-            # Append ID to make unique
-            project_id = generate_project_id()
-            base_name = config_filename.replace(PROJECT_CONFIG_SUFFIX, '')
-            config_filename = f"{base_name}-{project_id}{PROJECT_CONFIG_SUFFIX}"
-        
-        # Create project config with new ID
-        project_id = generate_project_id()
-        config = ProjectConfig(
-            id=project_id,
+        config, config_filename, project_dir = self._config_service.create_project(
+            project_path=project_path,
             name=name,
             description=description,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            repositories=RepositoryPaths(
-                concepts=concepts_path,
-                inferences=inferences_path,
-                inputs=inputs_path,
-            ),
-            execution=ExecutionSettings(
-                llm_model=llm_model,
-                max_cycles=max_cycles,
-                paradigm_dir=paradigm_dir,
-            ),
+            concepts_path=concepts_path,
+            inferences_path=inferences_path,
+            inputs_path=inputs_path,
+            llm_model=llm_model,
+            max_cycles=max_cycles,
+            paradigm_dir=paradigm_dir,
+            auto_discover=auto_discover,
         )
-        
-        # Save to file
-        config_path = project_dir / config_filename
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config.model_dump(mode='json'), f, indent=2, default=str)
-        
-        logger.info(f"Created project '{name}' at {project_dir}/{config_filename}")
         
         # Set as current project
         self.current_project_path = project_dir
@@ -423,7 +161,7 @@ class ProjectService:
         self.current_config_file = config_filename
         
         # Register the project
-        self._register_project(project_dir, config_filename, config)
+        self._registry_service.register_project(project_dir, config_filename, config)
         
         return config, config_filename
     
@@ -432,7 +170,7 @@ class ProjectService:
         project_path: Optional[str] = None,
         config_file: Optional[str] = None,
         project_id: Optional[str] = None,
-    ) -> tuple[ProjectConfig, str]:
+    ) -> Tuple[ProjectConfig, str]:
         """
         Open an existing project.
         
@@ -455,7 +193,7 @@ class ProjectService:
         """
         # If opening by project ID, look up in registry
         if project_id:
-            registered = self.get_project_by_id(project_id)
+            registered = self._registry_service.get_project_by_id(project_id)
             if not registered:
                 raise FileNotFoundError(f"No project found with ID: {project_id}")
             project_path = registered.directory
@@ -468,88 +206,16 @@ class ProjectService:
         
         # If no specific config file, find available configs
         if not config_file:
-            configs = self.find_project_configs(project_dir)
+            configs = self._config_service.find_project_configs(project_dir)
             if not configs:
                 raise FileNotFoundError(
                     f"No project config found at {project_dir}. "
                     f"Expected *{PROJECT_CONFIG_SUFFIX} or {LEGACY_PROJECT_CONFIG_FILE}"
                 )
-            # Use first config (or the only one)
             config_file = configs[0]
         
-        config_path = project_dir / config_file
-        
-        if not config_path.exists():
-            raise FileNotFoundError(f"Project config not found: {config_path}")
-        
-        # Load config
-        with open(config_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        # Handle legacy configs without ID
-        if 'id' not in data:
-            data['id'] = generate_project_id()
-            # Save updated config with ID
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, default=str)
-        
-        config = ProjectConfig(**data)
-        
-        # Auto-discover and fill in missing paths
-        config_updated = False
-        discovered = discover_project_paths(project_dir)
-        
-        # Check if concepts path exists, if not try discovered
-        concepts_path = project_dir / config.repositories.concepts
-        if not concepts_path.exists() and discovered.concepts:
-            logger.info(f"Updating concepts path from '{config.repositories.concepts}' to discovered '{discovered.concepts}'")
-            config.repositories.concepts = discovered.concepts
-            config_updated = True
-        
-        # Check if inferences path exists, if not try discovered
-        inferences_path = project_dir / config.repositories.inferences
-        if not inferences_path.exists() and discovered.inferences:
-            logger.info(f"Updating inferences path from '{config.repositories.inferences}' to discovered '{discovered.inferences}'")
-            config.repositories.inferences = discovered.inferences
-            config_updated = True
-        
-        # Check if inputs path exists (if set), if not try discovered
-        if config.repositories.inputs:
-            inputs_path = project_dir / config.repositories.inputs
-            if not inputs_path.exists() and discovered.inputs:
-                logger.info(f"Updating inputs path from '{config.repositories.inputs}' to discovered '{discovered.inputs}'")
-                config.repositories.inputs = discovered.inputs
-                config_updated = True
-        elif discovered.inputs:
-            # No inputs set, but we found some
-            config.repositories.inputs = discovered.inputs
-            config_updated = True
-        
-        # Check if paradigm_dir exists, if not try discovered
-        if config.execution.paradigm_dir:
-            paradigm_path = project_dir / config.execution.paradigm_dir
-            if not paradigm_path.exists() and discovered.paradigm_dir:
-                logger.info(f"Updating paradigm_dir from '{config.execution.paradigm_dir}' to discovered '{discovered.paradigm_dir}'")
-                config.execution.paradigm_dir = discovered.paradigm_dir
-                config_updated = True
-        elif discovered.paradigm_dir:
-            # No paradigm_dir set, but we found one
-            config.execution.paradigm_dir = discovered.paradigm_dir
-            config_updated = True
-        
-        # Auto-detect base_dir if not set
-        if not config.execution.base_dir:
-            base_dir = self._detect_base_dir(project_dir, config.repositories)
-            if base_dir:
-                config.execution.base_dir = str(base_dir)
-                config_updated = True
-        
-        # Save updated config if we made changes
-        if config_updated:
-            config.updated_at = datetime.now()
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config.model_dump(mode='json'), f, indent=2, default=str)
-            logger.info(f"Updated project config with discovered paths")
+        # Open the project
+        config, _ = self._config_service.open_project(project_dir, config_file)
         
         # Set as current project
         self.current_project_path = project_dir
@@ -557,53 +223,11 @@ class ProjectService:
         self.current_config_file = config_file
         
         # Register/update the project in registry
-        self._register_project(project_dir, config_file, config)
+        self._registry_service.register_project(project_dir, config_file, config)
         
         logger.info(f"Opened project '{config.name}' from {project_dir}/{config_file}")
         
         return config, config_file
-    
-    def _detect_base_dir(self, project_dir: Path, repos: RepositoryPaths) -> Optional[Path]:
-        """
-        Auto-detect the base directory from repository paths.
-        
-        Args:
-            project_dir: The project directory
-            repos: Repository paths configuration
-            
-        Returns:
-            Path to the detected base directory, or None
-        """
-        # Try to find common parent of repository files
-        paths = []
-        
-        concepts_path = Path(repos.concepts)
-        if concepts_path.is_absolute():
-            paths.append(concepts_path.parent)
-        else:
-            paths.append(project_dir / repos.concepts)
-        
-        inferences_path = Path(repos.inferences)
-        if inferences_path.is_absolute():
-            paths.append(inferences_path.parent)
-        else:
-            paths.append(project_dir / repos.inferences)
-        
-        if not paths:
-            return project_dir
-        
-        # Find common parent
-        common = paths[0]
-        for p in paths[1:]:
-            # Find common ancestor
-            while common not in p.parents and common != p:
-                common = common.parent
-        
-        # Return the common parent (but not the root)
-        if common and len(common.parts) > 1:
-            return common
-        
-        return project_dir
     
     def save_project(
         self,
@@ -628,22 +252,21 @@ class ProjectService:
         if not self.is_project_open:
             raise RuntimeError("No project is currently open")
         
-        # Update config with provided values
-        if execution is not None:
-            self.current_config.execution = execution
-        if breakpoints is not None:
-            self.current_config.breakpoints = breakpoints
-        if ui_preferences is not None:
-            self.current_config.ui_preferences = ui_preferences
+        self.current_config = self._config_service.save_project(
+            project_dir=self.current_project_path,
+            config_file=self.current_config_file,
+            config=self.current_config,
+            execution=execution,
+            breakpoints=breakpoints,
+            ui_preferences=ui_preferences,
+        )
         
-        self.current_config.updated_at = datetime.now()
-        
-        # Save to file (use current_config_file if set)
-        config_path = self.get_project_config_path(self.current_project_path, self.current_config_file)
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(self.current_config.model_dump(mode='json'), f, indent=2, default=str)
-        
-        logger.info(f"Saved project '{self.current_config.name}'")
+        # Update tabs service if project is open as a tab
+        if self._tabs_service.is_project_open(self.current_config.id):
+            self._tabs_service.update_project_config(
+                self.current_config.id, 
+                self.current_config
+            )
         
         return self.current_config
     
@@ -672,23 +295,14 @@ class ProjectService:
         if not self.is_project_open:
             raise RuntimeError("No project is currently open")
         
-        # Update repository paths
-        if concepts is not None:
-            self.current_config.repositories.concepts = concepts
-        if inferences is not None:
-            self.current_config.repositories.inferences = inferences
-        if inputs is not None:
-            # Empty string means clear the inputs path
-            self.current_config.repositories.inputs = inputs if inputs else None
-        
-        self.current_config.updated_at = datetime.now()
-        
-        # Save to file
-        config_path = self.get_project_config_path(self.current_project_path, self.current_config_file)
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(self.current_config.model_dump(mode='json'), f, indent=2, default=str)
-        
-        logger.info(f"Updated repository paths for project '{self.current_config.name}'")
+        self.current_config = self._config_service.update_repositories(
+            project_dir=self.current_project_path,
+            config_file=self.current_config_file,
+            config=self.current_config,
+            concepts=concepts,
+            inferences=inferences,
+            inputs=inputs,
+        )
         
         return self.current_config
     
@@ -713,172 +327,52 @@ class ProjectService:
         return self.current_config_file
     
     def get_absolute_repo_paths(self) -> dict:
-        """
-        Get absolute paths to repository files for the current project.
-        
-        Returns:
-            dict with 'concepts', 'inferences', 'inputs' (if set) keys
-        """
+        """Get absolute paths to repository files for the current project."""
         if not self.is_project_open:
             return {}
-        
-        base = self.current_project_path
-        repos = self.current_config.repositories
-        
-        paths = {
-            'concepts': str(base / repos.concepts),
-            'inferences': str(base / repos.inferences),
-            'base_dir': str(base),
-        }
-        
-        if repos.inputs:
-            paths['inputs'] = str(base / repos.inputs)
-        
-        return paths
+        return self._config_service.get_absolute_repo_paths(
+            self.current_project_path,
+            self.current_config.repositories,
+        )
     
     def check_repositories_exist(self) -> bool:
         """Check if the repository files exist for the current project."""
         if not self.is_project_open:
             return False
-        
-        paths = self.get_absolute_repo_paths()
-        concepts_exist = Path(paths['concepts']).exists()
-        inferences_exist = Path(paths['inferences']).exists()
-        
-        return concepts_exist and inferences_exist
+        return self._config_service.check_repositories_exist(
+            self.current_project_path,
+            self.current_config.repositories,
+        )
     
     def discover_paths(self, directory: str) -> Dict[str, Optional[str]]:
-        """
-        Discover repository files and paradigm directory in a directory.
-        
-        This is a public method that can be called to preview what paths
-        would be auto-discovered for a given directory.
-        
-        Args:
-            directory: Directory to scan
-            
-        Returns:
-            Dict with keys: concepts, inferences, inputs, paradigm_dir
-        """
-        project_dir = Path(directory)
-        if not project_dir.exists():
-            return {
-                'concepts': None,
-                'inferences': None,
-                'inputs': None,
-                'paradigm_dir': None,
-            }
-        
-        discovered = discover_project_paths(project_dir)
-        return discovered.to_dict()
+        """Discover repository files and paradigm directory in a directory."""
+        return self._config_service.discover_paths(directory)
     
-    # Project Registry Management
-    
-    def _get_registry_path(self) -> Path:
-        """Get path to project registry file."""
-        return self._app_data_dir / PROJECT_REGISTRY_FILE
-    
-    def _load_registry(self) -> ProjectRegistry:
-        """Load project registry."""
-        if self._registry is not None:
-            return self._registry
-        
-        path = self._get_registry_path()
-        if not path.exists():
-            self._registry = ProjectRegistry()
-            return self._registry
-        
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            self._registry = ProjectRegistry(**data)
-        except Exception as e:
-            logger.warning(f"Failed to load project registry: {e}")
-            self._registry = ProjectRegistry()
-        
-        return self._registry
-    
-    def _save_registry(self):
-        """Save project registry."""
-        if self._registry is None:
-            return
-        
-        path = self._get_registry_path()
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(self._registry.model_dump(mode='json'), f, indent=2, default=str)
-    
-    def _register_project(self, project_dir: Path, config_file: str, config: ProjectConfig):
-        """Register a project in the registry."""
-        registry = self._load_registry()
-        
-        project_dir_str = str(project_dir.absolute())
-        
-        # Remove if already exists (we'll re-add with updated info)
-        registry.projects = [
-            p for p in registry.projects 
-            if not (p.directory == project_dir_str and p.config_file == config_file)
-        ]
-        
-        # Also update by ID if same ID exists elsewhere (shouldn't happen but handle it)
-        registry.projects = [p for p in registry.projects if p.id != config.id]
-        
-        # Add at the beginning (most recently opened)
-        registry.projects.insert(0, RegisteredProject(
-            id=config.id,
-            name=config.name,
-            directory=project_dir_str,
-            config_file=config_file,
-            description=config.description,
-            created_at=config.created_at,
-            last_opened=datetime.now(),
-        ))
-        
-        self._save_registry()
+    # =========================================================================
+    # Registry Service Delegation
+    # =========================================================================
     
     def get_project_by_id(self, project_id: str) -> Optional[RegisteredProject]:
         """Get a registered project by its ID."""
-        registry = self._load_registry()
-        for project in registry.projects:
-            if project.id == project_id:
-                return project
-        return None
+        return self._registry_service.get_project_by_id(project_id)
     
     def get_projects_in_directory(self, directory: str) -> List[RegisteredProject]:
         """Get all registered projects in a specific directory."""
-        registry = self._load_registry()
-        dir_path = str(Path(directory).absolute())
-        return [p for p in registry.projects if p.directory == dir_path]
+        return self._registry_service.get_projects_in_directory(directory)
     
     def get_all_projects(self) -> List[RegisteredProject]:
         """Get all registered projects."""
-        registry = self._load_registry()
-        
-        # Validate that projects still exist
-        valid_projects = []
-        for project in registry.projects:
-            config_path = Path(project.directory) / project.config_file
-            if config_path.exists():
-                valid_projects.append(project)
-        
-        # Update registry if we removed any invalid projects
-        if len(valid_projects) != len(registry.projects):
-            registry.projects = valid_projects
-            self._save_registry()
-        
-        return valid_projects
+        return self._registry_service.get_all_projects()
     
     def get_recent_projects(self, limit: int = 10) -> List[RegisteredProject]:
         """Get most recently opened projects."""
-        all_projects = self.get_all_projects()
-        # Sort by last_opened (most recent first)
-        sorted_projects = sorted(
-            all_projects, 
-            key=lambda p: p.last_opened or datetime.min, 
-            reverse=True
-        )
-        return sorted_projects[:limit]
+        return self._registry_service.get_recent_projects(limit=limit)
     
-    def scan_directory_for_projects(self, directory: str, register: bool = True) -> List[RegisteredProject]:
+    def scan_directory_for_projects(
+        self, 
+        directory: str, 
+        register: bool = True
+    ) -> List[RegisteredProject]:
         """
         Scan a directory for project config files and optionally register them.
         
@@ -890,91 +384,44 @@ class ProjectService:
             List of found/registered projects
         """
         project_dir = Path(directory)
-        if not project_dir.exists():
-            return []
+        found_configs = self._config_service.scan_directory_for_projects(directory)
         
-        config_files = self.find_project_configs(project_dir)
         found_projects = []
-        
-        for config_file in config_files:
-            try:
-                config_path = project_dir / config_file
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                # Handle legacy configs without ID
-                if 'id' not in data:
-                    data['id'] = generate_project_id()
-                    # Optionally save the updated config
-                    with open(config_path, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=2, default=str)
-                
-                config = ProjectConfig(**data)
-                
-                registered = RegisteredProject(
-                    id=config.id,
-                    name=config.name,
-                    directory=str(project_dir.absolute()),
-                    config_file=config_file,
-                    description=config.description,
-                    created_at=config.created_at,
-                )
-                
-                if register:
-                    self._register_project(project_dir, config_file, config)
-                
-                found_projects.append(registered)
-                
-            except Exception as e:
-                logger.warning(f"Failed to load project config {config_file}: {e}")
+        for config, config_file in found_configs:
+            registered = RegisteredProject(
+                id=config.id,
+                name=config.name,
+                directory=str(project_dir.absolute()),
+                config_file=config_file,
+                description=config.description,
+                created_at=config.created_at,
+            )
+            
+            if register:
+                self._registry_service.register_project(project_dir, config_file, config)
+            
+            found_projects.append(registered)
         
         return found_projects
     
     def remove_project_from_registry(self, project_id: str):
         """Remove a project from the registry (does not delete files)."""
-        registry = self._load_registry()
-        registry.projects = [p for p in registry.projects if p.id != project_id]
-        self._save_registry()
+        self._registry_service.remove_project(project_id)
     
     def clear_registry(self):
         """Clear the entire project registry."""
-        self._registry = ProjectRegistry()
-        self._save_registry()
+        self._registry_service.clear_registry()
     
-    # Legacy support for migration
     def migrate_recent_projects(self):
         """Migrate legacy recent-projects.json to new registry format."""
-        legacy_path = self._app_data_dir / "recent-projects.json"
-        if not legacy_path.exists():
-            return
-        
-        try:
-            with open(legacy_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            legacy_config = RecentProjectsConfig(**data)
-            
-            for recent in legacy_config.projects:
-                # Try to open and register each legacy project
-                try:
-                    project_dir = Path(recent.path)
-                    if project_dir.exists():
-                        configs = self.find_project_configs(project_dir)
-                        if configs:
-                            self.open_project(project_path=recent.path, config_file=configs[0])
-                            self.close_project()
-                except Exception as e:
-                    logger.warning(f"Failed to migrate legacy project {recent.path}: {e}")
-            
-            # Rename legacy file to indicate migration
-            legacy_path.rename(legacy_path.with_suffix('.json.migrated'))
-            logger.info("Migrated legacy recent projects to new registry")
-            
-        except Exception as e:
-            logger.warning(f"Failed to migrate legacy projects: {e}")
+        self._registry_service.migrate_recent_projects(
+            find_project_configs_fn=self.find_project_configs,
+            open_project_fn=self.open_project,
+            close_project_fn=self.close_project,
+        )
     
     # =========================================================================
-    # Multi-Project (Tabs) Support
+    # Tabs Service Delegation (Multi-Project Support)
     # =========================================================================
     
     def open_project_as_tab(
@@ -1000,30 +447,25 @@ class ProjectService:
             
         Raises:
             FileNotFoundError: If project doesn't exist
-            ValueError: If project is already open
         """
-        # IMPORTANT: If there's a current project that's NOT in _open_projects,
-        # we need to add it first. This handles the case where the first project
-        # was opened via the old open_project API (not as a tab).
+        # If there's a current project that's NOT in tabs, add it first
         if (self.current_config is not None and 
             self.current_project_path is not None and
-            self.current_config.id not in self._open_projects):
+            not self._tabs_service.is_project_open(self.current_config.id)):
             
-            existing_instance = OpenProjectInstance(
-                id=self.current_config.id,
+            self._tabs_service.add_project_tab(
+                project_id=self.current_config.id,
                 name=self.current_config.name,
                 directory=str(self.current_project_path.absolute()),
                 config_file=self.current_config_file or "normcode-canvas.json",
                 config=self.current_config,
-                is_loaded=True,  # Assume loaded since we're working with it
                 repositories_exist=self.check_repositories_exist(),
-                is_active=False,  # Will be deactivated when new project opens
+                make_active=False,
                 is_read_only=False,
             )
-            self._open_projects[self.current_config.id] = existing_instance
             logger.info(f"Added existing project '{self.current_config.name}' to tabs (id={self.current_config.id})")
         
-        # First, open the project using existing logic (this also registers it)
+        # Open the project using existing logic
         config, config_filename = self.open_project(
             project_path=project_path,
             config_file=config_file,
@@ -1031,40 +473,26 @@ class ProjectService:
         )
         
         # Check if already open as a tab
-        if config.id in self._open_projects:
-            # Already open - just switch to it if requested
+        if self._tabs_service.is_project_open(config.id):
             if make_active:
-                self._active_project_id = config.id
-                # Update the "current" project references
-                instance = self._open_projects[config.id]
+                instance = self._tabs_service.switch_to_project(config.id)
+                # Update "current" project references
                 self.current_project_path = Path(instance.directory)
                 self.current_config = instance.config
                 self.current_config_file = instance.config_file
-            return self._open_projects[config.id]
+            return self._tabs_service.get_project(config.id)
         
-        # Create a new open project instance
-        instance = OpenProjectInstance(
-            id=config.id,
+        # Add as new tab
+        instance = self._tabs_service.add_project_tab(
+            project_id=config.id,
             name=config.name,
             directory=str(self.current_project_path.absolute()),
             config_file=config_filename,
             config=config,
-            is_loaded=False,  # Not loaded until repositories are loaded
             repositories_exist=self.check_repositories_exist(),
-            is_active=make_active,
+            make_active=make_active,
             is_read_only=is_read_only,
         )
-        
-        # Add to open projects
-        self._open_projects[config.id] = instance
-        
-        # Set as active if requested
-        if make_active:
-            # Mark previous active as not active
-            if self._active_project_id and self._active_project_id in self._open_projects:
-                self._open_projects[self._active_project_id].is_active = False
-            self._active_project_id = config.id
-            instance.is_active = True
         
         logger.info(f"Opened project '{config.name}' as tab (id={config.id}, active={make_active})")
         
@@ -1083,24 +511,12 @@ class ProjectService:
         Raises:
             KeyError: If project is not currently open
         """
-        if project_id not in self._open_projects:
-            raise KeyError(f"Project {project_id} is not currently open as a tab")
-        
-        # Mark previous active as not active
-        if self._active_project_id and self._active_project_id in self._open_projects:
-            self._open_projects[self._active_project_id].is_active = False
-        
-        # Set new active
-        self._active_project_id = project_id
-        instance = self._open_projects[project_id]
-        instance.is_active = True
+        instance = self._tabs_service.switch_to_project(project_id)
         
         # Update "current" project references
         self.current_project_path = Path(instance.directory)
         self.current_config = instance.config
         self.current_config_file = instance.config_file
-        
-        logger.info(f"Switched to project tab '{instance.name}' (id={project_id})")
         
         return instance
     
@@ -1114,69 +530,44 @@ class ProjectService:
         Returns:
             The ID of the new active project (if any), or None if no tabs remain
         """
-        if project_id not in self._open_projects:
-            logger.warning(f"Cannot close project {project_id}: not open as a tab")
-            return self._active_project_id
+        new_active_id = self._tabs_service.close_project_tab(project_id)
         
-        closed_project = self._open_projects.pop(project_id)
-        logger.info(f"Closed project tab '{closed_project.name}' (id={project_id})")
-        
-        # If we closed the active project, switch to another tab
-        new_active_id = None
-        if self._active_project_id == project_id:
-            self._active_project_id = None
-            
-            # Switch to another open project if any
-            if self._open_projects:
-                # Pick the first available
-                new_active_id = next(iter(self._open_projects.keys()))
-                self.switch_to_project(new_active_id)
-            else:
-                # No more open projects - clear current project state
-                self.current_project_path = None
-                self.current_config = None
-                self.current_config_file = None
+        # Update current project state
+        if new_active_id:
+            active_project = self._tabs_service.get_project(new_active_id)
+            if active_project:
+                self.current_project_path = Path(active_project.directory)
+                self.current_config = active_project.config
+                self.current_config_file = active_project.config_file
         else:
-            new_active_id = self._active_project_id
+            self.current_project_path = None
+            self.current_config = None
+            self.current_config_file = None
         
         return new_active_id
     
     def get_open_projects(self) -> List[OpenProjectInstance]:
-        """
-        Get all currently open project instances (tabs).
-        
-        Returns:
-            List of OpenProjectInstance objects
-        """
-        return list(self._open_projects.values())
+        """Get all currently open project instances (tabs)."""
+        return self._tabs_service.get_open_projects()
     
     def get_active_project_id(self) -> Optional[str]:
         """Get the ID of the currently active project."""
-        return self._active_project_id
+        return self._tabs_service.active_project_id
     
     def get_active_project(self) -> Optional[OpenProjectInstance]:
         """Get the currently active project instance."""
-        if self._active_project_id and self._active_project_id in self._open_projects:
-            return self._open_projects[self._active_project_id]
-        return None
+        return self._tabs_service.get_active_project()
     
     def update_open_project_loaded_state(self, project_id: str, is_loaded: bool):
-        """
-        Update the is_loaded state for an open project.
-        
-        Called after repositories are loaded/unloaded.
-        """
-        if project_id in self._open_projects:
-            self._open_projects[project_id].is_loaded = is_loaded
+        """Update the is_loaded state for an open project."""
+        self._tabs_service.update_loaded_state(project_id, is_loaded)
     
     def close_all_project_tabs(self):
         """Close all open project tabs."""
-        self._open_projects.clear()
-        self._active_project_id = None
+        self._tabs_service.close_all_tabs()
         self.current_project_path = None
         self.current_config = None
         self.current_config_file = None
-        logger.info("Closed all project tabs")
 
 
 # Global project service instance

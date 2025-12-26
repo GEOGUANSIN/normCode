@@ -35,11 +35,13 @@ import { AgentPanel } from './components/panels/AgentPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
 import { ProjectTabs } from './components/panels/ProjectTabs';
 import { ChatPanel } from './components/panels/ChatPanel';
+import { ToastContainer } from './components/common/ToastNotification';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
 import { useProjectStore } from './stores/projectStore';
 import { useChatStore } from './stores/chatStore';
+import { useNotificationStore } from './stores/notificationStore';
 
 // View modes for the main content area
 type ViewMode = 'canvas' | 'editor';
@@ -172,7 +174,13 @@ function App() {
   
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
+  const logs = useExecutionStore((s) => s.logs);
   const wsConnected = useWebSocket();
+  const showError = useNotificationStore((s) => s.showError);
+  const showWarning = useNotificationStore((s) => s.showWarning);
+  
+  // Track shown error logs to avoid duplicates
+  const [lastErrorLogCount, setLastErrorLogCount] = useState(0);
   
   // Chat state
   const { isOpen: isChatOpen, togglePanel: toggleChatPanel, compilerStatus } = useChatStore();
@@ -205,6 +213,39 @@ function App() {
     fetchRecentProjects();
     fetchOpenTabs();
   }, [fetchCurrentProject, fetchRecentProjects, fetchOpenTabs]);
+  
+  // Show toast notifications for new error/warning logs
+  useEffect(() => {
+    const errorLogs = logs.filter(log => log.level === 'error');
+    
+    // Only show toasts for new errors (not ones we've already seen)
+    if (errorLogs.length > lastErrorLogCount) {
+      const newErrors = errorLogs.slice(lastErrorLogCount);
+      
+      // Show toast for each new error (limit to avoid spam)
+      newErrors.slice(0, 3).forEach((log, idx) => {
+        // Slight delay between toasts for visual effect
+        setTimeout(() => {
+          showError(
+            log.flowIndex ? `Error in ${log.flowIndex}` : 'Error',
+            log.message,
+          );
+        }, idx * 100);
+      });
+      
+      // If more than 3 new errors, show summary
+      if (newErrors.length > 3) {
+        setTimeout(() => {
+          showWarning(
+            'Multiple Errors',
+            `${newErrors.length - 3} more errors occurred. Check the log panel for details.`,
+          );
+        }, 400);
+      }
+      
+      setLastErrorLogCount(errorLogs.length);
+    }
+  }, [logs, lastErrorLogCount, showError, showWarning]);
 
   // If no project is open, show project welcome screen
   if (!currentProject) {
@@ -320,21 +361,25 @@ function App() {
             </button>
           )}
           
-          {/* Panel toggles - only show in canvas mode */}
-          {graphData && viewMode === 'canvas' && (
+          {/* Panel toggles - show in canvas mode */}
+          {viewMode === 'canvas' && (
             <>
               <div className="w-px h-6 bg-slate-200 mx-1" />
-              <button
-                onClick={() => setShowDetailPanel(!showDetailPanel)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showDetailPanel 
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-                }`}
-                title={showDetailPanel ? 'Hide detail panel' : 'Show detail panel'}
-              >
-                {showDetailPanel ? <PanelRightClose size={18} /> : <PanelRight size={18} />}
-              </button>
+              {/* Detail panel toggle - only when graph loaded */}
+              {graphData && (
+                <button
+                  onClick={() => setShowDetailPanel(!showDetailPanel)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    showDetailPanel 
+                      ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                  }`}
+                  title={showDetailPanel ? 'Hide detail panel' : 'Show detail panel'}
+                >
+                  {showDetailPanel ? <PanelRightClose size={18} /> : <PanelRight size={18} />}
+                </button>
+              )}
+              {/* Log panel toggle - always available to see loading errors */}
               <button
                 onClick={() => setShowLogPanel(!showLogPanel)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -446,32 +491,37 @@ function App() {
               <EditorPanel />
             ) : !isLoaded ? (
           // Show message when repositories not loaded yet (Canvas mode)
-          <div className="flex-1 flex items-center justify-center bg-white">
-            <div className="text-center p-8">
-              <Folder className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-slate-700 mb-2">Project Ready</h2>
-              <p className="text-slate-500 mb-4 max-w-md">
-                {repositoriesExist 
-                  ? 'Click "Load" in the header to start working with your NormCode plan.'
-                  : 'Repository files not found. Make sure concepts.json and inferences.json exist in the project directory.'
-                }
-              </p>
-              {repositoriesExist && (
-                <button
-                  onClick={loadProjectRepositories}
-                  disabled={projectLoading}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 mx-auto transition-colors"
-                >
-                  {projectLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <FolderOpen className="w-4 h-4" />
-                  )}
-                  Load Repositories
-                </button>
-              )}
+          // Include LogPanel at the bottom for loading errors visibility
+          <>
+            <div className="flex-1 flex items-center justify-center bg-white">
+              <div className="text-center p-8">
+                <Folder className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-slate-700 mb-2">Project Ready</h2>
+                <p className="text-slate-500 mb-4 max-w-md">
+                  {repositoriesExist 
+                    ? 'Click "Load" in the header to start working with your NormCode plan.'
+                    : 'Repository files not found. Make sure concepts.json and inferences.json exist in the project directory.'
+                  }
+                </p>
+                {repositoriesExist && (
+                  <button
+                    onClick={loadProjectRepositories}
+                    disabled={projectLoading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 mx-auto transition-colors"
+                  >
+                    {projectLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FolderOpen className="w-4 h-4" />
+                    )}
+                    Load Repositories
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+            {/* Log Panel - available even before loading for error visibility */}
+            {showLogPanel && <LogPanel />}
+          </>
         ) : (
           // Canvas View
           <>
@@ -539,6 +589,9 @@ function App() {
 
       {/* User Input Modal (human-in-the-loop) */}
       <UserInputModal />
+
+      {/* Toast Notifications - prominent alerts for errors/warnings */}
+      <ToastContainer />
 
       {/* Status Bar */}
       <footer className="bg-white border-t border-slate-200 px-4 py-1 flex items-center justify-between text-xs text-slate-500">
