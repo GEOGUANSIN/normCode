@@ -523,3 +523,72 @@ async def cancel_user_input(request_id: str):
         request_id=request_id,
         message="Request cancelled"
     )
+
+
+# ============================================================================
+# Chat Input (for chat-driven paradigms like c_ChatRead-o_Literal)
+# ============================================================================
+
+class ChatInputSubmitRequest(BaseModel):
+    """Request body for submitting chat input."""
+    value: str
+
+
+@router.post("/chat-input/{request_id}")
+async def submit_chat_input(request_id: str, request: ChatInputSubmitRequest):
+    """Submit a response for a pending chat input request.
+    
+    This is used when a NormCode plan is blocking on a chat read operation
+    (e.g., using the c_ChatRead-o_Literal paradigm).
+    
+    Args:
+        request_id: The ID of the pending chat request
+        request.value: The user's message
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        raise HTTPException(status_code=400, detail="Chat tool not initialized")
+    
+    success = execution_controller.chat_tool.submit_response(request_id, request.value)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending chat request found with ID: {request_id}"
+        )
+    
+    return {"success": True, "request_id": request_id}
+
+
+@router.post("/chat-input/{request_id}/cancel")
+async def cancel_chat_input(request_id: str):
+    """Cancel a pending chat input request.
+    
+    Args:
+        request_id: The ID of the request to cancel
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        raise HTTPException(status_code=400, detail="Chat tool not initialized")
+    
+    success = execution_controller.chat_tool.cancel_request(request_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending chat request found with ID: {request_id}"
+        )
+    
+    return {"success": True, "request_id": request_id, "message": "Request cancelled"}
+
+
+@router.get("/chat-input/pending")
+async def get_pending_chat_input():
+    """Get the current pending chat input request, if any.
+    
+    Returns:
+        The pending request details or null
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {"pending": None}
+    
+    pending = execution_controller.chat_tool.get_pending_request()
+    return {"pending": pending}

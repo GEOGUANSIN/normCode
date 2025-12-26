@@ -431,6 +431,7 @@ export function useWebSocket() {
               inputType: (data.input_type as 'text' | 'code' | 'confirm' | 'select') || 'text',
               options: data.options as string[] | undefined,
               placeholder: data.placeholder as string | undefined,
+              source: (data.source as 'compiler' | 'execution') || 'compiler',
             });
           }
           break;

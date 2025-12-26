@@ -635,12 +635,22 @@ export const chatApi = {
     fetchJson(`${API_BASE}/chat/messages`, { method: 'DELETE' }),
   
   /**
-   * Submit a response to a pending input request.
+   * Submit a response to a pending input request (compiler service).
    */
   submitInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {
       method: 'POST',
       body: JSON.stringify({ request_id: requestId, value }),
+    }),
+  
+  /**
+   * Submit a response to a pending input request (execution service).
+   * Used when source="execution" in the input request.
+   */
+  submitExecutionInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/execution/chat-input/${encodeURIComponent(requestId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ value }),
     }),
   
   /**

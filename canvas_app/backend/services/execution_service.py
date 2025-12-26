@@ -612,9 +612,10 @@ class ExecutionController:
         logger.info("Injected CanvasUserInputTool for human-in-the-loop interactions")
         
         # Create and inject chat tool for compiler chat interface
-        self.chat_tool = CanvasChatTool(emit_callback=self._emit_sync)
+        # Create chat tool with source="execution" so frontend uses /api/execution/chat-input/
+        self.chat_tool = CanvasChatTool(emit_callback=self._emit_sync, source="execution")
         self.body.chat = self.chat_tool
-        logger.info("Injected CanvasChatTool for chat-driven execution")
+        logger.info("Injected CanvasChatTool for chat-driven execution (source=execution)")
         
         # Create and inject canvas display tool for canvas commands
         self.canvas_tool = CanvasDisplayTool(emit_callback=self._emit_sync)
@@ -772,6 +773,15 @@ class ExecutionController:
         """Stop execution."""
         self._stop_requested = True
         self._pause_event.set()  # Unblock if paused
+
+        # Cancel any pending chat input requests to unblock waiting threads
+        if hasattr(self, 'chat_tool') and self.chat_tool:
+            # Get all pending request IDs and cancel them
+            with self.chat_tool._lock:
+                pending_ids = list(self.chat_tool._pending_requests.keys())
+            for req_id in pending_ids:
+                self.chat_tool.cancel_request(req_id)
+                logger.debug(f"Cancelled pending chat request: {req_id}")
 
         if self._run_task and not self._run_task.done():
             self._run_task.cancel()

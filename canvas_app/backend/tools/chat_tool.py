@@ -50,15 +50,23 @@ class CanvasChatTool:
     input operations to be compatible with synchronous orchestrator code.
     """
     
-    def __init__(self, emit_callback: Optional[Callable[[str, Dict], None]] = None):
+    def __init__(
+        self, 
+        emit_callback: Optional[Callable[[str, Dict], None]] = None,
+        source: str = "compiler"
+    ):
         """
         Initialize the Canvas chat tool.
         
         Args:
             emit_callback: Callback to emit WebSocket events.
                           Signature: (event_type: str, data: dict) -> None
+            source: Identifier for which service owns this tool.
+                   "compiler" = CompilerService (/api/chat/input/)
+                   "execution" = ExecutionController (/api/execution/chat-input/)
         """
         self._emit_callback = emit_callback
+        self._source = source
         self._pending_requests: Dict[str, ChatInputRequest] = {}
         self._events: Dict[str, threading.Event] = {}
         self._lock = threading.Lock()
@@ -289,6 +297,7 @@ class CanvasChatTool:
             self._events[request_id] = event
         
         # Emit WebSocket event to notify frontend
+        # Include source so frontend knows which endpoint to use for response
         self._emit("chat:input_request", {
             "id": request_id,
             "prompt": prompt,
@@ -296,6 +305,7 @@ class CanvasChatTool:
             "options": option_list,
             "placeholder": placeholder,
             "initial_value": initial_value,
+            "source": self._source,  # "compiler" or "execution"
         })
         
         logger.info(f"Waiting for chat input: {request_id} ({input_type})")

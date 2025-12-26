@@ -44,13 +44,14 @@ export interface ChatArtifact {
   title?: string;
 }
 
-// Input request from the compiler
+// Input request from the compiler or execution controller
 export interface ChatInputRequest {
   id: string;
   prompt: string;
   inputType: 'text' | 'code' | 'confirm' | 'select';
   options?: string[];
   placeholder?: string;
+  source?: 'compiler' | 'execution';  // Which service to submit to
 }
 
 interface ChatState {
@@ -197,7 +198,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       // If there's a pending input request, respond to it
       if (pendingInputRequest) {
-        await chatApi.submitInput(pendingInputRequest.id, value);
+        // Use the correct endpoint based on source
+        if (pendingInputRequest.source === 'execution') {
+          await chatApi.submitExecutionInput(pendingInputRequest.id, value);
+        } else {
+          await chatApi.submitInput(pendingInputRequest.id, value);
+        }
         set({ pendingInputRequest: null });
       } else {
         // Otherwise, send as a new message
@@ -225,7 +231,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isSending: true, isInputDisabled: true });
       
       try {
-        await chatApi.submitInput(pendingInputRequest.id, response);
+        // Use the correct endpoint based on source
+        if (pendingInputRequest.source === 'execution') {
+          await chatApi.submitExecutionInput(pendingInputRequest.id, response);
+        } else {
+          await chatApi.submitInput(pendingInputRequest.id, response);
+        }
         set({ 
           pendingInputRequest: null,
           inputValue: '',
