@@ -8,11 +8,10 @@
     | %{ref_element}: dict(status: str)
     | %{norm_input}: c_ChatSessionClose-o_Status
     | %{body_faculty}: chat
-    <= $. %>({session result})
+    <= $. %>([all canvas statuses])
         /: Select session result when termination condition is met
         <= @:'(<session should end>)
         <* <session should end>
-    <- {session result}
     <- [on-going messages]
         /: Loop base - the message collection to iterate over
         | %{ref_axes}: [message]
