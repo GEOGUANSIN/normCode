@@ -250,7 +250,7 @@ Format for referencing external data:
 %{file_location}7f2(data/input.txt)
 %{prompt_location}3c4(prompts/template.txt)
 %{truth_value}(True)
-%{_X_}(computed value) /: This is Literal(_X_)
+%{<_X_>}(computed value) /: This is Literal(_X_)
 ```
 
 > **Legacy Note**: Older documentation and paradigms may use `Normal` to refer to literal/direct values. This has been replaced by `literal` for clarity.
