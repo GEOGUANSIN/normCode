@@ -4,9 +4,9 @@ Determine whether the user wants to end the current canvas session.
 
 ## Input
 
-**Current Message**: {1}
+**Current Message**: $input_1
 
-**Conversation History**: {2}
+**Conversation History**: $input_2
 
 ## Termination Signals
 

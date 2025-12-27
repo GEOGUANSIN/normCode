@@ -17,23 +17,6 @@
     }
   },
   {
-    "flow_info": {"flow_index": "1.1"},
-    "inference_sequence": "timing",
-    "concept_to_infer": "$. %>([all canvas statuses])",
-    "function_concept": "@:'(<session should end>)",
-    "value_concepts": [],
-    "context_concepts": ["<session should end>"],
-    "working_interpretation": {
-      "syntax": {
-        "marker": "if",
-        "condition": "<session should end>"
-      },
-      "blackboard": null,
-      "workspace": {},
-      "flow_info": {"flow_index": "1.1"}
-    }
-  },
-  {
     "flow_info": {"flow_index": "1.2"},
     "inference_sequence": "assigning",
     "concept_to_infer": "[on-going messages]",
@@ -139,7 +122,7 @@
         "{canvas command schema}": 2
       },
       "v_input_norm": "{prompt_location}",
-      "v_input_provision": "provision/prompts/classify_command.md",
+      "v_input_provision": "provisions/prompts/classify_command.md",
       "h_input_norm": "in-memory",
       "body_faculty": "llm",
       "workspace": {},
@@ -194,7 +177,7 @@
         "{command status}": 2
       },
       "v_input_norm": "{prompt_location}",
-      "v_input_provision": "prompts/generate_response.md",
+      "v_input_provision": "provisions/prompts/generate_response.md",
       "h_input_norm": "in-memory",
       "body_faculty": "llm",
       "workspace": {},
@@ -224,7 +207,7 @@
     "inference_sequence": "timing",
     "concept_to_infer": "$+ %>([on-going messages]) %<({current message}) %:({message})",
     "function_concept": "@:!(<session should end>)",
-    "value_concepts": [],
+    "value_concepts": ["<session should end>"],
     "context_concepts": ["<session should end>"],
     "working_interpretation": {
       "syntax": {
@@ -241,16 +224,17 @@
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<session should end>",
     "function_concept": "::(the user wants to end the session)<ALL {current message} True>",
-    "value_concepts": ["{current message}", "[on-going messages]"],
+    "value_concepts": ["{current message}", "{command status}", "[on-going messages]"],
     "context_concepts": [],
     "working_interpretation": {
       "paradigm": "h_Memo-v_Prompt-c_LLMGenerate-o_Truth",
       "value_order": {
         "{current message}": 1,
-        "[on-going messages]": 2
+        "{command status}": 2,
+        "[on-going messages]": 3
       },
       "v_input_norm": "{prompt_location}",
-      "v_input_provision": "prompts/judge_terminate.md",
+      "v_input_provision": "provisions/prompts/judge_terminate.md",
       "h_input_norm": "in-memory",
       "body_faculty": "llm",
       "assertion_condition": {

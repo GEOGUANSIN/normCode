@@ -17,7 +17,8 @@
     "type": "[]",
     "flow_indices": ["1.2", "1.3.2", "1.3.1.3", "1.3.1.4.3"],
     "description": "Loop base - the message collection to iterate over",
-    "is_ground_concept": true,
+    "is_ground_concept": false,
+    "is_invariant": true,
     "is_final_concept": false,
     "reference_data": [],
     "reference_axis_names": ["message"],
@@ -53,7 +54,7 @@
     "type": "{}",
     "flow_indices": ["1.3.1.2.2", "1.3.1.2.3.2.2", "1.3.1.2.4.2.2", "1.3.1.4.2"],
     "description": "The user's input message - BLOCKS until received",
-    "is_ground_concept": true,
+    "is_ground_concept": false,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": ["_none_axis"],
@@ -91,7 +92,7 @@
     "description": "Ground concept - the schema for valid commands",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": ["%{file_location}schema(provision/schemas/canvas_commands.json)"],
+    "reference_data": ["%{file_location}schema(provisions/schemas/canvas_commands.json)"],
     "reference_axis_names": ["_none_axis"],
     "natural_name": "canvas command schema"
   },
@@ -123,7 +124,7 @@
     "id": "c-session-should-end",
     "concept_name": "<session should end>",
     "type": "<>",
-    "flow_indices": ["1.1.2", "1.3.1.3.1.2", "1.3.1.4"],
+    "flow_indices": ["1.3.1.3.1.2", "1.3.1.4"],
     "description": "Boolean: should the session terminate?",
     "is_ground_concept": false,
     "is_final_concept": false,
@@ -154,18 +155,6 @@
     "reference_data": ["$. %>([all canvas statuses])"],
     "reference_axis_names": ["_none_axis"],
     "natural_name": "select all canvas statuses"
-  },
-  {
-    "id": "fc-timing-session-end",
-    "concept_name": "@:'(<session should end>)",
-    "type": "@:'",
-    "flow_indices": ["1.1.1"],
-    "description": "Functional: timing gate for session termination",
-    "is_ground_concept": true,
-    "is_invariant": true,
-    "reference_data": ["@:'(<session should end>)"],
-    "reference_axis_names": ["_none_axis"],
-    "natural_name": "when session should end"
   },
   {
     "id": "fc-abstraction-empty-messages",
@@ -235,7 +224,7 @@
     "description": "Functional: parse user message as command using LLM",
     "is_ground_concept": true,
     "is_invariant": true,
-    "reference_data": ["%{prompt_location}(provision/prompts/classify_command.md)"],
+    "reference_data": ["%{prompt_location}(provisions/prompts/classify_command.md)"],
     "reference_axis_names": ["_none_axis"],
     "natural_name": "understand message as command"
   },
@@ -271,7 +260,7 @@
     "description": "Functional: generate response using LLM",
     "is_ground_concept": true,
     "is_invariant": true,
-    "reference_data": ["%{prompt_location}(prompts/generate_response.md)"],
+    "reference_data": ["%{prompt_location}(provisions/prompts/generate_response.md)"],
     "reference_axis_names": ["_none_axis"],
     "natural_name": "generate helpful response"
   },
@@ -307,7 +296,7 @@
     "description": "Functional: judgement - check if user wants to end",
     "is_ground_concept": true,
     "is_invariant": true,
-    "reference_data": ["%{prompt_location}(prompts/judge_terminate.md)"],
+    "reference_data": ["%{prompt_location}(provisions/prompts/judge_terminate.md)"],
     "reference_axis_names": ["_none_axis"],
     "natural_name": "judge if user wants to end"
   }

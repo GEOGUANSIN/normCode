@@ -53,9 +53,9 @@ Based on the provided schema, classify the user's intent into one of these comma
 
 ## Input
 
-**User Message**: {1}
+**User Message**: $input_1
 
-**Command Schema**: {2}
+**Command Schema**: $input_2
 
 ## Output Format
 

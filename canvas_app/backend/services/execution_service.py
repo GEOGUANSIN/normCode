@@ -728,6 +728,10 @@ class ExecutionController:
         self.status = ExecutionStatus.RUNNING
         self._stop_requested = False
         self._pause_event.set()
+        
+        # Mark chat tool as execution active (messages will be queued)
+        if hasattr(self, 'chat_tool') and self.chat_tool:
+            self.chat_tool.set_execution_active(True)
 
         await self._emit("execution:started", {})
         self._add_log("info", "", "Execution started")
@@ -776,6 +780,8 @@ class ExecutionController:
 
         # Cancel any pending chat input requests to unblock waiting threads
         if hasattr(self, 'chat_tool') and self.chat_tool:
+            # Mark execution as inactive (clears message queue)
+            self.chat_tool.set_execution_active(False)
             # Get all pending request IDs and cancel them
             with self.chat_tool._lock:
                 pending_ids = list(self.chat_tool._pending_requests.keys())

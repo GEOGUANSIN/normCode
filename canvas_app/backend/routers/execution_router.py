@@ -592,3 +592,60 @@ async def get_pending_chat_input():
     
     pending = execution_controller.chat_tool.get_pending_request()
     return {"pending": pending}
+
+
+class ChatBufferRequest(BaseModel):
+    """Request body for buffering a chat message."""
+    message: str
+
+
+@router.post("/chat-buffer")
+async def buffer_chat_message(request: ChatBufferRequest):
+    """Buffer a chat message for the running plan to consume.
+    
+    Only ONE message can be buffered at a time. If a message is already
+    buffered (waiting to be consumed by the plan), this will fail.
+    
+    If there's already a pending input request, the message is delivered immediately.
+    
+    Args:
+        request.message: The user's message
+        
+    Returns:
+        success: True if message was buffered or delivered
+        buffer_full: True if buffer already has a message waiting
+        delivered: True if message was delivered to a waiting request immediately
+        buffered_message: The message currently in the buffer (if any)
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {"success": False, "reason": "Chat tool not initialized"}
+    
+    result = execution_controller.chat_tool.buffer_message(request.message)
+    return result
+
+
+@router.get("/chat-buffer/status")
+async def get_chat_buffer_status():
+    """Get the status of the chat message buffer.
+    
+    Returns:
+        execution_active: Whether execution is currently running
+        has_pending_request: Whether the plan is waiting for input
+        has_buffered_message: Whether there's a message waiting in the buffer
+        buffered_message: The message content (if any)
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {
+            "execution_active": False,
+            "has_pending_request": False,
+            "has_buffered_message": False,
+            "buffered_message": None
+        }
+    
+    chat_tool = execution_controller.chat_tool
+    return {
+        "execution_active": chat_tool.is_execution_active(),
+        "has_pending_request": chat_tool.has_pending_request(),
+        "has_buffered_message": chat_tool.has_buffered_message(),
+        "buffered_message": chat_tool.get_buffered_message()
+    }

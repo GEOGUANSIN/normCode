@@ -475,6 +475,16 @@ function OneDView({ data, axisName }: { data: unknown[]; axisName: string }) {
     setModalItem({ index, item });
   };
   
+  // Handle empty collection
+  if (data.length === 0) {
+    return (
+      <div className="text-sm text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+        <div className="mb-1">Empty collection</div>
+        <div className="text-xs text-slate-300">0 items along <span className="font-mono">[{axisName}]</span> axis</div>
+      </div>
+    );
+  }
+  
   // Always use expandable items layout for better inspection capability
   return (
     <>
@@ -515,7 +525,12 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
   const maxCols = Math.max(...data.map((row) => (Array.isArray(row) ? row.length : 0)), 0);
   
   if (data.length === 0) {
-    return <div className="text-sm text-slate-400 text-center py-4">Empty tensor</div>;
+    return (
+      <div className="text-sm text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+        <div className="mb-1">Empty collection</div>
+        <div className="text-xs text-slate-300">0 rows along <span className="font-mono">[{rowAxis}]</span> axis</div>
+      </div>
+    );
   }
   
   const handleCellClick = (row: number, col: number, cell: unknown) => {

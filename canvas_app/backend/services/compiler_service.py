@@ -156,12 +156,10 @@ class CompilerService:
             # Add welcome message
             self.add_message(
                 role="compiler",
-                content="NormCode Compiler ready. How can I help you today?\n\n"
-                       "You can ask me to:\n"
-                       "• Compile a NormCode plan\n"
-                       "• Explain how NormCode works\n"
-                       "• Help debug your plan\n"
-                       "• Generate new NormCode from natural language"
+                content="Ready to help with your NormCode plans.\n\n"
+                       "• Compile — parse and validate plans\n"
+                       "• Explain — learn NormCode concepts\n"
+                       "• Debug — find and fix issues"
             )
             
             logger.info("Compiler service started")
@@ -250,32 +248,33 @@ class CompilerService:
                 self.add_message(
                     role="compiler",
                     content="I can help you compile a NormCode plan!\n\n"
-                           "Please share your plan draft in `.ncds` format, or describe "
-                           "what you want to accomplish and I'll help you create one."
+                           "Share your plan in .ncds format, or describe what you'd like to build "
+                           "and I'll help you structure it."
                 )
             elif "help" in content_lower or "how" in content_lower:
                 self.add_message(
                     role="compiler",
-                    content="NormCode is a language for writing structured AI plans. "
-                           "Each plan consists of:\n\n"
-                           "• **Concepts** - data containers with explicit types\n"
-                           "• **Inferences** - operations that transform data\n"
-                           "• **Isolation** - each step only sees its explicit inputs\n\n"
-                           "Would you like me to explain any of these in more detail?"
+                    content="NormCode is a language for structured AI plans.\n\n"
+                           "• Concepts — typed data containers\n"
+                           "• Inferences — operations that transform data\n"
+                           "• Isolation — each step sees only its explicit inputs\n\n"
+                           "What would you like to learn more about?"
                 )
             elif "debug" in content_lower or "error" in content_lower:
                 self.add_message(
                     role="compiler",
-                    content="I can help you debug your NormCode plan.\n\n"
-                           "Please share the error message or describe the issue, "
-                           "and I'll analyze it."
+                    content="I can help debug your plan.\n\n"
+                           "Share the error message or describe what's happening, "
+                           "and I'll help you find the issue."
                 )
             else:
                 self.add_message(
                     role="compiler",
-                    content=f"I received your message: \"{content[:100]}{'...' if len(content) > 100 else ''}\"\n\n"
-                           "I'm still learning! The full compiler functionality is being implemented. "
-                           "Try asking me to 'compile a plan' or for 'help with NormCode'."
+                    content="The compiler is in preview mode.\n\n"
+                           "Try asking me to:\n"
+                           "• \"Compile my plan\"\n"
+                           "• \"Help with NormCode\"\n"
+                           "• \"Debug an error\""
                 )
             
         finally:

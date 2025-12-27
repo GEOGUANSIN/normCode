@@ -4,9 +4,9 @@ You are an assistant for a NormCode Canvas application. Generate a helpful, conc
 
 ## Context
 
-**User Message**: {1}
+**User Message**: $input_1
 
-**Command Execution Status**: {2}
+**Command Execution Status**: $input_2
 
 ## Response Guidelines
 

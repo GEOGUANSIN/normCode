@@ -583,6 +583,21 @@ export interface StartCompilerResponse {
   error?: string;
 }
 
+export interface ChatBufferResponse {
+  success: boolean;
+  buffer_full?: boolean;
+  delivered?: boolean;
+  buffered_message?: string;
+  reason?: string;
+}
+
+export interface ChatBufferStatus {
+  execution_active: boolean;
+  has_pending_request: boolean;
+  has_buffered_message: boolean;
+  buffered_message: string | null;
+}
+
 export const chatApi = {
   /**
    * Get the current state of the compiler meta project.
@@ -652,6 +667,23 @@ export const chatApi = {
       method: 'POST',
       body: JSON.stringify({ value }),
     }),
+  
+  /**
+   * Buffer a message for the running execution plan.
+   * Only ONE message can be buffered at a time.
+   * Used when execution is active but no input request is pending yet.
+   */
+  bufferMessage: (message: string): Promise<ChatBufferResponse> =>
+    fetchJson(`${API_BASE}/execution/chat-buffer`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  
+  /**
+   * Get the status of the execution chat buffer.
+   */
+  getBufferStatus: (): Promise<ChatBufferStatus> =>
+    fetchJson(`${API_BASE}/execution/chat-buffer/status`),
   
   /**
    * Cancel a pending input request.

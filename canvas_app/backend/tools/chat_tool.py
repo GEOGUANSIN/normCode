@@ -70,6 +70,12 @@ class CanvasChatTool:
         self._pending_requests: Dict[str, ChatInputRequest] = {}
         self._events: Dict[str, threading.Event] = {}
         self._lock = threading.Lock()
+        # Single message buffer for message received before a blocking read
+        # Only ONE message can be buffered at a time - cleaner UX
+        self._buffered_message: Optional[str] = None
+        self._buffer_lock = threading.Lock()
+        # Flag to indicate execution is active (messages should be buffered)
+        self._execution_active = False
     
     def set_emit_callback(self, callback: Callable[[str, Dict], None]):
         """Set the callback for emitting WebSocket events."""
@@ -86,6 +92,117 @@ class CanvasChatTool:
     def _generate_id(self) -> str:
         """Generate a unique ID for messages/requests."""
         return str(uuid.uuid4())[:8]
+    
+    # =========================================================================
+    # Execution State and Message Queue
+    # =========================================================================
+    
+    def set_execution_active(self, active: bool):
+        """
+        Set whether execution is active.
+        
+        When active, messages sent to the chat are buffered for the plan to consume.
+        When inactive, messages go to the normal chat flow.
+        
+        Args:
+            active: True when execution starts, False when it stops
+        """
+        with self._buffer_lock:
+            self._execution_active = active
+            if not active:
+                # Clear buffer when execution stops
+                self._buffered_message = None
+            logger.debug(f"Execution active: {active}")
+    
+    def is_execution_active(self) -> bool:
+        """Check if execution is currently active."""
+        with self._buffer_lock:
+            return self._execution_active
+    
+    def buffer_message(self, message: str) -> Dict[str, Any]:
+        """
+        Buffer a message for the running plan to consume.
+        
+        Only ONE message can be buffered at a time. If a message is already
+        buffered, this will fail and return buffer_full=True.
+        
+        Called by the API when a user sends a message while execution is active.
+        The message will be delivered when the plan next calls read_message().
+        
+        Args:
+            message: The user's message content
+            
+        Returns:
+            Dict with:
+                success: True if message was buffered
+                buffer_full: True if buffer already has a message
+                delivered: True if message was delivered to waiting request
+                buffered_message: The currently buffered message (if any)
+        """
+        with self._buffer_lock:
+            if not self._execution_active:
+                return {"success": False, "reason": "execution_not_active"}
+            
+            # Check if buffer already has a message
+            if self._buffered_message is not None:
+                return {
+                    "success": False, 
+                    "buffer_full": True,
+                    "buffered_message": self._buffered_message,
+                }
+            
+            # Buffer the message
+            self._buffered_message = message
+            logger.debug(f"Buffered message: {message[:50]}...")
+        
+        # If there's a pending input request waiting, deliver immediately
+        with self._lock:
+            for req_id, request in self._pending_requests.items():
+                if not request.completed:
+                    # Fulfill this request with the buffered message
+                    request.response = message
+                    request.completed = True
+                    self._events[req_id].set()
+                    # Clear the buffer since we delivered it
+                    with self._buffer_lock:
+                        self._buffered_message = None
+                    logger.debug(f"Delivered buffered message to pending request {req_id}")
+                    return {"success": True, "delivered": True}
+        
+        return {"success": True, "delivered": False, "buffered_message": message}
+    
+    def consume_buffered_message(self) -> Optional[str]:
+        """
+        Get and clear the buffered message.
+        
+        Called when the plan's read operation consumes the message.
+        
+        Returns:
+            The message content, or None if buffer is empty
+        """
+        with self._buffer_lock:
+            message = self._buffered_message
+            self._buffered_message = None
+            if message:
+                logger.debug(f"Consumed buffered message: {message[:50]}...")
+            return message
+    
+    def get_buffered_message(self) -> Optional[str]:
+        """
+        Peek at the buffered message without consuming it.
+        
+        Used by API to show buffer status to frontend.
+        
+        Returns:
+            The message content, or None if buffer is empty
+        """
+        with self._buffer_lock:
+            return self._buffered_message
+    
+    def has_buffered_message(self) -> bool:
+        """Check if there is a buffered message waiting."""
+        with self._buffer_lock:
+            return self._buffered_message is not None
     
     # =========================================================================
     # Writing to Chat
@@ -261,9 +378,10 @@ class CanvasChatTool:
         Block and wait for user input from the chat.
         
         This method:
-        1. Creates a pending request and emits a WebSocket event
-        2. Blocks on a threading.Event until response is received
-        3. Returns the user's response
+        1. First checks if there's a queued message (user typed before we blocked)
+        2. If not, creates a pending request and emits a WebSocket event
+        3. Blocks on a threading.Event until response is received
+        4. Returns the user's response
         
         Args:
             prompt: The prompt to show the user
@@ -275,6 +393,12 @@ class CanvasChatTool:
         Returns:
             The user's response as a string
         """
+        # Check if there's already a buffered message we can consume
+        buffered = self.consume_buffered_message()
+        if buffered is not None:
+            logger.info(f"Consumed buffered message: {buffered[:50]}...")
+            return buffered
+        
         request_id = self._generate_id()
         event = threading.Event()
         

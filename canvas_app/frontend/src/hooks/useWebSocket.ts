@@ -48,6 +48,8 @@ export function useWebSocket() {
   const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
   const setCompilerStatus = useChatStore((s) => s.setCompilerStatus);
   const setInputRequest = useChatStore((s) => s.setInputRequest);
+  const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
+  const clearBuffer = useChatStore((s) => s.clearBuffer);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -79,6 +81,13 @@ export function useWebSocket() {
 
         case 'execution:started':
           setStatus('running');
+          // Update chat store - execution is now active
+          updateBufferStatus({
+            execution_active: true,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:paused':
@@ -90,6 +99,13 @@ export function useWebSocket() {
 
         case 'execution:resumed':
           setStatus('running');
+          // Execution is active again after resume
+          updateBufferStatus({
+            execution_active: true,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:completed':
@@ -98,6 +114,14 @@ export function useWebSocket() {
           if (data.completed_count !== undefined && data.total_count !== undefined) {
             setProgress(data.completed_count as number, data.total_count as number);
           }
+          // Clear chat buffer state - execution finished
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:error':
@@ -107,16 +131,40 @@ export function useWebSocket() {
             level: 'error',
             message: data.error as string,
           });
+          // Clear chat buffer state - execution failed
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:stopped':
           setStatus('idle');
           setCurrentInference(null);
+          // Clear chat buffer state - execution stopped
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:reset':
           setStatus('idle');
           setCurrentInference(null);
+          // Clear chat buffer state - execution reset
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           // Update run_id if a new orchestrator was created
           if (data.run_id) {
             setRunId(data.run_id as string);
