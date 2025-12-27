@@ -149,16 +149,22 @@ class FormatterTool:
         """
         Wraps the data in the normcode format %xxx() or %{type}xxx().
         Delegates to the Body's Perception faculty if available (via encode_sign).
+        
+        Special case: type="literal" means NO type specifier - just %id(content).
+        "literal" is not a norm, it indicates raw data without a perceptual norm.
         """
+        # "literal" means no type specifier
+        effective_type = None if type == "literal" else type
+        
         if hasattr(self, 'perception_router'):
-            wrapped_data = self.perception_router.encode_sign(data, type)
+            wrapped_data = self.perception_router.encode_sign(data, effective_type)
             print(f">>> MIA step: Encoded sign -> {wrapped_data}")
             return wrapped_data
 
         # Fallback
         unique_code = uuid.uuid4().hex[:3]
-        if type:
-            wrapped_data = f"%{{{type}}}{unique_code}({data})"
+        if effective_type:
+            wrapped_data = f"%{{{effective_type}}}{unique_code}({data})"
         else:
             wrapped_data = f"%{unique_code}({data})"
         print(f">>> MIA step: Wrapped data -> {wrapped_data}")

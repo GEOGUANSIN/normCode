@@ -26,7 +26,7 @@
     "working_interpretation": {
       "syntax": {
         "marker": "%",
-        "face_value": [],
+        "face_value": [{"role": "system", "content": "__session_start__"}],
         "axis_names": ["message"]
       },
       "workspace": {},
@@ -186,41 +186,6 @@
   },
   {
     "flow_info": {"flow_index": "1.3.1.3"},
-    "inference_sequence": "assigning",
-    "concept_to_infer": "[on-going messages]",
-    "function_concept": "$+ %>([on-going messages]) %<({current message}) %:({message})",
-    "value_concepts": [],
-    "context_concepts": [],
-    "working_interpretation": {
-      "syntax": {
-        "marker": "+",
-        "assign_source": "[on-going messages]",
-        "assign_destination": "{current message}",
-        "by_axes": ["message"]
-      },
-      "workspace": {},
-      "flow_info": {"flow_index": "1.3.1.3"}
-    }
-  },
-  {
-    "flow_info": {"flow_index": "1.3.1.3.1"},
-    "inference_sequence": "timing",
-    "concept_to_infer": "$+ %>([on-going messages]) %<({current message}) %:({message})",
-    "function_concept": "@:!(<session should end>)",
-    "value_concepts": ["<session should end>"],
-    "context_concepts": ["<session should end>"],
-    "working_interpretation": {
-      "syntax": {
-        "marker": "if!",
-        "condition": "<session should end>"
-      },
-      "blackboard": null,
-      "workspace": {},
-      "flow_info": {"flow_index": "1.3.1.3.1"}
-    }
-  },
-  {
-    "flow_info": {"flow_index": "1.3.1.4"},
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<session should end>",
     "function_concept": "::(the user wants to end the session)<ALL {current message} True>",
@@ -245,7 +210,42 @@
         "condition": true
       },
       "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.3"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.4"},
+    "inference_sequence": "assigning",
+    "concept_to_infer": "[on-going messages]",
+    "function_concept": "$+ %>([on-going messages]) %<({current message}) %:({message})",
+    "value_concepts": ["[on-going messages]", "{current message}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "+",
+        "assign_source": "[on-going messages]",
+        "assign_destination": "{current message}",
+        "by_axes": ["message"]
+      },
+      "workspace": {},
       "flow_info": {"flow_index": "1.3.1.4"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.4.1"},
+    "inference_sequence": "timing",
+    "concept_to_infer": "$+ %>([on-going messages]) %<({current message}) %:({message})",
+    "function_concept": "@:!(<session should end>)",
+    "value_concepts": ["<session should end>"],
+    "context_concepts": ["<session should end>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if!",
+        "condition": "<session should end>"
+      },
+      "blackboard": null,
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.4.1"}
     }
   }
 ]

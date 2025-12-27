@@ -184,6 +184,9 @@ class CanvasFormatterTool:
         Affordance: Return a function that wraps data as perceptual signs.
         
         Formats data as %{type}xxx(data) for the Reference system.
+        
+        Special case: type="literal" means NO type specifier - just %id(content).
+        "literal" is not a norm, it indicates raw data without a perceptual norm.
         """
         def wrap_fn(data: Any = None, type: str = None, **kwargs) -> str:
             # Handle keyword arguments
@@ -192,11 +195,14 @@ class CanvasFormatterTool:
             
             # Use perception router if available
             if self.perception_router:
-                return self.perception_router.encode_sign(d, t)
+                # Pass None for literal type - no norm specifier
+                effective_type = None if t == "literal" else t
+                return self.perception_router.encode_sign(d, effective_type)
             
             # Fallback: simple wrapping
             unique_code = uuid.uuid4().hex[:3]
-            if t:
+            # "literal" means no type specifier - just %id(content)
+            if t and t != "literal":
                 return f"%{{{t}}}{unique_code}({d})"
             else:
                 return f"%{unique_code}({d})"
