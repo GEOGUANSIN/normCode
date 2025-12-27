@@ -11,6 +11,7 @@ import { useExecutionStore, type UserInputRequest } from '../stores/executionSto
 import { useAgentStore } from '../stores/agentStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useChatStore } from '../stores/chatStore';
+import { useCanvasCommandStore } from '../stores/canvasCommandStore';
 import type { WebSocketEvent, StepProgress } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
@@ -50,6 +51,9 @@ export function useWebSocket() {
   const setInputRequest = useChatStore((s) => s.setInputRequest);
   const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
   const clearBuffer = useChatStore((s) => s.clearBuffer);
+  
+  // Canvas command store actions
+  const addCanvasCommand = useCanvasCommandStore((s) => s.addCommand);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
@@ -488,11 +492,21 @@ export function useWebSocket() {
           setInputRequest(null);
           break;
 
+        // Canvas command events (from compiler-driven canvas control)
+        case 'canvas:command':
+          if (data.type) {
+            addCanvasCommand(
+              data.type as string,
+              (data.params as Record<string, unknown>) || {}
+            );
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setCompilerStatus, setInputRequest]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setCompilerStatus, setInputRequest, addCanvasCommand]
   );
 
   const [isConnected, setIsConnected] = useState(false);

@@ -1528,6 +1528,20 @@ class ExecutionController:
             paradigm_tool=custom_paradigm_tool
         )
         
+        # Inject canvas tools (same as in load_repositories)
+        # These are needed for chat-based compilation plans that use canvas commands
+        self.user_input_tool = CanvasUserInputTool(emit_callback=self._emit_sync)
+        self.body.user_input = self.user_input_tool
+        logger.info("Injected CanvasUserInputTool for checkpoint resume")
+        
+        self.chat_tool = CanvasChatTool(emit_callback=self._emit_sync, source="execution")
+        self.body.chat = self.chat_tool
+        logger.info("Injected CanvasChatTool for checkpoint resume")
+        
+        self.canvas_tool = CanvasDisplayTool(emit_callback=self._emit_sync)
+        self.body.canvas = self.canvas_tool
+        logger.info("Injected CanvasDisplayTool for checkpoint resume")
+        
         # Wrap body tools with monitoring proxies for real-time tool call tracking
         self._wrap_body_with_monitoring(self.body)
         

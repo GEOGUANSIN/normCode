@@ -4,7 +4,7 @@
     "inputs": {
       "vertical": {},
       "horizontal": {
-        "parsed_command": "A dict with 'type' and 'params' fields representing the command to execute."
+        "input_1": "The parsed command (may be wrapped) with 'type' and 'params' fields."
       }
     },
     "outputs": {
@@ -42,6 +42,19 @@
           {
             "affordance_name": "wrap",
             "call_code": "result = tool.wrap"
+          },
+          {
+            "affordance_name": "parse",
+            "call_code": "result = tool.parse"
+          }
+        ]
+      },
+      {
+        "tool_name": "perception_router",
+        "affordances": [
+          {
+            "affordance_name": "unwrap",
+            "call_code": "result = tool.strip_sign"
           }
         ]
       }
@@ -57,23 +70,35 @@
       },
       {
         "step_index": 2,
+        "affordance": "perception_router.unwrap",
+        "params": {},
+        "result_key": "unwrap_fn"
+      },
+      {
+        "step_index": 3,
+        "affordance": "formatter_tool.parse",
+        "params": {},
+        "result_key": "parse_fn"
+      },
+      {
+        "step_index": 4,
         "affordance": "canvas.execute_command",
         "params": {},
         "result_key": "execute_fn"
       },
       {
-        "step_index": 3,
+        "step_index": 5,
         "affordance": "formatter_tool.wrap",
         "params": {},
         "result_key": "wrap_fn"
       },
       {
-        "step_index": 4,
+        "step_index": 6,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
             {
-              "output_key": "command",
+              "output_key": "wrapped_command",
               "function": {
                 "__type__": "MetaValue",
                 "key": "dict_get_fn"
@@ -82,7 +107,27 @@
                 "dictionary": "__initial_input__"
               },
               "literal_params": {
-                "key": "parsed_command"
+                "key": "input_1"
+              }
+            },
+            {
+              "output_key": "command_string",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "unwrap_fn"
+              },
+              "params": {
+                "__positional__": "wrapped_command"
+              }
+            },
+            {
+              "output_key": "command",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "parse_fn"
+              },
+              "params": {
+                "__positional__": "command_string"
               }
             },
             {
@@ -143,4 +188,3 @@
     ]
   }
 }
-

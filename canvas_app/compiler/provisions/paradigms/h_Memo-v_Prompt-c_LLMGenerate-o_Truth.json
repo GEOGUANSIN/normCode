@@ -3,7 +3,7 @@
     "description": "Takes a memo and uses an LLM with a prompt template to make a boolean judgement. Returns a truth value.",
     "inputs": {
       "vertical": {
-        "prompt_template": "The prompt template file for the judgement."
+        "prompt_template": "The prompt template file path (from function concept reference, may be perception-wrapped)."
       },
       "horizontal": {
         "input_1": "The primary memo/message to evaluate.",
@@ -39,16 +39,34 @@
         "tool_name": "formatter_tool",
         "affordances": [
           {
-            "affordance_name": "create_substitute_function",
-            "call_code": "result = tool.create_substitute_function(template_key=params['template_key'])"
-          },
-          {
             "affordance_name": "parse_boolean",
             "call_code": "result = tool.parse_boolean"
           },
           {
             "affordance_name": "wrap",
             "call_code": "result = tool.wrap"
+          }
+        ]
+      },
+      {
+        "tool_name": "prompt_tool",
+        "affordances": [
+          {
+            "affordance_name": "read_now",
+            "call_code": "result = tool.read(params['template_name'])"
+          },
+          {
+            "affordance_name": "create_template_function",
+            "call_code": "result = tool.create_template_function(template=params['template'])"
+          }
+        ]
+      },
+      {
+        "tool_name": "perception_router",
+        "affordances": [
+          {
+            "affordance_name": "strip_sign",
+            "call_code": "result = tool.strip_sign(params['token'])"
           }
         ]
       }
@@ -58,32 +76,57 @@
     "steps": [
       {
         "step_index": 1,
-        "affordance": "formatter_tool.create_substitute_function",
+        "affordance": "perception_router.strip_sign",
         "params": {
-          "template_key": "prompt_template"
+          "token": {
+            "__type__": "MetaValue",
+            "key": "states.vertical"
+          }
+        },
+        "result_key": "raw_path"
+      },
+      {
+        "step_index": 2,
+        "affordance": "prompt_tool.read_now",
+        "params": {
+          "template_name": {
+            "__type__": "MetaValue",
+            "key": "raw_path"
+          }
+        },
+        "result_key": "prompt_obj"
+      },
+      {
+        "step_index": 3,
+        "affordance": "prompt_tool.create_template_function",
+        "params": {
+          "template": {
+            "__type__": "MetaValue",
+            "key": "prompt_obj"
+          }
         },
         "result_key": "template_fn"
       },
       {
-        "step_index": 2,
+        "step_index": 4,
         "affordance": "llm.generate",
         "params": {},
         "result_key": "generate_fn"
       },
       {
-        "step_index": 3,
+        "step_index": 5,
         "affordance": "formatter_tool.parse_boolean",
         "params": {},
         "result_key": "parse_bool_fn"
       },
       {
-        "step_index": 4,
+        "step_index": 6,
         "affordance": "formatter_tool.wrap",
         "params": {},
         "result_key": "wrap_fn"
       },
       {
-        "step_index": 5,
+        "step_index": 7,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
@@ -138,4 +181,3 @@
     ]
   }
 }
-

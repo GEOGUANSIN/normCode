@@ -43,6 +43,7 @@ import { FunctionNode } from './FunctionNode';
 import { CustomEdge } from './CustomEdge';
 import { useGraphStore } from '../../stores/graphStore';
 import { useSelectionStore } from '../../stores/selectionStore';
+import { useCanvasCommandStore } from '../../stores/canvasCommandStore';
 import type { GraphNode as GraphNodeType, GraphEdge as GraphEdgeType } from '../../types/graph';
 
 // Define custom node types
@@ -108,7 +109,40 @@ function getMiniMapNodeColor(node: Node): string {
 function GraphCanvasInner() {
   const [showControlsPanel, setShowControlsPanel] = useState(true);
   const [showMinimap, setShowMinimap] = useState(true);
-  const { setCenter, getViewport } = useReactFlow();
+  const { setCenter, getViewport, zoomIn, zoomOut, fitView } = useReactFlow();
+  
+  // Canvas command store for handling backend-driven canvas operations
+  const { pendingCommands, popCommand } = useCanvasCommandStore();
+  
+  // Process pending canvas commands
+  useEffect(() => {
+    if (pendingCommands.length === 0) return;
+    
+    const command = popCommand();
+    if (!command) return;
+    
+    console.log('[GraphCanvas] Executing command:', command);
+    
+    switch (command.type) {
+      case 'zoom_in':
+        zoomIn({ duration: 300 });
+        break;
+      case 'zoom_out':
+        zoomOut({ duration: 300 });
+        break;
+      case 'fit_view':
+        fitView({ padding: 0.2, duration: 300 });
+        break;
+      case 'center_on':
+        const { x, y, zoom } = command.params as { x?: number; y?: number; zoom?: number };
+        if (x !== undefined && y !== undefined) {
+          setCenter(x, y, { zoom: zoom ?? getViewport().zoom, duration: 300 });
+        }
+        break;
+      default:
+        console.log('[GraphCanvas] Unknown command type:', command.type);
+    }
+  }, [pendingCommands, popCommand, zoomIn, zoomOut, fitView, setCenter, getViewport]);
   
   // OPTIMIZED: Batch related state into single subscriptions with shallow comparison
   const { graphData, collapsedNodes, layoutMode, isLoading } = useGraphStore(

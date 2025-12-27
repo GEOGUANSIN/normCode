@@ -4,7 +4,7 @@
     "inputs": {
       "vertical": {},
       "horizontal": {
-        "response": "The response text to send to the user."
+        "input_1": "The response text to send to the user (may be wrapped)."
       }
     },
     "outputs": {
@@ -44,6 +44,15 @@
             "call_code": "result = tool.wrap"
           }
         ]
+      },
+      {
+        "tool_name": "perception_router",
+        "affordances": [
+          {
+            "affordance_name": "unwrap",
+            "call_code": "result = tool.strip_sign"
+          }
+        ]
       }
     ]
   },
@@ -57,23 +66,29 @@
       },
       {
         "step_index": 2,
+        "affordance": "perception_router.unwrap",
+        "params": {},
+        "result_key": "unwrap_fn"
+      },
+      {
+        "step_index": 3,
         "affordance": "chat.write_message",
         "params": {},
         "result_key": "write_fn"
       },
       {
-        "step_index": 3,
+        "step_index": 4,
         "affordance": "formatter_tool.wrap",
         "params": {},
         "result_key": "wrap_fn"
       },
       {
-        "step_index": 4,
+        "step_index": 5,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
             {
-              "output_key": "response_text",
+              "output_key": "wrapped_response",
               "function": {
                 "__type__": "MetaValue",
                 "key": "dict_get_fn"
@@ -82,7 +97,17 @@
                 "dictionary": "__initial_input__"
               },
               "literal_params": {
-                "key": "response"
+                "key": "input_1"
+              }
+            },
+            {
+              "output_key": "response_text",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "unwrap_fn"
+              },
+              "params": {
+                "__positional__": "wrapped_response"
               }
             },
             {
@@ -116,4 +141,3 @@
     ]
   }
 }
-

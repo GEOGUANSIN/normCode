@@ -217,6 +217,10 @@ class CanvasChatTool:
             role: Message role ('compiler', 'system', 'assistant')
             metadata: Optional metadata (flowIndex, nodeLink, etc.)
         """
+        # Ensure message is a string
+        if not isinstance(message, str):
+            message = str(message)
+        
         msg_id = self._generate_id()
         self._emit("chat:message", {
             "id": msg_id,

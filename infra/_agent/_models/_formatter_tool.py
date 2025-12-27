@@ -110,22 +110,36 @@ class FormatterTool:
 
     def parse(self, raw_response: str) -> Dict[str, Any]:
         """
-        Parses a JSON string into a Python dictionary.
-        Handles errors gracefully if the input is not valid JSON.
+        Parses a JSON or Python dict string into a Python dictionary.
+        Handles errors gracefully if the input is not valid.
         """
+        import ast
+        
         if not isinstance(raw_response, str) or not raw_response.strip():
-            return {"error": "Invalid input: received empty or non-string response for JSON parsing."}
+            return {"error": "Invalid input: received empty or non-string response for parsing."}
         
         # Attempt to fix common LLM errors like escaping single quotes
         cleaned_response = raw_response.replace(r"\'", "'")
         
+        # Try JSON first (standard format)
         try:
             return json.loads(cleaned_response)
         except json.JSONDecodeError:
-            return {
-                "raw_response": raw_response, # Log the original for debugging
-                "error": "Failed to parse JSON response"
-            }
+            pass
+        
+        # Try Python literal eval (handles single-quoted dicts from LLMs)
+        try:
+            result = ast.literal_eval(cleaned_response)
+            if isinstance(result, dict):
+                return result
+        except (ValueError, SyntaxError):
+            pass
+        
+        # Both failed
+        return {
+            "raw_response": raw_response,
+            "error": "Failed to parse response as JSON or Python dict"
+        }
 
     def get(self, dictionary: Dict, key: str, default: Any = None) -> Any:
         """Gets a value from a dictionary by key."""
