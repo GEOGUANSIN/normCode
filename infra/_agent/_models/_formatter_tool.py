@@ -206,3 +206,41 @@ class FormatterTool:
         
         # If no markdown block is found, assume the whole thing is the code
         return raw_code.strip()
+
+    @property
+    def parse_boolean(self) -> Callable[[str], bool]:
+        """
+        Returns a function that parses a raw LLM response to extract a boolean value.
+        
+        The function looks for common boolean indicators in the text:
+        - "true", "yes", "1", "correct", "affirmative" -> True
+        - "false", "no", "0", "incorrect", "negative" -> False
+        
+        Used by: h_Memo-v_Prompt-c_LLMGenerate-o_Truth paradigm
+        """
+        def _parse_boolean_fn(raw_response: str) -> bool:
+            if not isinstance(raw_response, str):
+                # If already a boolean, return it directly
+                if isinstance(raw_response, bool):
+                    return raw_response
+                return False
+            
+            # Normalize the response
+            text = raw_response.strip().lower()
+            
+            # Check for explicit true indicators
+            true_indicators = ['true', 'yes', '1', 'correct', 'affirmative', 'continue', 'proceed']
+            for indicator in true_indicators:
+                if indicator in text:
+                    return True
+            
+            # Check for explicit false indicators
+            false_indicators = ['false', 'no', '0', 'incorrect', 'negative', 'stop', 'end', 'terminate', 'quit', 'exit']
+            for indicator in false_indicators:
+                if indicator in text:
+                    return False
+            
+            # Default to False if no clear indicator found
+            return False
+        
+        return _parse_boolean_fn
