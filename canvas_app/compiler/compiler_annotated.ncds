@@ -1,0 +1,203 @@
+/: Minimal Self-Hosted Compiler Plan - ANNOTATED VERSION
+/: Understanding the NormCode execution model
+
+:<: session ends                                        /: [FINAL OUTPUT] The session result
+    <= return session ends                              /: [FUNCTION] How to derive session ends
+        <= if termination condition is met              /: [TIMING] Only when termination is true
+                                                        /:
+                                                        /: PROVISION: This will link to a paradigm
+                                                        /: that triggers action in chat (e.g. close session)
+
+    <- on-going messages                                /: [VALUE] The growing message collection
+        <= initiate the on-going messages               /: [INIT] Ground truth: starts empty []
+
+    <- all canvas statuses                              /: [VALUE] Collection of statuses (loop output)
+        <= for every on-going message                   /: [QUANTIFIER] *every loop
+                                                        /:
+                                                        /: Uses start_without_value_only_once=True
+                                                        /: First iteration runs even with empty collection
+                                                        /: Loop grows by appending new messages
+
+            <= return the canvas status                 /: [LOOP RETURN] What each iteration produces
+
+            <- new message                              /: [LOOP VAR] Current message being processed
+                <= :>(chat): user gives a new message   /: [IO-RECEIVE] BLOCKS until user types
+                                                        /:
+                                                        /: PROVISION: Links to chat_read paradigm
+                                                        /: → Body.chat.read_input()
+
+            <= (add this to all on-going messages)      /: [APPEND] $+ operator - grows the collection
+                <- if this is not the termination       /: [CONDITION] Only append if continuing
+                                                        /:
+                                                        /: When append succeeds → loop continues
+                                                        /: When append blocked → loop ends
+
+            <- new canvas command                       /: [LOOP VAR] Parsed command from message
+                <= :: understand the canvas command     /: [SEMANTIC] LLM extracts intent
+                <- canvas command                       /: [CONTEXT] The command namespace/schema
+                                                        /:
+                                                        /: PROVISION: Links to LLM paradigm
+                                                        /: → Body.llm.ask() with classification prompt
+
+            <- command status                           /: [LOOP VAR] Execution result
+                <= :: conduct the canvas command        /: [SEMANTIC] Execute via Body
+                <- new canvas command                   /: <- the command to execute
+                                                        /:
+                                                        /: PROVISION: Links to canvas_tool paradigm
+                                                        /: → Body.canvas.create_project() etc.
+
+            <- response                                 /: [LOOP VAR] Response to user
+                <= :: the chat gives a response         /: [SEMANTIC] Generate reply
+                <- new message                          /: <- original user message
+                <- command status                       /: <- what happened
+                                                        /:
+                                                        /: PROVISION: Links to LLM paradigm
+                                                        /: → Body.llm.ask() with response generation prompt
+
+            <- on-going responses                       /: [LOOP VAR] Accumulated responses
+                <= add the response                     /: [APPEND] Collect all responses
+                <- on-going responses                   /: <- self-reference for accumulation
+            
+            <- response is given to the user            /: [LOOP VAR] Send confirmation
+                <= :(chat): response to user            /: [IO-SEND] Display in chat
+                <- response                             /: <- what to send
+                                                        /:
+                                                        /: PROVISION: Links to chat_write paradigm
+                                                        /: → Body.chat.write()
+
+            <- termination condition is met             /: [LOOP VAR] Boolean judgement
+                <= judge if termination                 /: [JUDGEMENT] Check if user wants to quit
+                <- response                             /: <- based on response content
+                <- on-going messages                    /: <- or message history
+                                                        /:
+                                                        /: PROVISION: Links to judgement paradigm
+                                                        /: → Body.llm.ask() with judge prompt
+
+            <- termination condition is not met         /: [LOOP VAR] Negation (for append condition)
+        <- on-going messages                            /: [LOOP BASE] What we iterate over
+
+    <- session ends literal                             /: [VALUE] Literal marker for session end
+                                                        /: Ground concept with literal value "session ends"
+
+
+/: ============================================================
+/: EXECUTION TRACE - How the Loop Actually Works
+/: ============================================================
+/:
+/: PHASE 1: INITIALIZATION
+/:   - on-going messages = [] (initialized to empty)
+/:   - Loop quantifier has: start_without_value_only_once = True
+/:   - session ends literal = "session ends" (ground literal)
+/:
+/: PHASE 2: FIRST ITERATION (runs despite empty collection!)
+/:   Step 1: :>(chat): BLOCKS waiting for user input
+/:           Body.chat.read_input() waits...
+/:           ... user types "new project" ...
+/:   Step 2: new message = "new project"
+/:   Step 3: :: understand → new canvas command = {type: "create_project"}
+/:           Body.llm.ask(classification_prompt, "new project")
+/:   Step 4: :: conduct → command status = {success: true, id: "proj-123"}
+/:           Body.canvas.create_project()
+/:   Step 5: :: response → response = "✅ Created project proj-123"
+/:           Body.llm.ask(response_prompt, message, status)
+/:   Step 6: on-going responses += "✅ Created project proj-123"
+/:   Step 7: :(chat): sends response to user UI
+/:           Body.chat.write("✅ Created project proj-123")
+/:   Step 8: judge termination → FALSE (user said "new project", not "quit")
+/:           Body.llm.ask(judge_prompt, response, messages)
+/:   Step 9: termination condition is not met = TRUE
+/:   Step 10: (add this to on-going messages) ← SUCCEEDS!
+/:            on-going messages = [{role: "user", content: "new project"}]
+/:   Step 11: return canvas status = {...}
+/:
+/: PHASE 3: SECOND ITERATION (collection now has 1 item)
+/:   Step 1: :>(chat): BLOCKS waiting for user input
+/:           Body.chat.read_input() waits...
+/:           ... user types "quit" ...
+/:   Step 2: new message = "quit"
+/:   Step 3: :: understand → new canvas command = {type: "terminate"}
+/:   Step 4: :: conduct → command status = {terminate: true}
+/:   Step 5: :: response → response = "Goodbye! Session ended."
+/:   Step 6: :(chat): sends "Goodbye!"
+/:   Step 7: judge termination → TRUE (user said "quit")
+/:   Step 8: termination condition is not met = FALSE
+/:   Step 9: (add this to on-going messages) ← BLOCKED by condition!
+/:           on-going messages stays = [{...}] (no "quit" added)
+/:   Step 10: return canvas status = {...}
+/:
+/: PHASE 4: LOOP ENDS
+/:   - No new items in on-going messages
+/:   - Loop exhausted, exits
+/:
+/: PHASE 5: SESSION ENDS
+/:   - termination condition is met = TRUE (from last iteration)
+/:   - <= if termination condition is met → proceeds
+/:   - <= return session ends → triggers closing action via paradigm
+/:   - :<: session ends → output delivered, session closed
+/:
+/: ============================================================
+
+
+/: ============================================================
+/: PROVISION - LINKING OPERATORS TO PARADIGMS
+/: ============================================================
+/:
+/: In post-formalization (Phase 3.2), each operator links to a paradigm:
+/:
+/: | Operator | Paradigm | Body Faculty | Action |
+/: |----------|----------|--------------|--------|
+/: | :>(chat): | chat_read | Body.chat | read_input() - blocks for user |
+/: | :(chat): | chat_write | Body.chat | write() - sends to user |
+/: | :: understand | llm_classify | Body.llm | ask() with classify prompt |
+/: | :: conduct | canvas_execute | Body.canvas | execute command method |
+/: | :: response | llm_generate | Body.llm | ask() with response prompt |
+/: | judge if | llm_judge | Body.llm | ask() with judgement prompt |
+/: | return X | session_action | Body.session | close() - ends session |
+/:
+/: These paradigms are defined in:
+/:   canvas_app/compiler/paradigms/*.json
+/:
+/: The Body faculties are implemented in:
+/:   canvas_app/backend/tools/chat_tool.py
+/:   canvas_app/backend/tools/canvas_tool.py
+/:   canvas_app/backend/tools/llm_tool.py
+/:
+/: ============================================================
+
+
+/: ============================================================
+/: KEY NORMCODE PATTERNS IDENTIFIED
+/: ============================================================
+/:
+/: 1. SELF-SEEDING LOOP
+/:    The loop starts with empty collection but runs once anyway.
+/:    The first iteration creates the first item to add.
+/:    Subsequent iterations process newly added items.
+/:
+/: 2. BLOCKING I/O WITHIN LOOP  
+/:    :>(chat): blocks the entire iteration until input arrives.
+/:    This creates the "wait for user" behavior naturally.
+/:
+/: 3. CONDITIONAL APPEND FOR TERMINATION
+/:    The loop doesn't have an explicit "break".
+/:    Instead, the append is blocked by a condition.
+/:    No append = no new work = loop ends.
+/:
+/: 4. ACCUMULATED STATE
+/:    on-going responses grows across iterations.
+/:    Uses self-reference: <- on-going responses (previous)
+/:
+/: 5. JUDGEMENT FOR CONTROL FLOW
+/:    "judge if termination" returns boolean.
+/:    This boolean controls the append condition.
+/:
+/: 6. PROVISION LINKS TO TOOLS
+/:    Each operator (:>, :(, ::, judge) links to a paradigm.
+/:    Paradigms define which Body faculty to call.
+/:    This is configured in post-formalization phase.
+/:
+/: 7. OUTPUT TRIGGERS ACTION
+/:    The final output "session ends" isn't just a value.
+/:    It triggers an action paradigm (closing the session).
+/:
+/: ============================================================

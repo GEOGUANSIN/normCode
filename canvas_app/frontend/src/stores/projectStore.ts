@@ -7,6 +7,7 @@ import { projectApi, graphApi, executionApi } from '../services/api';
 import { useGraphStore } from './graphStore';
 import { useExecutionStore } from './executionStore';
 import { useConfigStore } from './configStore';
+import { useNotificationStore } from './notificationStore';
 
 interface ProjectState {
   // Current project state
@@ -234,6 +235,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to open project';
       set({ error: message, isLoading: false });
+      
+      // Show prominent toast notification
+      useNotificationStore.getState().showError(
+        'Failed to Open Project',
+        message,
+      );
+      
       return false;
     }
   },
@@ -277,6 +285,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create project';
       set({ error: message, isLoading: false });
+      
+      // Show prominent toast notification
+      useNotificationStore.getState().showError(
+        'Failed to Create Project',
+        message,
+      );
+      
       return false;
     }
   },
@@ -385,7 +400,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ isLoaded: true, isLoading: false });
       
       // Update the loaded state in the open tabs if using tabs
-      const { activeTabId, openTabs } = get();
+      const { activeTabId, openTabs, currentProject } = get();
       if (activeTabId) {
         const updatedTabs = openTabs.map(tab => 
           tab.id === activeTabId ? { ...tab, is_loaded: true } : tab
@@ -393,10 +408,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         set({ openTabs: updatedTabs });
       }
       
+      // Show success notification
+      useNotificationStore.getState().showSuccess(
+        'Repositories Loaded',
+        `${currentProject?.name || 'Project'} is ready for execution.`,
+        3000,
+      );
+      
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load repositories';
       set({ error: message, isLoading: false });
+      
+      // Show prominent toast notification for loading errors
+      useNotificationStore.getState().showError(
+        'Failed to Load Repositories',
+        message,
+      );
+      
       return false;
     }
   },
@@ -488,6 +517,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to open project as tab';
       set({ error: message, isLoading: false });
+      
+      useNotificationStore.getState().showError(
+        'Failed to Open Project',
+        message,
+      );
+      
       return false;
     }
   },

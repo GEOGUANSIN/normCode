@@ -1,0 +1,4 @@
+1. when loading - we need to have the log to see the debugs.
+2. llm configuratiom and base dir are not working properly sometimes
+3. some refactoring is needed: editor in specific 
+4. paradigm: normal should change to literal 

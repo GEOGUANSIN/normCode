@@ -27,51 +27,80 @@ import { useProjectStore } from '../../stores/projectStore';
 
 // Message bubble component
 function MessageBubble({ message }: { message: ChatMessage }) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const isCompiler = message.role === 'compiler';
   
-  // Determine styling based on role
-  const bubbleStyles = isUser
-    ? 'bg-blue-600 text-white ml-8'
-    : isCompiler
-    ? 'bg-purple-50 text-purple-900 border border-purple-200 mr-8'
-    : isSystem
-    ? 'bg-slate-100 text-slate-600 text-sm italic mx-4'
-    : 'bg-white text-slate-800 border border-slate-200 mr-8';
-  
-  const roleLabel = isCompiler ? 'Compiler' : isSystem ? 'System' : isUser ? 'You' : 'Assistant';
-  const roleColor = isCompiler ? 'text-purple-600' : isSystem ? 'text-slate-400' : isUser ? 'text-blue-400' : 'text-slate-500';
-  
-  return (
-    <div className={`${isUser ? 'flex justify-end' : ''}`}>
-      <div className={`rounded-lg p-3 max-w-full ${bubbleStyles}`}>
-        {/* Role label for non-user messages */}
-        {!isUser && (
-          <div className={`text-xs font-medium mb-1 flex items-center gap-1 ${roleColor}`}>
-            {isCompiler && <Zap size={12} />}
-            {roleLabel}
+  // User messages - right aligned, blue
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white ml-12 rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm max-w-[85%]">
+          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {message.content}
           </div>
-        )}
-        
-        {/* Message content */}
-        <div className="whitespace-pre-wrap break-words text-sm">
+          <div className="text-xs mt-1.5 text-blue-200 text-right">
+            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // System messages - centered, subtle
+  if (isSystem) {
+    return (
+      <div className="flex justify-center my-2">
+        <div className="bg-slate-100 text-slate-500 text-xs italic px-3 py-1.5 rounded-full">
           {message.content}
         </div>
-        
-        {/* Metadata/links */}
-        {message.metadata?.flowIndex && (
-          <div className="mt-2 flex items-center gap-1 text-xs opacity-70">
-            <Link2 size={10} />
-            <span>Node: {message.metadata.flowIndex}</span>
-          </div>
+      </div>
+    );
+  }
+  
+  // Compiler/Assistant messages - left aligned with avatar
+  return (
+    <div className="flex gap-2 mr-8">
+      {/* Avatar */}
+      <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
+        isCompiler ? 'bg-purple-100' : 'bg-slate-100'
+      }`}>
+        {isCompiler ? (
+          <Zap size={14} className="text-purple-600" />
+        ) : (
+          <MessageSquare size={14} className="text-slate-500" />
         )}
+      </div>
+      
+      {/* Message content */}
+      <div className="flex-1 min-w-0">
+        {/* Role label */}
+        <div className={`text-xs font-medium mb-1 ${isCompiler ? 'text-purple-600' : 'text-slate-500'}`}>
+          {isCompiler ? 'Compiler' : 'Assistant'}
+        </div>
+        
+        {/* Content bubble */}
+        <div className={`rounded-2xl rounded-tl-md px-4 py-2.5 ${
+          isCompiler 
+            ? 'bg-gradient-to-br from-purple-50 to-white border border-purple-100' 
+            : 'bg-white border border-slate-200'
+        }`}>
+          <div className="whitespace-pre-wrap break-words text-sm text-slate-700 leading-relaxed">
+            {message.content}
+          </div>
+          
+          {/* Metadata/links */}
+          {message.metadata?.flowIndex && (
+            <div className="mt-2 pt-2 border-t border-purple-100 flex items-center gap-1.5 text-xs text-purple-500">
+              <Link2 size={11} />
+              <span className="font-mono">{message.metadata.flowIndex}</span>
+            </div>
+          )}
+        </div>
         
         {/* Timestamp */}
-        <div className={`text-xs mt-1 opacity-50 ${isUser ? 'text-right' : ''}`}>
-          {message.timestamp.toLocaleTimeString()}
+        <div className="text-[10px] text-slate-400 mt-1 ml-1">
+          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
     </div>
@@ -118,6 +147,8 @@ export function ChatPanel() {
     isInputDisabled,
     isSending,
     pendingInputRequest,
+    bufferedMessage,
+    isExecutionActive,
     compilerStatus,
     compilerProjectPath,
     isCompilerProjectOpen,
@@ -127,6 +158,7 @@ export function ChatPanel() {
     submitInput,
     openCompilerProject,
     syncCompilerProjectState,
+    refreshBufferStatus,
   } = useChatStore();
   
   // Watch for tab changes to sync compiler project open state
@@ -136,6 +168,22 @@ export function ChatPanel() {
     // Sync state when tabs change (e.g., when compiler project tab is closed)
     syncCompilerProjectState();
   }, [openTabs, syncCompilerProjectState]);
+  
+  // Refresh buffer status when panel opens or periodically during execution
+  useEffect(() => {
+    if (isOpen && isExecutionActive) {
+      // Poll buffer status while execution is active
+      const interval = setInterval(refreshBufferStatus, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, isExecutionActive, refreshBufferStatus]);
+  
+  useEffect(() => {
+    // Initial buffer status check when panel opens
+    if (isOpen) {
+      refreshBufferStatus();
+    }
+  }, [isOpen, refreshBufferStatus]);
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -178,13 +226,19 @@ export function ChatPanel() {
           <div>
             <h3 className="font-semibold text-slate-800 text-sm">NormCode Compiler</h3>
             <div className="flex items-center gap-1 text-xs">
+              {/* Status indicator - "Connected" only shows when execution is running */}
               <span className={`w-1.5 h-1.5 rounded-full ${
-                compilerStatus === 'connected' ? 'bg-green-500' :
-                compilerStatus === 'running' ? 'bg-green-500 animate-pulse' :
+                isExecutionActive ? 'bg-green-500 animate-pulse' :
+                compilerStatus === 'connected' ? 'bg-slate-400' :
                 compilerStatus === 'connecting' ? 'bg-yellow-500' :
                 'bg-slate-400'
               }`} />
-              <span className="text-slate-500 capitalize">{compilerStatus}</span>
+              <span className="text-slate-500">
+                {isExecutionActive ? 'Connected' :
+                 compilerStatus === 'connected' ? 'Ready' :
+                 compilerStatus === 'connecting' ? 'Connecting' :
+                 'Disconnected'}
+              </span>
               {compilerProjectPath && (
                 <>
                   <span className="text-slate-300">•</span>
@@ -258,6 +312,19 @@ export function ChatPanel() {
         )}
       </div>
       
+      {/* Buffered message indicator - shows when user has sent a message waiting for plan to consume */}
+      {bufferedMessage && (
+        <div className="px-4 py-2 bg-amber-50 border-t border-amber-200">
+          <div className="flex items-center gap-2 text-amber-700 text-xs mb-1">
+            <Loader2 size={12} className="animate-spin" />
+            <span className="font-medium">Message buffered, waiting for plan...</span>
+          </div>
+          <div className="text-sm text-amber-800 bg-amber-100 rounded px-2 py-1 truncate">
+            "{bufferedMessage}"
+          </div>
+        </div>
+      )}
+      
       {/* Input request indicator */}
       {pendingInputRequest && (
         <div className="px-4 py-2 bg-purple-50 border-t border-purple-200 text-sm text-purple-700">
@@ -276,8 +343,13 @@ export function ChatPanel() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={pendingInputRequest?.placeholder || "Type a message..."}
-            disabled={isInputDisabled}
+            placeholder={
+              bufferedMessage 
+                ? "Waiting for plan to consume message..." 
+                : pendingInputRequest?.placeholder 
+                  || "Type a message..."
+            }
+            disabled={isInputDisabled || !!bufferedMessage}
             rows={1}
             className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             style={{

@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { 
   Bot, Plus, Settings, Trash2, Activity, Check, X, Loader2,
   ChevronRight, ChevronDown, Save, RotateCcw,
-  Wrench, FileCode, Code, MessageSquare, Cpu, Workflow, Repeat, Zap
+  Wrench, FileCode, Code, MessageSquare, Cpu, Workflow, Repeat, Zap,
+  MessageCircle, LayoutGrid
 } from 'lucide-react';
 import { useAgentStore, AgentConfig, ToolCallEvent } from '../../stores/agentStore';
 import { useLLMStore } from '../../stores/llmStore';
@@ -163,6 +164,8 @@ function CapabilitiesPanel({ agentId }: CapabilitiesPanelProps) {
       case 'prompt_tool': return <FileCode size={12} className="text-teal-500" />;
       case 'formatter_tool': return <Zap size={12} className="text-amber-500" />;
       case 'perception_router': return <Workflow size={12} className="text-cyan-500" />;
+      case 'chat': return <MessageCircle size={12} className="text-emerald-500" />;
+      case 'canvas': return <LayoutGrid size={12} className="text-rose-500" />;
       default: return <Wrench size={12} className="text-slate-500" />;
     }
   };

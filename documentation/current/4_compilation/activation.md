@@ -60,21 +60,28 @@ Activation generates two separate JSON files:
 ```json
 [
   {
+    "id": "c-document",
     "concept_name": "{document}",
     "type": "{}",
+    "flow_indices": ["1.2", "1.3.2"],
     "description": "Input document to process",
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": ["%{file_location}7f2(data/input.txt)"],
-    "reference_axis_names": ["_none_axis"]
+    "reference_axis_names": ["_none_axis"],
+    "natural_name": "document"
   },
   {
+    "id": "c-summary",
     "concept_name": "{summary}",
     "type": "{}",
+    "flow_indices": ["1"],
+    "description": "Final summarized output",
     "is_ground_concept": false,
     "is_final_concept": true,
     "reference_data": null,
-    "reference_axis_names": ["_none_axis"]
+    "reference_axis_names": ["_none_axis"],
+    "natural_name": "summary"
   }
 ]
 ```
@@ -83,29 +90,35 @@ Activation generates two separate JSON files:
 
 | Field | Type | Purpose | Example |
 |-------|------|---------|---------|
+| `id` | string | Unique identifier for the concept | `"c-document"`, `"c-summary"` |
 | `concept_name` | string | Full concept name with markers | `"{document}"`, `"[files]"`, `"<is valid>"` |
 | `type` | string | Semantic type | `"{}"`, `"[]"`, `"<>"` |
+| `flow_indices` | array | All flow indices where concept appears | `["1.2", "1.3.2"]` |
 | `description` | string | Optional description | `"Input document to process"` |
 | `is_ground_concept` | boolean | Pre-initialized? | `true` for inputs |
 | `is_final_concept` | boolean | Final output? | `true` for root |
 | `reference_data` | array or null | Initial perceptual signs | `["%{file_location}(...)"]` |
 | `reference_axis_names` | array | Axis names | `["_none_axis"]`, `["signal", "date"]` |
+| `natural_name` | string | Human-readable name | `"document"`, `"price data"` |
 
 ### Extraction from `.ncd`
 
 **Algorithm**:
 
-1. **Scan all value concepts** (`<-` lines)
-2. **Extract concept name** from line
-3. **Determine type** from markers (`{}`, `[]`, `<>`)
-4. **Check if ground**:
+1. **Scan all value concepts** (`<-` lines) and context concepts (`<*` lines)
+2. **Generate id** from concept name (e.g., `"{price data}"` → `"c-price-data"`)
+3. **Extract concept name** from line
+4. **Determine type** from markers (`{}`, `[]`, `<>`)
+5. **Collect flow_indices**: Track all flow indices where this concept appears
+6. **Check if ground**:
    - Has `:>:` marker?
    - No parent inference?
    - Has `$%` abstraction?
    - Has `|%{file_location}` annotation?
-5. **Check if final**: Has `:<:` marker?
-6. **Extract reference_data** from `|%{file_location}` or `$%` value
-7. **Extract axes** from `|%{ref_axes}` annotation
+7. **Check if final**: Has `:<:` marker?
+8. **Extract reference_data** from `|%{file_location}` or `$%` value
+9. **Extract axes** from `|%{ref_axes}` annotation
+10. **Generate natural_name** from concept name (strip markers)
 
 **Example**:
 
@@ -120,12 +133,16 @@ Activation generates two separate JSON files:
 **Concept Repo Entry**:
 ```json
 {
+  "id": "c-price-data",
   "concept_name": "{price data}",
   "type": "{}",
+  "flow_indices": ["1.2", "1.6.2.2"],
+  "description": "Price data retrieved from market sources",
   "is_ground_concept": true,
   "is_final_concept": false,
   "reference_data": ["%{file_location}price(provision/data/prices.json)"],
-  "reference_axis_names": ["date"]
+  "reference_axis_names": ["date"],
+  "natural_name": "price data"
 }
 ```
 

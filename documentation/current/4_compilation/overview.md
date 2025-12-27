@@ -241,7 +241,7 @@ Confirms **reference structure** (axes, shape, element type) for tensor coherenc
     |%{ref_axes}: [_none_axis]
     |%{ref_element}: dict(summary: str)
     <= ::(summarize this text) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{h_input_norm}: in-memory
         |%{body_faculty}: llm
     <- {clean text} | ?{flow_index}: 1.2
@@ -299,7 +299,7 @@ Transform the annotated `.ncd` into executable JSON repositories that the Orches
     "function_concept": "::(summarize this text)",
     "value_concepts": ["{clean text}"],
     "working_interpretation": {
-      "paradigm": "h_PromptTemplate-c_GenerateThinkJson-o_Normal",
+      "paradigm": "h_PromptTemplate-c_GenerateThinkJson-o_Literal",
       "value_order": {"{clean text}": 1},
       "workspace": {},
       "flow_info": {"flow_index": "1.1"}

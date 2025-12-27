@@ -7,7 +7,7 @@
  */
 
 import { create } from 'zustand';
-import { chatApi, type ChatMessage as ApiChatMessage } from '../services/api';
+import { chatApi, type ChatMessage as ApiChatMessage, type ChatBufferStatus } from '../services/api';
 import { useProjectStore } from './projectStore';
 
 // Message types for the chat
@@ -44,13 +44,14 @@ export interface ChatArtifact {
   title?: string;
 }
 
-// Input request from the compiler
+// Input request from the compiler or execution controller
 export interface ChatInputRequest {
   id: string;
   prompt: string;
   inputType: 'text' | 'code' | 'confirm' | 'select';
   options?: string[];
   placeholder?: string;
+  source?: 'compiler' | 'execution';  // Which service to submit to
 }
 
 interface ChatState {
@@ -65,6 +66,11 @@ interface ChatState {
   isInputDisabled: boolean;
   isSending: boolean;
   pendingInputRequest: ChatInputRequest | null;
+  
+  // Message buffer state (for execution mode)
+  // Only one message can be buffered at a time
+  bufferedMessage: string | null;
+  isExecutionActive: boolean;
   
   // Compiler connection state
   compilerProjectId: string | null;
@@ -92,6 +98,10 @@ interface ChatState {
   setInputRequest: (request: ChatInputRequest | null) => void;
   respondToInputRequest: (response: string) => Promise<void>;
   
+  // Buffer actions (for execution mode)
+  updateBufferStatus: (status: ChatBufferStatus) => void;
+  clearBuffer: () => void;
+  
   // Compiler connection actions
   setCompilerProjectId: (id: string | null) => void;
   setCompilerProjectPath: (path: string | null) => void;
@@ -104,6 +114,7 @@ interface ChatState {
   loadMessages: () => Promise<void>;
   openCompilerProject: () => Promise<void>;
   syncCompilerProjectState: () => void;
+  refreshBufferStatus: () => Promise<void>;
 }
 
 // Generate unique ID for messages
@@ -117,6 +128,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isInputDisabled: false,
   isSending: false,
   pendingInputRequest: null,
+  bufferedMessage: null,
+  isExecutionActive: false,
   compilerProjectId: null,
   compilerProjectPath: null,
   compilerProjectConfigFile: null,
@@ -189,7 +202,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setInputDisabled: (disabled) => set({ isInputDisabled: disabled }),
   
   submitInput: async (value) => {
-    const { pendingInputRequest, isSending } = get();
+    const { pendingInputRequest, isSending, bufferedMessage } = get();
     if (isSending) return;
     
     set({ isSending: true, isInputDisabled: true });
@@ -197,18 +210,78 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       // If there's a pending input request, respond to it
       if (pendingInputRequest) {
-        await chatApi.submitInput(pendingInputRequest.id, value);
+        // Add the user message to local display
+        get().addMessage({ role: 'user', content: value });
+        
+        // Use the correct endpoint based on source
+        if (pendingInputRequest.source === 'execution') {
+          await chatApi.submitExecutionInput(pendingInputRequest.id, value);
+        } else {
+          await chatApi.submitInput(pendingInputRequest.id, value);
+        }
         set({ pendingInputRequest: null });
       } else {
-        // Otherwise, send as a new message
-        await chatApi.sendMessage(value);
+        // Check if execution is active - if so, buffer the message
+        // Only ONE message can be buffered at a time
+        try {
+          const bufferStatus = await chatApi.getBufferStatus();
+          if (bufferStatus.execution_active) {
+            // Check if buffer is already full
+            if (bufferStatus.has_buffered_message) {
+              console.warn('Buffer already full, cannot send another message until plan consumes it');
+              // Don't clear input - let user see their message is stuck
+              set({ isSending: false, isInputDisabled: true });
+              return;
+            }
+            
+            // Execution is running, buffer the message for the plan
+            const bufferResult = await chatApi.bufferMessage(value);
+            if (bufferResult.success) {
+              // Message was buffered or delivered to pending request
+              get().addMessage({ role: 'user', content: value });
+              
+              if (bufferResult.delivered) {
+                // Message was delivered immediately to waiting request
+                console.log('Message delivered to waiting plan');
+                set({ bufferedMessage: null });
+              } else {
+                // Message is in buffer, waiting for plan to consume
+                console.log('Message buffered, waiting for plan to consume');
+                set({ bufferedMessage: bufferResult.buffered_message || value });
+              }
+            } else if (bufferResult.buffer_full) {
+              console.warn('Buffer is full:', bufferResult.buffered_message);
+              set({ 
+                bufferedMessage: bufferResult.buffered_message || null,
+                isSending: false, 
+                isInputDisabled: true 
+              });
+              return;
+            } else {
+              // Execution not active or other error, send as regular message
+              await chatApi.sendMessage(value);
+            }
+          } else {
+            // No execution active, send as a new message to compiler
+            await chatApi.sendMessage(value);
+          }
+        } catch (bufferError) {
+          // If buffer check fails, fallback to regular message
+          console.warn('Buffer status check failed, sending as regular message:', bufferError);
+          await chatApi.sendMessage(value);
+        }
       }
       
       set({ inputValue: '' });
     } catch (error) {
       console.error('Failed to submit input:', error);
     } finally {
-      set({ isSending: false, isInputDisabled: false });
+      // Only re-enable if we don't have a buffered message
+      const { bufferedMessage: currentBuffer } = get();
+      set({ 
+        isSending: false, 
+        isInputDisabled: currentBuffer !== null 
+      });
     }
   },
   
@@ -225,7 +298,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isSending: true, isInputDisabled: true });
       
       try {
-        await chatApi.submitInput(pendingInputRequest.id, response);
+        // Add the user's response to local display
+        get().addMessage({ role: 'user', content: response });
+        
+        // Use the correct endpoint based on source
+        if (pendingInputRequest.source === 'execution') {
+          await chatApi.submitExecutionInput(pendingInputRequest.id, response);
+        } else {
+          await chatApi.submitInput(pendingInputRequest.id, response);
+        }
         set({ 
           pendingInputRequest: null,
           inputValue: '',
@@ -358,5 +439,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
     );
     
     set({ isCompilerProjectOpen: isOpen });
+  },
+  
+  // Buffer actions for execution mode
+  updateBufferStatus: (status) => {
+    set({
+      isExecutionActive: status.execution_active,
+      bufferedMessage: status.buffered_message,
+      // Disable input if there's a buffered message waiting
+      isInputDisabled: status.has_buffered_message,
+    });
+  },
+  
+  clearBuffer: () => {
+    set({ 
+      bufferedMessage: null,
+      isInputDisabled: false,
+    });
+  },
+  
+  refreshBufferStatus: async () => {
+    try {
+      const status = await chatApi.getBufferStatus();
+      get().updateBufferStatus(status);
+    } catch (error) {
+      console.error('Failed to refresh buffer status:', error);
+    }
   },
 }));

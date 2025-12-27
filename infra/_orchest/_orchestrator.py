@@ -477,9 +477,10 @@ class Orchestrator:
         return not (is_quantifying and not is_complete)
 
     def _check_quantifying_completion(self, states: BaseStates, item: WaitlistItem) -> tuple[bool, bool]:
-        """Checks if an item is a quantifying inference and whether it has completed."""
-        is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
-        if not is_quantifying:
+        """Checks if an item is a quantifying or looping inference and whether it has completed."""
+        sequence_type = item.inference_entry.inference_sequence
+        is_iterating = sequence_type in ('quantifying', 'looping')
+        if not is_iterating:
             return False, True
         is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
         return True, is_complete
@@ -491,15 +492,16 @@ class Orchestrator:
             return
             
         flow_index = item.inference_entry.flow_info['flow_index']
-        logging.info(f"Quantifying loop for item {flow_index} not complete. Resetting supporters.")
+        sequence_type = item.inference_entry.inference_sequence
+        logging.info(f"Iterating {sequence_type} for item {flow_index} not complete. Resetting supporters.")
         
         for support_item in supporting_items:
             support_flow_index = support_item.inference_entry.flow_info['flow_index']
             self.blackboard.set_item_status(support_flow_index, 'pending')
             self.blackboard.reset_execution_count(support_flow_index)
 
-            # If the supporting item is a quantifying loop, clear its state from the workspace.
-            if support_item.inference_entry.inference_sequence == 'quantifying':
+            # If the supporting item is an iterating sequence, clear its state from the workspace.
+            if support_item.inference_entry.inference_sequence in ('quantifying', 'looping'):
                 self._clear_quantifier_workspace_state(support_item)
 
             inferred_concept_entry = support_item.inference_entry.concept_to_infer

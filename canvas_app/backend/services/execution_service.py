@@ -18,6 +18,8 @@ from schemas.execution_schemas import (
 from core.events import event_emitter
 from services.agent_service import agent_registry, agent_mapping, ToolCallEvent
 from tools.user_input_tool import CanvasUserInputTool
+from tools.chat_tool import CanvasChatTool
+from tools.canvas_tool import CanvasDisplayTool
 
 # Add project root to path for infra imports
 project_root = Path(__file__).parent.parent.parent.parent
@@ -243,7 +245,10 @@ class CustomParadigmTool:
         else:
             # Fallback: Import from infra but check custom directory first
             try:
-                from infra._agent._models._paradigms._paradigm import Paradigm, PARADIGMS_DIR
+                from infra._agent._models._paradigms._paradigm import (
+                    Paradigm, PARADIGMS_DIR, 
+                    _paradigm_object_hook, _build_env_spec, _build_sequence_spec
+                )
                 # Create a wrapper that loads from custom directory first, then falls back to default
                 class LocalParadigm:
                     """Wrapper to load paradigms from custom directory, falling back to default."""
@@ -253,14 +258,19 @@ class CustomParadigmTool:
                         paradigm_file = paradigm_dir / f"{paradigm_name}.json"
                         if paradigm_file.exists():
                             with open(paradigm_file, 'r', encoding='utf-8') as f:
-                                data = json.load(f)
-                            # Create Paradigm instance with loaded data
-                            paradigm = Paradigm.__new__(Paradigm)
-                            paradigm.name = paradigm_name
-                            paradigm.data = data
-                            paradigm.metadata = data.get('metadata', {})
-                            paradigm.env_spec = data.get('env_spec', {})
-                            paradigm.sequence_spec = data.get('sequence_spec', {})
+                                # Use the proper object hook to handle MetaValue etc
+                                raw_spec = json.load(f, object_hook=_paradigm_object_hook)
+                            
+                            # Properly reconstruct spec objects (not raw dicts!)
+                            env_spec_data = raw_spec.get('env_spec', {})
+                            sequence_spec_data = raw_spec.get('sequence_spec', {})
+                            metadata_data = raw_spec.get('metadata', {})
+                            
+                            env_spec = _build_env_spec(env_spec_data)
+                            sequence_spec = _build_sequence_spec(sequence_spec_data, env_spec)
+                            
+                            # Create Paradigm instance properly
+                            paradigm = Paradigm(env_spec, sequence_spec, metadata_data)
                             logger.debug(f"Loaded paradigm '{paradigm_name}' from custom directory")
                             return paradigm
                         
@@ -438,6 +448,21 @@ class ExecutionController:
                 emit_tool_event, get_flow_index
             )
         
+        if hasattr(body, 'chat') and body.chat is not None:
+            body.chat = MonitoredToolProxy(
+                "default", "chat", body.chat,
+                emit_tool_event, get_flow_index
+            )
+        
+        if hasattr(body, 'canvas') and body.canvas is not None:
+            body.canvas = MonitoredToolProxy(
+                "default", "canvas", body.canvas,
+                emit_tool_event, get_flow_index
+            )
+        
+        # Note: formatter_tool and composition_tool are internal tools used by paradigm
+        # execution. They don't benefit from monitoring as they are low-level utilities.
+        
         logger.info("Wrapped body tools with monitoring proxies")
     
     def _attach_infra_log_handlers(self):
@@ -522,6 +547,10 @@ class ExecutionController:
             from infra._orchest._repo import ConceptRepo, InferenceRepo
             from infra._agent._body import Body
             from infra._orchest._orchestrator import Orchestrator
+            from infra._core import set_dev_mode
+            # Enable dev mode to surface exceptions in element_action/cross_action
+            set_dev_mode(True)
+            logger.info("Enabled infra dev mode for debugging")
         except ImportError as e:
             logger.error(f"Failed to import infra modules: {e}")
             raise RuntimeError(f"Failed to import infra modules: {e}")
@@ -581,6 +610,20 @@ class ExecutionController:
         self.user_input_tool = CanvasUserInputTool(emit_callback=self._emit_sync)
         self.body.user_input = self.user_input_tool
         logger.info("Injected CanvasUserInputTool for human-in-the-loop interactions")
+        
+        # Create and inject chat tool for compiler chat interface
+        # Create chat tool with source="execution" so frontend uses /api/execution/chat-input/
+        self.chat_tool = CanvasChatTool(emit_callback=self._emit_sync, source="execution")
+        self.body.chat = self.chat_tool
+        logger.info("Injected CanvasChatTool for chat-driven execution (source=execution)")
+        
+        # Create and inject canvas display tool for canvas commands
+        self.canvas_tool = CanvasDisplayTool(emit_callback=self._emit_sync)
+        self.body.canvas = self.canvas_tool
+        logger.info("Injected CanvasDisplayTool for canvas operations")
+        
+        # Note: formatter_tool and composition_tool are already created by Body
+        # We don't overwrite them to preserve the perception_router injection
         
         # Wrap body tools with monitoring proxies for real-time tool call tracking
         self._wrap_body_with_monitoring(self.body)
@@ -685,6 +728,10 @@ class ExecutionController:
         self.status = ExecutionStatus.RUNNING
         self._stop_requested = False
         self._pause_event.set()
+        
+        # Mark chat tool as execution active (messages will be queued)
+        if hasattr(self, 'chat_tool') and self.chat_tool:
+            self.chat_tool.set_execution_active(True)
 
         await self._emit("execution:started", {})
         self._add_log("info", "", "Execution started")
@@ -730,6 +777,17 @@ class ExecutionController:
         """Stop execution."""
         self._stop_requested = True
         self._pause_event.set()  # Unblock if paused
+
+        # Cancel any pending chat input requests to unblock waiting threads
+        if hasattr(self, 'chat_tool') and self.chat_tool:
+            # Mark execution as inactive (clears message queue)
+            self.chat_tool.set_execution_active(False)
+            # Get all pending request IDs and cancel them
+            with self.chat_tool._lock:
+                pending_ids = list(self.chat_tool._pending_requests.keys())
+            for req_id in pending_ids:
+                self.chat_tool.cancel_request(req_id)
+                logger.debug(f"Cancelled pending chat request: {req_id}")
 
         if self._run_task and not self._run_task.done():
             self._run_task.cancel()
@@ -1469,6 +1527,20 @@ class ExecutionController:
             base_dir=base_dir,
             paradigm_tool=custom_paradigm_tool
         )
+        
+        # Inject canvas tools (same as in load_repositories)
+        # These are needed for chat-based compilation plans that use canvas commands
+        self.user_input_tool = CanvasUserInputTool(emit_callback=self._emit_sync)
+        self.body.user_input = self.user_input_tool
+        logger.info("Injected CanvasUserInputTool for checkpoint resume")
+        
+        self.chat_tool = CanvasChatTool(emit_callback=self._emit_sync, source="execution")
+        self.body.chat = self.chat_tool
+        logger.info("Injected CanvasChatTool for checkpoint resume")
+        
+        self.canvas_tool = CanvasDisplayTool(emit_callback=self._emit_sync)
+        self.body.canvas = self.canvas_tool
+        logger.info("Injected CanvasDisplayTool for checkpoint resume")
         
         # Wrap body tools with monitoring proxies for real-time tool call tracking
         self._wrap_body_with_monitoring(self.body)
