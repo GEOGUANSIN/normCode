@@ -239,21 +239,26 @@ class InferenceRepo:
                     raise ValueError(f"Context concept '{name}' not found in ConceptRepo.")
                 context_concepts.append(concept)
 
+            # Determine sequence-specific defaults for start flags
+            # Looping/quantifying sequences need to bypass checks on first execution
+            sequence = item['inference_sequence']
+            is_iterating_sequence = sequence in ('looping', 'quantifying')
+            
             # Create the InferenceEntry
             entry = InferenceEntry(
                 id=str(uuid.uuid4()),
-                inference_sequence=item['inference_sequence'],
+                inference_sequence=sequence,
                 concept_to_infer=concept_to_infer,
                 flow_info=item.get('flow_info', {}),
                 function_concept=function_concept,
                 value_concepts=value_concepts,
                 context_concepts=context_concepts,
                 start_without_value=item.get('start_without_value', False),
-                start_without_value_only_once=item.get('start_without_value_only_once', False),
+                start_without_value_only_once=item.get('start_without_value_only_once', is_iterating_sequence),
                 start_without_function=item.get('start_without_function', False),
-                start_without_function_only_once=item.get('start_without_function_only_once', False),
+                start_without_function_only_once=item.get('start_without_function_only_once', is_iterating_sequence),
                 start_with_support_reference_only=item.get('start_with_support_reference_only', False),
-                start_without_support_reference_only_once=item.get('start_without_support_reference_only_once', False),
+                start_without_support_reference_only_once=item.get('start_without_support_reference_only_once', is_iterating_sequence),
                 working_interpretation=item.get('working_interpretation')
             )
             inference_entries.append(entry)

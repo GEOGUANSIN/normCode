@@ -133,16 +133,16 @@
     "natural_name": "session should end"
   },
   {
-    "id": "c-message",
-    "concept_name": "{message}",
+    "id": "c-message-loop",
+    "concept_name": "{message}*1",
     "type": "{}",
     "flow_indices": ["1.3.3"],
-    "description": "Loop context - current message element",
+    "description": "Loop context - previous message element in loop @(1)",
     "is_ground_concept": false,
     "is_final_concept": false,
     "reference_data": null,
-    "reference_axis_names": ["_none_axis"],
-    "natural_name": "message"
+    "reference_axis_names": ["message"],
+    "natural_name": "previous discussion in loop"
   },
   {
     "id": "fc-spec-all-canvas-statuses",

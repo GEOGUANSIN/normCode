@@ -39,7 +39,7 @@
     "concept_to_infer": "[all canvas statuses]",
     "function_concept": "*. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)",
     "value_concepts": ["[on-going messages]"],
-    "context_concepts": ["{message}"],
+    "context_concepts": ["{message}*1"],
     "working_interpretation": {
       "syntax": {
         "marker": "every",
@@ -50,7 +50,6 @@
         "InLoopConcept": {},
         "ConceptToInfer": ["{canvas status}"]
       },
-      "loop_config": "start_without_value_only_once",
       "workspace": {},
       "flow_info": {"flow_index": "1.3"}
     }
@@ -66,7 +65,7 @@
       "syntax": {
         "marker": ".",
         "assign_source": "{canvas status}",
-        "assign_destination": "{canvas status}"
+        "assign_destination": "*. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)"
       },
       "workspace": {},
       "flow_info": {"flow_index": "1.3.1"}
@@ -218,13 +217,13 @@
     "inference_sequence": "assigning",
     "concept_to_infer": "[on-going messages]",
     "function_concept": "$+ %>([on-going messages]) %<({current message}) %:({message})",
-    "value_concepts": ["[on-going messages]", "{current message}"],
+    "value_concepts": ["{current message}", "[on-going messages]"],
     "context_concepts": [],
     "working_interpretation": {
       "syntax": {
         "marker": "+",
-        "assign_source": "[on-going messages]",
-        "assign_destination": "{current message}",
+        "assign_source": "{current message}",
+        "assign_destination": "[on-going messages]",
         "by_axes": ["message"]
       },
       "workspace": {},
