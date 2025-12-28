@@ -46,6 +46,7 @@ class ExecutionSettings(BaseModel):
     db_path: str = "orchestration.db"
     base_dir: Optional[str] = None  # Base directory for file operations (auto-detected if not set)
     paradigm_dir: Optional[str] = None  # e.g., "provision/paradigm"
+    agent_config: Optional[str] = None  # Path to .agent.json file (relative to project dir)
 
 
 class ProjectConfig(BaseModel):

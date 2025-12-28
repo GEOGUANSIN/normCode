@@ -45,7 +45,7 @@ import { editorApi } from '../../services/editorApi';
 import { isNormCodeFormat as checkNormCodeFormat } from '../../config/fileTypes';
 
 // Components
-import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor } from '../editor';
+import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor, RepoPreview, ProjectPreview, AgentConfigPreview } from '../editor';
 
 // Paradigm types
 import type { Paradigm, ParsedParadigm } from '../../types/paradigm';
@@ -109,7 +109,40 @@ export function EditorPanel() {
   const [paradigm, setParadigm] = useState<Paradigm | null>(null);
   const [parsedParadigm, setParsedParadigm] = useState<ParsedParadigm | null>(null);
   
+  // Repository preview state
+  const [isRepoFile, setIsRepoFile] = useState(false);
+  
+  // Project config preview state
+  const [isProjectFile, setIsProjectFile] = useState(false);
+  
+  // Agent config preview state
+  const [isAgentFile, setIsAgentFile] = useState(false);
+  
   const initialLoadDone = useRef(false);
+  
+  // Helper to detect if a file is a concept/inference repository
+  const isRepoFilename = (path: string): boolean => {
+    const filename = path.split(/[/\\]/).pop()?.toLowerCase() || '';
+    // Match patterns like: *.concept.json, *.inference.json, concept_repo.json, etc.
+    return (
+      filename.endsWith('.concept.json') ||
+      filename.endsWith('.inference.json') ||
+      (filename.includes('concept') && filename.endsWith('.json')) ||
+      (filename.includes('inference') && filename.endsWith('.json'))
+    );
+  };
+  
+  // Helper to detect if a file is a project config file
+  const isProjectFilename = (path: string): boolean => {
+    const filename = path.split(/[/\\]/).pop()?.toLowerCase() || '';
+    return filename.endsWith('.normcode-canvas.json');
+  };
+  
+  // Helper to detect if a file is an agent config file
+  const isAgentFilename = (path: string): boolean => {
+    const filename = path.split(/[/\\]/).pop()?.toLowerCase() || '';
+    return filename.endsWith('.agent.json');
+  };
 
   // Check if current file is NormCode format
   const isNormCodeFormat = checkNormCodeFormat(fileFormat);
@@ -212,10 +245,37 @@ export function EditorPanel() {
       setCollapsedIndices(new Set());
       setTextEditorKey(prev => prev + 1);
       
-      // Reset paradigm state
+      // Reset paradigm, repo, project, and agent state
       setIsParadigmFile(false);
       setParadigm(null);
       setParsedParadigm(null);
+      setIsRepoFile(false);
+      setIsProjectFile(false);
+      setIsAgentFile(false);
+      
+      // Check if this is a project config file (.normcode-canvas.json)
+      if (isProjectFilename(path)) {
+        setIsProjectFile(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if this is an agent config file (.agent.json)
+      if (isAgentFilename(path)) {
+        setIsAgentFile(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if this is a repository file (concept/inference JSON)
+      // The API returns format 'concept' or 'inference' for these files
+      if (result.format === 'concept' || result.format === 'inference' || 
+          (isRepoFilename(path) && result.format === 'json')) {
+        setIsRepoFile(true);
+        // Don't parse further - RepoPreview will handle loading
+        setIsLoading(false);
+        return;
+      }
       
       // Check if this is a paradigm file
       const isParadigm = editorApi.isParadigmFilename(path) || editorApi.isParadigmContent(result.content);
@@ -865,11 +925,17 @@ export function EditorPanel() {
               <div className="bg-gray-100 px-4 py-2 flex items-center justify-between border-b">
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-medium px-2 py-0.5 rounded uppercase ${
-                    isParadigmFile 
+                    isProjectFile
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : isAgentFile
+                      ? 'bg-violet-100 text-violet-700'
+                      : isRepoFile
+                      ? 'bg-blue-100 text-blue-700'
+                      : isParadigmFile 
                       ? 'bg-purple-100 text-purple-700' 
                       : 'bg-gray-200 text-gray-700'
                   }`}>
-                    {isParadigmFile ? 'paradigm' : fileFormat}
+                    {isProjectFile ? 'project' : isAgentFile ? 'agent' : isRepoFile ? 'repository' : isParadigmFile ? 'paradigm' : fileFormat}
                   </span>
                   
                   {/* Editor mode toggle for NormCode files */}
@@ -1039,8 +1105,34 @@ export function EditorPanel() {
               
               {/* Editor content area */}
               <div className="flex-1 min-h-0 overflow-hidden">
-                {/* Paradigm Editor */}
-                {isParadigmFile && paradigm && parsedParadigm ? (
+                {/* Project Config Preview (.normcode-canvas.json) */}
+                {isProjectFile && selectedFile ? (
+                  <ProjectPreview 
+                    filePath={selectedFile}
+                    onClose={() => setIsProjectFile(false)}
+                    onOpenFile={(relPath) => {
+                      // Handle relative paths from project config
+                      const projectDir = selectedFile.split(/[/\\]/).slice(0, -1).join('/');
+                      const fullPath = relPath.startsWith('.') || !relPath.includes(':')
+                        ? `${projectDir}/${relPath}`
+                        : relPath;
+                      loadFile(fullPath);
+                    }}
+                  />
+                ) : isAgentFile && selectedFile ? (
+                  /* Agent Config Preview (.agent.json) */
+                  <AgentConfigPreview 
+                    filePath={selectedFile}
+                    onClose={() => setIsAgentFile(false)}
+                  />
+                ) : isRepoFile && selectedFile ? (
+                  /* Repository Preview (concept/inference files) */
+                  <RepoPreview 
+                    filePath={selectedFile}
+                    onClose={() => setIsRepoFile(false)}
+                  />
+                ) : isParadigmFile && paradigm && parsedParadigm ? (
+                  /* Paradigm Editor */
                   <ParadigmEditor
                     paradigm={paradigm}
                     parsed={parsedParadigm}
