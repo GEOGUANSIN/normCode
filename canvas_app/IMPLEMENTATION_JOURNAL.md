@@ -2,7 +2,139 @@
 
 **Project Start**: December 18, 2024  
 **Current Phase**: Phase 6 - Self-Hosted Compiler  
-**Status**: ✅ Chat Backend Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Phase 5 ✅ Core)
+**Status**: ✅ Chat Controller Feature Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Phase 5 ✅ Core ✅)
+
+---
+
+## December 29, 2024 - Chat Controller Feature (Selectable Chat Projects)
+
+### What Was Implemented
+
+**Major Feature: Chat Controller Selection**
+
+Replaced the hardcoded "Compiler" chat with a flexible system where users can select any NormCode project to control the chat. This makes the system transparent: users see exactly which plan is running.
+
+#### Architecture Change
+
+```
+Before:
+  CompilerService (hardcoded to compiler project)
+      └── Placeholder responses
+
+After:
+  ChatControllerService
+      └── User selects controller → ExecutionController runs selected project
+            ├── ChatTool (read/write messages)
+            └── CanvasTool (execute canvas commands)
+```
+
+#### Backend Changes
+
+**New File: `services/chat_controller_service.py`**
+- [x] `ChatControllerService` - Main service for managing chat controllers
+- [x] `ControllerInfo` - Info about available controller projects
+- [x] `ControllerStatus` - Status constants (disconnected, connecting, running, etc.)
+- [x] `get_available_controllers()` - List built-in and registered controllers
+- [x] `register_controller()` - Dynamically register new controller projects
+- [x] `select_controller()` - Select and connect to a controller
+- [x] `start/pause/resume/stop/disconnect()` - Lifecycle management
+- [x] `send_message()` - Route messages to running controller
+- [x] Backward compatibility with `get_compiler_service()` alias
+
+**Updated: `routers/chat_router.py`**
+- [x] `GET /api/chat/controllers` - List available controllers
+- [x] `POST /api/chat/controllers/select` - Select a controller
+- [x] `POST /api/chat/controllers/register` - Register new controller
+- [x] `POST /api/chat/pause` - Pause controller
+- [x] `POST /api/chat/resume` - Resume controller
+- [x] Backward compatibility endpoints for old "compiler" naming
+
+**Updated: `routers/websocket_router.py`**
+- [x] Renamed service wiring to use `ChatControllerService`
+- [x] New event type `chat:controller_status` (includes controller_id, name)
+
+#### Frontend Changes
+
+**Updated: `services/api.ts`**
+- [x] New types: `ControllerInfo`, `ControllersListResponse`, `ControllerState`
+- [x] `listControllers()` - Fetch available controllers
+- [x] `selectController()` - Select a controller
+- [x] `startController/pauseController/resumeController/stopController()`
+- [x] `getControllerState()` - Get current controller state
+- [x] Backward compatibility aliases for old API
+
+**Updated: `stores/chatStore.ts`**
+- [x] New state: `availableControllers`, `controllerId`, `controllerName`, `controllerPath`
+- [x] New state: `controllerStatus` (disconnected/connecting/connected/running/paused/error)
+- [x] New state: `currentFlowIndex` - Shows which node is executing
+- [x] `loadControllers()` - Fetch available controllers on panel open
+- [x] `selectController()` - Switch to a different controller
+- [x] `setControllerStatus()` - Update from WebSocket events
+
+**Updated: `components/panels/ChatPanel.tsx`**
+- [x] `ControllerSelector` component - Dropdown to select controller
+- [x] Shows current controller name and status
+- [x] Shows execution flow index when running
+- [x] `ExecutionControls` component - Play/Pause/Stop buttons
+- [x] Messages show `@flowIndex` badges when metadata available
+- [x] Bot icon instead of Zap/Sparkles for controller avatar
+
+**Updated: `hooks/useWebSocket.ts`**
+- [x] Handle `chat:controller_status` event type
+- [x] Pass `current_flow_index` to store
+
+### UI Preview
+
+```
+┌─────────────────────────────────────────────────┐
+│  [Controller ▼] Running @1.3.1    [▶][⏸][⏹]   │
+│  NormCode Compiler                              │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  [Bot] Controller                @1.3.1.2.4    │
+│  Creating concept...                            │
+│                                                 │
+│                         [User]                  │
+│                         Create a user profile   │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  [Type a message...]              [Send]        │
+└─────────────────────────────────────────────────┘
+```
+
+### API Endpoints Summary
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chat/controllers` | List available controllers |
+| POST | `/api/chat/controllers/select` | Select a controller |
+| POST | `/api/chat/controllers/register` | Register new controller |
+| GET | `/api/chat/state` | Get current controller state |
+| POST | `/api/chat/start` | Start controller execution |
+| POST | `/api/chat/pause` | Pause execution |
+| POST | `/api/chat/resume` | Resume execution |
+| POST | `/api/chat/stop` | Stop execution |
+| POST | `/api/chat/disconnect` | Disconnect controller |
+
+### Files Created
+
+- `canvas_app/backend/services/chat_controller_service.py`
+
+### Files Modified
+
+- `canvas_app/backend/routers/chat_router.py`
+- `canvas_app/backend/routers/websocket_router.py`
+- `canvas_app/frontend/src/services/api.ts`
+- `canvas_app/frontend/src/stores/chatStore.ts`
+- `canvas_app/frontend/src/components/panels/ChatPanel.tsx`
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`
+
+### Next Steps
+
+1. **Test the controller selector** - Ensure switching between controllers works
+2. **Add more built-in controllers** - Tutor, assistant, etc.
+3. **Controller marketplace** - Browse and install community controllers
+4. **Per-controller message history** - Separate histories per controller
 
 ---
 

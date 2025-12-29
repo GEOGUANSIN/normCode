@@ -106,7 +106,7 @@ def install_backend_dependencies() -> bool:
         )
         
         if result.returncode == 0:
-            print("  ✓ Python dependencies installed successfully")
+            print("  [OK] Python dependencies installed successfully")
             return True
         else:
             print(f"  ERROR: pip install failed:\n{result.stderr}")
@@ -131,7 +131,7 @@ def install_frontend_dependencies() -> bool:
         )
         
         if result.returncode == 0:
-            print("  ✓ npm dependencies installed successfully")
+            print("  [OK] npm dependencies installed successfully")
             return True
         else:
             print(f"  ERROR: npm install failed:\n{result.stderr}")
@@ -284,36 +284,36 @@ def check_and_install_dependencies(force_install: bool = False, skip_check: bool
     all_ready = True
     
     # Check backend dependencies
-    print("\n📦 Backend (Python):")
+    print("\n[*] Backend (Python):")
     backend_ok, missing_packages = check_backend_dependencies()
     
     if backend_ok and not force_install:
-        print("  ✓ All Python dependencies installed")
+        print("  [OK] All Python dependencies installed")
     else:
         if force_install:
             print("  → Force reinstalling Python dependencies...")
         else:
-            print(f"  ✗ Missing packages: {', '.join(missing_packages)}")
+            print(f"  [FAIL] Missing packages: {', '.join(missing_packages)}")
         
         if not install_backend_dependencies():
             all_ready = False
     
     # Check infra module (required for backend to work)
-    print("\n📦 NormCode Infra Module:")
+    print("\n[*] NormCode Infra Module:")
     infra_ok, infra_error = check_infra_module()
     if infra_ok:
-        print("  ✓ infra module available")
+        print("  [OK] infra module available")
     else:
-        print("  ✗ infra module not found")
+        print("  [FAIL] infra module not found")
         print(f"    Error: {infra_error}")
         print("    Make sure you're running from the normCode project directory")
         all_ready = False
     
     # Check settings.yaml
-    print("\n📦 LLM Configuration:")
+    print("\n[*] LLM Configuration:")
     settings_ok, settings_path = check_settings_yaml()
     if settings_ok:
-        print(f"  ✓ settings.yaml found at {settings_path}")
+        print(f"  [OK] settings.yaml found at {settings_path}")
     else:
         print(f"  ⚠ settings.yaml not found at {settings_path}")
         print("    LLM features will be limited to 'demo' mode")
@@ -322,45 +322,45 @@ def check_and_install_dependencies(force_install: bool = False, skip_check: bool
     
     # Verify backend can actually start
     if all_ready:
-        print("\n📦 Backend Import Check:")
+        print("\n[*] Backend Import Check:")
         can_start, error = verify_backend_can_start()
         if can_start:
-            print("  ✓ Backend imports successfully")
+            print("  [OK] Backend imports successfully")
         else:
-            print("  ✗ Backend failed to import")
+            print("  [FAIL] Backend failed to import")
             print(f"    Error: {error[:500]}...")  # Truncate long errors
             all_ready = False
     
     # Check frontend dependencies
-    print("\n📦 Frontend (Node.js):")
+    print("\n[*] Frontend (Node.js):")
     
     # First check if Node.js and npm are available
     if not check_node_available():
-        print("  ✗ Node.js is not installed or not in PATH")
+        print("  [FAIL] Node.js is not installed or not in PATH")
         print("    Please install Node.js from https://nodejs.org/")
         all_ready = False
     elif not check_npm_available():
-        print("  ✗ npm is not available in PATH")
+        print("  [FAIL] npm is not available in PATH")
         print("    Please ensure npm is installed with Node.js")
         all_ready = False
     else:
         frontend_ok = check_frontend_dependencies()
         
         if frontend_ok and not force_install:
-            print("  ✓ All npm dependencies installed")
+            print("  [OK] All npm dependencies installed")
         else:
             if force_install:
                 print("  → Force reinstalling npm dependencies...")
             else:
-                print("  ✗ node_modules not found or incomplete")
+                print("  [FAIL] node_modules not found or incomplete")
             
             if not install_frontend_dependencies():
                 all_ready = False
     
     if all_ready:
-        print("\n✓ All dependencies ready!")
+        print("\n[OK] All dependencies ready!")
     else:
-        print("\n✗ Some dependencies failed to install. Please fix the errors above.")
+        print("\n[FAIL] Some dependencies failed to install. Please fix the errors above.")
     
     return all_ready
 
@@ -411,7 +411,7 @@ Examples:
         force_install=args.install, 
         skip_check=args.skip_deps
     ):
-        print("\n❌ Cannot start: dependency installation failed")
+        print("\n[ERROR] Cannot start: dependency installation failed")
         print("   Try running: pip install -r canvas_app/backend/requirements.txt")
         print("   And: cd canvas_app/frontend && npm install")
         sys.exit(1)
@@ -490,7 +490,7 @@ Examples:
             time.sleep(1)
             if backend_process.poll() is not None:
                 print(" FAILED!")
-                print(f"\n❌ Backend process exited with code {backend_process.returncode}")
+                print(f"\n[ERROR] Backend process exited with code {backend_process.returncode}")
                 print("   Run the backend manually to see the error:")
                 print(f"   cd {BACKEND_DIR}")
                 print(f"   {sys.executable} -m uvicorn main:app --port 8000")
@@ -523,31 +523,31 @@ Examples:
         print_header("NormCode Canvas is Running!")
         
         if not args.backend_only:
-            print("\n  🌐 Frontend:    http://localhost:5173")
+            print("\n  [URL] Frontend:    http://localhost:5173")
         if not args.frontend_only:
-            print("  📡 Backend API: http://localhost:8000/docs")
-            print("  🔌 WebSocket:   ws://localhost:8000/ws/events")
+            print("  [API] Backend API: http://localhost:8000/docs")
+            print("  [WS]  WebSocket:   ws://localhost:8000/ws/events")
         
         if dev_mode:
-            print("\n  📝 Development Mode:")
-            print("     • Backend auto-reloads on .py file changes")
-            print("     • Frontend hot-reloads on .tsx/.ts/.css changes")
+            print("\n  [DEV] Development Mode:")
+            print("     - Backend auto-reloads on .py file changes")
+            print("     - Frontend hot-reloads on .tsx/.ts/.css changes")
         
-        print("\n  ⏹  Press Ctrl+C to stop all servers...")
+        print("\n  [STOP] Press Ctrl+C to stop all servers...")
         print("=" * 60)
         
         # Wait for processes
         while True:
             for name, p in processes:
                 if p.poll() is not None:
-                    print(f"\n⚠ {name} process (PID {p.pid}) exited with code {p.returncode}")
+                    print(f"\n[WARN] {name} process (PID {p.pid}) exited with code {p.returncode}")
                     # If one process dies, stop all
                     if p.returncode != 0:
                         raise KeyboardInterrupt()
             time.sleep(1)
             
     except KeyboardInterrupt:
-        print("\n\n🛑 Shutting down...")
+        print("\n\n[STOP] Shutting down...")
     finally:
         # Terminate all processes - use taskkill on Windows to kill process trees
         for name, p in processes:
@@ -579,7 +579,7 @@ Examples:
             except Exception:
                 pass
         
-        print("\n✓ All servers stopped.")
+        print("\n[OK] All servers stopped.")
 
 
 if __name__ == "__main__":

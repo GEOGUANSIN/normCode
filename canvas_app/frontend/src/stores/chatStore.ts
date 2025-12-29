@@ -1,17 +1,28 @@
 /**
  * Chat state management with Zustand
  * 
- * Manages the compiler-driven chat interface that is independent of any project.
- * The chat panel can be opened/closed independently and is driven by a 
- * "compiler meta project" that orchestrates the conversation.
+ * Manages the chat interface which can be driven by any NormCode project
+ * that has chat capabilities (chat paradigms). The user can select which
+ * "controller" project drives the chat.
+ * 
+ * Key concepts:
+ * - Controller: A NormCode project that drives the chat conversation
+ * - The controller runs via ExecutionController and uses ChatTool for I/O
+ * - Messages show which flow_index generated them for transparency
  */
 
 import { create } from 'zustand';
-import { chatApi, type ChatMessage as ApiChatMessage, type ChatBufferStatus } from '../services/api';
+import { 
+  chatApi, 
+  type ChatMessage as ApiChatMessage, 
+  type ChatBufferStatus,
+  type ControllerInfo,
+  type ControllerState,
+} from '../services/api';
 import { useProjectStore } from './projectStore';
 
 // Message types for the chat
-export type MessageRole = 'user' | 'assistant' | 'system' | 'compiler';
+export type MessageRole = 'user' | 'assistant' | 'system' | 'compiler' | 'controller';
 
 export interface ChatMessage {
   id: string;
@@ -44,15 +55,24 @@ export interface ChatArtifact {
   title?: string;
 }
 
-// Input request from the compiler or execution controller
+// Input request from the controller or execution
 export interface ChatInputRequest {
   id: string;
   prompt: string;
   inputType: 'text' | 'code' | 'confirm' | 'select';
   options?: string[];
   placeholder?: string;
-  source?: 'compiler' | 'execution';  // Which service to submit to
+  source?: 'controller' | 'execution';
 }
+
+// Controller status types
+export type ControllerStatusType = 
+  | 'disconnected' 
+  | 'connecting' 
+  | 'connected' 
+  | 'running' 
+  | 'paused' 
+  | 'error';
 
 interface ChatState {
   // Panel visibility
@@ -68,16 +88,20 @@ interface ChatState {
   pendingInputRequest: ChatInputRequest | null;
   
   // Message buffer state (for execution mode)
-  // Only one message can be buffered at a time
   bufferedMessage: string | null;
   isExecutionActive: boolean;
   
-  // Compiler connection state
-  compilerProjectId: string | null;
-  compilerProjectPath: string | null;
-  compilerProjectConfigFile: string | null;
-  isCompilerProjectOpen: boolean;
-  compilerStatus: 'disconnected' | 'connecting' | 'connected' | 'running';
+  // Controller state (NEW)
+  availableControllers: ControllerInfo[];
+  controllerId: string | null;
+  controllerName: string | null;
+  controllerPath: string | null;
+  controllerStatus: ControllerStatusType;
+  currentFlowIndex: string | null;
+  isControllerProjectOpen: boolean;
+  
+  // Error state
+  errorMessage: string | null;
   
   // Actions
   togglePanel: () => void;
@@ -94,26 +118,29 @@ interface ChatState {
   setInputDisabled: (disabled: boolean) => void;
   submitInput: (value: string) => Promise<void>;
   
-  // Input request actions (from compiler)
+  // Input request actions
   setInputRequest: (request: ChatInputRequest | null) => void;
   respondToInputRequest: (response: string) => Promise<void>;
   
-  // Buffer actions (for execution mode)
+  // Buffer actions
   updateBufferStatus: (status: ChatBufferStatus) => void;
   clearBuffer: () => void;
   
-  // Compiler connection actions
-  setCompilerProjectId: (id: string | null) => void;
-  setCompilerProjectPath: (path: string | null) => void;
-  setCompilerProjectConfigFile: (configFile: string | null) => void;
-  setCompilerStatus: (status: ChatState['compilerStatus']) => void;
+  // Controller actions (NEW)
+  loadControllers: () => Promise<void>;
+  selectController: (controllerId: string) => Promise<void>;
+  setControllerStatus: (status: ControllerStatusType, flowIndex?: string) => void;
   
-  // API actions
-  startCompiler: () => Promise<void>;
-  stopCompiler: () => Promise<void>;
+  // Lifecycle actions
+  startController: () => Promise<void>;
+  pauseController: () => Promise<void>;
+  resumeController: () => Promise<void>;
+  stopController: () => Promise<void>;
   loadMessages: () => Promise<void>;
-  openCompilerProject: () => Promise<void>;
-  syncCompilerProjectState: () => void;
+  
+  // Project view actions
+  openControllerProject: () => Promise<void>;
+  syncControllerProjectState: () => void;
   refreshBufferStatus: () => Promise<void>;
 }
 
@@ -130,28 +157,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pendingInputRequest: null,
   bufferedMessage: null,
   isExecutionActive: false,
-  compilerProjectId: null,
-  compilerProjectPath: null,
-  compilerProjectConfigFile: null,
-  isCompilerProjectOpen: false,
-  compilerStatus: 'disconnected',
+  
+  // Controller state
+  availableControllers: [],
+  controllerId: null,
+  controllerName: null,
+  controllerPath: null,
+  controllerStatus: 'disconnected',
+  currentFlowIndex: null,
+  isControllerProjectOpen: false,
+  errorMessage: null,
   
   // Panel visibility
   togglePanel: () => {
     const { isOpen } = get();
     if (!isOpen) {
-      // Opening panel - start compiler if not already started
-      const { compilerStatus, startCompiler } = get();
-      if (compilerStatus === 'disconnected') {
-        startCompiler();
+      // Opening panel - start controller if not already started
+      const { controllerStatus, startController, loadControllers } = get();
+      loadControllers(); // Load available controllers
+      if (controllerStatus === 'disconnected') {
+        startController();
       }
     }
     set((state) => ({ isOpen: !state.isOpen }));
   },
   openPanel: () => {
-    const { compilerStatus, startCompiler } = get();
-    if (compilerStatus === 'disconnected') {
-      startCompiler();
+    const { controllerStatus, startController, loadControllers } = get();
+    loadControllers();
+    if (controllerStatus === 'disconnected') {
+      startController();
     }
     set({ isOpen: true });
   },
@@ -210,10 +244,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       // If there's a pending input request, respond to it
       if (pendingInputRequest) {
-        // Add the user message to local display
         get().addMessage({ role: 'user', content: value });
         
-        // Use the correct endpoint based on source
         if (pendingInputRequest.source === 'execution') {
           await chatApi.submitExecutionInput(pendingInputRequest.id, value);
         } else {
@@ -221,36 +253,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
         set({ pendingInputRequest: null });
       } else {
-        // Check if execution is active - if so, buffer the message
-        // Only ONE message can be buffered at a time
+        // Check buffer status
         try {
           const bufferStatus = await chatApi.getBufferStatus();
           if (bufferStatus.execution_active) {
-            // Check if buffer is already full
             if (bufferStatus.has_buffered_message) {
-              console.warn('Buffer already full, cannot send another message until plan consumes it');
-              // Don't clear input - let user see their message is stuck
+              console.warn('Buffer already full');
               set({ isSending: false, isInputDisabled: true });
               return;
             }
             
-            // Execution is running, buffer the message for the plan
             const bufferResult = await chatApi.bufferMessage(value);
             if (bufferResult.success) {
-              // Message was buffered or delivered to pending request
               get().addMessage({ role: 'user', content: value });
               
               if (bufferResult.delivered) {
-                // Message was delivered immediately to waiting request
-                console.log('Message delivered to waiting plan');
                 set({ bufferedMessage: null });
               } else {
-                // Message is in buffer, waiting for plan to consume
-                console.log('Message buffered, waiting for plan to consume');
                 set({ bufferedMessage: bufferResult.buffered_message || value });
               }
             } else if (bufferResult.buffer_full) {
-              console.warn('Buffer is full:', bufferResult.buffered_message);
               set({ 
                 bufferedMessage: bufferResult.buffered_message || null,
                 isSending: false, 
@@ -258,16 +280,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
               });
               return;
             } else {
-              // Execution not active or other error, send as regular message
               await chatApi.sendMessage(value);
             }
           } else {
-            // No execution active, send as a new message to compiler
             await chatApi.sendMessage(value);
           }
         } catch (bufferError) {
-          // If buffer check fails, fallback to regular message
-          console.warn('Buffer status check failed, sending as regular message:', bufferError);
+          console.warn('Buffer check failed, sending regular message:', bufferError);
           await chatApi.sendMessage(value);
         }
       }
@@ -276,7 +295,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('Failed to submit input:', error);
     } finally {
-      // Only re-enable if we don't have a buffered message
       const { bufferedMessage: currentBuffer } = get();
       set({ 
         isSending: false, 
@@ -288,7 +306,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   // Input request actions
   setInputRequest: (request) => set({ 
     pendingInputRequest: request,
-    isInputDisabled: false, // Enable input when request comes in
+    isInputDisabled: false,
   }),
   
   respondToInputRequest: async (response) => {
@@ -298,10 +316,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isSending: true, isInputDisabled: true });
       
       try {
-        // Add the user's response to local display
         get().addMessage({ role: 'user', content: response });
         
-        // Use the correct endpoint based on source
         if (pendingInputRequest.source === 'execution') {
           await chatApi.submitExecutionInput(pendingInputRequest.id, response);
         } else {
@@ -319,45 +335,118 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
   
-  // Compiler connection actions
-  setCompilerProjectId: (id) => set({ compilerProjectId: id }),
-  setCompilerProjectPath: (path) => set({ compilerProjectPath: path }),
-  setCompilerProjectConfigFile: (configFile) => set({ compilerProjectConfigFile: configFile }),
-  setCompilerStatus: (status) => set({ compilerStatus: status }),
-  
-  // API actions
-  startCompiler: async () => {
-    set({ compilerStatus: 'connecting' });
-    
+  // Controller actions (NEW)
+  loadControllers: async () => {
     try {
-      const response = await chatApi.startCompiler();
+      const response = await chatApi.listControllers();
+      set({ 
+        availableControllers: response.controllers,
+        controllerId: response.current_controller_id,
+      });
       
-      if (response.success) {
-        set({ 
-          compilerProjectId: response.project_id || null,
-          compilerProjectPath: response.project_path || null,
-          compilerProjectConfigFile: response.project_config_file || null,
-          compilerStatus: response.status as ChatState['compilerStatus'],
+      // If there's a connected controller, also load its full state (including path)
+      if (response.current_controller_id) {
+        const state = await chatApi.getControllerState();
+        set({
+          controllerName: state.controller_name || null,
+          controllerPath: state.controller_path || null,
+          controllerStatus: state.status as ControllerStatusType,
+          currentFlowIndex: state.current_flow_index || null,
         });
-        
-        // Load existing messages
-        await get().loadMessages();
-      } else {
-        set({ compilerStatus: 'disconnected' });
-        console.error('Failed to start compiler:', response.error);
       }
     } catch (error) {
-      set({ compilerStatus: 'disconnected' });
-      console.error('Failed to start compiler:', error);
+      console.error('Failed to load controllers:', error);
     }
   },
   
-  stopCompiler: async () => {
+  selectController: async (controllerId: string) => {
+    set({ controllerStatus: 'connecting' });
+    
     try {
-      await chatApi.stopCompiler();
-      set({ compilerStatus: 'connected' });
+      const state = await chatApi.selectController(controllerId);
+      
+      set({
+        controllerId: state.controller_id,
+        controllerName: state.controller_name,
+        controllerPath: state.controller_path,
+        controllerStatus: state.status as ControllerStatusType,
+        currentFlowIndex: state.current_flow_index,
+        errorMessage: state.error_message,
+      });
+      
+      // Load messages for the new controller
+      await get().loadMessages();
     } catch (error) {
-      console.error('Failed to stop compiler:', error);
+      console.error('Failed to select controller:', error);
+      set({ 
+        controllerStatus: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+  
+  setControllerStatus: (status, flowIndex) => set({ 
+    controllerStatus: status,
+    currentFlowIndex: flowIndex ?? null,
+    isExecutionActive: status === 'running',
+  }),
+  
+  // Lifecycle actions
+  startController: async () => {
+    set({ controllerStatus: 'connecting' });
+    
+    try {
+      const response = await chatApi.startController();
+      
+      if (response.success) {
+        set({ 
+          controllerId: response.controller_id || null,
+          controllerName: response.controller_name || null,
+          controllerPath: response.controller_path || null,
+          controllerStatus: response.status as ControllerStatusType,
+        });
+        
+        await get().loadMessages();
+      } else {
+        set({ 
+          controllerStatus: 'error',
+          errorMessage: response.error || 'Failed to start controller',
+        });
+        console.error('Failed to start controller:', response.error);
+      }
+    } catch (error) {
+      set({ 
+        controllerStatus: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      console.error('Failed to start controller:', error);
+    }
+  },
+  
+  pauseController: async () => {
+    try {
+      await chatApi.pauseController();
+      set({ controllerStatus: 'paused' });
+    } catch (error) {
+      console.error('Failed to pause controller:', error);
+    }
+  },
+  
+  resumeController: async () => {
+    try {
+      await chatApi.resumeController();
+      set({ controllerStatus: 'running' });
+    } catch (error) {
+      console.error('Failed to resume controller:', error);
+    }
+  },
+  
+  stopController: async () => {
+    try {
+      await chatApi.stopController();
+      set({ controllerStatus: 'connected' });
+    } catch (error) {
+      console.error('Failed to stop controller:', error);
     }
   },
   
@@ -365,7 +454,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const response = await chatApi.getMessages();
       
-      // Convert API messages to local format
       const messages: ChatMessage[] = response.messages.map(msg => ({
         id: msg.id,
         role: msg.role as MessageRole,
@@ -380,73 +468,64 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
   
-  openCompilerProject: async () => {
-    const { compilerProjectPath, compilerProjectConfigFile } = get();
+  openControllerProject: async () => {
+    const { controllerPath, controllerName } = get();
     
-    // Validate we have enough info to open the project
-    if (!compilerProjectPath) {
-      console.error('Cannot open compiler project: no project_path available');
+    if (!controllerPath) {
+      console.error('Cannot open controller project: no path available');
       return;
     }
     
-    // Check if already open by matching path (normalize path for comparison)
     const projectStore = useProjectStore.getState();
-    const normalizedPath = compilerProjectPath.replace(/\\/g, '/').toLowerCase();
+    const normalizedPath = controllerPath.replace(/\\/g, '/').toLowerCase();
     const existingTab = projectStore.openTabs.find(t => 
       t.directory.replace(/\\/g, '/').toLowerCase() === normalizedPath
     );
     
     if (existingTab) {
-      // Already open, just switch to it (don't re-open, just switch)
       await projectStore.switchTab(existingTab.id);
-      set({ isCompilerProjectOpen: true });
+      set({ isControllerProjectOpen: true });
       return;
     }
     
-    // Open the compiler project as a new tab
-    // Note: We use project_path, not project_id, because "compiler-meta" is
-    // not a registered project ID - it's just a static identifier
-    // The compiler project is read-only (view and execute only)
     try {
       const success = await projectStore.openProjectAsTab(
-        compilerProjectPath,
-        compilerProjectConfigFile || undefined,
-        undefined, // Don't use compilerProjectId - it's not a real registered ID
-        true, // Make it active so user can see it
-        true // Read-only mode - cannot modify the compiler project
+        controllerPath,
+        undefined,
+        undefined,
+        true, // Make active
+        true  // Read-only
       );
       
       if (success) {
-        set({ isCompilerProjectOpen: true });
+        set({ isControllerProjectOpen: true });
       }
     } catch (error) {
-      console.error('Failed to open compiler project:', error);
+      console.error('Failed to open controller project:', error);
     }
   },
   
-  // Check if compiler project is currently open in tabs
-  syncCompilerProjectState: () => {
-    const { compilerProjectPath } = get();
-    if (!compilerProjectPath) {
-      set({ isCompilerProjectOpen: false });
+  syncControllerProjectState: () => {
+    const { controllerPath } = get();
+    if (!controllerPath) {
+      set({ isControllerProjectOpen: false });
       return;
     }
     
     const projectStore = useProjectStore.getState();
-    const normalizedPath = compilerProjectPath.replace(/\\/g, '/').toLowerCase();
+    const normalizedPath = controllerPath.replace(/\\/g, '/').toLowerCase();
     const isOpen = projectStore.openTabs.some(t => 
       t.directory.replace(/\\/g, '/').toLowerCase() === normalizedPath
     );
     
-    set({ isCompilerProjectOpen: isOpen });
+    set({ isControllerProjectOpen: isOpen });
   },
   
-  // Buffer actions for execution mode
+  // Buffer actions
   updateBufferStatus: (status) => {
     set({
       isExecutionActive: status.execution_active,
       bufferedMessage: status.buffered_message,
-      // Disable input if there's a buffered message waiting
       isInputDisabled: status.has_buffered_message,
     });
   },

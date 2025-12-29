@@ -47,7 +47,7 @@ export function useWebSocket() {
   
   // Chat store actions
   const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
-  const setCompilerStatus = useChatStore((s) => s.setCompilerStatus);
+  const setControllerStatus = useChatStore((s) => s.setControllerStatus);
   const setInputRequest = useChatStore((s) => s.setInputRequest);
   const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
   const clearBuffer = useChatStore((s) => s.clearBuffer);
@@ -58,6 +58,42 @@ export function useWebSocket() {
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
       const { type, data } = event;
+      
+      // Check if this event is from the chat controller (not the main execution)
+      // Controller events should update chatStore, not executionStore
+      const eventSource = data.source as string | undefined;
+      const isControllerEvent = eventSource === 'controller';
+      
+      // Handle controller execution events separately
+      if (isControllerEvent && type.startsWith('execution:')) {
+        // Route controller execution events to chat store
+        switch (type) {
+          case 'execution:started':
+            setControllerStatus('running');
+            break;
+          case 'execution:paused':
+            setControllerStatus('paused', data.inference as string | undefined);
+            break;
+          case 'execution:resumed':
+            setControllerStatus('running');
+            break;
+          case 'execution:completed':
+          case 'execution:stopped':
+            setControllerStatus('connected');
+            break;
+          case 'execution:error':
+            setControllerStatus('error');
+            break;
+          case 'execution:progress':
+            // Update current flow index for controller
+            if (data.current_inference) {
+              setControllerStatus('running', data.current_inference as string);
+            }
+            break;
+        }
+        // Don't process further - this event is for the controller, not main execution
+        return;
+      }
       
       // Check if this event is for the active project
       // Events without project_id are assumed to be for the active project (backward compat)
@@ -470,8 +506,12 @@ export function useWebSocket() {
           break;
 
         case 'chat:compiler_status':
+        case 'chat:controller_status':
           if (data.status) {
-            setCompilerStatus(data.status as 'disconnected' | 'connecting' | 'connected' | 'running');
+            setControllerStatus(
+              data.status as 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error',
+              data.current_flow_index as string | undefined
+            );
           }
           break;
 
@@ -483,7 +523,7 @@ export function useWebSocket() {
               inputType: (data.input_type as 'text' | 'code' | 'confirm' | 'select') || 'text',
               options: data.options as string[] | undefined,
               placeholder: data.placeholder as string | undefined,
-              source: (data.source as 'compiler' | 'execution') || 'compiler',
+              source: (data.source as 'controller' | 'execution') || 'controller',
             });
           }
           break;
@@ -506,7 +546,7 @@ export function useWebSocket() {
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setCompilerStatus, setInputRequest, addCanvasCommand]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setControllerStatus, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
   );
 
   const [isConnected, setIsConnected] = useState(false);

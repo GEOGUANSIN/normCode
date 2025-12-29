@@ -532,17 +532,51 @@ export const checkpointApi = {
 };
 
 // ============================================================================
-// Chat API - Compiler-driven chat interface
+// Chat API - Controller-driven chat interface
 // ============================================================================
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system' | 'compiler';
+  role: 'user' | 'assistant' | 'system' | 'compiler' | 'controller';
   content: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
 
+// Controller info (available chat controllers)
+export interface ControllerInfo {
+  project_id: string;
+  name: string;
+  path: string;
+  config_file?: string;
+  description?: string;
+  is_builtin: boolean;
+}
+
+export interface ControllersListResponse {
+  controllers: ControllerInfo[];
+  current_controller_id: string | null;
+}
+
+// Controller state
+export interface ControllerState {
+  controller_id: string | null;
+  controller_name: string | null;
+  controller_path: string | null;
+  status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error';
+  current_flow_index: string | null;
+  error_message: string | null;
+  pending_input: {
+    id: string;
+    prompt: string;
+    input_type: 'text' | 'code' | 'confirm' | 'select';
+    options?: string[];
+    placeholder?: string;
+  } | null;
+  is_execution_active: boolean;
+}
+
+// Backward compatibility alias
 export interface CompilerState {
   compiler: {
     project_id: string | null;
@@ -574,6 +608,16 @@ export interface GetMessagesResponse {
   total_count: number;
 }
 
+export interface StartControllerResponse {
+  success: boolean;
+  controller_id?: string;
+  controller_name?: string;
+  controller_path?: string;
+  status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error';
+  error?: string;
+}
+
+// Backward compatibility alias
 export interface StartCompilerResponse {
   success: boolean;
   project_id?: string;
@@ -599,33 +643,86 @@ export interface ChatBufferStatus {
 }
 
 export const chatApi = {
+  // =========================================================================
+  // Controller Management (NEW)
+  // =========================================================================
+  
   /**
-   * Get the current state of the compiler meta project.
+   * List all available chat controller projects.
    */
-  getState: (): Promise<CompilerState> =>
+  listControllers: (refresh = false): Promise<ControllersListResponse> =>
+    fetchJson(`${API_BASE}/chat/controllers?refresh=${refresh}`),
+  
+  /**
+   * Select a chat controller project.
+   */
+  selectController: (controllerId: string): Promise<ControllerState> =>
+    fetchJson(`${API_BASE}/chat/controllers/select`, {
+      method: 'POST',
+      body: JSON.stringify({ controller_id: controllerId }),
+    }),
+  
+  /**
+   * Get the current controller state.
+   */
+  getControllerState: (): Promise<ControllerState> =>
     fetchJson(`${API_BASE}/chat/state`),
   
   /**
-   * Start/connect the compiler meta project.
-   * This initializes the compiler and makes it ready to receive user input.
+   * Start the chat controller.
    */
-  startCompiler: (autoRun = true): Promise<StartCompilerResponse> =>
+  startController: (autoRun = true): Promise<StartControllerResponse> =>
     fetchJson(`${API_BASE}/chat/start`, {
       method: 'POST',
       body: JSON.stringify({ auto_run: autoRun }),
     }),
   
   /**
-   * Stop the compiler execution (but keep it connected).
+   * Pause the controller execution.
    */
-  stopCompiler: (): Promise<{ success: boolean; status: string }> =>
+  pauseController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/pause`, { method: 'POST' }),
+  
+  /**
+   * Resume paused controller execution.
+   */
+  resumeController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/resume`, { method: 'POST' }),
+  
+  /**
+   * Stop the controller execution (but keep it connected).
+   */
+  stopController: (): Promise<{ success: boolean; status: string }> =>
     fetchJson(`${API_BASE}/chat/stop`, { method: 'POST' }),
   
   /**
-   * Disconnect the compiler completely.
+   * Disconnect the controller completely.
    */
+  disconnectController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/disconnect`, { method: 'POST' }),
+  
+  // =========================================================================
+  // Backward Compatibility Aliases
+  // =========================================================================
+  
+  getState: (): Promise<ControllerState> =>
+    fetchJson(`${API_BASE}/chat/state`),
+  
+  startCompiler: (autoRun = true): Promise<StartCompilerResponse> =>
+    fetchJson(`${API_BASE}/chat/start`, {
+      method: 'POST',
+      body: JSON.stringify({ auto_run: autoRun }),
+    }),
+  
+  stopCompiler: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/stop`, { method: 'POST' }),
+  
   disconnectCompiler: (): Promise<{ success: boolean; status: string }> =>
     fetchJson(`${API_BASE}/chat/disconnect`, { method: 'POST' }),
+  
+  // =========================================================================
+  // Messages
+  // =========================================================================
   
   /**
    * Get chat message history.
@@ -634,7 +731,7 @@ export const chatApi = {
     fetchJson(`${API_BASE}/chat/messages?limit=${limit}&offset=${offset}`),
   
   /**
-   * Send a message to the compiler.
+   * Send a message to the controller.
    * This is the main endpoint for user chat input.
    */
   sendMessage: (content: string, metadata?: Record<string, unknown>): Promise<SendMessageResponse> =>
@@ -649,8 +746,12 @@ export const chatApi = {
   clearMessages: (): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/messages`, { method: 'DELETE' }),
   
+  // =========================================================================
+  // Input Handling
+  // =========================================================================
+  
   /**
-   * Submit a response to a pending input request (compiler service).
+   * Submit a response to a pending input request (controller service).
    */
   submitInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {

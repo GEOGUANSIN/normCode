@@ -31,6 +31,8 @@ class ExecutionController:
     
     # Project association
     project_id: Optional[str] = None
+    # Source identifier for event routing ("main" for user projects, "controller" for chat controller)
+    event_source: str = "main"
     
     # Orchestrator components
     orchestrator: Optional[Any] = None
@@ -103,11 +105,13 @@ class ExecutionController:
     # =========================================================================
     
     async def _emit(self, event_type: str, data: Dict[str, Any]):
-        """Emit event through event emitter, including project_id."""
+        """Emit event through event emitter, including project_id and source."""
         from core.events import event_emitter
         
+        # Include source and project_id for event routing
+        data = {**data, "source": self.event_source}
         if self.project_id:
-            data = {**data, "project_id": self.project_id}
+            data["project_id"] = self.project_id
         await event_emitter.emit(event_type, data)
     
     def _emit_threadsafe(self, event_type: str, data: Dict[str, Any]):
