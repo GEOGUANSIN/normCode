@@ -623,6 +623,238 @@ After derivation, your `.ncds` file moves to:
 
 ---
 
+## Derivation Takeaways: Lessons from Examples
+
+The following insights are synthesized from verified working examples (see `documentation/current/4_compilation/examples/ncds/`).
+
+### 1. Derivation Expresses Computational Structure, Not Control Flow
+
+Traditional programming uses explicit control flow (`if`, `for`, `while`). NormCode derivation instead expresses **data dependencies** and **structural relationships**. The "control flow" emerges from how data flows.
+
+| Traditional | NormCode Derivation |
+|-------------|---------------------|
+| `for item in list:` | `<= for every item` + `<* list` |
+| `if condition:` | `<= if condition` + `<* condition` |
+| `while not done:` | Conditional append stops the loop |
+| `x = f(y, z)` | `<- x` with `<= f` and children `<- y`, `<- z` |
+
+**Insight**: Don't think "how do I loop?" Think "what collection am I iterating, and what result do I produce per item?"
+
+---
+
+### 2. Loops Are Self-Extending Collections
+
+NormCode loops don't have traditional "iterate N times" semantics. Instead:
+
+1. **A collection exists** (e.g., `on-going messages`)
+2. **Something iterates over it** (e.g., `for every message`)
+3. **Each iteration may append to the same collection** (conditional)
+4. **When append stops, loop stops**
+
+**Example (Chat Session)**:
+```ncds
+<- on-going messages
+    <= append current message
+        <= if session should NOT end
+        <* session should end?
+    <- current message
+```
+
+**This is a "self-seeding loop"**: Starts empty, but `start_without_value: true` lets iteration begin, creating the first item.
+
+**Takeaway**: Loops terminate via **conditional append**, not via a counter or explicit `break`.
+
+---
+
+### 3. Conditionals Are Timing Gates, Not Branches
+
+NormCode doesn't have traditional if-else branches. Instead:
+
+1. **Judgements produce boolean concepts** (`<>` type)
+2. **Timing gates enable/disable operations** (`@:'` = if true, `@:!` = if NOT true)
+3. **Multiple branches can coexist**, each gated by its condition
+
+**Example (Investment Decision)**:
+```ncds
+<- bullish recommendation
+    <= generate buy recommendation
+        <= if signals surpass expectations    ← timing gate
+        <* signals surpass?
+
+<- bearish recommendation
+    <= generate sell recommendation
+        <= if signals deviate from expectations
+        <* signals deviate?
+```
+
+**Both branches exist in the plan**. Only the applicable one produces a result.
+
+**Takeaway**: Think "which conditions enable which operations?" not "which branch do I take?"
+
+---
+
+### 4. State Lives in Axes, Not Variables
+
+Traditional mutable state (`carry = carry + 1`) doesn't exist. Instead:
+
+1. **Axis dimensions track state** (e.g., `carry-over number` axis)
+2. **Previous iteration state referenced via `*-1`** (e.g., `{carry}<$({carry})*-1>`)
+3. **Ground concepts provide initial values** (e.g., `reference_data: ["%(0)"]`)
+
+**Example (Addition Algorithm)**:
+```ncds
+<- carry-over
+    <= update from previous
+    ...
+<^ carry with previous value    ← references *-1 iteration
+```
+
+**Takeaway**: "Updating a variable" becomes "producing a new value on the next axis slice."
+
+---
+
+### 5. The Three Essential Markers
+
+Every `.ncds` derivation uses just three markers:
+
+| Marker | Purpose | When to Use |
+|--------|---------|-------------|
+| `<-` | **Value Concept** | Any data: inputs, outputs, intermediates |
+| `<=` | **Functional Concept** | Any operation: LLM call, computation, selection |
+| `<*` | **Context Concept** | Loop base, judgement condition, timing reference |
+
+**Advanced patterns add**:
+- `<^` — Carry-over state from previous iteration
+- Comments (`/:`, `?:`, `...:`) — Documentation
+
+**Takeaway**: If you're stuck, ask: "Is this data (`<-`), an operation (`<=`), or context (`<*`)?"
+
+---
+
+### 6. Bottom-Up Execution, Top-Down Writing
+
+**Writing order** (natural language → `.ncds`):
+1. What's the final output? → Root `<-`
+2. What operation produces it? → First `<=`
+3. What does that operation need? → Children `<-`
+4. Recurse until reaching base inputs
+
+**Execution order** (runtime):
+1. Start at leaves (deepest concepts)
+2. Execute operations bottom-up
+3. Results flow toward root
+
+**Example**:
+```ncds
+<- summary                    ← 4. Produced last
+    <= summarize              ← 3. Runs third
+    <- key points             ← 2. Produced second
+        <= extract key points ← 1. Runs first
+        <- document           ← 0. Input (exists)
+```
+
+**Takeaway**: Write top-down (goal-first), but read bottom-up (dependency order).
+
+---
+
+### 7. Grouping Creates Structure, Not Just Collections
+
+The `&` operator doesn't just collect items — it creates **labeled, structured output**:
+
+| Pattern | Result |
+|---------|--------|
+| `<= bundle A, B, C` | Dictionary-like `{A: ..., B: ..., C: ...}` |
+| `<= collect X across Y` | Array collected along Y axis |
+| `<= group signals` | New axis dimension for unified access |
+
+**Example (Investment Decision)**:
+```ncds
+<- all recommendations
+    <= bundle bullish, bearish, and neutral recommendations
+    <- bullish recommendation
+    <- bearish recommendation
+    <- neutral recommendation
+```
+
+**Takeaway**: Use grouping to create structured outputs that downstream operations can access by name.
+
+---
+
+### 8. LLM Calls vs. Python Scripts
+
+NormCode supports both **LLM-based** and **deterministic** operations:
+
+| Type | Syntax | Use When |
+|------|--------|----------|
+| **Imperative** `({})` | `<= generate summary` | LLM decision-making |
+| **Judgement** `<{}>` | `<= judge if X` | LLM boolean evaluation |
+| **Python** | `imperative_python` | Exact computation (math, parsing) |
+
+**The Addition Algorithm uses Python** because arithmetic must be exact:
+```ncds
+<- remainder
+    <= get remainder of digit sum divided by 10    ← Python script
+    <- digit sum
+```
+
+**Takeaway**: Use LLM for ambiguous reasoning; use Python for deterministic computation.
+
+---
+
+### 9. Comments Are First-Class Documentation
+
+Good `.ncds` includes comments that:
+- **Explain intent** (`/: This checks if user wants to quit`)
+- **Document patterns** (`/: Self-seeding loop starts empty`)
+- **Note the formal syntax** (`/: @:! = execute if NOT true`)
+
+**Example**:
+```ncds
+<- session should end?
+    <= judge if user wants to end session
+    /: Produces <> (proposition) type
+    /: Used as timing gate for append operation
+    <- current message
+```
+
+**Takeaway**: Write comments for your future self and for LLMs that will process the plan.
+
+---
+
+### 10. Pattern Recognition Beats Syntax Memorization
+
+The same small set of patterns appears across all examples:
+
+| Pattern | Examples Using It |
+|---------|-------------------|
+| Linear chain | 00, 01, 02, 03, 04, 05, 06, 07 |
+| Multiple inputs | 02, 05, 06, 07 |
+| Iteration | 01, 03, 06, 07 |
+| Conditional append | 01, 07 |
+| Judgement + timing gate | 01, 04, 06, 07 |
+| Grouping/bundling | 01, 05, 06, 07 |
+| Nested loops | 07 |
+| Carry-over state | 07 |
+
+**Takeaway**: Learn the patterns, not the syntax. The syntax follows naturally once you recognize which pattern applies.
+
+---
+
+### Quick Reference: Choosing the Right Pattern
+
+| If you need to... | Use this pattern |
+|-------------------|------------------|
+| Transform A into B | Linear chain: B depends on A |
+| Combine multiple inputs | Sibling children under operation |
+| Process each item in a collection | Iteration with `<*` |
+| Keep going until done | Self-seeding loop + conditional append |
+| Do A or B based on condition | Judgement + timing gates |
+| Bundle related outputs | Grouping (`&`) |
+| Carry state between iterations | Axis reference (`%^` / `*-1`) |
+| Execute after something completes | Timing dependency (`@.`) |
+
+---
+
 ## Summary
 
 ### Key Takeaways
@@ -634,6 +866,8 @@ After derivation, your `.ncds` file moves to:
 | **Three markers** | `<-` (data), `<=` (operations), `<*` (context) |
 | **Four-space indentation** | Hierarchy through indentation |
 | **LLM-friendly** | Both humans and LLMs can write `.ncds` |
+| **Patterns over syntax** | Learn the 10 patterns; syntax follows naturally |
+| **Control via data flow** | Loops and conditionals emerge from dependencies |
 
 ### The Derivation Promise
 

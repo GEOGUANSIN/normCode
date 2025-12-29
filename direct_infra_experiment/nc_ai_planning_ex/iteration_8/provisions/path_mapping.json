@@ -1,0 +1,49 @@
+{
+  "_comment": "Maps inference_repo prompt_path references to actual file locations",
+  "_base_dir": "provisions",
+  
+  "prompts": {
+    "provisions/prompts/phase_1/judge_instruction_vagueness.md": "prompts/phase_1/judge_instruction_vagueness.md",
+    "provisions/prompts/phase_1/apply_refinement_questions.md": "prompts/phase_1/apply_refinement_questions.md",
+    "provisions/prompts/phase_1/synthesize_refined_instruction.md": "prompts/phase_1/synthesize_refined_instruction.md",
+    
+    "provisions/prompts/phase_2/extract_concepts.md": "prompts/phase_2/extract_concepts.md",
+    "provisions/prompts/phase_2/extract_operations.md": "prompts/phase_2/extract_operations.md",
+    "provisions/prompts/phase_2/extract_dependencies.md": "prompts/phase_2/extract_dependencies.md",
+    "provisions/prompts/phase_2/extract_control_patterns.md": "prompts/phase_2/extract_control_patterns.md",
+    
+    "provisions/prompts/phase_3/gather_operation_context.md": "prompts/phase_3/gather_operation_context.md",
+    "provisions/prompts/phase_3/classify_operation.md": "prompts/phase_3/classify_operation.md",
+    
+    "provisions/prompts/phase_4/identify_goal.md": "prompts/phase_4/identify_goal.md",
+    "provisions/prompts/phase_4/construct_dependency_tree.md": "prompts/phase_4/construct_dependency_tree.md",
+    
+    "provisions/prompts/phase_5/serialize_tree_to_ncds.md": "prompts/phase_5/serialize_tree_to_ncds.md"
+  },
+  
+  "data": {
+    "provisions/data/refinement_questions.txt": "data/refinement_questions.txt"
+  },
+  
+  "paradigms": {
+    "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal": "paradigms/llm/h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal.json",
+    "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean": "paradigms/llm/h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean.json",
+    
+    "h_FilePath-c_ReadFile-o_Literal": "paradigms/file_system/h_FilePath-c_ReadFile-o_Literal.json",
+    "h_FilePath-c_ReadFileIfExists-o_Literal": "paradigms/file_system/h_FilePath-c_ReadFileIfExists-o_Literal.json",
+    "h_FilePath-c_ReadJsonFile-o_Struct": "paradigms/file_system/h_FilePath-c_ReadJsonFile-o_Struct.json",
+    "h_FilePath-h_Content-c_WriteFile-o_Literal": "paradigms/file_system/h_FilePath-h_Content-c_WriteFile-o_Literal.json",
+    "h_FilePath-h_Data-c_WriteJsonFile-o_Literal": "paradigms/file_system/h_FilePath-h_Data-c_WriteJsonFile-o_Literal.json",
+    "h_FilePath-h_Content-c_AppendFile-o_Literal": "paradigms/file_system/h_FilePath-h_Content-c_AppendFile-o_Literal.json",
+    
+    "h_Data-c_CheckPhaseComplete-o_Boolean": "paradigms/python_interpreter/h_Data-c_CheckPhaseComplete-o_Boolean.json",
+    "h_Data-c_ExtractField-o_Literal": "paradigms/python_interpreter/h_Data-c_ExtractField-o_Literal.json",
+    "h_Data-c_PassThrough-o_Literal": "paradigms/python_interpreter/h_Data-c_PassThrough-o_Literal.json"
+  },
+  
+  "scripts": {
+    "scripts/check_phase_complete.py": "scripts/check_phase_complete.py",
+    "scripts/extract_field.py": "scripts/extract_field.py",
+    "scripts/pass_through.py": "scripts/pass_through.py"
+  }
+}

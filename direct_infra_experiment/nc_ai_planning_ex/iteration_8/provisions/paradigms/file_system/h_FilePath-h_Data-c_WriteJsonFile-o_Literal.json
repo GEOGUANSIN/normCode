@@ -1,0 +1,54 @@
+{
+  "paradigm_id": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+  "description": "Write data as JSON to file",
+  "body_faculty": "file_system",
+  
+  "inputs": {
+    "horizontal": {
+      "file_path": {
+        "norm": "in-memory",
+        "description": "Path to the JSON file to write",
+        "required": true,
+        "order": 1
+      },
+      "data": {
+        "norm": "in-memory",
+        "description": "Data to serialize as JSON",
+        "required": true,
+        "order": 2
+      }
+    }
+  },
+  
+  "composition": {
+    "steps": [
+      {
+        "step": "serialize",
+        "action": "json.dumps(h.data, indent=2)",
+        "output": "json_content"
+      },
+      {
+        "step": "ensure_dir",
+        "action": "create parent directories if needed",
+        "output": null
+      },
+      {
+        "step": "write",
+        "action": "body.file_system.write(h.file_path, json_content)",
+        "output": "write_result"
+      }
+    ]
+  },
+  
+  "output": {
+    "format": "o_Literal",
+    "type": "str",
+    "description": "Confirmation string (e.g., 'written to path/to/file.json')"
+  },
+  
+  "error_handling": {
+    "serialization_error": "propagate error with context",
+    "permission_error": "propagate error"
+  }
+}
+

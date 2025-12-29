@@ -1,0 +1,37 @@
+{
+  "paradigm_id": "h_Data-c_PassThrough-o_Literal",
+  "description": "Pass data through unchanged (identity operation)",
+  "body_faculty": "python_interpreter",
+  
+  "inputs": {
+    "horizontal": {
+      "data": {
+        "norm": "in-memory",
+        "description": "Any data to pass through",
+        "required": true
+      }
+    }
+  },
+  
+  "composition": {
+    "steps": [
+      {
+        "step": "identity",
+        "action": "return h.data unchanged",
+        "output": "data"
+      }
+    ]
+  },
+  
+  "output": {
+    "format": "o_Literal",
+    "type": "any",
+    "description": "The input data unchanged"
+  },
+  
+  "notes": [
+    "Used when a conditional branch needs to forward data without transformation",
+    "Essentially a no-op that satisfies the inference structure"
+  ]
+}
+

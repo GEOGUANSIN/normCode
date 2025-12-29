@@ -1,0 +1,124 @@
+/: ========================================
+/: Example 07: Digit-by-Digit Addition
+/: ========================================
+/: Adds two numbers using the classic algorithm
+/: with nested loops and carry-over state.
+/: STATUS: Working (verified against infra/examples/add_examples/repo/)
+/:
+/: Input: {number pair} - e.g., [[123, 98]]
+/: Output: {new number pair} - remainders forming final sum
+
+/: ========================================
+/: PHASE 1: Addition (digit extraction)
+/: ========================================
+
+<- new number pair
+    <= for every number pair with carry-over state
+        /: *every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>]
+        /: Outer loop - iterates until all digits processed and no carry
+    
+        <= return the remainder per iteration
+        
+        <- remainder
+            <= get the remainder of digit sum divided by 10
+                <= after digit sum
+                /: @after({digit sum})
+            <- digit sum
+        
+        <- digit sum
+            <= sum all unit place values and carry-over
+            /: ::(sum {1}<$([all {unit place value} of numbers])%_> 
+            /:     and {2}<$({carry-over number}*1)%_> 
+            /:     to get {3}?<$({sum})%_>)
+            <- all unit place values of numbers
+                <= collect unit place values across the pair
+                /: &across({unit place value}:{number pair}*1)
+                
+                <- unit place value
+                    <= for every number in the pair
+                        /: *every({number pair}*1)%:[{number}]@(2)
+                    
+                        <= return single unit place value
+                        /: $.({single unit place value})
+                        
+                        <- single unit place value
+                            <= get unit place digit of number
+                            /: ::(get {2}?<$({unit place value})%_> of {1}<$({number})%_>)
+                            <- current number in pair
+                                /: {number pair}*1*2 - current iteration value
+                    
+                    <- current number pair
+                    <* current number in pair
+                /: Context from outer loop
+                <* current number pair
+            <- current carry-over
+        
+        <- number pair
+            <= append new number pair to collection
+                /: $+({number pair to append}:{number pair})
+                <= if NOT all numbers are 0
+                    /: @if!(<all number is 0>)
+                    <= if carry-over is 0
+                        /: @if(<carry-over number is 0>)
+                    <* carry-over number is 0?
+                <* all numbers are 0?
+            <- number pair to append
+                <= for every number in the pair
+                    /: *every({number pair}*1)%:[{number}]@(3)
+                
+                    <= return number with last digit removed
+                    /: $.({number with last digit removed})
+                    
+                    <- number with last digit removed
+                        <= remove unit place digit from number
+                        /: ::(output 0 if {1}<$({number})%_> is less than 10, 
+                        /:     otherwise remove {2}?<$({unit place digit})%_> from {1})
+                        <- current number for appending
+                            /: {number pair}*1*3
+                
+                <- current number pair
+                <* current number for appending
+            <- number pair
+            <- all numbers are 0?
+            <- carry-over number is 0?
+        
+        <- all numbers are 0?
+            <= judge if all numbers are 0
+                /: :%(True):<{1}<$({number})%_> is 0>
+                <= after number pair to append
+                /: @after({number pair to append}<$={1}>)
+            <- number pair to append
+        
+        <- carry-over number is 0?
+            <= judge if carry-over is 0
+                /: :%(True):<{1}<$({carry-over number})%_> is 0>
+                <= after number pair to append
+            <- current carry-over
+        
+        <- current carry-over
+            <= update carry-over from quotient
+            /: &across({carry-over number}*1:{carry-over number}*1<--<!_>>)
+            <- carry-over
+                <= find quotient of digit sum divided by 10
+                    /: ::(find the {1}?<$({quotient})%_> of {2}<$({digit sum})%_> divided by 10)
+                    <= after digit sum
+                <- digit sum
+    
+    <- number pair
+    <* current number pair from number pair
+        /: {number pair}*1
+    <^ carry-over with previous value
+        /: {carry-over number}*1 - initialized to 0 as ground concept
+
+/: ========================================
+/: PHASE 2: Combination (digit assembly)
+/: ========================================
+
+<- sum
+    <= combine all number digits
+    /: ::(combine all {1}<$({number digits})%_>)
+    <- number digits
+        <= collect all new number pair values
+        /: &across({new number pair}:{new number pair}<--<!_>>)
+        <- new number pair
+

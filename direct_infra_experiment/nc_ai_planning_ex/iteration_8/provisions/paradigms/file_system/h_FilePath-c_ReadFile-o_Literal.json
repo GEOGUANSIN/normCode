@@ -1,0 +1,37 @@
+{
+  "paradigm_id": "h_FilePath-c_ReadFile-o_Literal",
+  "description": "Read file content as string",
+  "body_faculty": "file_system",
+  
+  "inputs": {
+    "horizontal": {
+      "file_path": {
+        "norm": "in-memory",
+        "description": "Path to the file to read",
+        "required": true
+      }
+    }
+  },
+  
+  "composition": {
+    "steps": [
+      {
+        "step": "read",
+        "action": "body.file_system.read(h.file_path)",
+        "output": "file_content"
+      }
+    ]
+  },
+  
+  "output": {
+    "format": "o_Literal",
+    "type": "str",
+    "description": "File content as string"
+  },
+  
+  "error_handling": {
+    "file_not_found": "propagate error",
+    "encoding_error": "try utf-8, then latin-1"
+  }
+}
+

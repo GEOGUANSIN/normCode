@@ -53,7 +53,7 @@ Activation generates two separate JSON files:
 
 ### Purpose
 
-**`concept_repo.json`** stores static definitions of all data entities in the plan.
+**`concept_repo.json`** stores static definitions of all concepts in the plan—both **value concepts** (data entities) and **function concepts** (operations).
 
 ### Structure
 
@@ -69,6 +69,7 @@ Activation generates two separate JSON files:
     "is_final_concept": false,
     "reference_data": ["%{file_location}7f2(data/input.txt)"],
     "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "str",
     "natural_name": "document"
   },
   {
@@ -81,29 +82,60 @@ Activation generates two separate JSON files:
     "is_final_concept": true,
     "reference_data": null,
     "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "str",
     "natural_name": "summary"
+  },
+  {
+    "id": "fc-summarize-the-text",
+    "concept_name": "<= ::(summarize the text)",
+    "type": "({})",
+    "flow_indices": ["1.1"],
+    "description": "Summarize the text",
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "paradigm",
+    "natural_name": "summarize the text"
   }
 ]
 ```
+
+### Two Types of Concepts
+
+| Type | Marker | Purpose | Examples |
+|------|--------|---------|----------|
+| **Value Concepts** | `{}`, `[]`, `<>` | Data entities | `{document}`, `[files]`, `<is valid>` |
+| **Function Concepts** | `({})`, `<{}>` | Operations | `<= ::(summarize)`, `<= $. %>({x})` |
+
+**Important**: Function concepts MUST be included in concept_repo.json. The orchestrator looks up each `function_concept` from inference_repo in the concept_repo.
 
 ### Fields
 
 | Field | Type | Purpose | Example |
 |-------|------|---------|---------|
-| `id` | string | Unique identifier for the concept | `"c-document"`, `"c-summary"` |
-| `concept_name` | string | Full concept name with markers | `"{document}"`, `"[files]"`, `"<is valid>"` |
-| `type` | string | Semantic type | `"{}"`, `"[]"`, `"<>"` |
+| `id` | string | Unique identifier for the concept | `"c-document"`, `"fc-summarize"` |
+| `concept_name` | string | Full concept name with markers | `"{document}"`, `"<= ::(summarize)"` |
+| `type` | string | Semantic type | `"{}"`, `"[]"`, `"<>"`, `"({})"`, `"<{}>"` |
 | `flow_indices` | array | All flow indices where concept appears | `["1.2", "1.3.2"]` |
 | `description` | string | Optional description | `"Input document to process"` |
 | `is_ground_concept` | boolean | Pre-initialized? | `true` for inputs |
 | `is_final_concept` | boolean | Final output? | `true` for root |
 | `reference_data` | array or null | Initial perceptual signs | `["%{file_location}(...)"]` |
 | `reference_axis_names` | array | Axis names | `["_none_axis"]`, `["signal", "date"]` |
-| `natural_name` | string | Human-readable name | `"document"`, `"price data"` |
+| `reference_element_type` | string | Element data type | `"str"`, `"paradigm"`, `"operator"` |
+| `natural_name` | string | Human-readable name | `"document"`, `"summarize the text"` |
+
+### ID Prefixes
+
+| Prefix | Concept Type | Example |
+|--------|--------------|---------|
+| `c-` | Value concept | `c-document`, `c-summary` |
+| `fc-` | Function concept | `fc-summarize-the-text` |
 
 ### Extraction from `.ncd`
 
-**Algorithm**:
+**Algorithm for Value Concepts**:
 
 1. **Scan all value concepts** (`<-` lines) and context concepts (`<*` lines)
 2. **Generate id** from concept name (e.g., `"{price data}"` → `"c-price-data"`)
@@ -119,6 +151,28 @@ Activation generates two separate JSON files:
 8. **Extract reference_data** from `|%{file_location}` or `$%` value
 9. **Extract axes** from `|%{ref_axes}` annotation
 10. **Generate natural_name** from concept name (strip markers)
+
+**Algorithm for Function Concepts**:
+
+1. **Scan all functional concepts** (`<=` lines)
+2. **Generate id** from natural name (e.g., `"summarize the text"` → `"fc-summarize-the-text"`)
+3. **Store full `nc_main`** as `concept_name` (e.g., `"<= ::(summarize the text)"`)
+4. **Determine type**:
+   - Judgement (contains `<{...}>`) → `"<{}>"`
+   - All others (imperative, operators) → `"({})"`
+5. **Collect flow_indices**: Track all flow indices where this function appears
+6. **Set reference_element_type**:
+   - Imperative/judgement → `"paradigm"`
+   - Operators (`$`, `&`, `@`, `*`) → `"operator"`
+7. **Extract natural_name** from the action description
+
+**Why Function Concepts Are Required**:
+
+The orchestrator's execution engine looks up each `function_concept` string from `inference_repo.json` in the `concept_repo.json`. If a function concept is missing, execution fails with:
+
+```
+'Function concept '<= ::(action name)' not found in ConceptRepo.'
+```
 
 **Example**:
 
