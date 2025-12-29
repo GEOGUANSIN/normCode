@@ -21,6 +21,7 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
     COMPILER = "compiler"
+    CONTROLLER = "controller"
 
 
 class ChatMessage(BaseModel):
