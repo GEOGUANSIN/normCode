@@ -422,11 +422,30 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
         create_axis_match = re.search(r"%\+\(([^)]+)\)", nc_main)
         create_axis = create_axis_match.group(1) if create_axis_match else None
         
-        # Extract sources from %>[...]
-        sources_match = re.search(r"%>\[([^\]]+)\]", nc_main)
+        # Extract sources from %>[...] - handle nested brackets in concept names
+        # Pattern: %>[{...}, [...], ...] where items can have internal brackets
+        sources_section_match = re.search(r"%>\[(.+)\]", nc_main)
         sources = []
-        if sources_match:
-            sources = [s.strip() for s in sources_match.group(1).split(",")]
+        if sources_section_match:
+            sources_text = sources_section_match.group(1)
+            # Parse by tracking bracket depth
+            current = ""
+            depth = 0
+            for char in sources_text:
+                if char in "{[<":
+                    depth += 1
+                    current += char
+                elif char in "}]>":
+                    depth -= 1
+                    current += char
+                elif char == "," and depth == 0:
+                    if current.strip():
+                        sources.append(current.strip())
+                    current = ""
+                else:
+                    current += char
+            if current.strip():
+                sources.append(current.strip())
         
         wi["syntax"] = {
             "marker": marker,
@@ -583,8 +602,11 @@ def build_inference_repo(nci_data: list) -> list:
             "looping": "looping",
         }
         
+        # Use concept_to_infer's flow_index for consistency (it's the inference result position)
+        cti_flow_index = cti.get("flow_index", func_concept.get("flow_index", ""))
+        
         inference_entry = {
-            "flow_info": {"flow_index": func_concept.get("flow_index", "")},
+            "flow_info": {"flow_index": cti_flow_index},
             "inference_sequence": sequence_mapping.get(sequence_type, sequence_type),
             "concept_to_infer": concept_to_infer,
             "function_concept": func_nc_main,

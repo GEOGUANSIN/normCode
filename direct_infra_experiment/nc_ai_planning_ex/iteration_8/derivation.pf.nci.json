@@ -567,7 +567,7 @@
             "flow_index": "1.15",
             "type": "comment",
             "depth": 2,
-            "nc_comment": "| %{file_location}: provision/data/refinement_questions.txt"
+            "nc_comment": "| %{file_location}: provisions/data/refinement_questions.txt"
           },
           {
             "flow_index": "1.15",
@@ -1354,7 +1354,7 @@
           "flow_index": "1.3.3.1",
           "type": "comment",
           "depth": 4,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/serialize_tree_to_ncds.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_5/serialize_tree_to_ncds.md"
         },
         {
           "flow_index": "1.3.3.1",
@@ -2045,7 +2045,7 @@
           "flow_index": "1.5.3.1",
           "type": "comment",
           "depth": 4,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/construct_dependency_tree.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_4/construct_dependency_tree.md"
         },
         {
           "flow_index": "1.5.3.1",
@@ -2248,7 +2248,7 @@
           "flow_index": "1.5.3.1.1.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/identify_goal.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_4/identify_goal.md"
         },
         {
           "flow_index": "1.5.3.1.1.1",
@@ -2486,7 +2486,7 @@
           "flow_index": "1.5.3.1.3.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/extract_dependencies.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_4/extract_dependencies.md"
         },
         {
           "flow_index": "1.5.3.1.3.1",
@@ -3380,7 +3380,7 @@
           "flow_index": "1.7.3.1.1.1.1",
           "type": "comment",
           "depth": 6,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/classify_operation.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md"
         },
         {
           "flow_index": "1.7.3.1.1.1.1",
@@ -3541,7 +3541,7 @@
           "flow_index": "1.7.3.1.1.1.1.2.1",
           "type": "comment",
           "depth": 7,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/gather_operation_context.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md"
         },
         {
           "flow_index": "1.7.3.1.1.1.1.2.1",
@@ -4578,7 +4578,7 @@
           "flow_index": "1.9.3.1.1.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/extract_concepts.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md"
         },
         {
           "flow_index": "1.9.3.1.1.1",
@@ -4703,7 +4703,7 @@
           "flow_index": "1.9.3.1.2.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/extract_operations.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_operations.md"
         },
         {
           "flow_index": "1.9.3.1.2.1",
@@ -4828,7 +4828,7 @@
           "flow_index": "1.9.3.1.3.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/extract_dependencies.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md"
         },
         {
           "flow_index": "1.9.3.1.3.1",
@@ -5013,7 +5013,7 @@
           "flow_index": "1.9.3.1.4.1",
           "type": "comment",
           "depth": 5,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/extract_control_patterns.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md"
         },
         {
           "flow_index": "1.9.3.1.4.1",
@@ -6221,7 +6221,7 @@
           "flow_index": "1.11.3.1.2.2.1",
           "type": "comment",
           "depth": 6,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/synthesize_refined_instruction.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md"
         },
         {
           "flow_index": "1.11.3.1.2.2.1",
@@ -6316,7 +6316,7 @@
           "flow_index": "1.11.3.1.2.2.1",
           "type": "comment",
           "depth": 6,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/synthesize_refined_instruction.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md"
         },
         {
           "flow_index": "1.11.3.1.2.2.1",
@@ -6447,7 +6447,7 @@
           "flow_index": "1.11.3.1.2.2.2.1",
           "type": "comment",
           "depth": 7,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/apply_refinement_questions.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md"
         },
         {
           "flow_index": "1.11.3.1.2.2.2.1",
@@ -6917,7 +6917,7 @@
           "flow_index": "1.11.3.1.2.4.1",
           "type": "comment",
           "depth": 6,
-          "nc_comment": "| %{v_input_provision}: provision/prompts/judge_instruction_vagueness.md"
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md"
         },
         {
           "flow_index": "1.11.3.1.2.4.1",

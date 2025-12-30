@@ -1,7 +1,7 @@
 [
   {
     "flow_info": {
-      "flow_index": "1.1"
+      "flow_index": "1"
     },
     "inference_sequence": "assigning",
     "concept_to_infer": "{ncds}",
@@ -42,7 +42,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.2.1"
+      "flow_index": "1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{derivation complete}",
@@ -67,7 +67,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.3.1"
+      "flow_index": "1.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{ncds output written}",
@@ -96,7 +96,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.3.1.1"
+      "flow_index": "1.3.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{write ncds file to output path}",
@@ -119,7 +119,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.3.3.1"
+      "flow_index": "1.3.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{ncds content}",
@@ -138,12 +138,12 @@
       "value_order": {
         "{dependency tree}": 1
       },
-      "prompt_path": "provision/prompts/serialize_tree_to_ncds.md"
+      "prompt_path": "provisions/prompts/phase_5/serialize_tree_to_ncds.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.3.4.1"
+      "flow_index": "1.3.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<phase 5 already complete>",
@@ -172,7 +172,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.4.1"
+      "flow_index": "1.4"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{phase 4 complete}",
@@ -197,7 +197,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.5.1"
+      "flow_index": "1.5"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{tree file written}",
@@ -226,7 +226,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.5.1.1"
+      "flow_index": "1.5.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{write dependency tree to checkpoint file}",
@@ -249,7 +249,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.5.3.1"
+      "flow_index": "1.5.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{dependency tree}",
@@ -272,12 +272,12 @@
         "{classified operations}": 2,
         "[all dependencies]": 3
       },
-      "prompt_path": "provision/prompts/construct_dependency_tree.md"
+      "prompt_path": "provisions/prompts/phase_4/construct_dependency_tree.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.5.3.1.1.1"
+      "flow_index": "1.5.3.1.1"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{final output concept}",
@@ -296,12 +296,12 @@
       "value_order": {
         "{extraction data}": 1
       },
-      "prompt_path": "provision/prompts/identify_goal.md"
+      "prompt_path": "provisions/prompts/phase_4/identify_goal.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.5.3.1.2.1"
+      "flow_index": "1.5.3.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classified operations}",
@@ -324,7 +324,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.5.3.1.3.1"
+      "flow_index": "1.5.3.1.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[all dependencies]",
@@ -343,12 +343,12 @@
       "value_order": {
         "{extraction data}": 1
       },
-      "prompt_path": "provision/prompts/extract_dependencies.md"
+      "prompt_path": "provisions/prompts/phase_4/extract_dependencies.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.5.4.1"
+      "flow_index": "1.5.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<phase 4 already complete>",
@@ -377,7 +377,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.6.1"
+      "flow_index": "1.6"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{phase 3 complete}",
@@ -402,7 +402,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.1"
+      "flow_index": "1.7"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classifications file written}",
@@ -431,7 +431,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.1.1"
+      "flow_index": "1.7.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{write classifications to checkpoint file}",
@@ -454,7 +454,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1"
+      "flow_index": "1.7.3"
     },
     "inference_sequence": "looping",
     "concept_to_infer": "[all classifications]",
@@ -496,7 +496,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.7.3.1"
+        "flow_index": "1.7.3.1.1"
       },
       "syntax": {
         "marker": ".",
@@ -506,7 +506,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1.1.1.1"
+      "flow_index": "1.7.3.1.1.1"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classification}",
@@ -527,12 +527,12 @@
         "{current operation}": 1,
         "{operation context}": 2
       },
-      "prompt_path": "provision/prompts/classify_operation.md"
+      "prompt_path": "provisions/prompts/phase_3/classify_operation.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1.1.1.1.2.1"
+      "flow_index": "1.7.3.1.1.1.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{operation context}",
@@ -553,12 +553,12 @@
         "{current operation}": 1,
         "{extraction data}": 2
       },
-      "prompt_path": "provision/prompts/gather_operation_context.md"
+      "prompt_path": "provisions/prompts/phase_3/gather_operation_context.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.2.1"
+      "flow_index": "1.7.3.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted operations]",
@@ -581,7 +581,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.4.1"
+      "flow_index": "1.7.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<phase 3 already complete>",
@@ -610,7 +610,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.8.1"
+      "flow_index": "1.8"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{phase 2 complete}",
@@ -635,7 +635,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.1"
+      "flow_index": "1.9"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{extraction file written}",
@@ -664,7 +664,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.1.1"
+      "flow_index": "1.9.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{write extraction results to checkpoint file}",
@@ -687,7 +687,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1"
+      "flow_index": "1.9.3"
     },
     "inference_sequence": "grouping",
     "concept_to_infer": "{extraction data}",
@@ -708,7 +708,9 @@
         "marker": "in",
         "sources": [
           "{extracted concepts}",
-          "[extracted operations"
+          "[extracted operations]",
+          "[extracted dependencies]",
+          "[extracted control patterns]"
         ],
         "create_axis": "extraction"
       }
@@ -716,7 +718,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.1.1"
+      "flow_index": "1.9.3.1.1"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{extracted concepts}",
@@ -735,12 +737,12 @@
       "value_order": {
         "{refined instruction content}": 1
       },
-      "prompt_path": "provision/prompts/extract_concepts.md"
+      "prompt_path": "provisions/prompts/phase_2/extract_concepts.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.2.1"
+      "flow_index": "1.9.3.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted operations]",
@@ -759,12 +761,12 @@
       "value_order": {
         "{refined instruction content}": 1
       },
-      "prompt_path": "provision/prompts/extract_operations.md"
+      "prompt_path": "provisions/prompts/phase_2/extract_operations.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.3.1"
+      "flow_index": "1.9.3.1.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted dependencies]",
@@ -787,12 +789,12 @@
         "{extracted concepts}": 2,
         "[extracted operations]": 3
       },
-      "prompt_path": "provision/prompts/extract_dependencies.md"
+      "prompt_path": "provisions/prompts/phase_2/extract_dependencies.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.4.1"
+      "flow_index": "1.9.3.1.4"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted control patterns]",
@@ -811,12 +813,12 @@
       "value_order": {
         "{refined instruction content}": 1
       },
-      "prompt_path": "provision/prompts/extract_control_patterns.md"
+      "prompt_path": "provisions/prompts/phase_2/extract_control_patterns.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.4.1"
+      "flow_index": "1.9.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<phase 2 already complete>",
@@ -845,7 +847,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.10.1"
+      "flow_index": "1.10"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{phase 1 complete}",
@@ -870,7 +872,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.1"
+      "flow_index": "1.11"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refined instruction file written}",
@@ -897,7 +899,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.1.1"
+      "flow_index": "1.11.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{write refined instruction to checkpoint file}",
@@ -920,7 +922,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1"
+      "flow_index": "1.11.3"
     },
     "inference_sequence": "assigning",
     "concept_to_infer": "{refined instruction content}",
@@ -943,7 +945,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.1.1"
+      "flow_index": "1.11.3.1.1"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{cached refined instruction}",
@@ -966,7 +968,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.1.1.1"
+      "flow_index": "1.11.3.1.1.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{read refined instruction from checkpoint}",
@@ -989,7 +991,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.1"
+      "flow_index": "1.11.3.1.2"
     },
     "inference_sequence": "assigning",
     "concept_to_infer": "{freshly refined instruction}",
@@ -1013,7 +1015,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.1.1"
+      "flow_index": "1.11.3.1.2.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{timing_gate_phase_1_already_complete}",
@@ -1036,7 +1038,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.1"
+      "flow_index": "1.11.3.1.2.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refined version}",
@@ -1055,12 +1057,12 @@
       "value_order": {
         "{refinement answers}": 1
       },
-      "prompt_path": "provision/prompts/synthesize_refined_instruction.md"
+      "prompt_path": "provisions/prompts/phase_1/synthesize_refined_instruction.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.1.1"
+      "flow_index": "1.11.3.1.2.2.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{synthesize from refinement answers}",
@@ -1083,7 +1085,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2.1"
+      "flow_index": "1.11.3.1.2.2.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refinement answers}",
@@ -1104,12 +1106,12 @@
         "{raw instruction content}": 1,
         "{refinement questions content}": 2
       },
-      "prompt_path": "provision/prompts/apply_refinement_questions.md"
+      "prompt_path": "provisions/prompts/phase_1/apply_refinement_questions.md"
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2.1.2.1"
+      "flow_index": "1.11.3.1.2.2.2.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refinement questions content}",
@@ -1132,7 +1134,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.3.1"
+      "flow_index": "1.11.3.1.2.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{original version}",
@@ -1155,7 +1157,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.3.1.1"
+      "flow_index": "1.11.3.1.2.3.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{pass through raw instruction}",
@@ -1178,7 +1180,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.4.1"
+      "flow_index": "1.11.3.1.2.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<instruction is vague>",
@@ -1197,7 +1199,7 @@
       "value_order": {
         "{raw instruction content}": 1
       },
-      "prompt_path": "provision/prompts/judge_instruction_vagueness.md",
+      "prompt_path": "provisions/prompts/phase_1/judge_instruction_vagueness.md",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -1208,7 +1210,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.4.1"
+      "flow_index": "1.11.4"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<phase 1 already complete>",
@@ -1237,7 +1239,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.12.1"
+      "flow_index": "1.12"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{raw instruction content}",
@@ -1260,7 +1262,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.13.1"
+      "flow_index": "1.13"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{current progress}",

@@ -237,10 +237,12 @@ class FlowIndexResolver:
         repo_indices = self.concept_repo_flow_indices.get(concept_name, [])
         
         if not repo_indices:
+            logger.info(f"[RESOLVER] '{concept_name}' NOT FOUND in concept_repo, using fallback '{fallback_flow_index}'")
             return fallback_flow_index
         
         # Priority 1: Exact match with fallback
         if fallback_flow_index in repo_indices:
+            logger.info(f"[RESOLVER] '{concept_name}' exact match: fallback '{fallback_flow_index}' in repo_indices {repo_indices}")
             return fallback_flow_index
         
         # Find indices matching the parent pattern
@@ -274,6 +276,7 @@ class FlowIndexResolver:
             if usage_idx < len(direct_children):
                 selected = direct_children[usage_idx]
                 self._usage[usage_key] = usage_idx + 1
+                logger.info(f"[RESOLVER] '{concept_name}' using direct child: '{selected}' (fallback was '{fallback_flow_index}')")
                 return selected
         
         # Priority 3: Deeper descendants (only if no direct children available)
@@ -285,8 +288,10 @@ class FlowIndexResolver:
             if usage_idx < len(deeper_descendants):
                 selected = deeper_descendants[usage_idx]
                 self._usage[usage_key] = usage_idx + 1
+                logger.info(f"[RESOLVER] '{concept_name}' using deeper descendant: '{selected}' (fallback was '{fallback_flow_index}')")
                 return selected
         
+        logger.info(f"[RESOLVER] '{concept_name}' no match found, using fallback '{fallback_flow_index}' (repo had {repo_indices})")
         return fallback_flow_index
     
     def register_flow_index(self, concept_name: str, flow_idx: str) -> None:
@@ -407,6 +412,7 @@ def _try_add_node(
     nodes[node_id] = node
     resolver.register_flow_index(concept_name, flow_index)
     
+    
     return node_id, True
 
 
@@ -435,6 +441,7 @@ def _process_inference(
     """
     flow_info = inf.get('flow_info', {})
     base_flow_index = flow_info.get('flow_index', '0')
+    
     base_level = len(base_flow_index.split('.')) - 1
     
     target_name = inf.get('concept_to_infer', '')

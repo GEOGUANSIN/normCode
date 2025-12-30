@@ -55,7 +55,7 @@
             <= ::(serialize dependency tree to ncds text format) | ?{flow_index}: 1.3.3.1 | ?{sequence}: imperative
                 |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                 |%{v_input_norm}: {prompt_location}
-                |%{v_input_provision}: provision/prompts/serialize_tree_to_ncds.md
+                |%{v_input_provision}: provisions/prompts/phase_5/serialize_tree_to_ncds.md
                 |%{h_input_norm}: in-memory
                 |%{body_faculty}: llm
                 |%{o_shape}: str in memory
@@ -117,7 +117,7 @@
             <= ::(construct tree from classifications and extractions) | ?{flow_index}: 1.5.3.1 | ?{sequence}: imperative
                 |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                 |%{v_input_norm}: {prompt_location}
-                |%{v_input_provision}: provision/prompts/construct_dependency_tree.md
+                |%{v_input_provision}: provisions/prompts/phase_4/construct_dependency_tree.md
                 |%{h_input_norm}: in-memory
                 |%{body_faculty}: llm
                 |%{o_shape}: dict in memory
@@ -128,7 +128,7 @@
                 <= ::(identify goal from extraction data) | ?{flow_index}: 1.5.3.1.1.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/identify_goal.md
+                    |%{v_input_provision}: provisions/prompts/phase_4/identify_goal.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: str in memory
@@ -154,7 +154,7 @@
                 <= ::(extract dependencies from extraction data) | ?{flow_index}: 1.5.3.1.3.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/extract_dependencies.md
+                    |%{v_input_provision}: provisions/prompts/phase_4/extract_dependencies.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: list in memory
@@ -224,7 +224,7 @@
                     <= ::(determine pattern type for operation) | ?{flow_index}: 1.7.3.1.1.1.1 | ?{sequence}: imperative
                         |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                         |%{v_input_norm}: {prompt_location}
-                        |%{v_input_provision}: provision/prompts/classify_operation.md
+                        |%{v_input_provision}: provisions/prompts/phase_3/classify_operation.md
                         |%{h_input_norm}: in-memory
                         |%{body_faculty}: llm
                         |%{o_shape}: dict in memory
@@ -238,7 +238,7 @@
                         <= ::(gather context from extraction data) | ?{flow_index}: 1.7.3.1.1.1.1.2.1 | ?{sequence}: imperative
                             |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                             |%{v_input_norm}: {prompt_location}
-                            |%{v_input_provision}: provision/prompts/gather_operation_context.md
+                            |%{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md
                             |%{h_input_norm}: in-memory
                             |%{body_faculty}: llm
                             |%{o_shape}: dict in memory
@@ -325,7 +325,7 @@
                 <= ::(identify all nouns and data entities) | ?{flow_index}: 1.9.3.1.1.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/extract_concepts.md
+                    |%{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: list in memory
@@ -340,7 +340,7 @@
                 <= ::(identify all verbs and actions) | ?{flow_index}: 1.9.3.1.2.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/extract_operations.md
+                    |%{v_input_provision}: provisions/prompts/phase_2/extract_operations.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: list in memory
@@ -355,7 +355,7 @@
                 <= ::(identify what needs what) | ?{flow_index}: 1.9.3.1.3.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/extract_dependencies.md
+                    |%{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: list in memory
@@ -376,7 +376,7 @@
                 <= ::(identify loops and conditions) | ?{flow_index}: 1.9.3.1.4.1 | ?{sequence}: imperative
                     |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
                     |%{v_input_norm}: {prompt_location}
-                    |%{v_input_provision}: provision/prompts/extract_control_patterns.md
+                    |%{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md
                     |%{h_input_norm}: in-memory
                     |%{body_faculty}: llm
                     |%{o_shape}: list in memory
@@ -464,10 +464,10 @@
                     |%{ref_axes}: [_none_axis]
                     |%{ref_shape}: (1,)
                     |%{ref_element}: str
-                    <= ::(synthesize from refinement answers) | ?{flow_index}: 1.11.3.1.2.2.1 | ?{sequence}: imperative
-                        |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                        |%{v_input_norm}: {prompt_location}
-                        |%{v_input_provision}: provision/prompts/synthesize_refined_instruction.md
+                        <= ::(synthesize from refinement answers) | ?{flow_index}: 1.11.3.1.2.2.1 | ?{sequence}: imperative
+                            |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
+                            |%{v_input_norm}: {prompt_location}
+                            |%{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
                         |%{h_input_norm}: in-memory
                         |%{body_faculty}: llm
                         |%{o_shape}: str in memory
@@ -477,10 +477,10 @@
                         |%{ref_axes}: [question]
                         |%{ref_shape}: (n_question,)
                         |%{ref_element}: dict(question: str, answer: str)
-                        <= ::(apply each refinement question) | ?{flow_index}: 1.11.3.1.2.2.2.1 | ?{sequence}: imperative
-                            |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                            |%{v_input_norm}: {prompt_location}
-                            |%{v_input_provision}: provision/prompts/apply_refinement_questions.md
+                            <= ::(apply each refinement question) | ?{flow_index}: 1.11.3.1.2.2.2.1 | ?{sequence}: imperative
+                                |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
+                                |%{v_input_norm}: {prompt_location}
+                                |%{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
                             |%{h_input_norm}: in-memory
                             |%{body_faculty}: llm
                             |%{o_shape}: list in memory
@@ -519,10 +519,10 @@
                     |%{ref_axes}: [_none_axis]
                     |%{ref_shape}: (1,)
                     |%{ref_element}: %{truth_value}
-                    <= ::<{judge if instruction lacks concrete details}><ALL True> | ?{flow_index}: 1.11.3.1.2.4.1 | ?{sequence}: judgement
-                        |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean
-                        |%{v_input_norm}: {prompt_location}
-                        |%{v_input_provision}: provision/prompts/judge_instruction_vagueness.md
+                        <= ::<{judge if instruction lacks concrete details}><ALL True> | ?{flow_index}: 1.11.3.1.2.4.1 | ?{sequence}: judgement
+                            |%{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean
+                            |%{v_input_norm}: {prompt_location}
+                            |%{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
                         |%{h_input_norm}: in-memory
                         |%{body_faculty}: llm
                         |%{o_shape}: boolean
@@ -583,7 +583,7 @@
         |%{ref_axes}: [_none_axis]
         |%{ref_shape}: (1,)
         |%{ref_element}: perceptual_sign
-        |%{file_location}: provision/data/refinement_questions.txt
+        |%{file_location}: provisions/data/refinement_questions.txt
         /: Ground: path to refinement_questions.txt
 
     <- {progress file path} | ?{flow_index}: 1.16

@@ -1220,6 +1220,23 @@
     "natural_name": "<= @:!(<phase 1 already complete>)"
   },
   {
+    "id": "c-timing-gate-phase-1-already-complete",
+    "concept_name": "{timing_gate_phase_1_already_complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1.11.3.1.2.1"
+    ],
+    "description": "Timing gate for phase 1 completion check",
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "timing gate phase 1 already complete"
+  },
+  {
     "id": "c-phase-1-already-complete",
     "concept_name": "<phase 1 already complete>",
     "type": "<>",
@@ -1585,7 +1602,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{file_location}(provision/data/refinement_questions.txt)"
+      "%{file_location}(provisions/data/refinement_questions.txt)"
     ],
     "reference_axis_names": [
       "_none_axis"
