@@ -96,16 +96,25 @@ class CanvasToolSet:
     These tools enable human-in-the-loop interactions and canvas operations.
     """
     
-    def __init__(self, emit_callback: Callable[[str, Dict], None]):
+    def __init__(
+        self, 
+        emit_callback: Callable[[str, Dict], None],
+        execution_getter: Optional[Callable[[], Any]] = None
+    ):
         """
         Initialize the canvas tool set.
         
         Args:
             emit_callback: Callback to emit WebSocket events
+            execution_getter: Optional callback to get the main ExecutionController
+                             This enables canvas tool to query execution state
         """
         self.user_input_tool = CanvasUserInputTool(emit_callback=emit_callback)
         self.chat_tool = CanvasChatTool(emit_callback=emit_callback, source="execution")
-        self.canvas_tool = CanvasDisplayTool(emit_callback=emit_callback)
+        self.canvas_tool = CanvasDisplayTool(
+            emit_callback=emit_callback,
+            execution_getter=execution_getter
+        )
     
     def inject_into_body(self, body: Any) -> None:
         """Inject all canvas tools into a Body instance."""
@@ -113,20 +122,34 @@ class CanvasToolSet:
         body.chat = self.chat_tool
         body.canvas = self.canvas_tool
         logger.info("Injected canvas tools into body")
+    
+    def set_execution_getter(self, getter: Callable[[], Any]) -> None:
+        """
+        Set the execution getter for the canvas tool.
+        
+        This can be called after initialization to wire up the execution controller.
+        """
+        self.canvas_tool.set_execution_getter(getter)
 
 
-def inject_canvas_tools(body: Any, emit_callback: Callable[[str, Dict], None]) -> CanvasToolSet:
+def inject_canvas_tools(
+    body: Any, 
+    emit_callback: Callable[[str, Dict], None],
+    execution_getter: Optional[Callable[[], Any]] = None
+) -> CanvasToolSet:
     """
     Create and inject canvas-specific tools into a Body.
     
     Args:
         body: The Body instance to inject tools into
         emit_callback: Callback to emit WebSocket events
+        execution_getter: Optional callback to get the main ExecutionController
+                         for querying execution state
         
     Returns:
         CanvasToolSet containing the created tools
     """
-    tool_set = CanvasToolSet(emit_callback)
+    tool_set = CanvasToolSet(emit_callback, execution_getter)
     tool_set.inject_into_body(body)
     return tool_set
 

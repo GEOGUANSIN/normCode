@@ -11,16 +11,22 @@ Architecture:
 
 This makes the system transparent: users see exactly which plan is
 running and can switch between different chat-capable projects.
+
+The chat controller's canvas tool can also query the MAIN execution
+controller (running user projects) to explain what's happening there.
 """
 
 import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from tools.chat_tool import CanvasChatTool
 from tools.canvas_tool import CanvasDisplayTool
+
+if TYPE_CHECKING:
+    from services.execution.controller import ExecutionController
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +133,62 @@ class ChatControllerService:
         self._emit_callback = callback
         # Create tools with the callback
         self._chat_tool = CanvasChatTool(emit_callback=callback, source="controller")
-        self._canvas_tool = CanvasDisplayTool(emit_callback=callback)
+        self._canvas_tool = CanvasDisplayTool(
+            emit_callback=callback,
+            execution_getter=self._get_main_execution_controller
+        )
+    
+    def _get_main_execution_controller(self) -> Optional["ExecutionController"]:
+        """
+        Get the main ExecutionController for user projects.
+        
+        This allows the chat controller's canvas tool to query execution state
+        of the user's project, enabling the chat to explain what's happening.
+        
+        We try multiple strategies:
+        1. Get controller by current project ID from project_service
+        2. Fall back to active controller from registry
+        
+        Returns:
+            The main ExecutionController, or None if no project is loaded
+        """
+        try:
+            from services.execution_service import execution_controller_registry, get_execution_controller
+            from services.project_service import project_service
+            
+            # Strategy 1: Use current project from project_service
+            if project_service.is_project_open and project_service.current_config:
+                current_project_id = project_service.current_config.id
+                controller = get_execution_controller(current_project_id)
+                
+                logger.debug(f"Checking controller for current project: {current_project_id}, "
+                            f"has_controller={controller is not None}, "
+                            f"concept_repo={controller.concept_repo is not None if controller else 'N/A'}, "
+                            f"inference_repo={controller.inference_repo is not None if controller else 'N/A'}")
+                
+                if controller and controller.concept_repo is not None:
+                    return controller
+            
+            # Strategy 2: Fall back to active controller from registry
+            active_id = execution_controller_registry.get_active_project_id()
+            controller = execution_controller_registry.get_active_controller()
+            
+            logger.debug(f"Checking active controller: active_id={active_id}, "
+                        f"has_controller={controller is not None}, "
+                        f"concept_repo={controller.concept_repo is not None if controller else 'N/A'}")
+            
+            if controller and controller.concept_repo is not None:
+                return controller
+            
+            logger.debug(f"No loaded execution controller found. "
+                        f"Project open: {project_service.is_project_open}, "
+                        f"Active ID: {active_id}")
+            return None
+        except Exception as e:
+            logger.warning(f"Could not get main execution controller: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            return None
     
     def _emit(self, event_type: str, data: Dict[str, Any]):
         """Emit a WebSocket event."""
