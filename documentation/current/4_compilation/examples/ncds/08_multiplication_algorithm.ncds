@@ -1,0 +1,117 @@
+/: ========================================
+/: Example 08: Digit-by-Digit Multiplication
+/: ========================================
+/: Multiplies two numbers using nested loops
+/: and partial product accumulation.
+/: STATUS: Draft - derived from refined instruction
+/:
+/: Input: multiplicand, multiplier
+/: Output: product
+/:
+/: Algorithm:
+/:   1. For each multiplier digit position:
+/:      - Multiply multiplicand by that digit
+/:      - Shift result by position
+/:   2. Sum all partial products
+
+<- product
+    <= sum all partial products
+    /: Composition: reuses addition algorithm
+    
+    <- all partial products
+        <= for each multiplier digit position
+        /: Outer loop: positions 0, 1, 2, ... from right
+        
+            <= return shifted partial product per position
+            
+            <- shifted partial product
+                <= shift partial result left by position
+                /: Append 'position' zeros to the right
+                <- partial result
+                <- position
+            
+            <- partial result
+                <= multiply multiplicand by single digit with carry
+                /: Middle operation: multiplicand × one digit
+                
+                <- digit multiplication result
+                    <= for each multiplicand digit with carry state
+                    /: Inner loop: process each digit of multiplicand
+                    
+                        <= return result digit per iteration
+                        
+                        <- result digit
+                            <= get remainder of digit product divided by 10
+                                <= after digit product
+                                /: @after - wait for product
+                            <- digit product
+                        
+                        <- digit product
+                            <= compute multiplicand digit times multiplier digit plus carry
+                            /: Atomic: (a × b + carry)
+                            <- current multiplicand digit
+                                <= extract unit digit from current multiplicand
+                                <- current multiplicand
+                            <- multiplier digit
+                                /: From outer loop context
+                            <- current carry
+                        
+                        <- multiplicand state
+                            <= append next multiplicand state to continue loop
+                                <= if NOT all done
+                                    /: @:! gate
+                                    <= if carry is 0
+                                        /: @:' gate (nested)
+                                    <* carry is 0?
+                                <* all multiplicand digits processed?
+                            <- next multiplicand state
+                                <= remove unit digit from current multiplicand
+                                /: number div 10
+                                <- current multiplicand
+                            <- multiplicand state
+                            <- all multiplicand digits processed?
+                            <- carry is 0?
+                        
+                        <- all multiplicand digits processed?
+                            <= judge if current multiplicand is 0
+                                <= after next multiplicand state
+                            <- next multiplicand state
+                        
+                        <- carry is 0?
+                            <= judge if current carry is 0
+                                <= after digit product
+                            <- current carry
+                        
+                        <- current carry
+                            <= update carry from quotient
+                            /: &across - carry state persists
+                            <- new carry
+                                <= get quotient of digit product divided by 10
+                                    <= after digit product
+                                <- digit product
+                    
+                    <- multiplicand state
+                        /: Initial: the full multiplicand
+                    <* current multiplicand from multiplicand state
+                    <^ carry with previous value
+                        /: Initialized to 0
+                
+                <- multiplicand
+            
+            <- multiplier digit
+                <= extract digit at position from multiplier
+                /: Get the Nth digit from right
+                <- multiplier
+                <- position
+        
+        <- multiplier positions
+            <= generate position indices from multiplier
+            /: [0, 1, 2, ...] for each digit
+            <- multiplier
+        <* position in multiplier positions
+    
+    <- multiplicand
+        /: Ground concept: first input number
+    <- multiplier
+        /: Ground concept: second input number
+

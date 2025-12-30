@@ -1,0 +1,215 @@
+/: ========================================
+/: File-Based Derivation Algorithm
+/: ========================================
+/: Formalized NormCode Plan (.ncd)
+/:
+/: INPUT:  instruction.txt (file path)
+/: OUTPUT: ncds_output.ncds (file path)
+/: CHECKPOINTS: progress.txt, 1_*.txt, 2_*.json, 3_*.json, 4_*.json
+
+:<:{ncds} | ?{flow_index}: 1
+    <= $. %>({ncds}) | ?{flow_index}: 1.1 | ?{sequence}: assigning
+    <- {derivation complete} | ?{flow_index}: 1.2
+        <= ::(write completion status to progress file) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
+        <- {progress file path}<:{1}> | ?{flow_index}: 1.2.1.1
+        <- {ncds output written}<:{2}> | ?{flow_index}: 1.2.1.2
+        
+    <- {ncds output written} | ?{flow_index}: 1.3
+        <= ::(write ncds file to output path) | ?{flow_index}: 1.3.1 | ?{sequence}: imperative
+            <= @:!(<phase 5 already complete>) | ?{flow_index}: 1.3.1.1 | ?{sequence}: timing
+            <* <phase 5 already complete> | ?{flow_index}: 1.3.1.2
+        /: PHASE 5: Serialize and write final output
+        <- {output file path}<:{1}> | ?{flow_index}: 1.3.2
+        <- {ncds content}<:{2}> | ?{flow_index}: 1.3.3
+            <= ::(serialize dependency tree to ncds text format) | ?{flow_index}: 1.3.3.1 | ?{sequence}: imperative
+            <- {dependency tree} | ?{flow_index}: 1.3.3.1.1
+        <- <phase 5 already complete> | ?{flow_index}: 1.3.4
+            <= ::<{check if phase 5 already complete in progress}><ALL True> | ?{flow_index}: 1.3.4.1 | ?{sequence}: judgement
+            <- {current progress} | ?{flow_index}: 1.3.4.1.1
+        <- {phase 4 complete} | ?{flow_index}: 1.3.5
+            /: Dependency: must complete tree construction first
+
+    <- {phase 4 complete} | ?{flow_index}: 1.4
+        <= ::(write phase 4 status to progress file) | ?{flow_index}: 1.4.1 | ?{sequence}: imperative
+        <- {progress file path}<:{1}> | ?{flow_index}: 1.4.1.1
+        <- {tree file written}<:{2}> | ?{flow_index}: 1.4.1.2
+
+    <- {tree file written} | ?{flow_index}: 1.5
+        <= ::(write dependency tree to checkpoint file) | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
+            <= @:!(<phase 4 already complete>) | ?{flow_index}: 1.5.1.1 | ?{sequence}: timing
+            <* <phase 4 already complete> | ?{flow_index}: 1.5.1.2
+        /: PHASE 4: Build and save tree
+        <- {tree file path}<:{1}> | ?{flow_index}: 1.5.2
+        <- {dependency tree}<:{2}> | ?{flow_index}: 1.5.3
+            <= ::(construct tree from classifications and extractions) | ?{flow_index}: 1.5.3.1 | ?{sequence}: imperative
+            <- {final output concept}<:{1}> | ?{flow_index}: 1.5.3.1.1
+                <= ::(identify goal from extraction data) | ?{flow_index}: 1.5.3.1.1.1 | ?{sequence}: imperative
+                <- {extraction data} | ?{flow_index}: 1.5.3.1.1.1.1
+            <- {classified operations}<:{2}> | ?{flow_index}: 1.5.3.1.2
+                <= ::(read classifications from checkpoint) | ?{flow_index}: 1.5.3.1.2.1 | ?{sequence}: imperative
+                <- {classifications file path} | ?{flow_index}: 1.5.3.1.2.1.1
+            <- [all dependencies]<:{3}> | ?{flow_index}: 1.5.3.1.3
+                <= ::(extract dependencies from extraction data) | ?{flow_index}: 1.5.3.1.3.1 | ?{sequence}: imperative
+                <- {extraction data} | ?{flow_index}: 1.5.3.1.3.1.1
+        <- <phase 4 already complete> | ?{flow_index}: 1.5.4
+            <= ::<{check if phase 4 already complete in progress}><ALL True> | ?{flow_index}: 1.5.4.1 | ?{sequence}: judgement
+            <- {current progress} | ?{flow_index}: 1.5.4.1.1
+        <- {phase 3 complete} | ?{flow_index}: 1.5.5
+            /: Dependency: must complete classification first
+
+    <- {phase 3 complete} | ?{flow_index}: 1.6
+        <= ::(write phase 3 status to progress file) | ?{flow_index}: 1.6.1 | ?{sequence}: imperative
+        <- {progress file path}<:{1}> | ?{flow_index}: 1.6.1.1
+        <- {classifications file written}<:{2}> | ?{flow_index}: 1.6.1.2
+
+    <- {classifications file written} | ?{flow_index}: 1.7
+        <= ::(write classifications to checkpoint file) | ?{flow_index}: 1.7.1 | ?{sequence}: imperative
+            <= @:!(<phase 3 already complete>) | ?{flow_index}: 1.7.1.1 | ?{sequence}: timing
+            <* <phase 3 already complete> | ?{flow_index}: 1.7.1.2
+        /: PHASE 3: Classify and save
+        <- {classifications file path}<:{1}> | ?{flow_index}: 1.7.2
+        <- [all classifications]<:{2}> | ?{flow_index}: 1.7.3
+            <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1) | ?{flow_index}: 1.7.3.1 | ?{sequence}: looping
+            
+                <= $. %>({classification}) | ?{flow_index}: 1.7.3.1.1 | ?{sequence}: assigning
+                
+                <- {classification} | ?{flow_index}: 1.7.3.1.1.1
+                    <= ::(determine pattern type for operation) | ?{flow_index}: 1.7.3.1.1.1.1 | ?{sequence}: imperative
+                    <- {current operation}<:{1}> | ?{flow_index}: 1.7.3.1.1.1.1.1
+                    <- {operation context}<:{2}> | ?{flow_index}: 1.7.3.1.1.1.1.2
+                        <= ::(gather context from extraction data) | ?{flow_index}: 1.7.3.1.1.1.1.2.1 | ?{sequence}: imperative
+                        <- {current operation}<:{1}> | ?{flow_index}: 1.7.3.1.1.1.1.2.1.1
+                        <- {extraction data}<:{2}> | ?{flow_index}: 1.7.3.1.1.1.1.2.1.2
+            
+            <- [extracted operations] | ?{flow_index}: 1.7.3.2
+                <= ::(get operations from extraction data) | ?{flow_index}: 1.7.3.2.1 | ?{sequence}: imperative
+                <- {extraction data} | ?{flow_index}: 1.7.3.2.1.1
+            <* {current operation}<$([extracted operations])*> | ?{flow_index}: 1.7.3.3
+        <- <phase 3 already complete> | ?{flow_index}: 1.7.4
+            <= ::<{check if phase 3 already complete in progress}><ALL True> | ?{flow_index}: 1.7.4.1 | ?{sequence}: judgement
+            <- {current progress} | ?{flow_index}: 1.7.4.1.1
+        <- {phase 2 complete} | ?{flow_index}: 1.7.5
+            /: Dependency: must complete extraction first
+
+    <- {phase 2 complete} | ?{flow_index}: 1.8
+        <= ::(write phase 2 status to progress file) | ?{flow_index}: 1.8.1 | ?{sequence}: imperative
+        <- {progress file path}<:{1}> | ?{flow_index}: 1.8.1.1
+        <- {extraction file written}<:{2}> | ?{flow_index}: 1.8.1.2
+
+    <- {extraction file written} | ?{flow_index}: 1.9
+        <= ::(write extraction results to checkpoint file) | ?{flow_index}: 1.9.1 | ?{sequence}: imperative
+            <= @:!(<phase 2 already complete>) | ?{flow_index}: 1.9.1.1 | ?{sequence}: timing
+            <* <phase 2 already complete> | ?{flow_index}: 1.9.1.2
+        /: PHASE 2: Extract and save
+        <- {extraction file path}<:{1}> | ?{flow_index}: 1.9.2
+        <- {extraction data}<:{2}> | ?{flow_index}: 1.9.3
+            <= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction) | ?{flow_index}: 1.9.3.1 | ?{sequence}: grouping
+            
+            <- {extracted concepts} | ?{flow_index}: 1.9.3.1.1
+                <= ::(identify all nouns and data entities) | ?{flow_index}: 1.9.3.1.1.1 | ?{sequence}: imperative
+                <- {refined instruction content} | ?{flow_index}: 1.9.3.1.1.1.1
+            
+            <- [extracted operations] | ?{flow_index}: 1.9.3.1.2
+                <= ::(identify all verbs and actions) | ?{flow_index}: 1.9.3.1.2.1 | ?{sequence}: imperative
+                <- {refined instruction content} | ?{flow_index}: 1.9.3.1.2.1.1
+            
+            <- [extracted dependencies] | ?{flow_index}: 1.9.3.1.3
+                <= ::(identify what needs what) | ?{flow_index}: 1.9.3.1.3.1 | ?{sequence}: imperative
+                <- {refined instruction content}<:{1}> | ?{flow_index}: 1.9.3.1.3.1.1
+                <- {extracted concepts}<:{2}> | ?{flow_index}: 1.9.3.1.3.1.2
+                <- [extracted operations]<:{3}> | ?{flow_index}: 1.9.3.1.3.1.3
+            
+            <- [extracted control patterns] | ?{flow_index}: 1.9.3.1.4
+                <= ::(identify loops and conditions) | ?{flow_index}: 1.9.3.1.4.1 | ?{sequence}: imperative
+                <- {refined instruction content} | ?{flow_index}: 1.9.3.1.4.1.1
+        <- <phase 2 already complete> | ?{flow_index}: 1.9.4
+            <= ::<{check if phase 2 already complete in progress}><ALL True> | ?{flow_index}: 1.9.4.1 | ?{sequence}: judgement
+            <- {current progress} | ?{flow_index}: 1.9.4.1.1
+        <- {phase 1 complete} | ?{flow_index}: 1.9.5
+            /: Dependency: must complete refinement first
+
+    <- {phase 1 complete} | ?{flow_index}: 1.10
+        <= ::(write phase 1 status to progress file) | ?{flow_index}: 1.10.1 | ?{sequence}: imperative
+        <- {progress file path}<:{1}> | ?{flow_index}: 1.10.1.1
+        <- {refined instruction file written}<:{2}> | ?{flow_index}: 1.10.1.2
+
+    <- {refined instruction file written} | ?{flow_index}: 1.11
+        <= ::(write refined instruction to checkpoint file) | ?{flow_index}: 1.11.1 | ?{sequence}: imperative
+            <= @:!(<phase 1 already complete>) | ?{flow_index}: 1.11.1.1 | ?{sequence}: timing
+            <* <phase 1 already complete> | ?{flow_index}: 1.11.1.2
+        /: PHASE 1: Refine and save
+        <- {refined instruction file path}<:{1}> | ?{flow_index}: 1.11.2
+        <- {refined instruction content}<:{2}> | ?{flow_index}: 1.11.3
+            <= $. %>[{cached refined instruction}, {freshly refined instruction}] | ?{flow_index}: 1.11.3.1 | ?{sequence}: assigning
+            
+            <- {cached refined instruction} | ?{flow_index}: 1.11.3.1.1
+                <= ::(read refined instruction from checkpoint) | ?{flow_index}: 1.11.3.1.1.1 | ?{sequence}: imperative
+                    <= @:'(<phase 1 already complete>) | ?{flow_index}: 1.11.3.1.1.1.1 | ?{sequence}: timing
+                    <* <phase 1 already complete> | ?{flow_index}: 1.11.3.1.1.1.2
+                <- {refined instruction file path} | ?{flow_index}: 1.11.3.1.1.2
+            
+            <- {freshly refined instruction} | ?{flow_index}: 1.11.3.1.2
+                <= $. %>[{refined version}, {original version}] | ?{flow_index}: 1.11.3.1.2.1 | ?{sequence}: assigning
+                    <= @:!(<phase 1 already complete>) | ?{flow_index}: 1.11.3.1.2.1.1 | ?{sequence}: timing
+                    <* <phase 1 already complete> | ?{flow_index}: 1.11.3.1.2.1.2
+                
+                <- {refined version} | ?{flow_index}: 1.11.3.1.2.2
+                    <= ::(synthesize from refinement answers) | ?{flow_index}: 1.11.3.1.2.2.1 | ?{sequence}: imperative
+                        <= @:'(<instruction is vague>) | ?{flow_index}: 1.11.3.1.2.2.1.1 | ?{sequence}: timing
+                        <* <instruction is vague> | ?{flow_index}: 1.11.3.1.2.2.1.2
+                    <- {refinement answers} | ?{flow_index}: 1.11.3.1.2.2.2
+                        <= ::(apply each refinement question) | ?{flow_index}: 1.11.3.1.2.2.2.1 | ?{sequence}: imperative
+                        <- {raw instruction content}<:{1}> | ?{flow_index}: 1.11.3.1.2.2.2.1.1
+                        <- {refinement questions content}<:{2}> | ?{flow_index}: 1.11.3.1.2.2.2.1.2
+                            <= ::(read refinement questions from file) | ?{flow_index}: 1.11.3.1.2.2.2.1.2.1 | ?{sequence}: imperative
+                            <- {refinement questions file path} | ?{flow_index}: 1.11.3.1.2.2.2.1.2.1.1
+                
+                <- {original version} | ?{flow_index}: 1.11.3.1.2.3
+                    <= ::(pass through raw instruction) | ?{flow_index}: 1.11.3.1.2.3.1 | ?{sequence}: imperative
+                        <= @:!(<instruction is vague>) | ?{flow_index}: 1.11.3.1.2.3.1.1 | ?{sequence}: timing
+                        <* <instruction is vague> | ?{flow_index}: 1.11.3.1.2.3.1.2
+                    <- {raw instruction content} | ?{flow_index}: 1.11.3.1.2.3.2
+                
+                <- <instruction is vague> | ?{flow_index}: 1.11.3.1.2.4
+                    <= ::<{judge if instruction lacks concrete details}><ALL True> | ?{flow_index}: 1.11.3.1.2.4.1 | ?{sequence}: judgement
+                    <- {raw instruction content} | ?{flow_index}: 1.11.3.1.2.4.1.1
+        
+        <- <phase 1 already complete> | ?{flow_index}: 1.11.4
+            <= ::<{check if phase 1 already complete in progress}><ALL True> | ?{flow_index}: 1.11.4.1 | ?{sequence}: judgement
+            <- {current progress} | ?{flow_index}: 1.11.4.1.1
+        
+    <- {raw instruction content} | ?{flow_index}: 1.12
+        <= ::(read instruction from input file) | ?{flow_index}: 1.12.1 | ?{sequence}: imperative
+        <- {instruction file path} | ?{flow_index}: 1.12.1.1
+
+    <- {current progress} | ?{flow_index}: 1.13
+        <= ::(read progress from file if exists) | ?{flow_index}: 1.13.1 | ?{sequence}: imperative
+        <- {progress file path} | ?{flow_index}: 1.13.1.1
+
+    /: ========================================
+    /: FILE PATH CONFIGURATION (Ground Concepts)
+    /: ========================================
+
+    <- {instruction file path} | ?{flow_index}: 1.14
+        /: Ground: path to instruction.txt
+
+    <- {refinement questions file path} | ?{flow_index}: 1.15
+        /: Ground: path to refinement_questions.txt
+
+    <- {progress file path} | ?{flow_index}: 1.16
+        /: Ground: path to progress.txt
+
+    <- {refined instruction file path} | ?{flow_index}: 1.17
+        /: Ground: path to 1_refined_instruction.txt
+
+    <- {extraction file path} | ?{flow_index}: 1.18
+        /: Ground: path to 2_extraction.json
+
+    <- {classifications file path} | ?{flow_index}: 1.19
+        /: Ground: path to 3_classifications.json
+
+    <- {tree file path} | ?{flow_index}: 1.20
+        /: Ground: path to 4_dependency_tree.json
+
+    <- {output file path} | ?{flow_index}: 1.21
+        /: Ground: path to ncds_output.ncds

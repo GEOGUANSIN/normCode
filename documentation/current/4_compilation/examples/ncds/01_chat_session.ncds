@@ -1,0 +1,52 @@
+/: Chat Session Controller
+/: A self-seeding loop that handles user messages until termination
+/: 
+/: STATUS: Working - verified against canvas_app/compiler/repos/
+
+<- session result
+    <= select all canvas statuses as final result
+    
+    <- on-going messages
+        <= initialize to empty list
+    
+    <- all canvas statuses
+        <= for every on-going message
+        
+            <= return the canvas status per iteration
+            
+            <- canvas status
+                <= bundle the message, command status, and response sent together
+                
+                <- current message
+                    <= read user input (blocks until received)
+                
+                <- command status
+                    <= execute the canvas command based on parsed intent
+                    <- parsed command
+                        <= understand the user message as a canvas command
+                        <- current message
+                        <- canvas command schema
+                
+                <- response sent
+                    <= send the response message to the user
+                    <- response
+                        <= generate a helpful response for the user
+                        <- current message
+                        <- command status
+            
+            <- session should end?
+                <= judge if the user wants to end the session
+                <- current message
+                <- command status
+                <- on-going messages
+            
+            <- on-going messages
+                <= append current message to collection
+                    <= if session should NOT end
+                    <* session should end?
+                <- current message
+                <- on-going messages
+        
+        <- on-going messages
+        <* message in on-going messages
+

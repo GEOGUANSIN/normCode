@@ -1,0 +1,70 @@
+{
+  "paradigm_id": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean",
+  "description": "Generate a boolean judgement from a prompt template and data using chain-of-thought reasoning",
+  "body_faculty": "llm",
+  
+  "inputs": {
+    "vertical": {
+      "prompt_template": {
+        "norm": "{prompt_location}",
+        "description": "Path to the prompt template file",
+        "required": true
+      }
+    },
+    "horizontal": {
+      "data": {
+        "norm": "in-memory",
+        "description": "Runtime data to inject into prompt template",
+        "required": true
+      }
+    }
+  },
+  
+  "composition": {
+    "steps": [
+      {
+        "step": "load_prompt",
+        "action": "read prompt template from v.prompt_template",
+        "output": "prompt_content"
+      },
+      {
+        "step": "inject_data",
+        "action": "substitute {{placeholders}} with h.data values",
+        "output": "filled_prompt"
+      },
+      {
+        "step": "generate",
+        "action": "call LLM with filled_prompt, request JSON with boolean field",
+        "config": {
+          "temperature": 0.3,
+          "response_format": "json",
+          "chain_of_thought": true
+        },
+        "output": "llm_response"
+      },
+      {
+        "step": "parse",
+        "action": "parse JSON from llm_response",
+        "output": "parsed_result"
+      },
+      {
+        "step": "extract_boolean",
+        "action": "extract boolean value from parsed_result (e.g., .is_vague, .result, .value)",
+        "output": "boolean_result"
+      }
+    ]
+  },
+  
+  "output": {
+    "format": "o_Boolean",
+    "type": "bool",
+    "description": "Boolean value for judgement assertions"
+  },
+  
+  "error_handling": {
+    "json_parse_error": "retry with explicit JSON instruction",
+    "boolean_extraction_error": "default to false with warning",
+    "llm_error": "propagate error"
+  }
+}
+

@@ -1,0 +1,15 @@
+/: Extract entities from each document in a collection
+/: STATUS: Reference pattern
+
+<- all extracted entities
+    <= for every document in the list
+    
+        <= return the extracted entities per document
+        
+        <- extracted entities
+            <= extract key entities and themes
+            <- current document
+    
+    <- documents
+    <* current document from documents
+

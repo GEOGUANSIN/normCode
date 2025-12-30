@@ -1,0 +1,64 @@
+{
+  "paradigm_id": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+  "description": "Generate structured JSON output from a prompt template and data using chain-of-thought reasoning",
+  "body_faculty": "llm",
+  
+  "inputs": {
+    "vertical": {
+      "prompt_template": {
+        "norm": "{prompt_location}",
+        "description": "Path to the prompt template file",
+        "required": true
+      }
+    },
+    "horizontal": {
+      "data": {
+        "norm": "in-memory",
+        "description": "Runtime data to inject into prompt template",
+        "required": true
+      }
+    }
+  },
+  
+  "composition": {
+    "steps": [
+      {
+        "step": "load_prompt",
+        "action": "read prompt template from v.prompt_template",
+        "output": "prompt_content"
+      },
+      {
+        "step": "inject_data",
+        "action": "substitute {{placeholders}} with h.data values",
+        "output": "filled_prompt"
+      },
+      {
+        "step": "generate",
+        "action": "call LLM with filled_prompt, request JSON output",
+        "config": {
+          "temperature": 0.7,
+          "response_format": "json",
+          "chain_of_thought": true
+        },
+        "output": "llm_response"
+      },
+      {
+        "step": "parse",
+        "action": "parse JSON from llm_response",
+        "output": "parsed_result"
+      }
+    ]
+  },
+  
+  "output": {
+    "format": "o_Literal",
+    "type": "dict",
+    "description": "Parsed JSON object returned directly in memory"
+  },
+  
+  "error_handling": {
+    "json_parse_error": "retry with explicit JSON instruction",
+    "llm_error": "propagate error"
+  }
+}
+

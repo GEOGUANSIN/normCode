@@ -1,0 +1,13 @@
+/: Bundle multiple results into a single structured output
+/: STATUS: Reference pattern
+
+<- response bundle
+    <= bundle the query, results, and summary together
+    <- user query
+    <- database results
+        <= query the database
+        <- user query
+    <- generated summary
+        <= summarize the results
+        <- database results
+
