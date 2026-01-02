@@ -42,10 +42,10 @@ import type {
 import { editorApi } from '../../services/editorApi';
 
 // Config
-import { isNormCodeFormat as checkNormCodeFormat } from '../../config/fileTypes';
+import { isNormCodeFormat as checkNormCodeFormat, isDatabaseFormat as checkDatabaseFormat } from '../../config/fileTypes';
 
 // Components
-import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor, RepoPreview, ProjectPreview, AgentConfigPreview } from '../editor';
+import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor, RepoPreview, ProjectPreview, AgentConfigPreview, OrchestratorDBInspector } from '../editor';
 
 // Paradigm types
 import type { Paradigm, ParsedParadigm } from '../../types/paradigm';
@@ -118,6 +118,9 @@ export function EditorPanel() {
   // Agent config preview state
   const [isAgentFile, setIsAgentFile] = useState(false);
   
+  // Database file state
+  const [isDatabaseFile, setIsDatabaseFile] = useState(false);
+  
   const initialLoadDone = useRef(false);
   
   // Helper to detect if a file is a concept/inference repository
@@ -143,9 +146,18 @@ export function EditorPanel() {
     const filename = path.split(/[/\\]/).pop()?.toLowerCase() || '';
     return filename.endsWith('.agent.json');
   };
+  
+  // Helper to detect if a file is a database file
+  const isDatabaseFilename = (path: string): boolean => {
+    const filename = path.split(/[/\\]/).pop()?.toLowerCase() || '';
+    return filename.endsWith('.db') || filename.endsWith('.sqlite') || filename.endsWith('.sqlite3');
+  };
 
   // Check if current file is NormCode format
   const isNormCodeFormat = checkNormCodeFormat(fileFormat);
+  
+  // Check if current file is a database format
+  const isDatabaseFormat = checkDatabaseFormat(fileFormat);
 
   // ==========================================================================
   // Message handling
@@ -245,13 +257,22 @@ export function EditorPanel() {
       setCollapsedIndices(new Set());
       setTextEditorKey(prev => prev + 1);
       
-      // Reset paradigm, repo, project, and agent state
+      // Reset paradigm, repo, project, agent, and database state
       setIsParadigmFile(false);
       setParadigm(null);
       setParsedParadigm(null);
       setIsRepoFile(false);
       setIsProjectFile(false);
       setIsAgentFile(false);
+      setIsDatabaseFile(false);
+      
+      // Check if this is a database file (.db, .sqlite, .sqlite3)
+      if (isDatabaseFilename(path) || result.format === 'sqlite') {
+        setIsDatabaseFile(true);
+        setFileFormat(result.format);
+        setIsLoading(false);
+        return;
+      }
       
       // Check if this is a project config file (.normcode-canvas.json)
       if (isProjectFilename(path)) {
@@ -925,7 +946,9 @@ export function EditorPanel() {
               <div className="bg-gray-100 px-4 py-2 flex items-center justify-between border-b">
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-medium px-2 py-0.5 rounded uppercase ${
-                    isProjectFile
+                    isDatabaseFile
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : isProjectFile
                       ? 'bg-indigo-100 text-indigo-700'
                       : isAgentFile
                       ? 'bg-violet-100 text-violet-700'
@@ -935,7 +958,7 @@ export function EditorPanel() {
                       ? 'bg-purple-100 text-purple-700' 
                       : 'bg-gray-200 text-gray-700'
                   }`}>
-                    {isProjectFile ? 'project' : isAgentFile ? 'agent' : isRepoFile ? 'repository' : isParadigmFile ? 'paradigm' : fileFormat}
+                    {isDatabaseFile ? 'database' : isProjectFile ? 'project' : isAgentFile ? 'agent' : isRepoFile ? 'repository' : isParadigmFile ? 'paradigm' : fileFormat}
                   </span>
                   
                   {/* Editor mode toggle for NormCode files */}
@@ -1105,8 +1128,14 @@ export function EditorPanel() {
               
               {/* Editor content area */}
               <div className="flex-1 min-h-0 overflow-hidden">
-                {/* Project Config Preview (.normcode-canvas.json) */}
-                {isProjectFile && selectedFile ? (
+                {/* Database Inspector (.db, .sqlite, .sqlite3) */}
+                {isDatabaseFile && selectedFile ? (
+                  <OrchestratorDBInspector 
+                    initialDbPath={selectedFile}
+                    className="h-full"
+                  />
+                ) : isProjectFile && selectedFile ? (
+                  /* Project Config Preview (.normcode-canvas.json) */
                   <ProjectPreview 
                     filePath={selectedFile}
                     onClose={() => setIsProjectFile(false)}

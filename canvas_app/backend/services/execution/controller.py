@@ -112,7 +112,41 @@ class ExecutionController:
         data = {**data, "source": self.event_source}
         if self.project_id:
             data["project_id"] = self.project_id
+        
+        # Route through WorkerRegistry for panel targeting
+        worker_id = self._get_worker_id()
+        if worker_id:
+            self._route_through_registry(worker_id, event_type, data)
+        
         await event_emitter.emit(event_type, data)
+    
+    def _get_worker_id(self) -> Optional[str]:
+        """Get the worker ID for this controller."""
+        if self.project_id:
+            # User project workers have "user-" prefix
+            # Chat controller workers have "chat-" prefix
+            if self.event_source == "controller":
+                return f"chat-{self.project_id.replace('chat-', '')}"
+            else:
+                return f"user-{self.project_id}"
+        return None
+    
+    def _route_through_registry(self, worker_id: str, event_type: str, data: Dict[str, Any]):
+        """Route event through WorkerRegistry for panel targeting."""
+        try:
+            from services.execution.worker_registry import get_worker_registry
+            registry = get_worker_registry()
+            
+            # Get routing info and add to event data
+            targets = registry.get_event_targets(worker_id)
+            data["target_panels"] = targets.get("panel_ids", [])
+            data["target_panel_types"] = targets.get("panel_types", [])
+            data["worker_id"] = worker_id
+            
+            # Route the event (this notifies any registry listeners)
+            registry.route_event(worker_id, event_type, data)
+        except Exception as e:
+            logger.debug(f"Registry routing skipped: {e}")
     
     def _emit_threadsafe(self, event_type: str, data: Dict[str, Any]):
         """Emit an event in a thread-safe manner."""
@@ -257,6 +291,51 @@ class ExecutionController:
             "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
             "breakpoints": list(self.breakpoints),
         }
+    
+    def _sync_status_to_registry(self):
+        """Sync execution status to WorkerRegistry."""
+        worker_id = self._get_worker_id()
+        if not worker_id:
+            return
+        
+        try:
+            from services.execution.worker_registry import get_worker_registry, WorkerStatus as RegistryStatus
+            registry = get_worker_registry()
+            
+            # Map ExecutionStatus to RegistryStatus
+            status_map = {
+                ExecutionStatus.IDLE: RegistryStatus.IDLE,
+                ExecutionStatus.RUNNING: RegistryStatus.RUNNING,
+                ExecutionStatus.PAUSED: RegistryStatus.PAUSED,
+                ExecutionStatus.STEPPING: RegistryStatus.STEPPING,
+                ExecutionStatus.COMPLETED: RegistryStatus.COMPLETED,
+                ExecutionStatus.FAILED: RegistryStatus.FAILED,
+            }
+            
+            registry_status = status_map.get(self.status, RegistryStatus.IDLE)
+            registry.update_status(worker_id, registry_status)
+        except Exception as e:
+            logger.debug(f"Registry status sync skipped: {e}")
+    
+    def _sync_progress_to_registry(self):
+        """Sync execution progress to WorkerRegistry."""
+        worker_id = self._get_worker_id()
+        if not worker_id:
+            return
+        
+        try:
+            from services.execution.worker_registry import get_worker_registry
+            registry = get_worker_registry()
+            
+            registry.update_progress(
+                worker_id=worker_id,
+                current_inference=self.current_inference,
+                completed_count=self.completed_count,
+                total_count=self.total_count,
+                cycle_count=self.cycle_count,
+            )
+        except Exception as e:
+            logger.debug(f"Registry progress sync skipped: {e}")
     
     # =========================================================================
     # Repository Loading
@@ -435,6 +514,9 @@ class ExecutionController:
         self._stop_requested = False
         self._pause_event.set()
         
+        # Sync to registry
+        self._sync_status_to_registry()
+        
         if hasattr(self, 'chat_tool') and self.chat_tool:
             self.chat_tool.set_execution_active(True)
 
@@ -447,6 +529,7 @@ class ExecutionController:
         """Pause execution after current inference."""
         self.status = ExecutionStatus.PAUSED
         self._pause_event.clear()
+        self._sync_status_to_registry()
         await self._emit("execution:paused", {"inference": self.current_inference})
         self._add_log("info", "", f"Execution paused at {self.current_inference or 'start'}")
     
@@ -454,6 +537,7 @@ class ExecutionController:
         """Resume from paused state."""
         self.status = ExecutionStatus.RUNNING
         self._pause_event.set()
+        self._sync_status_to_registry()
         await self._emit("execution:resumed", {})
         self._add_log("info", "", "Execution resumed")
     
@@ -497,6 +581,7 @@ class ExecutionController:
         self._detach_infra_log_handlers()
 
         self.status = ExecutionStatus.IDLE
+        self._sync_status_to_registry()
         await self._emit("execution:stopped", {})
         self._add_log("info", "", "Execution stopped")
     
@@ -631,6 +716,8 @@ class ExecutionController:
             
             if not self._stop_requested and self.status != ExecutionStatus.PAUSED:
                 self.status = ExecutionStatus.COMPLETED
+                self._sync_status_to_registry()
+                self._sync_progress_to_registry()
                 self._detach_infra_log_handlers()
                 await self._emit("execution:completed", {
                     "completed_count": self.completed_count,
@@ -643,6 +730,7 @@ class ExecutionController:
             self._detach_infra_log_handlers()
         except Exception as e:
             self.status = ExecutionStatus.FAILED
+            self._sync_status_to_registry()
             self._detach_infra_log_handlers()
             await self._emit("execution:error", {"error": str(e)})
             self._add_log("error", "", f"Execution failed: {str(e)}")
@@ -721,6 +809,7 @@ class ExecutionController:
                 if new_status == 'completed':
                     self.node_statuses[flow_index] = NodeStatus.COMPLETED
                     self.completed_count += 1
+                    self._sync_progress_to_registry()
                     await self._emit("inference:completed", {
                         "flow_index": flow_index,
                         "duration": duration

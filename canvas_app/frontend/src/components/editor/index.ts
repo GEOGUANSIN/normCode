@@ -9,4 +9,5 @@ export { ParadigmEditor } from './ParadigmEditor';
 export { RepoPreview } from './RepoPreview';
 export { ProjectPreview } from './ProjectPreview';
 export { AgentConfigPreview } from './AgentConfigPreview';
+export { OrchestratorDBInspector } from './OrchestratorDBInspector';
 

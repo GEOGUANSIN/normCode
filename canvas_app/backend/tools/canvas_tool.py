@@ -296,7 +296,7 @@ class CanvasDisplayTool:
                 "has_graph": has_graph,
                 "project_id": controller.project_id,
                 "project_name": project_config.get("name") if project_config else None,
-                "concepts_count": len(controller.concept_repo.entries) if controller.concept_repo else 0,
+                "concepts_count": len(list(controller.concept_repo.get_all_concepts())) if controller.concept_repo else 0,
                 "inferences_count": len(controller.inference_repo.inferences) if controller.inference_repo else 0,
                 "run_id": getattr(controller.orchestrator, 'run_id', None) if controller.orchestrator else None,
                 "config": controller._load_config if hasattr(controller, '_load_config') else None,
@@ -410,7 +410,7 @@ class CanvasDisplayTool:
         
         # Build concept summaries
         concepts = []
-        for entry in controller.concept_repo.entries:
+        for entry in controller.concept_repo.get_all_concepts():
             concept = entry.concept if hasattr(entry, 'concept') else entry
             concepts.append({
                 "name": concept.concept_name if hasattr(concept, 'concept_name') else str(concept),
@@ -952,6 +952,8 @@ class CanvasDisplayTool:
             return self._cmd_file_operation("save", params)
         elif command_type == "load":
             return self._cmd_file_operation("load", params)
+        elif command_type == "load_repositories":
+            return self._cmd_load_repositories(params)
         elif command_type == "export":
             return self._cmd_file_operation("export", params)
         elif command_type == "import":
@@ -1130,6 +1132,75 @@ class CanvasDisplayTool:
             "path": params.get("path"),
             "success": True,
         }
+    
+    def _cmd_load_repositories(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Load repositories for the current project.
+        
+        This is equivalent to clicking the "Load" button in the UI.
+        It loads concept and inference repositories and enables execution.
+        """
+        try:
+            from services.project_service import project_service
+            from services.graph_service import graph_service
+            from services.execution_service import get_execution_controller, execution_controller_registry
+            
+            # Check if a project is open
+            if not project_service.is_project_open:
+                return {
+                    "operation": "load_repositories",
+                    "success": False,
+                    "error": "No project is currently open. Please open a project first.",
+                }
+            
+            # Check if repositories exist
+            if not project_service.check_repositories_exist():
+                return {
+                    "operation": "load_repositories",
+                    "success": False,
+                    "error": "Repository files not found for the current project.",
+                }
+            
+            # Get paths
+            paths = project_service.get_absolute_repo_paths()
+            project_id = project_service.current_config.id
+            
+            # Load graph first
+            graph_service.load_from_files(
+                paths['concepts'],
+                paths['inferences']
+            )
+            
+            # Get or create the ExecutionController for this project
+            controller = get_execution_controller(project_id)
+            
+            # Ensure the registry knows this is the active project
+            execution_controller_registry.set_active(project_id)
+            
+            # Emit an event to tell the frontend to reload
+            self._emit("canvas:command", {
+                "type": "load_repositories",
+                "params": {"project_id": project_id},
+            })
+            
+            # Note: We can't await load_repositories here since this is a sync method
+            # The actual repo loading needs to happen via the API call
+            # So we emit the command and let the frontend handle it
+            
+            return {
+                "operation": "load_repositories",
+                "success": True,
+                "project_id": project_id,
+                "project_name": project_service.current_config.name,
+                "message": f"Initiated repository loading for '{project_service.current_config.name}'. The graph has been loaded with {len(graph_service.current_graph.nodes)} nodes.",
+            }
+        except Exception as e:
+            logger.error(f"Failed to load repositories: {e}")
+            return {
+                "operation": "load_repositories",
+                "success": False,
+                "error": str(e),
+            }
     
     def _cmd_query(self, query_type: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle query operations - retrieve data from execution state."""

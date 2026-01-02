@@ -123,25 +123,106 @@ function GraphCanvasInner() {
     
     console.log('[GraphCanvas] Executing command:', command);
     
-    switch (command.type) {
-      case 'zoom_in':
-        zoomIn({ duration: 300 });
-        break;
-      case 'zoom_out':
-        zoomOut({ duration: 300 });
-        break;
-      case 'fit_view':
-        fitView({ padding: 0.2, duration: 300 });
-        break;
-      case 'center_on':
-        const { x, y, zoom } = command.params as { x?: number; y?: number; zoom?: number };
-        if (x !== undefined && y !== undefined) {
-          setCenter(x, y, { zoom: zoom ?? getViewport().zoom, duration: 300 });
-        }
-        break;
-      default:
-        console.log('[GraphCanvas] Unknown command type:', command.type);
-    }
+    // Import executionApi dynamically to avoid circular dependencies
+    import('../../services/api').then(({ executionApi }) => {
+      switch (command.type) {
+        // View operations
+        case 'zoom_in':
+          zoomIn({ duration: 300 });
+          break;
+        case 'zoom_out':
+          zoomOut({ duration: 300 });
+          break;
+        case 'fit_view':
+          fitView({ padding: 0.2, duration: 300 });
+          break;
+        case 'center_on':
+          const { x, y, zoom } = command.params as { x?: number; y?: number; zoom?: number };
+          if (x !== undefined && y !== undefined) {
+            setCenter(x, y, { zoom: zoom ?? getViewport().zoom, duration: 300 });
+          }
+          break;
+        
+        // Execution operations
+        case 'run':
+          executionApi.start()
+            .then(() => console.log('[GraphCanvas] Execution started via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to start execution:', err));
+          break;
+        case 'step':
+          executionApi.step()
+            .then(() => console.log('[GraphCanvas] Step executed via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to step:', err));
+          break;
+        case 'pause':
+          executionApi.pause()
+            .then(() => console.log('[GraphCanvas] Execution paused via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to pause:', err));
+          break;
+        case 'stop':
+          executionApi.stop()
+            .then(() => console.log('[GraphCanvas] Execution stopped via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to stop:', err));
+          break;
+        case 'resume':
+          executionApi.resume()
+            .then(() => console.log('[GraphCanvas] Execution resumed via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to resume:', err));
+          break;
+        case 'restart':
+          executionApi.restart()
+            .then(() => console.log('[GraphCanvas] Execution restarted via command'))
+            .catch((err) => console.error('[GraphCanvas] Failed to restart:', err));
+          break;
+        case 'run_to':
+          const flowIndex = command.params.flow_index as string;
+          if (flowIndex) {
+            executionApi.runTo(flowIndex)
+              .then(() => console.log(`[GraphCanvas] Run to ${flowIndex} via command`))
+              .catch((err) => console.error('[GraphCanvas] Failed to run to:', err));
+          }
+          break;
+        case 'set_breakpoint':
+          const bpFlowIndex = (command.params.flow_index || command.params.node_id) as string;
+          if (bpFlowIndex) {
+            executionApi.setBreakpoint(bpFlowIndex)
+              .then(() => console.log(`[GraphCanvas] Breakpoint set at ${bpFlowIndex}`))
+              .catch((err) => console.error('[GraphCanvas] Failed to set breakpoint:', err));
+          }
+          break;
+        case 'clear_breakpoint':
+          const clearBpFlowIndex = (command.params.flow_index || command.params.node_id) as string;
+          if (clearBpFlowIndex) {
+            executionApi.clearBreakpoint(clearBpFlowIndex)
+              .then(() => console.log(`[GraphCanvas] Breakpoint cleared at ${clearBpFlowIndex}`))
+              .catch((err) => console.error('[GraphCanvas] Failed to clear breakpoint:', err));
+          }
+          break;
+        
+        // File/Project operations
+        case 'load_repositories':
+          // Call the project API to load repositories
+          import('../../services/api').then(({ projectApi, graphApi }) => {
+            projectApi.loadRepositories()
+              .then(() => {
+                console.log('[GraphCanvas] Repositories loaded via command');
+                // Reload graph data
+                return graphApi.get();
+              })
+              .then((graphData) => {
+                import('../../stores/graphStore').then(({ useGraphStore }) => {
+                  useGraphStore.getState().setGraphData(graphData);
+                  console.log('[GraphCanvas] Graph data reloaded');
+                });
+              })
+              .catch((err: Error) => console.error('[GraphCanvas] Failed to load repositories:', err));
+          });
+          break;
+        
+        default:
+          console.log('[GraphCanvas] Unknown command type:', command.type);
+      }
+    });
   }, [pendingCommands, popCommand, zoomIn, zoomOut, fitView, setCenter, getViewport]);
   
   // OPTIMIZED: Batch related state into single subscriptions with shallow comparison

@@ -22,7 +22,7 @@ import {
 // Types
 // =============================================================================
 
-export type FileCategory = 'normcode' | 'code' | 'data' | 'doc' | 'config' | 'other';
+export type FileCategory = 'normcode' | 'code' | 'data' | 'database' | 'doc' | 'config' | 'other';
 
 export interface FileTypeConfig {
   extension: string;
@@ -213,6 +213,30 @@ export const FILE_TYPES: Record<string, FileTypeConfig> = {
     supportsLineEdit: false,
     supportsPreview: false,
   },
+
+  // Database formats
+  sqlite: {
+    extension: '.db',
+    formatName: 'sqlite',
+    displayName: 'SQLite Database',
+    category: 'database',
+    icon: Database,
+    iconColor: 'text-indigo-500',
+    supportsParsing: false,  // Binary format
+    supportsLineEdit: false,
+    supportsPreview: true,   // Uses DB Inspector
+  },
+  sqlite3: {
+    extension: '.sqlite3',
+    formatName: 'sqlite',
+    displayName: 'SQLite Database',
+    category: 'database',
+    icon: Database,
+    iconColor: 'text-indigo-500',
+    supportsParsing: false,
+    supportsLineEdit: false,
+    supportsPreview: true,
+  },
 };
 
 // =============================================================================
@@ -311,6 +335,23 @@ export function getLineEditFormats(): string[] {
 export function getNormCodeFormats(): string[] {
   return Object.entries(FILE_TYPES)
     .filter(([, config]) => config.category === 'normcode')
+    .map(([name]) => name);
+}
+
+/**
+ * Check if a format is a database format.
+ */
+export function isDatabaseFormat(formatName: string): boolean {
+  const config = FILE_TYPES[formatName];
+  return config?.category === 'database';
+}
+
+/**
+ * Get database formats.
+ */
+export function getDatabaseFormats(): string[] {
+  return Object.entries(FILE_TYPES)
+    .filter(([, config]) => config.category === 'database')
     .map(([name]) => name);
 }
 

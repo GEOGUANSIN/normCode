@@ -28,6 +28,7 @@
         "clear_breakpoint",
         "save",
         "load",
+        "load_repositories",
         "export",
         "import",
         "help",
@@ -243,6 +244,12 @@
         "params": {
           "path": { "type": "string" }
         }
+      },
+      "load_repositories": {
+        "description": "Load the repositories for the current project (equivalent to clicking the Load button)",
+        "usage": "load repositories | load repos",
+        "examples": ["load the repository", "load repos", "load repositories for me", "initialize the project"],
+        "params": {}
       },
       "export": {
         "description": "Export the graph to a file",

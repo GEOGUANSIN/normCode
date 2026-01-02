@@ -795,4 +795,188 @@ export const chatApi = {
     }),
 };
 
+// ============================================================================
+// Database Inspector API - Read-only database exploration
+// ============================================================================
+
+export interface ExecutionRecord {
+  id: number;
+  run_id?: string;
+  cycle: number;
+  flow_index: string;
+  inference_type?: string;
+  status: string;
+  concept_inferred?: string;
+  timestamp?: string;
+  log_content?: string;
+}
+
+export interface ExecutionHistoryResponse {
+  executions: ExecutionRecord[];
+  total_count: number;
+  run_id: string;
+}
+
+export interface TableSchema {
+  name: string;
+  columns: { name: string; type: string }[];
+  row_count: number;
+}
+
+export interface DatabaseOverview {
+  path: string;
+  size_bytes: number;
+  tables: TableSchema[];
+  run_count: number;
+  total_executions: number;
+  total_checkpoints: number;
+}
+
+export interface RunStatistics {
+  run_id: string;
+  total_executions: number;
+  completed: number;
+  failed: number;
+  in_progress: number;
+  cycles_completed: number;
+  unique_concepts_inferred: number;
+  execution_by_type: Record<string, number>;
+}
+
+export interface CheckpointStateResponse {
+  cycle: number;
+  inference_count: number;
+  timestamp?: string;
+  blackboard?: Record<string, unknown>;
+  workspace?: Record<string, unknown>;
+  tracker?: Record<string, unknown>;
+  completed_concepts?: Record<string, unknown>;
+  signatures?: Record<string, unknown>;
+}
+
+export interface BlackboardSummary {
+  concept_statuses: Record<string, string>;
+  item_statuses: Record<string, string>;
+  item_results: Record<string, string>;
+  item_completion_details: Record<string, string>;
+  execution_counts: Record<string, number>;
+  concept_count: number;
+  item_count: number;
+  completed_concepts: number;
+  completed_items: number;
+}
+
+export interface QueryResult {
+  rows: Record<string, unknown>[];
+  total_count: number;
+  table: string;
+}
+
+export const dbInspectorApi = {
+  /**
+   * Get an overview of the database structure and contents.
+   */
+  getOverview: (dbPath: string): Promise<DatabaseOverview> =>
+    fetchJson(`${API_BASE}/db-inspector/overview?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get execution history for a run.
+   */
+  getExecutionHistory: (
+    runId: string,
+    dbPath: string,
+    options?: { includeLogs?: boolean; limit?: number; offset?: number }
+  ): Promise<ExecutionHistoryResponse> => {
+    const params = new URLSearchParams({
+      db_path: dbPath,
+      include_logs: String(options?.includeLogs ?? false),
+      limit: String(options?.limit ?? 500),
+      offset: String(options?.offset ?? 0),
+    });
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/executions?${params}`);
+  },
+
+  /**
+   * Get logs for a specific execution.
+   */
+  getExecutionLogs: (
+    runId: string,
+    executionId: number,
+    dbPath: string
+  ): Promise<{ execution_id: number; log_content: string }> =>
+    fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/executions/${executionId}/logs?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get statistics for a run.
+   */
+  getRunStatistics: (runId: string, dbPath: string): Promise<RunStatistics> =>
+    fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/statistics?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get checkpoint state data.
+   */
+  getCheckpointState: (
+    runId: string,
+    cycle: number,
+    dbPath: string,
+    inferenceCount?: number
+  ): Promise<CheckpointStateResponse> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (inferenceCount !== undefined) {
+      params.set('inference_count', String(inferenceCount));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/checkpoints/${cycle}?${params}`);
+  },
+
+  /**
+   * Get blackboard summary from a checkpoint.
+   */
+  getBlackboardSummary: (
+    runId: string,
+    dbPath: string,
+    cycle?: number
+  ): Promise<BlackboardSummary> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (cycle !== undefined) {
+      params.set('cycle', String(cycle));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/blackboard?${params}`);
+  },
+
+  /**
+   * Get completed concepts from a checkpoint.
+   */
+  getCompletedConcepts: (
+    runId: string,
+    dbPath: string,
+    cycle?: number
+  ): Promise<{ concepts: Record<string, unknown>; count: number }> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (cycle !== undefined) {
+      params.set('cycle', String(cycle));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/concepts?${params}`);
+  },
+
+  /**
+   * Run a custom query against a table.
+   */
+  query: (
+    dbPath: string,
+    table: string,
+    options?: { limit?: number; offset?: number; where?: string }
+  ): Promise<QueryResult> => {
+    const params = new URLSearchParams({
+      db_path: dbPath,
+      table,
+      limit: String(options?.limit ?? 100),
+      offset: String(options?.offset ?? 0),
+    });
+    if (options?.where) {
+      params.set('where', options.where);
+    }
+    return fetchJson(`${API_BASE}/db-inspector/query?${params}`);
+  },
+};
+
 export { ApiError };

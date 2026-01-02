@@ -390,15 +390,17 @@ export function ChatPanel() {
             {/* View Controller Project - opens as tab to see the plan's graph */}
             <button
               onClick={openControllerProject}
-              disabled={controllerStatus === 'disconnected'}
+              disabled={controllerStatus === 'disconnected' || !controllerPath}
               className={`p-1.5 rounded transition-colors relative ${
                 isControllerProjectOpen
                   ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-              } ${controllerStatus === 'disconnected' ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={isControllerProjectOpen 
-                ? "Switch to controller tab" 
-                : "Open controller as tab (runs in parallel)"
+              } ${(controllerStatus === 'disconnected' || !controllerPath) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={!controllerPath 
+                ? "Demo mode - no project to view"
+                : isControllerProjectOpen 
+                  ? "Switch to controller tab" 
+                  : "Open controller as tab (runs in parallel)"
               }
             >
               <Eye size={14} />

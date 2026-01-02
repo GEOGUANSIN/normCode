@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Save,
   Sparkles,
+  Workflow,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -32,6 +33,7 @@ import { ProjectPanel } from './components/panels/ProjectPanel';
 import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { AgentPanel } from './components/panels/AgentPanel';
+import { WorkersPanel } from './components/panels/WorkersPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
 import { ProjectTabs } from './components/panels/ProjectTabs';
 import { ChatPanel } from './components/panels/ChatPanel';
@@ -168,6 +170,7 @@ function App() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
   const [showAgentPanel, setShowAgentPanel] = useState(false);
+  const [showWorkersPanel, setShowWorkersPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   const [showRepoPathsModal, setShowRepoPathsModal] = useState(false);
@@ -183,7 +186,7 @@ function App() {
   const [lastErrorLogCount, setLastErrorLogCount] = useState(0);
   
   // Chat state
-  const { isOpen: isChatOpen, togglePanel: toggleChatPanel, compilerStatus } = useChatStore();
+  const { isOpen: isChatOpen, togglePanel: toggleChatPanel, controllerStatus } = useChatStore();
   
   // Project state
   const {
@@ -346,19 +349,35 @@ function App() {
         
         {/* Right side: Actions */}
         <div className="flex items-center gap-1">
-          {/* Agent Panel Toggle - left-side panel opener */}
+          {/* Left panel toggles (Workers, Agent) */}
           {viewMode === 'canvas' && (
-            <button
-              onClick={() => setShowAgentPanel(!showAgentPanel)}
-              className={`p-2 rounded-lg transition-colors ${
-                showAgentPanel
-                  ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-              }`}
-              title="Agent Configuration Panel"
-            >
-              <Bot size={18} />
-            </button>
+            <>
+              {/* Workers Panel Toggle */}
+              <button
+                onClick={() => setShowWorkersPanel(!showWorkersPanel)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showWorkersPanel
+                    ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Workers Panel - View all orchestrators"
+              >
+                <Workflow size={18} />
+              </button>
+              
+              {/* Agent Panel Toggle */}
+              <button
+                onClick={() => setShowAgentPanel(!showAgentPanel)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showAgentPanel
+                    ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Agent Configuration Panel"
+              >
+                <Bot size={18} />
+              </button>
+            </>
           )}
           
           {/* Panel toggles - show in canvas mode */}
@@ -440,7 +459,7 @@ function App() {
           >
             <Sparkles size={18} />
             <span className="text-sm font-medium">Chat</span>
-            {compilerStatus === 'running' && (
+            {controllerStatus === 'running' && (
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             )}
           </button>
@@ -526,7 +545,8 @@ function App() {
           // Canvas View
           <>
             <div className="flex-1 flex overflow-hidden">
-              {/* Agent Panel (left side) */}
+              {/* Left side panels */}
+              {showWorkersPanel && <WorkersPanel />}
               {showAgentPanel && <AgentPanel />}
               
               {/* Graph Canvas */}

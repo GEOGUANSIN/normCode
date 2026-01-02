@@ -130,6 +130,15 @@ interface ChatState {
   loadControllers: () => Promise<void>;
   selectController: (controllerId: string) => Promise<void>;
   setControllerStatus: (status: ControllerStatusType, flowIndex?: string) => void;
+  updateControllerInfo: (info: {
+    status?: ControllerStatusType;
+    controller_id?: string;
+    controller_name?: string;
+    controller_path?: string;
+    current_flow_index?: string;
+    error?: string;
+    placeholder_mode?: boolean;
+  }) => void;
   
   // Lifecycle actions
   startController: () => Promise<void>;
@@ -391,6 +400,37 @@ export const useChatStore = create<ChatState>((set, get) => ({
     isExecutionActive: status === 'running',
   }),
   
+  updateControllerInfo: (info) => {
+    const updates: Partial<ChatState> = {};
+    
+    if (info.status !== undefined) {
+      updates.controllerStatus = info.status;
+      updates.isExecutionActive = info.status === 'running';
+    }
+    if (info.controller_id !== undefined) {
+      updates.controllerId = info.controller_id;
+    }
+    if (info.controller_name !== undefined) {
+      updates.controllerName = info.controller_name;
+    }
+    if (info.controller_path !== undefined) {
+      updates.controllerPath = info.controller_path || null;
+    }
+    if (info.current_flow_index !== undefined) {
+      updates.currentFlowIndex = info.current_flow_index || null;
+    }
+    if (info.error !== undefined) {
+      updates.errorMessage = info.error;
+    }
+    
+    set(updates);
+    
+    // Sync controller project state after path update
+    if (info.controller_path !== undefined) {
+      get().syncControllerProjectState();
+    }
+  },
+  
   // Lifecycle actions
   startController: async () => {
     set({ controllerStatus: 'connecting' });
@@ -485,6 +525,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (existingTab) {
       await projectStore.switchTab(existingTab.id);
       set({ isControllerProjectOpen: true });
+      
+      // If repositories aren't loaded, load them to show the graph
+      if (!existingTab.is_loaded && existingTab.repositories_exist) {
+        console.log('[ChatStore] Loading controller project repositories for graph view...');
+        await projectStore.loadProjectRepositories();
+      }
       return;
     }
     
@@ -499,6 +545,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       
       if (success) {
         set({ isControllerProjectOpen: true });
+        
+        // Load repositories to show the graph
+        // The controller's repositories should exist since it was running
+        const currentProject = projectStore.currentProject;
+        if (currentProject && projectStore.repositoriesExist && !projectStore.isLoaded) {
+          console.log('[ChatStore] Loading controller project repositories for graph view...');
+          await projectStore.loadProjectRepositories();
+        }
       }
     } catch (error) {
       console.error('Failed to open controller project:', error);

@@ -508,6 +508,47 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         configStore.setDbPath(exec.db_path);
         configStore.setBaseDir(exec.base_dir || '');
         configStore.setParadigmDir(exec.paradigm_dir || '');
+        
+        // Reload graph and execution state to match the new active project
+        // This is important because opening a tab switches the backend context
+        const executionStore = useExecutionStore.getState();
+        executionStore.reset();
+        
+        if (instance.is_loaded) {
+          try {
+            // Reload graph from the new active project's files
+            const graphData = await graphApi.reload();
+            useGraphStore.getState().setGraphData(graphData);
+            
+            // Update execution store with initial counts
+            executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+            
+            // Fetch and sync breakpoints from backend
+            try {
+              const breakpointsResponse = await executionApi.getBreakpoints();
+              breakpointsResponse.breakpoints.forEach(bp => executionStore.addBreakpoint(bp));
+              console.log(`Tab open: synced ${breakpointsResponse.breakpoints.length} breakpoints`);
+            } catch (bpErr) {
+              console.warn('Failed to fetch breakpoints for new tab:', bpErr);
+            }
+            
+            // Sync execution state from the project's controller
+            try {
+              const execState = await executionApi.getState();
+              executionStore.setStatus(execState.status);
+              if (execState.node_statuses) {
+                executionStore.setNodeStatuses(execState.node_statuses);
+              }
+            } catch (stateErr) {
+              console.warn('Failed to sync execution state for new tab:', stateErr);
+            }
+          } catch (graphErr) {
+            console.warn('Failed to reload graph for new tab:', graphErr);
+          }
+        } else {
+          // New tab is not loaded, clear graph
+          useGraphStore.getState().reset();
+        }
       }
       
       // Refresh recent projects
