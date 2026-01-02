@@ -706,6 +706,134 @@ async def get_worker_state(worker_id: str):
     return controller.get_state()
 
 
+@router.get("/workers/{worker_id}/graph")
+async def get_worker_graph(worker_id: str):
+    """Get graph data for a specific worker.
+    
+    Returns the pre-built graph from when the worker loaded its repositories.
+    This is fast since the graph is already computed.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    # Use pre-built graph if available (built when repos were loaded)
+    if controller.graph_data:
+        logger.info(f"Returning pre-built graph for worker {worker_id}: {len(controller.graph_data.nodes)} nodes")
+        return {
+            "nodes": [n.model_dump() for n in controller.graph_data.nodes],
+            "edges": [e.model_dump() for e in controller.graph_data.edges],
+            "worker_id": worker_id,
+        }
+    
+    # Fallback: Build graph from JSON files if pre-built not available
+    if not controller._load_config:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Worker {worker_id} has no graph data and no load config"
+        )
+    
+    try:
+        from services.graph_service import build_graph_from_repositories
+        import json
+        
+        concepts_path = controller._load_config.get("concepts_path")
+        inferences_path = controller._load_config.get("inferences_path")
+        
+        if not concepts_path or not inferences_path:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Worker {worker_id} missing repository paths in load config"
+            )
+        
+        with open(concepts_path, 'r', encoding='utf-8') as f:
+            concepts_data = json.load(f)
+        with open(inferences_path, 'r', encoding='utf-8') as f:
+            inferences_data = json.load(f)
+        
+        logger.info(f"Building graph on-demand for worker {worker_id}")
+        graph = build_graph_from_repositories(concepts_data, inferences_data)
+        
+        # Cache it for next time
+        controller.graph_data = graph
+        
+        return {
+            "nodes": [n.model_dump() for n in graph.nodes],
+            "edges": [e.model_dump() for e in graph.edges],
+            "worker_id": worker_id,
+        }
+    except FileNotFoundError as e:
+        logger.error(f"Repository file not found for worker {worker_id}: {e}")
+        raise HTTPException(status_code=404, detail=f"Repository file not found: {str(e)}")
+    except Exception as e:
+        logger.exception(f"Failed to build graph for worker {worker_id}")
+        raise HTTPException(status_code=500, detail=f"Failed to build graph: {str(e)}")
+
+
+@router.get("/workers/{worker_id}/reference/{concept_name}")
+async def get_worker_reference_data(worker_id: str, concept_name: str):
+    """Get reference data for a concept from a specific worker.
+    
+    This allows fetching concept values from any worker, not just the active project.
+    Useful when viewing an assistant's graph in a separate tab.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": [],
+            "error": "No concept repository loaded"
+        }
+    
+    ref_data = controller.get_reference_data(concept_name)
+    if ref_data is None:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": []
+        }
+    
+    logger.debug(f"Got reference data for {concept_name} from worker {worker_id}")
+    return ref_data
+
+
+@router.get("/workers/{worker_id}/references")
+async def get_worker_all_references(worker_id: str):
+    """Get all reference data from a specific worker.
+    
+    Returns a dict mapping concept_name -> reference_data for all concepts
+    that have values in this worker's concept repository.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {"references": {}, "count": 0}
+    
+    return controller.get_all_reference_data()
+
+
 class PanelBindRequest(BaseModel):
     """Request to bind a panel to a worker."""
     panel_id: str

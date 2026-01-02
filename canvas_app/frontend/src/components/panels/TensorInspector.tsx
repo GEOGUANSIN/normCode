@@ -261,9 +261,12 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
   return (
     <div className="border border-slate-200 rounded-lg mb-2 overflow-hidden bg-white hover:border-slate-300 transition-colors">
       {/* Header - clickable to expand */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
+        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group cursor-pointer"
       >
         <span className="text-slate-400 flex-shrink-0">
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -279,7 +282,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
         )}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={handleCopy}
+            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
             className="p-1.5 hover:bg-slate-200 rounded transition-colors"
             title="Copy to clipboard"
           >
@@ -293,7 +296,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
             <Maximize2 size={12} className="text-slate-400" />
           </button>
         </div>
-      </button>
+      </div>
       
       {/* Expanded content */}
       {isExpanded && (

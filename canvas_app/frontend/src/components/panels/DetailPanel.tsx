@@ -10,6 +10,7 @@ import { useSelectionStore } from '../../stores/selectionStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useProjectStore } from '../../stores/projectStore';
+import { useWorkerStore } from '../../stores/workerStore';
 import { executionApi, ReferenceData } from '../../services/api';
 import { TensorInspector } from './TensorInspector';
 import { StepPipeline } from './StepPipeline';
@@ -40,6 +41,10 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
   const openTabs = useProjectStore((s) => s.openTabs);
   const activeTabId = useProjectStore((s) => s.activeTabId);
   const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
+  
+  // Worker store for fetching references from bound workers
+  const getMainPanelWorkerId = useWorkerStore((s) => s.getMainPanelWorkerId);
+  const fetchWorkerReference = useWorkerStore((s) => s.fetchWorkerReference);
 
   // Reference data state
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null);
@@ -75,12 +80,25 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     const conceptName = node.data.concept_name || node.label;
     if (!conceptName) return;
 
-    // Fetch reference data
+    // Fetch reference data - use worker-specific endpoint if a worker is bound
     const fetchReference = async () => {
       setIsLoadingRef(true);
       setRefError(null);
       try {
-        const data = await executionApi.getReference(conceptName);
+        let data: ReferenceData | null = null;
+        const boundWorkerId = getMainPanelWorkerId();
+        
+        if (boundWorkerId) {
+          // Use worker-specific endpoint for bound workers (e.g., assistant)
+          const workerData = await fetchWorkerReference(boundWorkerId, conceptName);
+          if (workerData && workerData.has_reference) {
+            data = workerData as ReferenceData;
+          }
+        } else {
+          // Use default endpoint for regular projects
+          data = await executionApi.getReference(conceptName);
+        }
+        
         // Check if reference data exists (has_reference: true)
         if (data && data.has_reference) {
           setReferenceData(data);
@@ -96,7 +114,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     };
 
     fetchReference();
-  }, [selectedNodeId, getNode]);
+  }, [selectedNodeId, getNode, getMainPanelWorkerId, fetchWorkerReference]);
 
   // Refresh reference data
   const refreshReference = async () => {
@@ -110,7 +128,20 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     setIsLoadingRef(true);
     setRefError(null);
     try {
-      const data = await executionApi.getReference(conceptName);
+      let data: ReferenceData | null = null;
+      const boundWorkerId = getMainPanelWorkerId();
+      
+      if (boundWorkerId) {
+        // Use worker-specific endpoint for bound workers
+        const workerData = await fetchWorkerReference(boundWorkerId, conceptName);
+        if (workerData && workerData.has_reference) {
+          data = workerData as ReferenceData;
+        }
+      } else {
+        // Use default endpoint for regular projects
+        data = await executionApi.getReference(conceptName);
+      }
+      
       // Check if reference data exists (has_reference: true)
       if (data && data.has_reference) {
         setReferenceData(data);

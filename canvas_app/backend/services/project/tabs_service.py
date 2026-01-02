@@ -54,6 +54,7 @@ class ProjectTabsService:
         repositories_exist: bool = False,
         make_active: bool = True,
         is_read_only: bool = False,
+        is_loaded: bool = False,
     ) -> OpenProjectInstance:
         """
         Add a new project tab.
@@ -69,6 +70,7 @@ class ProjectTabsService:
             repositories_exist: Whether repository files exist
             make_active: Whether to switch to this tab
             is_read_only: Whether the project is read-only
+            is_loaded: Whether repositories are already loaded
             
         Returns:
             OpenProjectInstance for the tab
@@ -87,7 +89,7 @@ class ProjectTabsService:
             directory=directory,
             config_file=config_file,
             config=config,
-            is_loaded=False,  # Not loaded until repositories are loaded
+            is_loaded=is_loaded,
             repositories_exist=repositories_exist,
             is_active=make_active,
             is_read_only=is_read_only,

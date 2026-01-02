@@ -82,6 +82,24 @@ interface WorkerStoreState {
   bindPanel: (panelId: string, panelType: PanelType, workerId: string) => Promise<boolean>;
   unbindPanel: (panelId: string) => Promise<boolean>;
   switchPanelWorker: (panelId: string, newWorkerId: string) => Promise<boolean>;
+  fetchWorkerGraph: (workerId: string) => Promise<{ nodes: unknown[]; edges: unknown[] } | null>;
+  fetchWorkerExecutionState: (workerId: string) => Promise<{
+    status: string;
+    current_inference: string | null;
+    completed_count: number;
+    total_count: number;
+    cycle_count: number;
+    node_statuses: Record<string, string>;
+    breakpoints: string[];
+  } | null>;
+  fetchWorkerReference: (workerId: string, conceptName: string) => Promise<{
+    concept_name: string;
+    has_reference: boolean;
+    data: unknown;
+    axes: string[];
+    shape: number[];
+  } | null>;
+  getMainPanelWorkerId: () => string | null;
 }
 
 const API_BASE = '/api/execution';
@@ -230,6 +248,60 @@ export const useWorkerStore = create<WorkerStoreState>((set, get) => ({
       console.error('Failed to switch panel worker:', e);
       return false;
     }
+  },
+  
+  fetchWorkerGraph: async (workerId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/workers/${workerId}/graph`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch graph for worker ${workerId}`);
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch worker graph:', e);
+      return null;
+    }
+  },
+  
+  fetchWorkerExecutionState: async (workerId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/workers/${workerId}/state`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch state for worker ${workerId}`);
+      }
+      return await res.json() as {
+        status: string;
+        current_inference: string | null;
+        completed_count: number;
+        total_count: number;
+        cycle_count: number;
+        node_statuses: Record<string, string>;
+        breakpoints: string[];
+      };
+    } catch (e) {
+      console.error('Failed to fetch worker execution state:', e);
+      return null;
+    }
+  },
+  
+  fetchWorkerReference: async (workerId: string, conceptName: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/workers/${workerId}/reference/${encodeURIComponent(conceptName)}`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch reference for ${conceptName} from worker ${workerId}`);
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch worker reference:', e);
+      return null;
+    }
+  },
+  
+  // Get the worker ID bound to the main panel (if any)
+  getMainPanelWorkerId: () => {
+    const { panelBindings } = get();
+    const mainBinding = panelBindings['main_panel'];
+    return mainBinding?.worker_id || null;
   },
 }));
 

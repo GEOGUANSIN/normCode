@@ -352,7 +352,7 @@ function App() {
           {/* Left panel toggles (Workers, Agent) */}
           {viewMode === 'canvas' && (
             <>
-              {/* Workers Panel Toggle */}
+              {/* Plans in Work Panel Toggle */}
               <button
                 onClick={() => setShowWorkersPanel(!showWorkersPanel)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -360,7 +360,7 @@ function App() {
                     ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
-                title="Workers Panel - View all orchestrators"
+                title="Plans in Work - View all active NormCode plans"
               >
                 <Workflow size={18} />
               </button>
@@ -508,8 +508,8 @@ function App() {
             {viewMode === 'editor' ? (
               // Editor View
               <EditorPanel />
-            ) : !isLoaded ? (
-          // Show message when repositories not loaded yet (Canvas mode)
+            ) : (!isLoaded && !graphData) ? (
+          // Show message when repositories not loaded yet AND no worker graph is loaded (Canvas mode)
           // Include LogPanel at the bottom for loading errors visibility
           <>
             <div className="flex-1 flex items-center justify-center bg-white">

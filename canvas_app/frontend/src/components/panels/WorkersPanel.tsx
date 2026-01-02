@@ -1,8 +1,8 @@
 /**
- * Workers Panel - Shows all running orchestrators/workers
+ * Plans in Work Panel - Shows all running NormCode plans
  * 
  * Similar to Agent Panel, displays on the left side of the graph.
- * Shows all registered workers with their status and panel bindings.
+ * Shows all active plans with their status and panel bindings.
  */
 
 import { useState, useEffect } from 'react';
@@ -116,17 +116,17 @@ function formatTimestamp(timestamp: string | null): string {
 }
 
 // ============================================================================
-// Worker Card Component
+// Plan Card Component
 // ============================================================================
 
-interface WorkerCardProps {
+interface PlanCardProps {
   worker: RegisteredWorker;
   isSelected: boolean;
   onSelect: () => void;
   onBindPanel: (panelType: PanelType) => void;
 }
 
-function WorkerCard({ worker, isSelected, onSelect, onBindPanel }: WorkerCardProps) {
+function PlanCard({ worker, isSelected, onSelect, onBindPanel }: PlanCardProps) {
   const { state, bindings } = worker;
   const [expanded, setExpanded] = useState(false);
   const { panelBindings } = useWorkerStore();
@@ -186,7 +186,7 @@ function WorkerCard({ worker, isSelected, onSelect, onBindPanel }: WorkerCardPro
               
               {/* Visibility indicator */}
               {state.visibility === 'hidden' && (
-                <span className="text-slate-400" title="Hidden (no panels)">
+                <span className="text-slate-400" title="Hidden plan (no panels viewing)">
                   <EyeOff size={10} />
                 </span>
               )}
@@ -247,7 +247,7 @@ function WorkerCard({ worker, isSelected, onSelect, onBindPanel }: WorkerCardPro
               {getCategoryLabel(state.category)}
             </div>
             <div>
-              <span className="text-slate-400">Worker ID:</span>{' '}
+              <span className="text-slate-400">Plan ID:</span>{' '}
               <span className="font-mono">{state.worker_id}</span>
             </div>
             {state.project_id && (
@@ -298,10 +298,10 @@ function WorkerCard({ worker, isSelected, onSelect, onBindPanel }: WorkerCardPro
 }
 
 // ============================================================================
-// Workers List by Category
+// Plans List by Category
 // ============================================================================
 
-interface WorkersByCategoryProps {
+interface PlansByCategoryProps {
   category: WorkerCategory;
   workers: RegisteredWorker[];
   selectedWorkerId: string | null;
@@ -309,13 +309,13 @@ interface WorkersByCategoryProps {
   onBindPanel: (workerId: string, panelType: PanelType) => void;
 }
 
-function WorkersByCategory({ 
+function PlansByCategory({ 
   category, 
   workers, 
   selectedWorkerId,
   onSelectWorker,
   onBindPanel,
-}: WorkersByCategoryProps) {
+}: PlansByCategoryProps) {
   const [collapsed, setCollapsed] = useState(false);
   
   if (workers.length === 0) return null;
@@ -348,11 +348,11 @@ function WorkersByCategory({
         )}
       </div>
       
-      {/* Workers list */}
+      {/* Plans list */}
       {!collapsed && (
         <div className="space-y-1.5 ml-4">
           {workers.map(worker => (
-            <WorkerCard
+            <PlanCard
               key={worker.state.worker_id}
               worker={worker}
               isSelected={selectedWorkerId === worker.state.worker_id}
@@ -367,7 +367,7 @@ function WorkersByCategory({
 }
 
 // ============================================================================
-// Main Workers Panel
+// Main Plans in Work Panel
 // ============================================================================
 
 export function WorkersPanel() {
@@ -400,15 +400,55 @@ export function WorkersPanel() {
     return () => clearInterval(interval);
   }, [autoRefresh, fetchWorkers]);
   
-  // Group workers by category
+  // Filter out "empty shell" workers that have an active chat counterpart
+  // A user-{projectId} worker is an empty shell if:
+  // 1. It's idle with no completed inferences
+  // 2. There's a corresponding chat-{projectId} worker that has activity
   const workerList = Object.values(workers);
-  const projectWorkers = workerList.filter(w => w.state.category === 'project');
-  const assistantWorkers = workerList.filter(w => w.state.category === 'assistant');
-  const backgroundWorkers = workerList.filter(w => w.state.category === 'background');
-  const ephemeralWorkers = workerList.filter(w => w.state.category === 'ephemeral');
   
-  const runningCount = workerList.filter(w => w.state.status === 'running').length;
-  const hiddenCount = workerList.filter(w => w.state.visibility === 'hidden').length;
+  const filteredWorkerList = workerList.filter(w => {
+    const workerId = w.state.worker_id;
+    
+    // If this is a user-* worker, check if there's an active chat-* counterpart
+    if (workerId.startsWith('user-')) {
+      const projectId = workerId.replace('user-', '');
+      const chatWorkerId = `chat-${projectId}`;
+      const chatWorker = workers[chatWorkerId];
+      
+      // Hide the user worker if:
+      // - It's idle/completed with no activity
+      // - There's a chat worker that has activity (running/paused/has completed some work)
+      const isEmptyShell = (
+        (w.state.status === 'idle' || w.state.status === 'completed') &&
+        w.state.completed_count === 0
+      );
+      const chatHasActivity = chatWorker && (
+        chatWorker.state.status === 'running' ||
+        chatWorker.state.status === 'paused' ||
+        chatWorker.state.completed_count > 0 ||
+        chatWorker.bindings.length > 0
+      );
+      
+      if (isEmptyShell && chatHasActivity) {
+        return false; // Filter out this empty shell
+      }
+    }
+    
+    return true;
+  });
+  
+  // Group workers by category
+  const projectWorkers = filteredWorkerList.filter(w => w.state.category === 'project');
+  const assistantWorkers = filteredWorkerList.filter(w => w.state.category === 'assistant');
+  const backgroundWorkers = filteredWorkerList.filter(w => w.state.category === 'background');
+  const ephemeralWorkers = filteredWorkerList.filter(w => w.state.category === 'ephemeral');
+  
+  const runningCount = filteredWorkerList.filter(w => w.state.status === 'running').length;
+  // Count hidden workers that are actually meaningful (not filtered out empty shells)
+  const hiddenCount = filteredWorkerList.filter(w => w.state.visibility === 'hidden').length;
+  
+  // Count how many workers were filtered out
+  const filteredOutCount = workerList.length - filteredWorkerList.length;
   
   const handleBindPanel = async (workerId: string, panelType: PanelType) => {
     const panelId = `${panelType}_panel`;
@@ -421,9 +461,9 @@ export function WorkersPanel() {
       <div className="p-2 border-b bg-white flex items-center justify-between">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <Workflow size={14} className="text-indigo-500" />
-          Workers
+          Plans in Work
           <span className="text-xs text-slate-400">
-            ({workerList.length})
+            ({filteredWorkerList.length})
           </span>
           {runningCount > 0 && (
             <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full flex items-center gap-1">
@@ -470,26 +510,26 @@ export function WorkersPanel() {
         )}
         
         {/* Empty state */}
-        {workerList.length === 0 && !isLoading && (
+        {filteredWorkerList.length === 0 && !isLoading && (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4 text-center">
             <Workflow size={32} className="mb-2 text-slate-300" />
-            <p>No workers registered</p>
+            <p>No plans active</p>
             <p className="text-xs mt-1">
-              Workers appear when you load and execute a project
+              Plans appear when you load and execute a project
             </p>
           </div>
         )}
         
         {/* Loading state */}
-        {isLoading && workerList.length === 0 && (
+        {isLoading && filteredWorkerList.length === 0 && (
           <div className="h-full flex items-center justify-center">
             <Loader2 size={20} className="animate-spin text-slate-400" />
           </div>
         )}
         
-        {/* Workers by category */}
+        {/* Plans by category */}
         {projectWorkers.length > 0 && (
-          <WorkersByCategory
+          <PlansByCategory
             category="project"
             workers={projectWorkers}
             selectedWorkerId={selectedWorkerId}
@@ -499,7 +539,7 @@ export function WorkersPanel() {
         )}
         
         {assistantWorkers.length > 0 && (
-          <WorkersByCategory
+          <PlansByCategory
             category="assistant"
             workers={assistantWorkers}
             selectedWorkerId={selectedWorkerId}
@@ -509,7 +549,7 @@ export function WorkersPanel() {
         )}
         
         {backgroundWorkers.length > 0 && (
-          <WorkersByCategory
+          <PlansByCategory
             category="background"
             workers={backgroundWorkers}
             selectedWorkerId={selectedWorkerId}
@@ -519,7 +559,7 @@ export function WorkersPanel() {
         )}
         
         {ephemeralWorkers.length > 0 && (
-          <WorkersByCategory
+          <PlansByCategory
             category="ephemeral"
             workers={ephemeralWorkers}
             selectedWorkerId={selectedWorkerId}
@@ -528,11 +568,21 @@ export function WorkersPanel() {
           />
         )}
         
-        {/* Hidden workers note */}
-        {hiddenCount > 0 && (
-          <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-400 flex items-center gap-1">
-            <EyeOff size={10} />
-            {hiddenCount} hidden worker{hiddenCount > 1 ? 's' : ''} (no panel bindings)
+        {/* Hidden/filtered plans note */}
+        {(hiddenCount > 0 || filteredOutCount > 0) && (
+          <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-400 space-y-0.5">
+            {hiddenCount > 0 && (
+              <div className="flex items-center gap-1">
+                <EyeOff size={10} />
+                {hiddenCount} hidden plan{hiddenCount > 1 ? 's' : ''} (no panel bindings)
+              </div>
+            )}
+            {filteredOutCount > 0 && (
+              <div className="flex items-center gap-1 text-slate-300">
+                <span className="text-[8px]">✓</span>
+                {filteredOutCount} duplicate{filteredOutCount > 1 ? 's' : ''} merged with assistant
+              </div>
+            )}
           </div>
         )}
       </div>

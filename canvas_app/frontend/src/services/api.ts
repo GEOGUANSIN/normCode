@@ -89,12 +89,20 @@ export const graphApi = {
     fetchJson(`${API_BASE}/graph/stats`),
   
   /**
-   * Reload the graph for the current project.
-   * Used when switching between project tabs to ensure the graph matches
-   * the current project's repository files.
+   * Reload the graph for the current project FROM DISK.
+   * DEPRECATED: Use swap() for tab switching instead.
+   * Only use reload() when files have actually changed on disk.
    */
   reload: (): Promise<GraphData> =>
     fetchJson(`${API_BASE}/graph/reload`, { method: 'POST' }),
+  
+  /**
+   * Swap to the cached graph for a specific project.
+   * This uses cached data from the ExecutionController instead of
+   * re-reading from disk, making tab switching much faster.
+   */
+  swap: (projectId: string): Promise<GraphData> =>
+    fetchJson(`${API_BASE}/graph/swap/${encodeURIComponent(projectId)}`, { method: 'POST' }),
 };
 
 // Execution endpoints

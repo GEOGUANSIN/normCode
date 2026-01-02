@@ -77,6 +77,13 @@ class ExecutionController:
     chat_tool: Optional[Any] = None
     canvas_tool: Optional[Any] = None
     
+    # Pre-built graph for visualization (built when repositories are loaded)
+    graph_data: Optional[Any] = None
+    
+    # Cached repository data for graph swapping (avoids re-reading from disk)
+    concepts_data: List[Dict[str, Any]] = field(default_factory=list)
+    inferences_data: List[Dict[str, Any]] = field(default_factory=list)
+    
     def __post_init__(self):
         self._pause_event.set()  # Not paused by default
         self._attached_loggers = []
@@ -366,15 +373,15 @@ class ExecutionController:
             logger.error(f"Failed to import infra modules: {e}")
             raise RuntimeError(f"Failed to import infra modules: {e}")
         
-        # Load repository files
+        # Load repository files and cache for later use (graph swapping)
         with open(concepts_path, 'r', encoding='utf-8') as f:
-            concepts_data = json_module.load(f)
+            self.concepts_data = json_module.load(f)
         with open(inferences_path, 'r', encoding='utf-8') as f:
-            inferences_data = json_module.load(f)
+            self.inferences_data = json_module.load(f)
         
         # Create repositories
-        self.concept_repo = ConceptRepo.from_json_list(concepts_data)
-        self.inference_repo = InferenceRepo.from_json_list(inferences_data, self.concept_repo)
+        self.concept_repo = ConceptRepo.from_json_list(self.concepts_data)
+        self.inference_repo = InferenceRepo.from_json_list(self.inferences_data, self.concept_repo)
         
         # Load inputs if provided
         if inputs_path:
@@ -446,11 +453,21 @@ class ExecutionController:
         self.total_count = 0
         self.completed_count = 0
         
-        for inf in inferences_data:
+        for inf in self.inferences_data:
             flow_index = inf.get('flow_info', {}).get('flow_index', '')
             if flow_index:
                 self.node_statuses[flow_index] = NodeStatus.PENDING
                 self.total_count += 1
+        
+        # Build graph for visualization (stored for when "view" is clicked)
+        # This cached graph_data enables fast tab switching without disk I/O
+        try:
+            from services.graph_service import build_graph_from_repositories
+            self.graph_data = build_graph_from_repositories(self.concepts_data, self.inferences_data)
+            logger.info(f"Pre-built graph: {len(self.graph_data.nodes)} nodes, {len(self.graph_data.edges)} edges")
+        except Exception as e:
+            logger.warning(f"Failed to pre-build graph: {e}")
+            self.graph_data = None
         
         self.status = ExecutionStatus.IDLE
         self._retries = []
@@ -474,7 +491,7 @@ class ExecutionController:
             "total_inferences": self.total_count,
         })
         
-        self._add_log("info", "", f"Loaded {len(concepts_data)} concepts and {self.total_count} inferences")
+        self._add_log("info", "", f"Loaded {len(self.concepts_data)} concepts and {self.total_count} inferences")
         self._add_log("info", "", f"Config: model={llm_model}, max_cycles={max_cycles}, db={db_path}")
         
         if self.orchestrator and self.orchestrator.checkpoint_manager:
@@ -485,7 +502,7 @@ class ExecutionController:
         return {
             "run_id": getattr(self.orchestrator, 'run_id', 'unknown'),
             "total_inferences": self.total_count,
-            "concepts_count": len(concepts_data),
+            "concepts_count": len(self.concepts_data),
             "config": {
                 "llm_model": llm_model,
                 "max_cycles": max_cycles,

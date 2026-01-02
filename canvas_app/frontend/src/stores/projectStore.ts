@@ -510,18 +510,95 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         configStore.setParadigmDir(exec.paradigm_dir || '');
         
         // Reload graph and execution state to match the new active project
-        // This is important because opening a tab switches the backend context
         const executionStore = useExecutionStore.getState();
         executionStore.reset();
         
-        if (instance.is_loaded) {
-          try {
-            // Reload graph from the new active project's files
-            const graphData = await graphApi.reload();
+        // ALWAYS try graphApi.swap() - it handles both user and chat workers
+        // This enables viewing chat controller projects that were loaded by the chat system
+        console.log(`[openProjectAsTab] Attempting to swap to graph for project ${instance.id}...`);
+        
+        try {
+          const graphData = await graphApi.swap(instance.id);
+          
+          if (graphData && graphData.nodes && graphData.nodes.length > 0) {
+            console.log(`[openProjectAsTab] Swapped to graph with ${graphData.nodes.length} nodes`);
             useGraphStore.getState().setGraphData(graphData);
             
             // Update execution store with initial counts
             executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+            
+            // Mark this tab as effectively "loaded" since we have graph data
+            const { openTabs } = get();
+            const updatedTabsWithLoaded = openTabs.map(t => 
+              t.id === instance.id ? { ...t, is_loaded: true } : t
+            );
+            set({ openTabs: updatedTabsWithLoaded, isLoaded: true });
+            
+            // Check if there's a chat worker for this project
+            const { useWorkerStore } = await import('./workerStore');
+            const workerStore = useWorkerStore.getState();
+            await workerStore.fetchWorkers();
+            
+            const chatWorkerId = `chat-${instance.id}`;
+            const userWorkerId = `user-${instance.id}`;
+            const chatWorker = workerStore.workers[chatWorkerId];
+            const userWorker = workerStore.workers[userWorkerId];
+            
+            // Prefer chat worker if it exists and has activity
+            const preferChatWorker = chatWorker && (
+              chatWorker.state.status === 'running' || 
+              chatWorker.state.completed_count > 0
+            );
+            
+            if (preferChatWorker) {
+              console.log(`[openProjectAsTab] Found active chat worker ${chatWorkerId}, binding main panel to it`);
+              await workerStore.bindPanel('main_panel', 'main', chatWorkerId);
+              
+              // Sync execution state from the chat worker
+              try {
+                const execState = await workerStore.fetchWorkerExecutionState(chatWorkerId);
+                if (execState) {
+                  executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                  executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                  if (execState.current_inference) {
+                    executionStore.setCurrentInference(execState.current_inference);
+                  }
+                  if (execState.node_statuses) {
+                    executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                  }
+                }
+              } catch (stateErr) {
+                console.warn('[openProjectAsTab] Failed to sync execution state from chat worker:', stateErr);
+              }
+            } else if (userWorker) {
+              await workerStore.bindPanel('main_panel', 'main', userWorkerId);
+              
+              try {
+                const execState = await workerStore.fetchWorkerExecutionState(userWorkerId);
+                if (execState) {
+                  executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                  executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                  if (execState.current_inference) {
+                    executionStore.setCurrentInference(execState.current_inference);
+                  }
+                  if (execState.node_statuses) {
+                    executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                  }
+                }
+              } catch (stateErr) {
+                console.warn('[openProjectAsTab] Failed to sync execution state from user worker:', stateErr);
+              }
+            } else {
+              try {
+                const execState = await executionApi.getState();
+                executionStore.setStatus(execState.status);
+                if (execState.node_statuses) {
+                  executionStore.setNodeStatuses(execState.node_statuses);
+                }
+              } catch (stateErr) {
+                console.warn('[openProjectAsTab] Failed to sync execution state:', stateErr);
+              }
+            }
             
             // Fetch and sync breakpoints from backend
             try {
@@ -531,22 +608,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             } catch (bpErr) {
               console.warn('Failed to fetch breakpoints for new tab:', bpErr);
             }
-            
-            // Sync execution state from the project's controller
-            try {
-              const execState = await executionApi.getState();
-              executionStore.setStatus(execState.status);
-              if (execState.node_statuses) {
-                executionStore.setNodeStatuses(execState.node_statuses);
-              }
-            } catch (stateErr) {
-              console.warn('Failed to sync execution state for new tab:', stateErr);
-            }
-          } catch (graphErr) {
-            console.warn('Failed to reload graph for new tab:', graphErr);
+          } else {
+            // No cached graph available - project needs to be loaded
+            console.log(`[openProjectAsTab] No cached graph for project ${instance.id}`);
+            useGraphStore.getState().reset();
           }
-        } else {
-          // New tab is not loaded, clear graph
+        } catch (graphErr) {
+          // Swap failed - project hasn't been loaded yet, that's okay
+          console.log(`[openProjectAsTab] No graph available for project ${instance.id}:`, graphErr);
           useGraphStore.getState().reset();
         }
       }
@@ -574,11 +643,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const instance = await projectApi.switchTab({ project_id: projectId });
       
-      // Update tabs state
+      console.log(`[switchTab] Switched to project ${projectId}, is_loaded=${instance.is_loaded}`);
+      
+      // Update tabs state - also sync is_loaded from backend
       const { openTabs } = get();
       const updatedTabs = openTabs.map(t => ({
         ...t,
         is_active: t.id === projectId,
+        // Sync is_loaded from backend for the switched tab
+        is_loaded: t.id === projectId ? instance.is_loaded : t.is_loaded,
       }));
       
       set({
@@ -601,23 +674,106 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       configStore.setBaseDir(exec.base_dir || '');
       configStore.setParadigmDir(exec.paradigm_dir || '');
       
-      // If the project was loaded, we need to reload the graph and sync execution state
-      // Each project has its own ExecutionController on the backend, so we just need
-      // to reload the graph (graph_service is shared) and sync the execution state
-      if (instance.is_loaded) {
-        // Reset execution state first
-        const executionStore = useExecutionStore.getState();
-        executionStore.reset();
+      // Reset execution state first
+      const executionStore = useExecutionStore.getState();
+      executionStore.reset();
+      
+      // ALWAYS try graphApi.swap() - it handles both:
+      // 1. User project workers (user-{projectId}) 
+      // 2. Chat/assistant workers (chat-{projectId})
+      // This enables viewing chat controller projects that were loaded by the chat system
+      console.log(`[switchTab] Attempting to swap to graph for project ${projectId}...`);
+      
+      try {
+        const graphData = await graphApi.swap(projectId);
         
-        try {
-          // Reload graph from the current project's files
-          const graphData = await graphApi.reload();
+        if (graphData && graphData.nodes && graphData.nodes.length > 0) {
+          console.log(`[switchTab] Swapped to graph with ${graphData.nodes.length} nodes`);
           useGraphStore.getState().setGraphData(graphData);
           
           // Update execution store with initial counts
           executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
           
-          // Fetch and sync breakpoints from backend (from the project's controller)
+          // Mark this tab as effectively "loaded" since we have graph data
+          const { openTabs } = get();
+          const updatedTabsWithLoaded = openTabs.map(t => 
+            t.id === projectId ? { ...t, is_loaded: true } : t
+          );
+          set({ openTabs: updatedTabsWithLoaded, isLoaded: true });
+          
+          // Check if there's a chat worker for this project (for controller projects)
+          // If so, bind main panel to it and sync execution state from it
+          const { useWorkerStore } = await import('./workerStore');
+          const workerStore = useWorkerStore.getState();
+          await workerStore.fetchWorkers();
+          
+          const chatWorkerId = `chat-${projectId}`;
+          const userWorkerId = `user-${projectId}`;
+          const chatWorker = workerStore.workers[chatWorkerId];
+          const userWorker = workerStore.workers[userWorkerId];
+          
+          // Determine which worker to bind to and sync from
+          // Prefer chat worker if it exists and has activity (it's the one actually running)
+          const preferChatWorker = chatWorker && (
+            chatWorker.state.status === 'running' || 
+            chatWorker.state.completed_count > 0
+          );
+          
+          if (preferChatWorker) {
+            console.log(`[switchTab] Found active chat worker ${chatWorkerId}, binding main panel to it`);
+            await workerStore.bindPanel('main_panel', 'main', chatWorkerId);
+            
+            // Sync execution state from the chat worker
+            try {
+              const execState = await workerStore.fetchWorkerExecutionState(chatWorkerId);
+              if (execState) {
+                executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                if (execState.current_inference) {
+                  executionStore.setCurrentInference(execState.current_inference);
+                }
+                if (execState.node_statuses) {
+                  executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                }
+                console.log(`[switchTab] Synced execution state from chat worker: ${execState.completed_count}/${execState.total_count}`);
+              }
+            } catch (stateErr) {
+              console.warn('[switchTab] Failed to sync execution state from chat worker:', stateErr);
+            }
+          } else if (userWorker) {
+            console.log(`[switchTab] Using user worker ${userWorkerId}, binding main panel to it`);
+            await workerStore.bindPanel('main_panel', 'main', userWorkerId);
+            
+            // Sync execution state from the user worker
+            try {
+              const execState = await workerStore.fetchWorkerExecutionState(userWorkerId);
+              if (execState) {
+                executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                if (execState.current_inference) {
+                  executionStore.setCurrentInference(execState.current_inference);
+                }
+                if (execState.node_statuses) {
+                  executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                }
+              }
+            } catch (stateErr) {
+              console.warn('[switchTab] Failed to sync execution state from user worker:', stateErr);
+            }
+          } else {
+            // No worker found, try the generic execution API
+            try {
+              const execState = await executionApi.getState();
+              executionStore.setStatus(execState.status);
+              if (execState.node_statuses) {
+                executionStore.setNodeStatuses(execState.node_statuses);
+              }
+            } catch (stateErr) {
+              console.warn('[switchTab] Failed to sync execution state:', stateErr);
+            }
+          }
+          
+          // Fetch and sync breakpoints from backend
           try {
             const breakpointsResponse = await executionApi.getBreakpoints();
             breakpointsResponse.breakpoints.forEach(bp => executionStore.addBreakpoint(bp));
@@ -625,29 +781,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           } catch (bpErr) {
             console.warn('Failed to fetch breakpoints for switched tab:', bpErr);
           }
-          
-          // Sync execution state from the project's controller
-          try {
-            const execState = await executionApi.getState();
-            executionStore.setStatus(execState.status);
-            if (execState.node_statuses) {
-              executionStore.setNodeStatuses(execState.node_statuses);
-            }
-          } catch (stateErr) {
-            console.warn('Failed to sync execution state for switched tab:', stateErr);
-          }
-        } catch (graphErr) {
-          console.warn('Failed to reload graph for switched tab:', graphErr);
+        } else {
+          // No cached graph available - project needs to be loaded
+          console.log(`[switchTab] No cached graph for project ${projectId}, clearing`);
+          useGraphStore.getState().reset();
         }
-      } else {
-        // Clear graph if not loaded
+      } catch (graphErr) {
+        // Swap failed - this is expected for projects that haven't been loaded yet
+        console.log(`[switchTab] No graph available for project ${projectId}:`, graphErr);
         useGraphStore.getState().reset();
-        useExecutionStore.getState().reset();
       }
       
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to switch tab';
+      console.error('[switchTab] Error:', message);
       set({ error: message, isLoading: false });
       return false;
     }
@@ -683,19 +831,93 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         configStore.setBaseDir(exec.base_dir || '');
         configStore.setParadigmDir(exec.paradigm_dir || '');
         
-        // If the new active tab was loaded, reload graph and execution state
-        if (activeTab.is_loaded) {
-          // Reset execution state first
-          const executionStore = useExecutionStore.getState();
-          executionStore.reset();
+        // Reset execution state first
+        const executionStore = useExecutionStore.getState();
+        executionStore.reset();
+        
+        // ALWAYS try graphApi.swap() - handles both user and chat workers
+        console.log(`[closeTab] Attempting to swap to graph for project ${activeTab.id}...`);
+        
+        try {
+          const graphData = await graphApi.swap(activeTab.id);
           
-          try {
-            // Reload graph from the new active project's files
-            const graphData = await graphApi.reload();
+          if (graphData && graphData.nodes && graphData.nodes.length > 0) {
+            console.log(`[closeTab] Swapped to graph with ${graphData.nodes.length} nodes`);
             useGraphStore.getState().setGraphData(graphData);
             
             // Update execution store with initial counts
             executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+            
+            // Mark this tab as loaded since we have graph data
+            const { openTabs } = get();
+            const updatedTabsWithLoaded = openTabs.map(t => 
+              t.id === activeTab.id ? { ...t, is_loaded: true } : t
+            );
+            set({ openTabs: updatedTabsWithLoaded, isLoaded: true });
+            
+            // Check if there's a chat worker for this project
+            const { useWorkerStore } = await import('./workerStore');
+            const workerStore = useWorkerStore.getState();
+            await workerStore.fetchWorkers();
+            
+            const chatWorkerId = `chat-${activeTab.id}`;
+            const userWorkerId = `user-${activeTab.id}`;
+            const chatWorker = workerStore.workers[chatWorkerId];
+            const userWorker = workerStore.workers[userWorkerId];
+            
+            const preferChatWorker = chatWorker && (
+              chatWorker.state.status === 'running' || 
+              chatWorker.state.completed_count > 0
+            );
+            
+            if (preferChatWorker) {
+              console.log(`[closeTab] Found active chat worker, binding main panel to it`);
+              await workerStore.bindPanel('main_panel', 'main', chatWorkerId);
+              
+              try {
+                const execState = await workerStore.fetchWorkerExecutionState(chatWorkerId);
+                if (execState) {
+                  executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                  executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                  if (execState.current_inference) {
+                    executionStore.setCurrentInference(execState.current_inference);
+                  }
+                  if (execState.node_statuses) {
+                    executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                  }
+                }
+              } catch (stateErr) {
+                console.warn('[closeTab] Failed to sync execution state from chat worker:', stateErr);
+              }
+            } else if (userWorker) {
+              await workerStore.bindPanel('main_panel', 'main', userWorkerId);
+              
+              try {
+                const execState = await workerStore.fetchWorkerExecutionState(userWorkerId);
+                if (execState) {
+                  executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+                  executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+                  if (execState.current_inference) {
+                    executionStore.setCurrentInference(execState.current_inference);
+                  }
+                  if (execState.node_statuses) {
+                    executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+                  }
+                }
+              } catch (stateErr) {
+                console.warn('[closeTab] Failed to sync execution state from user worker:', stateErr);
+              }
+            } else {
+              try {
+                const execState = await executionApi.getState();
+                executionStore.setStatus(execState.status);
+                if (execState.node_statuses) {
+                  executionStore.setNodeStatuses(execState.node_statuses);
+                }
+              } catch (stateErr) {
+                console.warn('[closeTab] Failed to sync execution state:', stateErr);
+              }
+            }
             
             // Fetch and sync breakpoints from backend
             try {
@@ -705,24 +927,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             } catch (bpErr) {
               console.warn('Failed to fetch breakpoints for new active tab:', bpErr);
             }
-            
-            // Sync execution state from the project's controller
-            try {
-              const execState = await executionApi.getState();
-              executionStore.setStatus(execState.status);
-              if (execState.node_statuses) {
-                executionStore.setNodeStatuses(execState.node_statuses);
-              }
-            } catch (stateErr) {
-              console.warn('Failed to sync execution state for new active tab:', stateErr);
-            }
-          } catch (graphErr) {
-            console.warn('Failed to reload graph for new active tab:', graphErr);
+          } else {
+            // No cached graph available
+            console.log(`[closeTab] No cached graph for project ${activeTab.id}`);
+            useGraphStore.getState().reset();
           }
-        } else {
-          // New active tab is not loaded, clear state
+        } catch (graphErr) {
+          console.log(`[closeTab] No graph available for project ${activeTab.id}:`, graphErr);
           useGraphStore.getState().reset();
-          useExecutionStore.getState().reset();
         }
       } else {
         // No more tabs - reset state

@@ -135,21 +135,55 @@ class ExecutionControllerRegistry:
         Set the active project for the registry.
         
         This also binds the main panel to view this project's worker.
+        
+        Worker selection priority:
+        1. Chat worker (chat-{project_id}) if it exists and has activity/graph_data
+        2. User worker (user-{project_id}) otherwise
+        
+        This ensures that chat controller projects show the correct execution state.
         """
         self._active_project_id = project_id
         logger.info(f"Active project set to: {project_id}")
         
         if project_id:
-            worker_id = f"user-{project_id}"
+            user_worker_id = f"user-{project_id}"
+            chat_worker_id = f"chat-{project_id}"
             
-            # Bind main panel to this worker in WorkerRegistry
+            # Determine which worker to bind to
             try:
                 registry = get_worker_registry()
-                if registry.get_worker(worker_id):
+                
+                # Check if chat worker exists and has activity
+                chat_worker = registry.get_worker(chat_worker_id)
+                user_worker = registry.get_worker(user_worker_id)
+                
+                # Prefer chat worker if it has graph_data or activity
+                prefer_chat = False
+                if chat_worker and chat_worker.controller:
+                    has_graph = getattr(chat_worker.controller, 'graph_data', None) is not None
+                    has_activity = (
+                        chat_worker.state.status in ('running', 'paused', 'stepping') or
+                        chat_worker.state.completed_count > 0
+                    )
+                    prefer_chat = has_graph or has_activity
+                    logger.debug(f"Chat worker {chat_worker_id}: has_graph={has_graph}, has_activity={has_activity}")
+                
+                # Select the appropriate worker
+                if prefer_chat:
+                    target_worker_id = chat_worker_id
+                    logger.info(f"Preferring chat worker {chat_worker_id} for main panel (has graph/activity)")
+                elif user_worker:
+                    target_worker_id = user_worker_id
+                else:
+                    target_worker_id = None
+                    logger.warning(f"No worker found for project {project_id}")
+                
+                # Bind main panel to the selected worker
+                if target_worker_id and registry.get_worker(target_worker_id):
                     registry.bind_panel(
                         panel_id=self.MAIN_PANEL_ID,
                         panel_type=PanelType.MAIN,
-                        worker_id=worker_id,
+                        worker_id=target_worker_id,
                     )
             except Exception as e:
                 logger.warning(f"Failed to bind main panel to worker: {e}")
@@ -158,7 +192,7 @@ class ExecutionControllerRegistry:
             try:
                 from services.execution.worker_manager import get_worker_manager
                 wm = get_worker_manager()
-                wm.set_focused_project(worker_id)
+                wm.set_focused_project(user_worker_id)  # Legacy uses user worker id
             except Exception as e:
                 logger.warning(f"Failed to set focused project in WorkerManager: {e}")
     

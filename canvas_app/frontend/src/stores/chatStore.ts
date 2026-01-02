@@ -17,9 +17,11 @@ import {
   type ChatMessage as ApiChatMessage, 
   type ChatBufferStatus,
   type ControllerInfo,
-  type ControllerState,
 } from '../services/api';
 import { useProjectStore } from './projectStore';
+import { useWorkerStore } from './workerStore';
+import { useGraphStore } from './graphStore';
+import { useExecutionStore } from './executionStore';
 
 // Message types for the chat
 export type MessageRole = 'user' | 'assistant' | 'system' | 'compiler' | 'controller';
@@ -509,7 +511,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
   
   openControllerProject: async () => {
-    const { controllerPath, controllerName } = get();
+    const { controllerId, controllerPath } = get();
     
     if (!controllerPath) {
       console.error('Cannot open controller project: no path available');
@@ -517,45 +519,95 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     
     const projectStore = useProjectStore.getState();
+    const workerStore = useWorkerStore.getState();
+    const assistantWorkerId = `chat-${controllerId}`;
+    
+    // Step 1: Open the assistant project as a SEPARATE TAB (preserves current project's tab)
     const normalizedPath = controllerPath.replace(/\\/g, '/').toLowerCase();
     const existingTab = projectStore.openTabs.find(t => 
       t.directory.replace(/\\/g, '/').toLowerCase() === normalizedPath
     );
     
+    let tabOpened = false;
+    
     if (existingTab) {
+      // Tab already exists - switch to it
+      console.log('[ChatStore] Switching to existing controller tab:', existingTab.id);
       await projectStore.switchTab(existingTab.id);
-      set({ isControllerProjectOpen: true });
-      
-      // If repositories aren't loaded, load them to show the graph
-      if (!existingTab.is_loaded && existingTab.repositories_exist) {
-        console.log('[ChatStore] Loading controller project repositories for graph view...');
-        await projectStore.loadProjectRepositories();
+      tabOpened = true;
+    } else {
+      // Open as a new read-only tab
+      console.log('[ChatStore] Opening controller project as new tab:', controllerPath);
+      try {
+        tabOpened = await projectStore.openProjectAsTab(
+          controllerPath,
+          undefined,
+          undefined,
+          true, // Make active
+          true  // Read-only
+        );
+      } catch (error) {
+        console.error('Failed to open controller project tab:', error);
       }
+    }
+    
+    if (!tabOpened) {
+      console.error('[ChatStore] Failed to open controller project tab');
       return;
     }
     
+    set({ isControllerProjectOpen: true });
+    
+    // Step 2: Use unified graphApi.swap() which handles both user and chat workers
+    // This leverages the backend's caching mechanism - no disk I/O if graph is cached
     try {
-      const success = await projectStore.openProjectAsTab(
-        controllerPath,
-        undefined,
-        undefined,
-        true, // Make active
-        true  // Read-only
-      );
+      const { graphApi } = await import('../services/api');
+      const graphData = await graphApi.swap(controllerId!);
       
-      if (success) {
-        set({ isControllerProjectOpen: true });
+      const graphStore = useGraphStore.getState();
+      graphStore.setGraphData(graphData);
+      console.log('[ChatStore] Swapped to controller graph with', graphData.nodes?.length || 0, 'nodes');
+      
+      // Mark the controller project tab as "loaded" so switching back works correctly
+      const currentProjectStore = useProjectStore.getState();
+      const { openTabs, activeTabId } = currentProjectStore;
+      if (activeTabId) {
+        const updatedTabs = openTabs.map(tab => 
+          tab.id === activeTabId ? { ...tab, is_loaded: true } : tab
+        );
+        currentProjectStore.setOpenTabs(updatedTabs);
+        currentProjectStore.setIsLoaded(true);
+        console.log('[ChatStore] Marked controller tab as loaded');
+      }
+      
+      // Step 3: Bind main panel to the assistant worker for event routing (if worker exists)
+      await workerStore.fetchWorkers();
+      const freshWorkerStore = useWorkerStore.getState();
+      const worker = freshWorkerStore.workers[assistantWorkerId];
+      
+      if (worker) {
+        console.log('[ChatStore] Found assistant worker:', assistantWorkerId, 'status:', worker.state.status);
+        await freshWorkerStore.bindPanel('main_panel', 'main', assistantWorkerId);
         
-        // Load repositories to show the graph
-        // The controller's repositories should exist since it was running
-        const currentProject = projectStore.currentProject;
-        if (currentProject && projectStore.repositoriesExist && !projectStore.isLoaded) {
-          console.log('[ChatStore] Loading controller project repositories for graph view...');
-          await projectStore.loadProjectRepositories();
+        // Sync execution state (node statuses, progress) from the worker
+        const execState = await freshWorkerStore.fetchWorkerExecutionState(assistantWorkerId);
+        if (execState) {
+          const executionStore = useExecutionStore.getState();
+          executionStore.setStatus(execState.status as import('../types/execution').ExecutionStatus);
+          executionStore.setProgress(execState.completed_count, execState.total_count, execState.cycle_count);
+          if (execState.current_inference) {
+            executionStore.setCurrentInference(execState.current_inference);
+          }
+          if (execState.node_statuses) {
+            executionStore.setNodeStatuses(execState.node_statuses as Record<string, import('../types/execution').NodeStatus>);
+          }
+          console.log('[ChatStore] Synced execution state:', execState.completed_count, '/', execState.total_count, 'completed');
         }
       }
-    } catch (error) {
-      console.error('Failed to open controller project:', error);
+    } catch (swapErr) {
+      console.error('[ChatStore] Failed to swap to controller graph:', swapErr);
+      // Don't fallback to loadProjectRepositories - if swap failed, the project isn't ready
+      // The user should see that the project needs to be loaded
     }
   },
   
