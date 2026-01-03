@@ -13,6 +13,7 @@ from config.file_types import (
     get_format_from_path,
     get_supported_extensions,
     is_normcode_format,
+    is_database_format,
 )
 
 router = APIRouter()
@@ -77,11 +78,23 @@ async def read_file(path: str) -> FileContent:
         if not file_path.is_file():
             raise HTTPException(status_code=400, detail=f"Not a file: {path}")
         
+        file_format = get_file_format(file_path.name)
+        
+        # Handle database files specially - they are binary and should use DB Inspector
+        if is_database_format(file_format):
+            # Get file size for display
+            file_size = file_path.stat().st_size
+            size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / (1024 * 1024):.1f} MB"
+            content = f"[SQLite Database - {size_str}]\n\nThis is a binary database file.\nUse the Database Inspector to view its contents.\n\nPath: {file_path.absolute()}"
+            return FileContent(
+                path=str(file_path.absolute()),
+                content=content,
+                format=file_format
+            )
+        
         # Read file content
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
-        file_format = get_file_format(file_path.name)
         
         return FileContent(
             path=str(file_path.absolute()),

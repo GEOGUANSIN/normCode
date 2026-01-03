@@ -15,6 +15,7 @@ class FileTypeCategory(Enum):
     NORMCODE = "normcode"      # NormCode family (.ncd, .ncn, .ncdn, etc.)
     CODE = "code"              # Programming languages (.py, .js, etc.)
     DATA = "data"              # Data files (.json, .yaml, .toml)
+    DATABASE = "database"      # Database files (.db, .sqlite)
     DOCUMENTATION = "doc"      # Documentation (.md, .txt, .rst)
     CONFIG = "config"          # Configuration files
     OTHER = "other"            # Uncategorized
@@ -254,6 +255,44 @@ FILE_TYPES: Dict[str, FileTypeConfig] = {
         icon_name="file-text",
         icon_color="gray",
     ),
+    
+    # Database files
+    ".db": FileTypeConfig(
+        extension=".db",
+        format_name="sqlite",
+        display_name="SQLite Database",
+        category=FileTypeCategory.DATABASE,
+        supports_parsing=False,  # Binary format, not directly parseable as text
+        supports_preview=True,   # Can be previewed via DB Inspector
+        icon_name="database",
+        icon_color="indigo",
+        mime_type="application/x-sqlite3",
+        metadata={"inspector": "OrchestratorDBInspector"},
+    ),
+    ".sqlite": FileTypeConfig(
+        extension=".sqlite",
+        format_name="sqlite",
+        display_name="SQLite Database",
+        category=FileTypeCategory.DATABASE,
+        supports_parsing=False,
+        supports_preview=True,
+        icon_name="database",
+        icon_color="indigo",
+        mime_type="application/x-sqlite3",
+        metadata={"inspector": "OrchestratorDBInspector"},
+    ),
+    ".sqlite3": FileTypeConfig(
+        extension=".sqlite3",
+        format_name="sqlite",
+        display_name="SQLite Database",
+        category=FileTypeCategory.DATABASE,
+        supports_parsing=False,
+        supports_preview=True,
+        icon_name="database",
+        icon_color="indigo",
+        mime_type="application/x-sqlite3",
+        metadata={"inspector": "OrchestratorDBInspector"},
+    ),
 }
 
 
@@ -333,4 +372,17 @@ def is_normcode_format(format_name: str) -> bool:
 def get_normcode_extensions() -> List[str]:
     """Get all NormCode family extensions."""
     return get_extensions_by_category(FileTypeCategory.NORMCODE)
+
+
+def get_database_extensions() -> List[str]:
+    """Get all database file extensions."""
+    return get_extensions_by_category(FileTypeCategory.DATABASE)
+
+
+def is_database_format(format_name: str) -> bool:
+    """Check if a format is a database file."""
+    for config in FILE_TYPES.values():
+        if config.format_name == format_name:
+            return config.category == FileTypeCategory.DATABASE
+    return False
 

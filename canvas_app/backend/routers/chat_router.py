@@ -15,7 +15,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.chat_controller_service import get_chat_controller_service, ControllerStatus
+from services.chat_controller_service import get_chat_controller_service
 from schemas.chat_schemas import (
     ChatMessage,
     SendMessageRequest,
@@ -24,6 +24,8 @@ from schemas.chat_schemas import (
     ChatInputRequest,
     ChatInputResponse,
     CompilerStatus,
+    ControllerStatus,
+    ControllerInfo as ControllerInfoSchema,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,19 +37,9 @@ router = APIRouter(prefix="/api/chat")
 # New Models for Controller Selection
 # ============================================================================
 
-class ControllerInfo(BaseModel):
-    """Information about an available chat controller."""
-    project_id: str
-    name: str
-    path: str
-    config_file: Optional[str] = None
-    description: Optional[str] = None
-    is_builtin: bool = False
-
-
 class ControllersListResponse(BaseModel):
     """Response containing available controllers."""
-    controllers: List[ControllerInfo]
+    controllers: List[ControllerInfoSchema]
     current_controller_id: Optional[str] = None
 
 
@@ -102,7 +94,7 @@ async def list_controllers(refresh: bool = False):
     controllers = service.get_available_controllers(refresh=refresh)
     
     return ControllersListResponse(
-        controllers=[ControllerInfo(**c) for c in controllers],
+        controllers=[ControllerInfoSchema(**c) for c in controllers],
         current_controller_id=service._controller_id,
     )
 

@@ -306,6 +306,53 @@ class FlowIndexResolver:
 # Node Creation
 # =============================================================================
 
+def _serialize_for_json(value: Any) -> Any:
+    """Serialize a value to be JSON-safe.
+    
+    Handles infra Reference objects and other non-JSON-serializable types
+    by converting them to primitive representations.
+    
+    Args:
+        value: Any value that might need serialization
+        
+    Returns:
+        JSON-safe version of the value
+    """
+    if value is None:
+        return None
+    
+    # Handle Reference objects from infra library
+    # They have .axes, .shape, and .data attributes
+    if hasattr(value, 'axes') and hasattr(value, 'shape') and hasattr(value, 'data'):
+        try:
+            return {
+                "type": "Reference",
+                "axes": list(value.axes) if value.axes else [],
+                "shape": list(value.shape) if value.shape else [],
+                "data": _serialize_for_json(value.data),  # Recursively serialize
+            }
+        except Exception:
+            return str(value)
+    
+    # Handle lists recursively
+    if isinstance(value, list):
+        return [_serialize_for_json(item) for item in value]
+    
+    # Handle dicts recursively
+    if isinstance(value, dict):
+        return {k: _serialize_for_json(v) for k, v in value.items()}
+    
+    # Handle other non-primitive types by converting to string
+    if not isinstance(value, (str, int, float, bool, type(None))):
+        try:
+            # Try to convert to a basic representation
+            return str(value)
+        except Exception:
+            return f"<unserializable: {type(value).__name__}>"
+    
+    return value
+
+
 def _create_graph_node(
     concept_name: str,
     concept_attrs: Dict[str, Any],
@@ -327,18 +374,22 @@ def _create_graph_node(
     Returns:
         Configured GraphNode instance
     """
+    # Serialize reference_data to handle infra Reference objects
+    reference_data = _serialize_for_json(concept_attrs.get('reference_data'))
+    
     node_data = {
         "is_ground": concept_attrs.get('is_ground_concept', False),
         "is_final": concept_attrs.get('is_final_concept', False),
         "axes": concept_attrs.get('reference_axis_names', []),
-        "reference_data": concept_attrs.get('reference_data'),
+        "reference_data": reference_data,
         "concept_name": concept_name,
         "natural_name": concept_attrs.get('natural_name'),
         "flow_indices_from_repo": concept_attrs.get('flow_indices', []),
     }
     
     if extra_data:
-        node_data.update(extra_data)
+        # Also serialize extra_data in case it contains non-serializable types
+        node_data.update(_serialize_for_json(extra_data))
     
     return GraphNode(
         id=f"node@{flow_index}",
@@ -856,32 +907,104 @@ def build_graph_from_repositories(
 # =============================================================================
 
 class GraphService:
-    """Service for managing graph state."""
+    """Service for managing graph state.
+    
+    This is a singleton that manages the CURRENTLY DISPLAYED graph.
+    Each project's ExecutionController caches its own graph_data.
+    When switching tabs, we swap the cached graph instead of reloading from files.
+    """
     
     def __init__(self):
         self.current_graph: Optional[GraphData] = None
         self.concepts_data: List[Dict[str, Any]] = []
         self.inferences_data: List[Dict[str, Any]] = []
         self.current_layout_mode: str = "hierarchical"
+        self._current_project_id: Optional[str] = None  # Track which project's graph is loaded
+    
+    def swap_to_cached(
+        self, 
+        graph_data: GraphData, 
+        concepts_data: List[Dict[str, Any]],
+        inferences_data: List[Dict[str, Any]],
+        project_id: str,
+        layout_mode: str = "hierarchical"
+    ) -> GraphData:
+        """Swap to a cached graph without reloading from files.
+        
+        This is used when switching tabs - we swap to the cached graph
+        from the ExecutionController instead of re-reading from disk.
+        
+        Args:
+            graph_data: The cached GraphData from ExecutionController
+            concepts_data: The cached concepts data
+            inferences_data: The cached inferences data
+            project_id: The project ID this graph belongs to
+            layout_mode: The layout mode to use
+            
+        Returns:
+            The graph data (sanitized for JSON serialization)
+        """
+        # Sanitize node data to ensure it's JSON-serializable
+        # This handles cases where cached graph contains Reference objects from infra
+        sanitized_nodes = []
+        for node in graph_data.nodes:
+            # Deep copy and sanitize the node data
+            sanitized_data = _serialize_for_json(node.data)
+            sanitized_node = GraphNode(
+                id=node.id,
+                label=node.label,
+                category=node.category,
+                node_type=node.node_type,
+                flow_index=node.flow_index,
+                level=node.level,
+                position=node.position,
+                data=sanitized_data if isinstance(sanitized_data, dict) else {}
+            )
+            sanitized_nodes.append(sanitized_node)
+        
+        # Create sanitized graph
+        sanitized_graph = GraphData(nodes=sanitized_nodes, edges=graph_data.edges)
+        
+        self.current_graph = sanitized_graph
+        self.concepts_data = concepts_data
+        self.inferences_data = inferences_data
+        self._current_project_id = project_id
+        self.current_layout_mode = layout_mode
+        logger.info(f"Swapped to cached graph for project {project_id} ({len(graph_data.nodes)} nodes)")
+        return self.current_graph
+    
+    def get_current_project_id(self) -> Optional[str]:
+        """Get the project ID of the currently loaded graph."""
+        return self._current_project_id
     
     def load_from_files(
         self, 
         concepts_path: str, 
         inferences_path: str, 
-        layout_mode: str = "hierarchical"
+        layout_mode: str = "hierarchical",
+        project_id: Optional[str] = None
     ) -> GraphData:
-        """Load repositories from files and build graph."""
+        """Load repositories from files and build graph.
+        
+        Args:
+            concepts_path: Path to concepts JSON file
+            inferences_path: Path to inferences JSON file
+            layout_mode: Layout mode for positioning
+            project_id: Optional project ID to track which project this graph belongs to
+        """
         with open(concepts_path, 'r', encoding='utf-8') as f:
             self.concepts_data = json.load(f)
         with open(inferences_path, 'r', encoding='utf-8') as f:
             self.inferences_data = json.load(f)
         
         self.current_layout_mode = layout_mode
+        self._current_project_id = project_id
         self.current_graph = build_graph_from_repositories(
             self.concepts_data,
             self.inferences_data,
             layout_mode=layout_mode
         )
+        logger.info(f"Loaded graph from files for project {project_id} ({len(self.current_graph.nodes)} nodes)")
         return self.current_graph
     
     def load_from_data(

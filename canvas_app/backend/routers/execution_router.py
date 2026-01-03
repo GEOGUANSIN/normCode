@@ -1,9 +1,12 @@
 """Execution control endpoints."""
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 
-from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
+from services.execution_service import (
+    execution_controller, execution_controller_registry, get_execution_controller,
+    get_worker_registry, PanelType,
+)
 from services.project_service import project_service
 from schemas.execution_schemas import (
     ExecutionState, BreakpointRequest, LogsResponse, LogEntry,
@@ -648,4 +651,332 @@ async def get_chat_buffer_status():
         "has_pending_request": chat_tool.has_pending_request(),
         "has_buffered_message": chat_tool.has_buffered_message(),
         "buffered_message": chat_tool.get_buffered_message()
+    }
+
+
+# =============================================================================
+# Worker Registry API (Normalized worker/panel management)
+# =============================================================================
+
+@router.get("/workers")
+async def list_workers():
+    """List all registered workers.
+    
+    Returns workers with their state and panel bindings.
+    """
+    registry = get_worker_registry()
+    state = registry.get_registry_state()
+    return state
+
+
+@router.get("/workers/{worker_id}")
+async def get_worker(worker_id: str):
+    """Get details for a specific worker.
+    
+    Args:
+        worker_id: The worker ID
+        
+    Returns:
+        Worker state and bindings
+    """
+    registry = get_worker_registry()
+    worker = registry.get_worker(worker_id)
+    
+    if not worker:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    return {
+        "state": worker.state.to_dict(),
+        "bindings": list(worker.bindings),
+    }
+
+
+@router.get("/workers/{worker_id}/state")
+async def get_worker_state(worker_id: str):
+    """Get execution state for a specific worker.
+    
+    This returns the full execution state from the worker's controller.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    return controller.get_state()
+
+
+@router.get("/workers/{worker_id}/graph")
+async def get_worker_graph(worker_id: str):
+    """Get graph data for a specific worker.
+    
+    Returns the pre-built graph from when the worker loaded its repositories.
+    This is fast since the graph is already computed.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    # Use pre-built graph if available (built when repos were loaded)
+    if controller.graph_data:
+        logger.info(f"Returning pre-built graph for worker {worker_id}: {len(controller.graph_data.nodes)} nodes")
+        return {
+            "nodes": [n.model_dump() for n in controller.graph_data.nodes],
+            "edges": [e.model_dump() for e in controller.graph_data.edges],
+            "worker_id": worker_id,
+        }
+    
+    # Fallback: Build graph from JSON files if pre-built not available
+    if not controller._load_config:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Worker {worker_id} has no graph data and no load config"
+        )
+    
+    try:
+        from services.graph_service import build_graph_from_repositories
+        import json
+        
+        concepts_path = controller._load_config.get("concepts_path")
+        inferences_path = controller._load_config.get("inferences_path")
+        
+        if not concepts_path or not inferences_path:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Worker {worker_id} missing repository paths in load config"
+            )
+        
+        with open(concepts_path, 'r', encoding='utf-8') as f:
+            concepts_data = json.load(f)
+        with open(inferences_path, 'r', encoding='utf-8') as f:
+            inferences_data = json.load(f)
+        
+        logger.info(f"Building graph on-demand for worker {worker_id}")
+        graph = build_graph_from_repositories(concepts_data, inferences_data)
+        
+        # Cache it for next time
+        controller.graph_data = graph
+        
+        return {
+            "nodes": [n.model_dump() for n in graph.nodes],
+            "edges": [e.model_dump() for e in graph.edges],
+            "worker_id": worker_id,
+        }
+    except FileNotFoundError as e:
+        logger.error(f"Repository file not found for worker {worker_id}: {e}")
+        raise HTTPException(status_code=404, detail=f"Repository file not found: {str(e)}")
+    except Exception as e:
+        logger.exception(f"Failed to build graph for worker {worker_id}")
+        raise HTTPException(status_code=500, detail=f"Failed to build graph: {str(e)}")
+
+
+@router.get("/workers/{worker_id}/reference/{concept_name}")
+async def get_worker_reference_data(worker_id: str, concept_name: str):
+    """Get reference data for a concept from a specific worker.
+    
+    This allows fetching concept values from any worker, not just the active project.
+    Useful when viewing an assistant's graph in a separate tab.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": [],
+            "error": "No concept repository loaded"
+        }
+    
+    ref_data = controller.get_reference_data(concept_name)
+    if ref_data is None:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": []
+        }
+    
+    logger.debug(f"Got reference data for {concept_name} from worker {worker_id}")
+    return ref_data
+
+
+@router.get("/workers/{worker_id}/references")
+async def get_worker_all_references(worker_id: str):
+    """Get all reference data from a specific worker.
+    
+    Returns a dict mapping concept_name -> reference_data for all concepts
+    that have values in this worker's concept repository.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {"references": {}, "count": 0}
+    
+    return controller.get_all_reference_data()
+
+
+class PanelBindRequest(BaseModel):
+    """Request to bind a panel to a worker."""
+    panel_id: str
+    panel_type: str = "main"  # main, chat, secondary, floating, debug
+    worker_id: str
+
+
+@router.post("/panels/bind")
+async def bind_panel(request: PanelBindRequest):
+    """Bind a panel to view a specific worker.
+    
+    This allows any panel to view any worker's execution.
+    A panel can only be bound to one worker at a time.
+    
+    Args:
+        request.panel_id: Unique ID for the panel
+        request.panel_type: Type of panel (main, chat, secondary, etc.)
+        request.worker_id: The worker to bind to
+    """
+    registry = get_worker_registry()
+    
+    # Parse panel type
+    try:
+        panel_type = PanelType(request.panel_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid panel type: {request.panel_type}. Valid types: {[t.value for t in PanelType]}"
+        )
+    
+    try:
+        binding = registry.bind_panel(
+            panel_id=request.panel_id,
+            panel_type=panel_type,
+            worker_id=request.worker_id,
+        )
+        return {
+            "success": True,
+            "panel_id": binding.panel_id,
+            "panel_type": binding.panel_type.value,
+            "worker_id": binding.worker_id,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/panels/{panel_id}/unbind")
+async def unbind_panel(panel_id: str):
+    """Unbind a panel from its current worker.
+    
+    Args:
+        panel_id: The panel to unbind
+    """
+    registry = get_worker_registry()
+    was_bound = registry.unbind_panel(panel_id)
+    
+    return {
+        "success": True,
+        "was_bound": was_bound,
+        "panel_id": panel_id,
+    }
+
+
+class PanelSwitchRequest(BaseModel):
+    """Request to switch a panel to a different worker."""
+    worker_id: str
+
+
+@router.post("/panels/{panel_id}/switch")
+async def switch_panel_worker(panel_id: str, request: PanelSwitchRequest):
+    """Switch a panel to view a different worker.
+    
+    This unbinds from the current worker and binds to the new one.
+    
+    Args:
+        panel_id: The panel to switch
+        request.worker_id: The new worker to view
+    """
+    registry = get_worker_registry()
+    
+    # Get current binding to preserve panel type
+    current = registry.get_panel_binding(panel_id)
+    panel_type = current.panel_type if current else PanelType.MAIN
+    
+    try:
+        binding = registry.bind_panel(
+            panel_id=panel_id,
+            panel_type=panel_type,
+            worker_id=request.worker_id,
+        )
+        return {
+            "success": True,
+            "panel_id": binding.panel_id,
+            "old_worker_id": current.worker_id if current else None,
+            "new_worker_id": binding.worker_id,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/panels/{panel_id}")
+async def get_panel_binding(panel_id: str):
+    """Get the binding for a specific panel.
+    
+    Returns which worker the panel is viewing, if any.
+    """
+    registry = get_worker_registry()
+    binding = registry.get_panel_binding(panel_id)
+    
+    if not binding:
+        return {
+            "panel_id": panel_id,
+            "bound": False,
+            "worker_id": None,
+        }
+    
+    return {
+        "panel_id": binding.panel_id,
+        "bound": True,
+        "panel_type": binding.panel_type.value,
+        "worker_id": binding.worker_id,
+    }
+
+
+@router.get("/panels/{panel_id}/state")
+async def get_panel_worker_state(panel_id: str):
+    """Get execution state for the worker bound to a panel.
+    
+    This is a convenience method to get the execution state
+    that a specific panel should display.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller_for_panel(panel_id)
+    
+    if not controller:
+        return {
+            "panel_id": panel_id,
+            "bound": False,
+            "state": None,
+        }
+    
+    return {
+        "panel_id": panel_id,
+        "bound": True,
+        "state": controller.get_state(),
     }

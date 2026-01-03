@@ -9,69 +9,34 @@ Architecture:
     User selects a project → ChatControllerService loads it →
     ExecutionController runs the plan → ChatTool handles I/O
 
-This makes the system transparent: users see exactly which plan is
-running and can switch between different chat-capable projects.
+This service is a facade that coordinates:
+- ControllerRegistryService: Available controller discovery/registration
+- ChatMessageService: Chat message history management
+- ExecutionController: Running the selected controller project
+
+The chat controller's canvas tool can also query the MAIN execution
+controller (running user projects) to explain what's happening there.
 """
 
 import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from tools.chat_tool import CanvasChatTool
 from tools.canvas_tool import CanvasDisplayTool
+from schemas.chat_schemas import ControllerStatus, ControllerInfo
+
+# Import sub-services
+from .chat.registry_service import ControllerRegistryService, BUILT_IN_PROJECTS_DIR
+from .chat.message_service import ChatMessageService
+from .chat.placeholder_service import PlaceholderService
+
+if TYPE_CHECKING:
+    from services.execution.controller import ExecutionController
 
 logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Default Controller Projects
-# =============================================================================
-
-# Built-in compiler project (default controller)
-COMPILER_PROJECT_DIR = Path(__file__).parent.parent.parent / "compiler"
-COMPILER_CONFIG_FILE = COMPILER_PROJECT_DIR / "compiler.normcode-canvas.json"
-
-
-class ControllerStatus:
-    """Valid status values for the controller."""
-    DISCONNECTED = "disconnected"
-    CONNECTING = "connecting"
-    CONNECTED = "connected"
-    RUNNING = "running"
-    PAUSED = "paused"
-    ERROR = "error"
-
-
-class ControllerInfo:
-    """Information about an available chat controller project."""
-    
-    def __init__(
-        self,
-        project_id: str,
-        name: str,
-        path: str,
-        config_file: Optional[str] = None,
-        description: Optional[str] = None,
-        is_builtin: bool = False,
-    ):
-        self.project_id = project_id
-        self.name = name
-        self.path = path
-        self.config_file = config_file
-        self.description = description
-        self.is_builtin = is_builtin
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "project_id": self.project_id,
-            "name": self.name,
-            "path": self.path,
-            "config_file": self.config_file,
-            "description": self.description,
-            "is_builtin": self.is_builtin,
-        }
 
 
 class ChatControllerService:
@@ -83,6 +48,11 @@ class ChatControllerService:
     2. Can be loaded and executed
     3. Drives the conversation via ChatTool
     
+    This is a facade that coordinates:
+    - ControllerRegistryService: Controller discovery and registration
+    - ChatMessageService: Message history management
+    - ExecutionController: Running the controller project
+    
     Key Features:
     - List available controller projects
     - Select and load a controller
@@ -92,12 +62,20 @@ class ChatControllerService:
     
     def __init__(self):
         """Initialize the chat controller service."""
+        # Sub-services
+        self._registry_service = ControllerRegistryService()
+        self._message_service = ChatMessageService()
+        self._placeholder_service = PlaceholderService()
+        
         # Current controller state
         self._controller_id: Optional[str] = None
         self._controller_info: Optional[ControllerInfo] = None
-        self._status: str = ControllerStatus.DISCONNECTED
+        self._status: ControllerStatus = ControllerStatus.DISCONNECTED
         self._current_flow_index: Optional[str] = None
         self._error_message: Optional[str] = None
+        
+        # Placeholder mode flag (use demo responses instead of real controller)
+        self._placeholder_mode: bool = False
         
         # Execution controller for running the chat project
         self._execution_controller: Optional[Any] = None
@@ -106,13 +84,6 @@ class ChatControllerService:
         self._chat_tool: Optional[CanvasChatTool] = None
         self._canvas_tool: Optional[CanvasDisplayTool] = None
         self._emit_callback: Optional[Callable] = None
-        
-        # Message history
-        self._messages: List[Dict[str, Any]] = []
-        
-        # Available controllers (cached)
-        self._available_controllers: List[ControllerInfo] = []
-        self._controllers_scanned = False
     
     # =========================================================================
     # Configuration
@@ -125,44 +96,99 @@ class ChatControllerService:
         Called by websocket_router when a connection is established.
         """
         self._emit_callback = callback
+        
+        # Configure sub-services with callback
+        self._message_service.set_emit_callback(callback)
+        
         # Create tools with the callback
         self._chat_tool = CanvasChatTool(emit_callback=callback, source="controller")
-        self._canvas_tool = CanvasDisplayTool(emit_callback=callback)
+        self._canvas_tool = CanvasDisplayTool(
+            emit_callback=callback,
+            execution_getter=self._get_main_execution_controller
+        )
+    
+    def _get_main_execution_controller(self) -> Optional["ExecutionController"]:
+        """
+        Get the main ExecutionController for user projects.
+        
+        This allows the chat controller's canvas tool to query execution state
+        of the user's project, enabling the chat to explain what's happening.
+        
+        Strategy:
+        1. Use WorkerRegistry's main panel binding (preferred - explicit binding)
+        2. Fall back to WorkerManager's focused controller
+        3. Fall back to active controller from legacy registry
+        
+        Returns:
+            The main ExecutionController, or None if no project is loaded
+        """
+        try:
+            # Strategy 1: Use WorkerRegistry's main panel binding (NEW)
+            from services.execution.worker_registry import get_worker_registry, PanelType
+            registry = get_worker_registry()
+            
+            # Get controller bound to main panel
+            main_controller = registry.get_controller_for_panel("main_panel")
+            if main_controller and main_controller.concept_repo is not None:
+                logger.debug("Using controller bound to main_panel from WorkerRegistry")
+                return main_controller
+            
+            # Strategy 2: Use WorkerManager's focused controller
+            from services.execution.worker_manager import get_worker_manager
+            wm = get_worker_manager()
+            
+            focused_controller = wm.get_focused_controller()
+            if focused_controller and focused_controller.concept_repo is not None:
+                logger.debug("Using focused controller from WorkerManager")
+                return focused_controller
+            
+            # Strategy 3: Fall back to legacy registry for backward compatibility
+            from services.execution_service import execution_controller_registry, get_execution_controller
+            from services.project_service import project_service
+            
+            if project_service.is_project_open and project_service.current_config:
+                current_project_id = project_service.current_config.id
+                controller = get_execution_controller(current_project_id)
+                
+                if controller and controller.concept_repo is not None:
+                    logger.debug(f"Using controller from legacy registry: {current_project_id}")
+                    return controller
+            
+            # Strategy 4: Fall back to active controller from registry
+            controller = execution_controller_registry.get_active_controller()
+            if controller and controller.concept_repo is not None:
+                logger.debug("Using active controller from legacy registry")
+                return controller
+            
+            logger.debug("No loaded execution controller found")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Could not get main execution controller: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            return None
     
     def _emit(self, event_type: str, data: Dict[str, Any]):
         """Emit a WebSocket event."""
         if self._emit_callback:
             try:
+                # Add controller info to status events for frontend to update state
+                if event_type == "chat:controller_status":
+                    if self._controller_info:
+                        # Always include controller details so frontend stays in sync
+                        data.setdefault("controller_id", self._controller_info.project_id)
+                        data.setdefault("controller_name", self._controller_info.name)
+                        data.setdefault("controller_path", self._controller_info.path)
+                        data.setdefault("config_file", self._controller_info.config_file)
+                    data.setdefault("placeholder_mode", self._placeholder_mode)
                 self._emit_callback(event_type, data)
             except Exception as e:
                 logger.error(f"Failed to emit event {event_type}: {e}")
     
     # =========================================================================
-    # Available Controllers
+    # Registry Delegation
     # =========================================================================
-    
-    def _scan_builtin_controllers(self) -> List[ControllerInfo]:
-        """Scan for built-in controller projects."""
-        controllers = []
-        
-        # Add the default compiler controller
-        if COMPILER_CONFIG_FILE.exists():
-            try:
-                with open(COMPILER_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                
-                controllers.append(ControllerInfo(
-                    project_id="compiler",
-                    name=config.get("name", "NormCode Compiler"),
-                    path=str(COMPILER_PROJECT_DIR),
-                    config_file=COMPILER_CONFIG_FILE.name,
-                    description=config.get("description", "Default chat-driven compiler"),
-                    is_builtin=True,
-                ))
-            except Exception as e:
-                logger.warning(f"Failed to load compiler config: {e}")
-        
-        return controllers
     
     def get_available_controllers(self, refresh: bool = False) -> List[Dict[str, Any]]:
         """
@@ -174,11 +200,8 @@ class ChatControllerService:
         Returns:
             List of controller info dicts
         """
-        if not self._controllers_scanned or refresh:
-            self._available_controllers = self._scan_builtin_controllers()
-            self._controllers_scanned = True
-        
-        return [c.to_dict() for c in self._available_controllers]
+        controllers = self._registry_service.get_available_controllers(refresh=refresh)
+        return [c.model_dump() for c in controllers]
     
     def register_controller(
         self,
@@ -201,23 +224,13 @@ class ChatControllerService:
         Returns:
             The registered ControllerInfo
         """
-        info = ControllerInfo(
+        return self._registry_service.register_controller(
             project_id=project_id,
             name=name,
             path=path,
             config_file=config_file,
             description=description,
-            is_builtin=False,
         )
-        
-        # Remove existing with same ID
-        self._available_controllers = [
-            c for c in self._available_controllers 
-            if c.project_id != project_id
-        ]
-        self._available_controllers.append(info)
-        
-        return info
     
     # =========================================================================
     # State Accessors
@@ -241,21 +254,22 @@ class ChatControllerService:
         """Get the current controller state."""
         return {
             "controller_id": self._controller_id,
-            "controller_info": self._controller_info.to_dict() if self._controller_info else None,
-            "status": self._status,
+            "controller_info": self._controller_info.model_dump() if self._controller_info else None,
+            "status": self._status.value,
             "current_flow_index": self._current_flow_index,
             "error_message": self._error_message,
             "pending_input": self._chat_tool.get_pending_request() if self._chat_tool else None,
             "is_execution_active": self._chat_tool.is_execution_active() if self._chat_tool else False,
+            "placeholder_mode": self._placeholder_mode,
         }
     
     # =========================================================================
-    # Message History
+    # Message History Delegation
     # =========================================================================
     
     def get_messages(self) -> List[Dict[str, Any]]:
         """Get all chat messages."""
-        return self._messages
+        return self._message_service.get_messages()
     
     def add_message(
         self,
@@ -273,28 +287,16 @@ class ChatControllerService:
             metadata: Optional metadata
             flow_index: Optional flow index that generated this message
         """
-        import uuid
-        from datetime import datetime
-        
-        msg_metadata = metadata or {}
-        if flow_index:
-            msg_metadata["flowIndex"] = flow_index
-        
-        message = {
-            "id": str(uuid.uuid4())[:8],
-            "role": role,
-            "content": content,
-            "timestamp": datetime.now().isoformat(),
-            "metadata": msg_metadata,
-        }
-        self._messages.append(message)
-        self._emit("chat:message", message)
-        
-        return message
+        return self._message_service.add_message(
+            role=role,
+            content=content,
+            metadata=metadata,
+            flow_index=flow_index,
+        )
     
     def clear_messages(self):
         """Clear all chat messages."""
-        self._messages = []
+        self._message_service.clear_messages()
     
     # =========================================================================
     # Controller Lifecycle
@@ -310,27 +312,24 @@ class ChatControllerService:
         Returns:
             State after selection
         """
-        # Find the controller
-        controller = None
-        for c in self._available_controllers:
-            if c.project_id == controller_id:
-                controller = c
-                break
-        
-        if not controller:
-            # Try to scan again
-            self.get_available_controllers(refresh=True)
-            for c in self._available_controllers:
-                if c.project_id == controller_id:
-                    controller = c
-                    break
-        
-        if not controller:
-            raise ValueError(f"Controller not found: {controller_id}")
-        
         # Stop current controller if running
         if self._status != ControllerStatus.DISCONNECTED:
             await self.disconnect()
+        
+        # Special case: placeholder controller (demo mode)
+        if controller_id == "placeholder":
+            return await self.start_placeholder_mode()
+        
+        # Find the controller
+        controller = self._registry_service.get_controller(controller_id)
+        
+        if not controller:
+            # Try to refresh and find again
+            self._registry_service.get_available_controllers(refresh=True)
+            controller = self._registry_service.get_controller(controller_id)
+        
+        if not controller:
+            raise ValueError(f"Controller not found: {controller_id}")
         
         # Connect to new controller
         return await self._connect_controller(controller)
@@ -346,7 +345,7 @@ class ChatControllerService:
             self._controller_id = controller.project_id
             self._controller_info = controller
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.CONNECTING,
+                "status": ControllerStatus.CONNECTING.value,
                 "controller_id": controller.project_id,
             })
             
@@ -398,12 +397,49 @@ class ChatControllerService:
                 # Override the source so input requests go to /api/chat/input/ not /api/execution/chat-input/
                 self._chat_tool._source = "controller"
             
+            # Register with WorkerRegistry (primary)
+            from services.execution.worker_registry import get_worker_registry, WorkerCategory, PanelType
+            registry = get_worker_registry()
+            worker_id = f"chat-{controller.project_id}"
+            registry.register_worker(
+                worker_id=worker_id,
+                controller=self._execution_controller,
+                category=WorkerCategory.ASSISTANT,
+                name=controller.name,
+                project_id=controller.project_id,
+                metadata={"controller_info": controller.model_dump()},
+            )
+            
+            # Bind chat panel to this worker
+            registry.bind_panel(
+                panel_id="chat_panel",
+                panel_type=PanelType.CHAT,
+                worker_id=worker_id,
+            )
+            
+            # Also register with legacy WorkerManager for backward compat
+            try:
+                from services.execution.worker_manager import get_worker_manager, WorkerType
+                wm = get_worker_manager()
+                wm.register_worker(
+                    worker_id=worker_id,
+                    worker_type=WorkerType.CHAT_CONTROLLER,
+                    controller=self._execution_controller,
+                    project_id=controller.project_id,
+                    project_name=controller.name,
+                    metadata={"controller_info": controller.model_dump()},
+                )
+            except Exception as e:
+                logger.debug(f"Legacy WorkerManager registration skipped: {e}")
+            
             self._status = ControllerStatus.CONNECTED
             self._error_message = None
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.CONNECTED,
+                "status": ControllerStatus.CONNECTED.value,
                 "controller_id": controller.project_id,
                 "controller_name": controller.name,
+                "controller_path": controller.path,
+                "config_file": controller.config_file,
             })
             
             # Add welcome message
@@ -420,7 +456,7 @@ class ChatControllerService:
             self._status = ControllerStatus.ERROR
             self._error_message = str(e)
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.ERROR,
+                "status": ControllerStatus.ERROR.value,
                 "error": str(e),
             })
             logger.error(f"Failed to connect controller: {e}")
@@ -435,11 +471,10 @@ class ChatControllerService:
         """
         if not self._execution_controller:
             # If no controller selected, use default
-            if not self._available_controllers:
-                self.get_available_controllers()
+            default_id = self._registry_service.get_default_controller_id()
             
-            if self._available_controllers:
-                await self.select_controller(self._available_controllers[0].project_id)
+            if default_id:
+                await self.select_controller(default_id)
             else:
                 raise RuntimeError("No chat controllers available")
         
@@ -449,7 +484,7 @@ class ChatControllerService:
         try:
             self._status = ControllerStatus.RUNNING
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.RUNNING,
+                "status": ControllerStatus.RUNNING.value,
                 "controller_id": self._controller_id,
             })
             
@@ -463,7 +498,7 @@ class ChatControllerService:
             self._status = ControllerStatus.ERROR
             self._error_message = str(e)
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.ERROR,
+                "status": ControllerStatus.ERROR.value,
                 "error": str(e),
             })
             raise
@@ -474,7 +509,7 @@ class ChatControllerService:
             await self._execution_controller.pause()
             self._status = ControllerStatus.PAUSED
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.PAUSED,
+                "status": ControllerStatus.PAUSED.value,
                 "controller_id": self._controller_id,
             })
     
@@ -484,7 +519,7 @@ class ChatControllerService:
             await self._execution_controller.resume()
             self._status = ControllerStatus.RUNNING
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.RUNNING,
+                "status": ControllerStatus.RUNNING.value,
                 "controller_id": self._controller_id,
             })
     
@@ -494,7 +529,7 @@ class ChatControllerService:
             await self._execution_controller.stop()
             self._status = ControllerStatus.CONNECTED
             self._emit("chat:controller_status", {
-                "status": ControllerStatus.CONNECTED,
+                "status": ControllerStatus.CONNECTED.value,
                 "controller_id": self._controller_id,
             })
     
@@ -502,13 +537,97 @@ class ChatControllerService:
         """Disconnect the controller completely."""
         if self._execution_controller:
             await self._execution_controller.stop()
+            
+            if self._controller_id:
+                worker_id = f"chat-{self._controller_id}"
+                
+                # Unbind chat panel first
+                try:
+                    from services.execution.worker_registry import get_worker_registry
+                    registry = get_worker_registry()
+                    registry.unbind_panel("chat_panel")
+                except Exception as e:
+                    logger.debug(f"Failed to unbind chat panel: {e}")
+                
+                # Unregister from WorkerRegistry
+                try:
+                    from services.execution.worker_registry import get_worker_registry
+                    registry = get_worker_registry()
+                    registry.unregister_worker(worker_id)
+                except Exception as e:
+                    logger.warning(f"Failed to unregister from WorkerRegistry: {e}")
+                
+                # Unregister from legacy WorkerManager
+                try:
+                    from services.execution.worker_manager import get_worker_manager
+                    wm = get_worker_manager()
+                    wm.unregister_worker(worker_id)
+                except Exception as e:
+                    logger.debug(f"Legacy WorkerManager unregister skipped: {e}")
+            
             self._execution_controller = None
         
         self._controller_id = None
         self._controller_info = None
         self._status = ControllerStatus.DISCONNECTED
         self._current_flow_index = None
-        self._emit("chat:controller_status", {"status": ControllerStatus.DISCONNECTED})
+        self._placeholder_mode = False
+        self._emit("chat:controller_status", {"status": ControllerStatus.DISCONNECTED.value})
+    
+    # =========================================================================
+    # Placeholder Mode
+    # =========================================================================
+    
+    @property
+    def is_placeholder_mode(self) -> bool:
+        """Check if using placeholder/demo responses."""
+        return self._placeholder_mode
+    
+    async def start_placeholder_mode(self) -> Dict[str, Any]:
+        """
+        Start placeholder mode for demo responses.
+        
+        Use this when no controller is available or for demos.
+        """
+        self._placeholder_mode = True
+        self._status = ControllerStatus.CONNECTED
+        self._controller_id = "placeholder"
+        
+        # Get placeholder controller info from registry
+        placeholder_info = self._registry_service.get_controller("placeholder")
+        if placeholder_info:
+            self._controller_info = placeholder_info
+        else:
+            # Fallback if not in registry
+            self._controller_info = ControllerInfo(
+                project_id="placeholder",
+                name="Demo Assistant",
+                path="",
+                description="Helpful demo responses about NormCode (no execution)",
+                is_builtin=True,
+            )
+        
+        self._emit("chat:controller_status", {
+            "status": ControllerStatus.CONNECTED.value,
+            "controller_id": "placeholder",
+            "controller_name": self._controller_info.name,
+            "controller_path": "",  # Placeholder has no path
+            "placeholder_mode": True,
+        })
+        
+        # Add welcome message
+        self.add_message(
+            role="controller",
+            content=self._placeholder_service.get_welcome_message()
+        )
+        
+        logger.info("Started placeholder mode")
+        return self.get_state()
+    
+    def _handle_placeholder_response(self, content: str):
+        """Generate and add a placeholder response."""
+        response = self._placeholder_service.generate_response(content)
+        self.add_message(role="controller", content=response)
     
     # =========================================================================
     # Message Handling
@@ -520,11 +639,18 @@ class ChatControllerService:
         
         The message is:
         1. Added to history
-        2. If controller is running with pending input, message is delivered
-        3. Otherwise, buffered for the controller to read
+        2. If in placeholder mode, generate demo response
+        3. If controller is running with pending input, message is delivered
+        4. Otherwise, buffered for the controller to read
+        5. If disconnected, auto-start placeholder mode for graceful degradation
         """
         # Add user message to history
         message = self.add_message("user", content, metadata)
+        
+        # If in placeholder mode, generate demo response
+        if self._placeholder_mode:
+            self._handle_placeholder_response(content)
+            return message
         
         # If there's a pending input request, fulfill it
         if self._chat_tool and self._chat_tool.has_pending_request():
@@ -544,12 +670,31 @@ class ChatControllerService:
                     logger.info("Message buffered for controller")
                 return message
         
-        # If controller is not running, start it
+        # If controller is connected but not running, start it
         if self._status == ControllerStatus.CONNECTED:
             await self.start()
             # Buffer the message for the newly started controller
             if self._chat_tool:
                 self._chat_tool.buffer_message(content)
+            return message
+        
+        # If disconnected and no controller available, use placeholder mode
+        if self._status == ControllerStatus.DISCONNECTED:
+            default_id = self._registry_service.get_default_controller_id()
+            if default_id:
+                try:
+                    await self.select_controller(default_id)
+                    await self.start()
+                    if self._chat_tool:
+                        self._chat_tool.buffer_message(content)
+                except Exception as e:
+                    logger.warning(f"Failed to start default controller, using placeholder: {e}")
+                    await self.start_placeholder_mode()
+                    self._handle_placeholder_response(content)
+            else:
+                # No controllers available, use placeholder
+                await self.start_placeholder_mode()
+                self._handle_placeholder_response(content)
         
         return message
     
@@ -610,4 +755,3 @@ def get_chat_controller_service() -> ChatControllerService:
 def get_compiler_service():
     """Backward compatibility alias for get_chat_controller_service."""
     return get_chat_controller_service()
-

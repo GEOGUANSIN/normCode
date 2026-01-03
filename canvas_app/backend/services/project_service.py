@@ -453,6 +453,17 @@ class ProjectService:
             self.current_project_path is not None and
             not self._tabs_service.is_project_open(self.current_config.id)):
             
+            # Check if the project was already loaded (has ExecutionController with orchestrator)
+            current_is_loaded = False
+            try:
+                from services.execution_service import execution_controller_registry
+                if execution_controller_registry.has_controller(self.current_config.id):
+                    from services.execution_service import get_execution_controller
+                    controller = get_execution_controller(self.current_config.id)
+                    current_is_loaded = controller.orchestrator is not None
+            except Exception as e:
+                logger.debug(f"Could not check loaded state: {e}")
+            
             self._tabs_service.add_project_tab(
                 project_id=self.current_config.id,
                 name=self.current_config.name,
@@ -462,8 +473,9 @@ class ProjectService:
                 repositories_exist=self.check_repositories_exist(),
                 make_active=False,
                 is_read_only=False,
+                is_loaded=current_is_loaded,
             )
-            logger.info(f"Added existing project '{self.current_config.name}' to tabs (id={self.current_config.id})")
+            logger.info(f"Added existing project '{self.current_config.name}' to tabs (id={self.current_config.id}, is_loaded={current_is_loaded})")
         
         # Open the project using existing logic
         config, config_filename = self.open_project(

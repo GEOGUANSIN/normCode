@@ -1,0 +1,508 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Canvas Command Schema",
+  "description": "Schema for NormCode Canvas application commands. These commands control the graph canvas, execution, and allow querying project state.",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "create_node",
+        "delete_node",
+        "move_node",
+        "edit_node",
+        "select_node",
+        "create_edge",
+        "delete_edge",
+        "edit_edge",
+        "zoom_in",
+        "zoom_out",
+        "fit_view",
+        "center_on",
+        "run",
+        "step",
+        "pause",
+        "stop",
+        "set_breakpoint",
+        "clear_breakpoint",
+        "save",
+        "load",
+        "load_repositories",
+        "export",
+        "import",
+        "help",
+        "status",
+        "undo",
+        "redo",
+        "quit",
+        "compile",
+        "validate",
+        "formalize",
+        "activate",
+        "clarify",
+        "chat",
+        "query_project",
+        "query_execution",
+        "query_graph",
+        "query_value",
+        "query_node",
+        "query_logs",
+        "explain"
+      ]
+    },
+    "params": {
+      "type": "object"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasoning": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "node_operations": {
+      "description": "Commands for creating, editing, and managing graph nodes",
+      "create_node": {
+        "description": "Create a new node on the canvas",
+        "usage": "create node [label] as [type]",
+        "examples": ["create node 'user input' as value", "create function node 'process data'"],
+        "params": {
+          "node_type": {
+            "type": "string",
+            "enum": ["value", "function", "context"],
+            "description": "The type of node: value (data), function (operation), or context"
+          },
+          "label": { 
+            "type": "string",
+            "description": "Display label for the node"
+          },
+          "concept_type": {
+            "type": "string",
+            "enum": ["object", "proposition", "relation", "imperative", "judgement"],
+            "description": "Semantic category of the concept"
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          }
+        }
+      },
+      "delete_node": {
+        "description": "Delete a node from the canvas",
+        "usage": "delete node [name or id]",
+        "examples": ["delete node 'user input'", "delete the process node"],
+        "params": {
+          "node_id": { "type": "string", "description": "Exact node ID" },
+          "node_hint": { "type": "string", "description": "Partial name or description to match" },
+          "force": { "type": "boolean", "default": false, "description": "Delete even if node has connections" }
+        }
+      },
+      "move_node": {
+        "description": "Move a node to a new position",
+        "usage": "move node [name] to [position]",
+        "examples": ["move 'output' to the right", "move node 1.3 down"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          },
+          "relative": { "type": "boolean", "default": false }
+        }
+      },
+      "edit_node": {
+        "description": "Edit a node's properties",
+        "usage": "edit node [name] [property] to [value]",
+        "examples": ["edit node 'result' label to 'final output'", "rename 'temp' to 'processed data'"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "label": { "type": "string", "description": "New label for the node" },
+          "properties": { "type": "object", "description": "Properties to update" }
+        }
+      },
+      "select_node": {
+        "description": "Select a node to view its details",
+        "usage": "select node [name or flow_index]",
+        "examples": ["select node 1.3", "show me the 'user intent' node", "click on output"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" }
+        }
+      }
+    },
+    "edge_operations": {
+      "description": "Commands for creating and managing connections between nodes",
+      "create_edge": {
+        "description": "Create a connection between two nodes",
+        "usage": "connect [source] to [target]",
+        "examples": ["connect 'input' to 'process'", "link user data to the function"],
+        "params": {
+          "source_id": { "type": "string" },
+          "target_id": { "type": "string" },
+          "source_hint": { "type": "string", "description": "Source node name or hint" },
+          "target_hint": { "type": "string", "description": "Target node name or hint" },
+          "edge_type": {
+            "type": "string",
+            "enum": ["value", "function", "context"],
+            "description": "Type of connection"
+          }
+        }
+      },
+      "delete_edge": {
+        "description": "Remove a connection between nodes",
+        "usage": "disconnect [source] from [target]",
+        "examples": ["disconnect 'input' from 'process'", "remove the link to output"],
+        "params": {
+          "edge_id": { "type": "string" },
+          "source_hint": { "type": "string" },
+          "target_hint": { "type": "string" }
+        }
+      }
+    },
+    "execution_operations": {
+      "description": "Commands for running and debugging the plan",
+      "run": {
+        "description": "Start or resume execution of the plan",
+        "usage": "run [from start]",
+        "examples": ["run", "run the plan", "start execution", "execute from beginning"],
+        "params": {
+          "from_start": { "type": "boolean", "default": true }
+        }
+      },
+      "step": {
+        "description": "Execute one inference at a time",
+        "usage": "step [count]",
+        "examples": ["step", "step once", "execute next node", "step 3 times"],
+        "params": {
+          "count": { "type": "integer", "default": 1 }
+        }
+      },
+      "pause": {
+        "description": "Pause execution",
+        "usage": "pause",
+        "examples": ["pause", "pause execution", "stop running"],
+        "params": {}
+      },
+      "stop": {
+        "description": "Stop execution completely",
+        "usage": "stop",
+        "examples": ["stop", "stop execution", "halt"],
+        "params": {}
+      },
+      "set_breakpoint": {
+        "description": "Set a breakpoint at a node",
+        "usage": "set breakpoint at [node]",
+        "examples": ["set breakpoint at 1.3", "break at 'output'", "add breakpoint on result"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "flow_index": { "type": "string", "description": "Flow index like 1.3.2" }
+        }
+      },
+      "clear_breakpoint": {
+        "description": "Remove a breakpoint",
+        "usage": "clear breakpoint [at node | all]",
+        "examples": ["clear breakpoint at 1.3", "remove all breakpoints", "clear breakpoint on output"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "flow_index": { "type": "string" },
+          "all": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "file_operations": {
+      "description": "Commands for saving and loading projects",
+      "save": {
+        "description": "Save the current project",
+        "usage": "save [to path] [as format]",
+        "examples": ["save", "save project", "save to myplan.ncds"],
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "json"]
+          }
+        }
+      },
+      "load": {
+        "description": "Load a project from file",
+        "usage": "load [path]",
+        "examples": ["load myplan.ncds", "open project.json"],
+        "params": {
+          "path": { "type": "string" }
+        }
+      },
+      "load_repositories": {
+        "description": "Load the repositories for the current project (equivalent to clicking the Load button)",
+        "usage": "load repositories | load repos",
+        "examples": ["load the repository", "load repos", "load repositories for me", "initialize the project"],
+        "params": {}
+      },
+      "export": {
+        "description": "Export the graph to a file",
+        "usage": "export [to path] [as format]",
+        "examples": ["export as png", "export to graph.svg"],
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "ncn", "ncdn", "json", "png", "svg"]
+          }
+        }
+      },
+      "import": {
+        "description": "Import a plan from file",
+        "usage": "import [path]",
+        "examples": ["import plan.ncds", "import from draft.json"],
+        "params": {
+          "path": { "type": "string" },
+          "format": {
+            "type": "string",
+            "enum": ["ncd", "ncds", "json"]
+          }
+        }
+      }
+    },
+    "query_operations": {
+      "description": "Commands for querying project state, execution status, and data values",
+      "query_project": {
+        "description": "Get information about the loaded project",
+        "usage": "query project | what project is loaded | show project info",
+        "examples": ["what project is loaded?", "show project info", "tell me about this project"],
+        "params": {}
+      },
+      "query_execution": {
+        "description": "Get the current execution state",
+        "usage": "query execution | what is running | show execution state",
+        "examples": ["what's the execution status?", "how many nodes completed?", "is it running?"],
+        "params": {}
+      },
+      "query_graph": {
+        "description": "Get a summary of the graph structure",
+        "usage": "query graph | describe the graph | what concepts exist",
+        "examples": ["describe the graph", "what concepts are there?", "show me the structure"],
+        "params": {}
+      },
+      "query_value": {
+        "description": "Get the current value of a specific concept",
+        "usage": "query value [concept_name] | what is the value of [concept]",
+        "examples": ["what is the value of 'user input'?", "show me the output value", "get value of result"],
+        "params": {
+          "concept_name": { 
+            "type": "string", 
+            "description": "Name of the concept to query" 
+          }
+        }
+      },
+      "query_node": {
+        "description": "Get detailed information about a specific node",
+        "usage": "query node [flow_index] | tell me about node [flow_index]",
+        "examples": ["tell me about node 1.3", "what does inference 1.2.4 do?", "explain node 1"],
+        "params": {
+          "flow_index": { 
+            "type": "string", 
+            "description": "Flow index of the node (e.g., 1.3.2)" 
+          }
+        }
+      },
+      "query_logs": {
+        "description": "Get recent execution logs",
+        "usage": "query logs | show logs | what happened",
+        "examples": ["show me the logs", "what happened recently?", "show execution history"],
+        "params": {
+          "limit": { 
+            "type": "integer", 
+            "default": 20,
+            "description": "Maximum number of log entries to return" 
+          },
+          "flow_index": { 
+            "type": "string", 
+            "description": "Filter logs by flow_index" 
+          }
+        }
+      },
+      "explain": {
+        "description": "Get comprehensive context for explaining the current state",
+        "usage": "explain | what's happening | summarize",
+        "examples": ["explain what's happening", "summarize the current state", "what is this project doing?"],
+        "params": {}
+      }
+    },
+    "view_operations": {
+      "description": "Commands for navigating and viewing the graph",
+      "zoom_in": {
+        "description": "Zoom in on the graph",
+        "usage": "zoom in",
+        "examples": ["zoom in", "make it bigger"],
+        "params": {}
+      },
+      "zoom_out": {
+        "description": "Zoom out of the graph",
+        "usage": "zoom out",
+        "examples": ["zoom out", "make it smaller"],
+        "params": {}
+      },
+      "fit_view": {
+        "description": "Fit the entire graph in view",
+        "usage": "fit view | show all",
+        "examples": ["fit view", "show all nodes", "zoom to fit"],
+        "params": {}
+      },
+      "center_on": {
+        "description": "Center view on a specific node",
+        "usage": "center on [node]",
+        "examples": ["center on 1.3", "focus on output", "go to result node"],
+        "params": {
+          "node_id": { "type": "string" },
+          "node_hint": { "type": "string" },
+          "flow_index": { "type": "string" }
+        }
+      }
+    },
+    "compilation_operations": {
+      "description": "Commands for compiling NormCode plans",
+      "compile": {
+        "description": "Compile the current draft plan",
+        "usage": "compile [target]",
+        "examples": ["compile", "compile to json", "compile the plan"],
+        "params": {
+          "target": {
+            "type": "string",
+            "enum": ["ncd", "json", "all"]
+          }
+        }
+      },
+      "validate": {
+        "description": "Validate the plan structure",
+        "usage": "validate [strict]",
+        "examples": ["validate", "check the plan", "validate strictly"],
+        "params": {
+          "strict": { "type": "boolean", "default": false }
+        }
+      },
+      "formalize": {
+        "description": "Formalize the draft into structured format",
+        "usage": "formalize",
+        "examples": ["formalize", "formalize the draft"],
+        "params": {}
+      },
+      "activate": {
+        "description": "Activate the plan into repositories",
+        "usage": "activate [output_dir]",
+        "examples": ["activate", "activate to repos/"],
+        "params": {
+          "output_dir": { "type": "string" }
+        }
+      }
+    },
+    "session_operations": {
+      "description": "Commands for session management and help",
+      "help": {
+        "description": "Show available commands and how to use them",
+        "usage": "help [topic]",
+        "examples": ["help", "help execution", "how do I run the plan?", "what can you do?"],
+        "params": {
+          "topic": {
+            "type": "string",
+            "enum": ["all", "nodes", "edges", "execution", "files", "query", "view", "compilation"],
+            "description": "Specific help topic"
+          }
+        }
+      },
+      "status": {
+        "description": "Show current status summary",
+        "usage": "status",
+        "examples": ["status", "show status", "what's the current state?"],
+        "params": {}
+      },
+      "undo": {
+        "description": "Undo the last action",
+        "usage": "undo",
+        "examples": ["undo", "undo last action"],
+        "params": {}
+      },
+      "redo": {
+        "description": "Redo the last undone action",
+        "usage": "redo",
+        "examples": ["redo", "redo last action"],
+        "params": {}
+      },
+      "quit": {
+        "description": "End the session",
+        "usage": "quit | exit | bye",
+        "examples": ["quit", "exit", "bye", "goodbye", "end session"],
+        "params": {}
+      },
+      "clarify": {
+        "description": "Request clarification from the user",
+        "usage": "(internal - used when command is ambiguous)",
+        "params": {}
+      },
+      "chat": {
+        "description": "General conversation (not a specific command)",
+        "usage": "(any general question or statement)",
+        "params": {
+          "message": { "type": "string" }
+        }
+      }
+    }
+  },
+  "help_text": {
+    "summary": "I can help you work with NormCode plans. Here are the main things you can do:",
+    "categories": {
+      "query": {
+        "title": "Query & Understand",
+        "commands": ["explain", "query_project", "query_execution", "query_graph", "query_value", "query_node", "query_logs"],
+        "description": "Ask about the project, execution state, concept values, or what a node does."
+      },
+      "execution": {
+        "title": "Run & Debug",
+        "commands": ["run", "step", "pause", "stop", "set_breakpoint", "clear_breakpoint"],
+        "description": "Execute the plan, step through it, or set breakpoints for debugging."
+      },
+      "graph": {
+        "title": "Edit Graph",
+        "commands": ["create_node", "delete_node", "edit_node", "select_node", "create_edge", "delete_edge"],
+        "description": "Create, edit, or delete nodes and edges in the graph."
+      },
+      "view": {
+        "title": "Navigate",
+        "commands": ["zoom_in", "zoom_out", "fit_view", "center_on"],
+        "description": "Zoom, pan, and navigate the graph view."
+      },
+      "files": {
+        "title": "Files",
+        "commands": ["save", "load", "export", "import"],
+        "description": "Save, load, import, or export projects."
+      },
+      "compilation": {
+        "title": "Compile",
+        "commands": ["compile", "validate", "formalize", "activate"],
+        "description": "Compile NormCode drafts into executable plans."
+      }
+    },
+    "examples": [
+      {"input": "What is this project?", "command": "query_project"},
+      {"input": "Run the plan", "command": "run"},
+      {"input": "What's the value of 'user input'?", "command": "query_value", "params": {"concept_name": "user input"}},
+      {"input": "Explain node 1.3", "command": "query_node", "params": {"flow_index": "1.3"}},
+      {"input": "Step through one node", "command": "step"},
+      {"input": "Set a breakpoint at 1.2", "command": "set_breakpoint", "params": {"flow_index": "1.2"}},
+      {"input": "Zoom to fit", "command": "fit_view"},
+      {"input": "What happened?", "command": "query_logs"}
+    ]
+  }
+}

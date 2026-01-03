@@ -48,6 +48,7 @@ export function useWebSocket() {
   // Chat store actions
   const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
   const setControllerStatus = useChatStore((s) => s.setControllerStatus);
+  const updateControllerInfo = useChatStore((s) => s.updateControllerInfo);
   const setInputRequest = useChatStore((s) => s.setInputRequest);
   const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
   const clearBuffer = useChatStore((s) => s.clearBuffer);
@@ -507,12 +508,16 @@ export function useWebSocket() {
 
         case 'chat:compiler_status':
         case 'chat:controller_status':
-          if (data.status) {
-            setControllerStatus(
-              data.status as 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error',
-              data.current_flow_index as string | undefined
-            );
-          }
+          // Update all controller info from the event
+          updateControllerInfo({
+            status: data.status as 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error' | undefined,
+            controller_id: data.controller_id as string | undefined,
+            controller_name: data.controller_name as string | undefined,
+            controller_path: data.controller_path as string | undefined,
+            current_flow_index: data.current_flow_index as string | undefined,
+            error: data.error as string | undefined,
+            placeholder_mode: data.placeholder_mode as boolean | undefined,
+          });
           break;
 
         case 'chat:input_request':

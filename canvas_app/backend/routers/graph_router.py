@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 
 from services.graph_service import graph_service
 from services.project_service import project_service
+from services.execution_service import get_execution_controller, execution_controller_registry
 from schemas.graph_schemas import GraphData, GraphNode
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,8 @@ async def reload_graph():
     """
     Reload the graph for the current project.
     
-    This is used when switching between project tabs to ensure the graph
-    matches the current project's repository files.
+    DEPRECATED: Use /graph/swap/{project_id} for tab switching instead.
+    This endpoint re-reads from disk and should only be used for actual file changes.
     """
     if not project_service.is_project_open:
         raise HTTPException(status_code=400, detail="No project is currently open")
@@ -39,14 +40,136 @@ async def reload_graph():
     
     try:
         paths = project_service.get_absolute_repo_paths()
+        project_id = project_service.current_config.id if project_service.current_config else None
         graph_service.load_from_files(
             paths['concepts'],
-            paths['inferences']
+            paths['inferences'],
+            project_id=project_id
         )
-        logger.info(f"Reloaded graph for project '{project_service.current_config.name}'")
+        logger.info(f"Reloaded graph from files for project '{project_service.current_config.name}'")
         return graph_service.current_graph
     except Exception as e:
         logger.exception(f"Failed to reload graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/swap/{project_id}", response_model=GraphData)
+async def swap_to_project_graph(project_id: str):
+    """
+    Swap to the cached graph for a specific project.
+    
+    This is used when switching tabs - it uses the cached graph data from
+    the ExecutionController instead of re-reading from disk files.
+    
+    If the project's controller doesn't have cached graph data, it will
+    fall back to loading from files.
+    
+    Args:
+        project_id: The project ID to swap to
+    """
+    logger.info(f"[swap] Request to swap to project {project_id}")
+    
+    # Check if the graph is already loaded for this project
+    current_project_id = graph_service.get_current_project_id()
+    logger.info(f"[swap] Current graph project_id={current_project_id}, requested={project_id}")
+    
+    if current_project_id == project_id and graph_service.current_graph is not None:
+        logger.info(f"[swap] Graph already loaded for project {project_id}, skipping swap")
+        return graph_service.current_graph
+    
+    # Try to get cached graph from ExecutionController (user project)
+    try:
+        has_controller = execution_controller_registry.has_controller(project_id)
+        logger.info(f"[swap] Has user controller for {project_id}: {has_controller}")
+        
+        if has_controller:
+            controller = get_execution_controller(project_id)
+            has_graph = getattr(controller, 'graph_data', None) is not None
+            logger.info(f"[swap] User controller has graph_data: {has_graph}")
+            
+            if has_graph:
+                # Use cached graph - no disk I/O needed!
+                graph_nodes = len(controller.graph_data.nodes) if hasattr(controller.graph_data, 'nodes') else 0
+                logger.info(f"[swap] Using cached graph from user controller ({graph_nodes} nodes)")
+                return graph_service.swap_to_cached(
+                    graph_data=controller.graph_data,
+                    concepts_data=getattr(controller, 'concepts_data', []) or [],
+                    inferences_data=getattr(controller, 'inferences_data', []) or [],
+                    project_id=project_id,
+                    layout_mode=graph_service.get_layout_mode()
+                )
+    except Exception as e:
+        logger.exception(f"[swap] Error checking user controller for project {project_id}: {e}")
+    
+    # Try to get cached graph from chat/assistant worker (for controller projects)
+    try:
+        from services.execution.worker_registry import get_worker_registry
+        registry = get_worker_registry()
+        
+        # Check for chat worker (e.g., "chat-canvas-assistant" for project "canvas-assistant")
+        chat_worker_id = f"chat-{project_id}"
+        chat_worker = registry.get_worker(chat_worker_id)
+        
+        logger.info(f"[swap] Checking chat worker {chat_worker_id}: exists={chat_worker is not None}")
+        
+        if chat_worker and chat_worker.controller:
+            has_graph = getattr(chat_worker.controller, 'graph_data', None) is not None
+            logger.info(f"[swap] Chat worker {chat_worker_id} has graph_data: {has_graph}")
+            
+            if has_graph:
+                graph_nodes = len(chat_worker.controller.graph_data.nodes) if hasattr(chat_worker.controller.graph_data, 'nodes') else 0
+                logger.info(f"[swap] Using cached graph from chat worker {chat_worker_id} ({graph_nodes} nodes)")
+                return graph_service.swap_to_cached(
+                    graph_data=chat_worker.controller.graph_data,
+                    concepts_data=getattr(chat_worker.controller, 'concepts_data', []) or [],
+                    inferences_data=getattr(chat_worker.controller, 'inferences_data', []) or [],
+                    project_id=project_id,
+                    layout_mode=graph_service.get_layout_mode()
+                )
+    except Exception as e:
+        logger.exception(f"[swap] Error checking chat worker for project {project_id}: {e}")
+    
+    # Fall back to loading from files if no cached data
+    logger.info(f"No cached graph for project {project_id}, attempting to load from files")
+    
+    if not project_service.is_project_open:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"No project is currently open. Cannot load graph for project {project_id}."
+        )
+    
+    # IMPORTANT: Only load from files if the current project matches the requested project
+    # Otherwise we'd be loading the wrong project's files
+    current_project = project_service.current_config
+    if current_project and current_project.id != project_id:
+        # The requested project is different from the current project
+        # This can happen for chat controller projects that aren't the "current" user project
+        logger.warning(
+            f"[swap] Requested project {project_id} differs from current project {current_project.id}. "
+            f"No cached graph available for {project_id}."
+        )
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No cached graph available for project {project_id}. "
+                   f"The project may need to be loaded first."
+        )
+    
+    if not project_service.check_repositories_exist():
+        raise HTTPException(
+            status_code=404,
+            detail="Repository files not found for current project"
+        )
+    
+    try:
+        paths = project_service.get_absolute_repo_paths()
+        graph_service.load_from_files(
+            paths['concepts'],
+            paths['inferences'],
+            project_id=project_id
+        )
+        return graph_service.current_graph
+    except Exception as e:
+        logger.exception(f"Failed to load graph for project {project_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
