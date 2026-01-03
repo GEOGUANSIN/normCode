@@ -12,12 +12,6 @@
       "attached_comments": [
         {
           "flow_index": "1",
-          "type": "inline_comment",
-          "depth": 0,
-          "nc_comment": "?{flow_index}: 1"
-        },
-        {
-          "flow_index": "1",
           "type": "comment",
           "depth": 1,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -45,14 +39,7 @@
       "concept_type": "operator",
       "operator_type": "specification",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.1",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.1 | ?{sequence}: assigning"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
@@ -65,12 +52,6 @@
         "operator_type": null,
         "concept_name": "derivation complete",
         "attached_comments": [
-          {
-            "flow_index": "1.2",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.2"
-          },
           {
             "flow_index": "1.2",
             "type": "comment",
@@ -103,12 +84,6 @@
         "attached_comments": [
           {
             "flow_index": "1.3",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.3"
-          },
-          {
-            "flow_index": "1.3",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -137,12 +112,6 @@
         "operator_type": null,
         "concept_name": "phase 4 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.4",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.4"
-          },
           {
             "flow_index": "1.4",
             "type": "comment",
@@ -175,12 +144,6 @@
         "attached_comments": [
           {
             "flow_index": "1.5",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.5"
-          },
-          {
-            "flow_index": "1.5",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -209,12 +172,6 @@
         "operator_type": null,
         "concept_name": "phase 3 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.6",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.6"
-          },
           {
             "flow_index": "1.6",
             "type": "comment",
@@ -247,12 +204,6 @@
         "attached_comments": [
           {
             "flow_index": "1.7",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.7"
-          },
-          {
-            "flow_index": "1.7",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -281,12 +232,6 @@
         "operator_type": null,
         "concept_name": "phase 2 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.8",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.8"
-          },
           {
             "flow_index": "1.8",
             "type": "comment",
@@ -319,12 +264,6 @@
         "attached_comments": [
           {
             "flow_index": "1.9",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.9"
-          },
-          {
-            "flow_index": "1.9",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -353,12 +292,6 @@
         "operator_type": null,
         "concept_name": "phase 1 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.10",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.10"
-          },
           {
             "flow_index": "1.10",
             "type": "comment",
@@ -391,12 +324,6 @@
         "attached_comments": [
           {
             "flow_index": "1.11",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.11"
-          },
-          {
-            "flow_index": "1.11",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -425,12 +352,6 @@
         "operator_type": null,
         "concept_name": "raw instruction content",
         "attached_comments": [
-          {
-            "flow_index": "1.12",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.12"
-          },
           {
             "flow_index": "1.12",
             "type": "comment",
@@ -463,12 +384,6 @@
         "attached_comments": [
           {
             "flow_index": "1.13",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.13"
-          },
-          {
-            "flow_index": "1.13",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -497,12 +412,6 @@
         "operator_type": null,
         "concept_name": "instruction file path",
         "attached_comments": [
-          {
-            "flow_index": "1.14",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.14"
-          },
           {
             "flow_index": "1.14",
             "type": "comment",
@@ -539,12 +448,6 @@
         "operator_type": null,
         "concept_name": "refinement questions file path",
         "attached_comments": [
-          {
-            "flow_index": "1.15",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.15"
-          },
           {
             "flow_index": "1.15",
             "type": "comment",
@@ -589,12 +492,6 @@
         "attached_comments": [
           {
             "flow_index": "1.16",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.16"
-          },
-          {
-            "flow_index": "1.16",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -629,12 +526,6 @@
         "operator_type": null,
         "concept_name": "refined instruction file path",
         "attached_comments": [
-          {
-            "flow_index": "1.17",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.17"
-          },
           {
             "flow_index": "1.17",
             "type": "comment",
@@ -673,12 +564,6 @@
         "attached_comments": [
           {
             "flow_index": "1.18",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.18"
-          },
-          {
-            "flow_index": "1.18",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -713,12 +598,6 @@
         "operator_type": null,
         "concept_name": "classifications file path",
         "attached_comments": [
-          {
-            "flow_index": "1.19",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.19"
-          },
           {
             "flow_index": "1.19",
             "type": "comment",
@@ -757,12 +636,6 @@
         "attached_comments": [
           {
             "flow_index": "1.20",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.20"
-          },
-          {
-            "flow_index": "1.20",
             "type": "comment",
             "depth": 2,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -797,12 +670,6 @@
         "operator_type": null,
         "concept_name": "output file path",
         "attached_comments": [
-          {
-            "flow_index": "1.21",
-            "type": "inline_comment",
-            "depth": 1,
-            "nc_comment": "?{flow_index}: 1.21"
-          },
           {
             "flow_index": "1.21",
             "type": "comment",
@@ -845,12 +712,6 @@
       "attached_comments": [
         {
           "flow_index": "1.2",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.2"
-        },
-        {
-          "flow_index": "1.2",
           "type": "comment",
           "depth": 2,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -881,12 +742,6 @@
       "attached_comments": [
         {
           "flow_index": "1.2.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.2.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal"
@@ -913,7 +768,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.2.1.1",
+        "flow_index": "1.2.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}<:{1}>",
@@ -923,19 +778,13 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.2.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.2.1.1"
-          },
-          {
-            "flow_index": "1.2.1.1",
+            "flow_index": "1.2.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.2.1.1",
+            "flow_index": "1.2.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -943,7 +792,7 @@
         ]
       },
       {
-        "flow_index": "1.2.1.2",
+        "flow_index": "1.2.3",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {ncds output written}<:{2}>",
@@ -953,19 +802,13 @@
         "concept_name": "ncds output written",
         "attached_comments": [
           {
-            "flow_index": "1.2.1.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.2.1.2"
-          },
-          {
-            "flow_index": "1.2.1.2",
+            "flow_index": "1.2.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.2.1.2",
+            "flow_index": "1.2.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -986,12 +829,6 @@
       "operator_type": null,
       "concept_name": "ncds output written",
       "attached_comments": [
-        {
-          "flow_index": "1.3",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.3"
-        },
         {
           "flow_index": "1.3",
           "type": "comment",
@@ -1022,12 +859,6 @@
       "operator_type": null,
       "concept_name": "write ncds file to output path",
       "attached_comments": [
-        {
-          "flow_index": "1.3.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.3.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.3.1",
           "type": "comment",
@@ -1067,12 +898,6 @@
         "attached_comments": [
           {
             "flow_index": "1.3.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.3.2"
-          },
-          {
-            "flow_index": "1.3.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -1095,12 +920,6 @@
         "operator_type": null,
         "concept_name": "ncds content",
         "attached_comments": [
-          {
-            "flow_index": "1.3.3",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.3.3"
-          },
           {
             "flow_index": "1.3.3",
             "type": "comment",
@@ -1133,12 +952,6 @@
         "attached_comments": [
           {
             "flow_index": "1.3.4",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.3.4"
-          },
-          {
-            "flow_index": "1.3.4",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -1167,12 +980,6 @@
         "operator_type": null,
         "concept_name": "phase 4 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.3.5",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.3.5"
-          },
           {
             "flow_index": "1.3.5",
             "type": "comment",
@@ -1209,12 +1016,6 @@
       "attached_comments": [
         {
           "flow_index": "1.3.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.3.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.3.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal"
@@ -1248,14 +1049,7 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.3.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.3.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
@@ -1269,12 +1063,6 @@
         "operator_type": null,
         "concept_name": "phase 5 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.3.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.3.1.2"
-          },
           {
             "flow_index": "1.3.1.2",
             "type": "comment",
@@ -1296,12 +1084,6 @@
       "operator_type": null,
       "concept_name": "ncds content",
       "attached_comments": [
-        {
-          "flow_index": "1.3.3",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.3.3"
-        },
         {
           "flow_index": "1.3.3",
           "type": "comment",
@@ -1332,12 +1114,6 @@
       "operator_type": null,
       "concept_name": "serialize dependency tree to ncds text format",
       "attached_comments": [
-        {
-          "flow_index": "1.3.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.3.3.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.3.3.1",
           "type": "comment",
@@ -1378,7 +1154,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.3.3.1.1",
+        "flow_index": "1.3.3.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {dependency tree}",
@@ -1388,19 +1164,13 @@
         "concept_name": "dependency tree",
         "attached_comments": [
           {
-            "flow_index": "1.3.3.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.3.3.1.1"
-          },
-          {
-            "flow_index": "1.3.3.1.1",
+            "flow_index": "1.3.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.3.3.1.1",
+            "flow_index": "1.3.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: dict(root: str, nodes: dict)"
@@ -1421,12 +1191,6 @@
       "operator_type": null,
       "concept_name": "phase 5 already complete",
       "attached_comments": [
-        {
-          "flow_index": "1.3.4",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.3.4"
-        },
         {
           "flow_index": "1.3.4",
           "type": "comment",
@@ -1459,12 +1223,6 @@
       "attached_comments": [
         {
           "flow_index": "1.3.4.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.3.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.3.4.1",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean"
@@ -1491,7 +1249,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.3.4.1.1",
+        "flow_index": "1.3.4.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {current progress}",
@@ -1501,19 +1259,13 @@
         "concept_name": "current progress",
         "attached_comments": [
           {
-            "flow_index": "1.3.4.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.3.4.1.1"
-          },
-          {
-            "flow_index": "1.3.4.1.1",
+            "flow_index": "1.3.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.3.4.1.1",
+            "flow_index": "1.3.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -1534,12 +1286,6 @@
       "operator_type": null,
       "concept_name": "phase 4 complete",
       "attached_comments": [
-        {
-          "flow_index": "1.4",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.4"
-        },
         {
           "flow_index": "1.4",
           "type": "comment",
@@ -1572,12 +1318,6 @@
       "attached_comments": [
         {
           "flow_index": "1.4.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.4.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.4.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal"
@@ -1604,7 +1344,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.4.1.1",
+        "flow_index": "1.4.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}<:{1}>",
@@ -1614,19 +1354,13 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.4.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.4.1.1"
-          },
-          {
-            "flow_index": "1.4.1.1",
+            "flow_index": "1.4.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.4.1.1",
+            "flow_index": "1.4.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -1634,7 +1368,7 @@
         ]
       },
       {
-        "flow_index": "1.4.1.2",
+        "flow_index": "1.4.3",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {tree file written}<:{2}>",
@@ -1644,19 +1378,13 @@
         "concept_name": "tree file written",
         "attached_comments": [
           {
-            "flow_index": "1.4.1.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.4.1.2"
-          },
-          {
-            "flow_index": "1.4.1.2",
+            "flow_index": "1.4.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.4.1.2",
+            "flow_index": "1.4.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -1677,12 +1405,6 @@
       "operator_type": null,
       "concept_name": "tree file written",
       "attached_comments": [
-        {
-          "flow_index": "1.5",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.5"
-        },
         {
           "flow_index": "1.5",
           "type": "comment",
@@ -1713,12 +1435,6 @@
       "operator_type": null,
       "concept_name": "write dependency tree to checkpoint file",
       "attached_comments": [
-        {
-          "flow_index": "1.5.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.5.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.5.1",
           "type": "comment",
@@ -1758,12 +1474,6 @@
         "attached_comments": [
           {
             "flow_index": "1.5.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.5.2"
-          },
-          {
-            "flow_index": "1.5.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -1786,12 +1496,6 @@
         "operator_type": null,
         "concept_name": "dependency tree",
         "attached_comments": [
-          {
-            "flow_index": "1.5.3",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.5.3"
-          },
           {
             "flow_index": "1.5.3",
             "type": "comment",
@@ -1824,12 +1528,6 @@
         "attached_comments": [
           {
             "flow_index": "1.5.4",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.5.4"
-          },
-          {
-            "flow_index": "1.5.4",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -1858,12 +1556,6 @@
         "operator_type": null,
         "concept_name": "phase 3 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.5.5",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.5.5"
-          },
           {
             "flow_index": "1.5.5",
             "type": "comment",
@@ -1900,12 +1592,6 @@
       "attached_comments": [
         {
           "flow_index": "1.5.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.5.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.5.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal"
@@ -1939,14 +1625,7 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.5.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
@@ -1960,12 +1639,6 @@
         "operator_type": null,
         "concept_name": "phase 4 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.5.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.5.1.2"
-          },
           {
             "flow_index": "1.5.1.2",
             "type": "comment",
@@ -1987,12 +1660,6 @@
       "operator_type": null,
       "concept_name": "dependency tree",
       "attached_comments": [
-        {
-          "flow_index": "1.5.3",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.5.3"
-        },
         {
           "flow_index": "1.5.3",
           "type": "comment",
@@ -2023,12 +1690,6 @@
       "operator_type": null,
       "concept_name": "construct tree from classifications and extractions",
       "attached_comments": [
-        {
-          "flow_index": "1.5.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.3.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.5.3.1",
           "type": "comment",
@@ -2069,7 +1730,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.5.3.1.1",
+        "flow_index": "1.5.3.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {final output concept}<:{1}>",
@@ -2079,25 +1740,19 @@
         "concept_name": "final output concept",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.5.3.1.1"
-          },
-          {
-            "flow_index": "1.5.3.1.1",
+            "flow_index": "1.5.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.3.1.1",
+            "flow_index": "1.5.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.5.3.1.1",
+            "flow_index": "1.5.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -2105,7 +1760,7 @@
         ]
       },
       {
-        "flow_index": "1.5.3.1.2",
+        "flow_index": "1.5.3.3",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {classified operations}<:{2}>",
@@ -2115,25 +1770,19 @@
         "concept_name": "classified operations",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.5.3.1.2"
-          },
-          {
-            "flow_index": "1.5.3.1.2",
+            "flow_index": "1.5.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.3.1.2",
+            "flow_index": "1.5.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.5.3.1.2",
+            "flow_index": "1.5.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: dict"
@@ -2141,7 +1790,7 @@
         ]
       },
       {
-        "flow_index": "1.5.3.1.3",
+        "flow_index": "1.5.3.4",
         "type": "main",
         "depth": 3,
         "nc_main": "<- [all dependencies]<:{3}>",
@@ -2151,25 +1800,19 @@
         "concept_name": "all dependencies",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.3",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.5.3.1.3"
-          },
-          {
-            "flow_index": "1.5.3.1.3",
+            "flow_index": "1.5.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [dependency]"
           },
           {
-            "flow_index": "1.5.3.1.3",
+            "flow_index": "1.5.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (n_dependency,)"
           },
           {
-            "flow_index": "1.5.3.1.3",
+            "flow_index": "1.5.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: dict(source: str, target: str)"
@@ -2181,7 +1824,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.5.3.1.1",
+      "flow_index": "1.5.3.2",
       "type": "main",
       "depth": 3,
       "nc_main": "<- {final output concept}<:{1}>",
@@ -2191,25 +1834,19 @@
       "concept_name": "final output concept",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.3.1.1"
-        },
-        {
-          "flow_index": "1.5.3.1.1",
+          "flow_index": "1.5.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.5.3.1.1",
+          "flow_index": "1.5.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.5.3.1.1",
+          "flow_index": "1.5.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: str"
@@ -2217,7 +1854,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.5.3.1.1.1",
+      "flow_index": "1.5.3.2.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(identify goal from extraction data)",
@@ -2227,43 +1864,37 @@
       "concept_name": "identify goal from extraction data",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.5.3.1.1.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_4/identify_goal.md"
         },
         {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.5.3.1.1.1",
+          "flow_index": "1.5.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -2272,7 +1903,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.5.3.1.1.1.1",
+        "flow_index": "1.5.3.2.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {extraction data}",
@@ -2282,19 +1913,13 @@
         "concept_name": "extraction data",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.1.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.5.3.1.1.1.1"
-          },
-          {
-            "flow_index": "1.5.3.1.1.1.1",
+            "flow_index": "1.5.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.3.1.1.1.1",
+            "flow_index": "1.5.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)"
@@ -2306,7 +1931,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.5.3.1.2",
+      "flow_index": "1.5.3.3",
       "type": "main",
       "depth": 3,
       "nc_main": "<- {classified operations}<:{2}>",
@@ -2316,25 +1941,19 @@
       "concept_name": "classified operations",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.2",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.3.1.2"
-        },
-        {
-          "flow_index": "1.5.3.1.2",
+          "flow_index": "1.5.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.5.3.1.2",
+          "flow_index": "1.5.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.5.3.1.2",
+          "flow_index": "1.5.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: dict"
@@ -2342,7 +1961,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.5.3.1.2.1",
+      "flow_index": "1.5.3.3.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(read classifications from checkpoint)",
@@ -2352,31 +1971,25 @@
       "concept_name": "read classifications from checkpoint",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.2.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.5.3.1.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.5.3.1.2.1",
+          "flow_index": "1.5.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadJsonFile-o_Struct"
         },
         {
-          "flow_index": "1.5.3.1.2.1",
+          "flow_index": "1.5.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.5.3.1.2.1",
+          "flow_index": "1.5.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: file_system"
         },
         {
-          "flow_index": "1.5.3.1.2.1",
+          "flow_index": "1.5.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: dict in memory"
@@ -2385,7 +1998,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.5.3.1.2.1.1",
+        "flow_index": "1.5.3.3.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {classifications file path}",
@@ -2395,19 +2008,13 @@
         "concept_name": "classifications file path",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.2.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.5.3.1.2.1.1"
-          },
-          {
-            "flow_index": "1.5.3.1.2.1.1",
+            "flow_index": "1.5.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.3.1.2.1.1",
+            "flow_index": "1.5.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -2419,7 +2026,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.5.3.1.3",
+      "flow_index": "1.5.3.4",
       "type": "main",
       "depth": 3,
       "nc_main": "<- [all dependencies]<:{3}>",
@@ -2429,25 +2036,19 @@
       "concept_name": "all dependencies",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.3",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.3.1.3"
-        },
-        {
-          "flow_index": "1.5.3.1.3",
+          "flow_index": "1.5.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [dependency]"
         },
         {
-          "flow_index": "1.5.3.1.3",
+          "flow_index": "1.5.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (n_dependency,)"
         },
         {
-          "flow_index": "1.5.3.1.3",
+          "flow_index": "1.5.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: dict(source: str, target: str)"
@@ -2455,7 +2056,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.5.3.1.3.1",
+      "flow_index": "1.5.3.4.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(extract dependencies from extraction data)",
@@ -2465,43 +2066,37 @@
       "concept_name": "extract dependencies from extraction data",
       "attached_comments": [
         {
-          "flow_index": "1.5.3.1.3.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.5.3.1.3.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_4/extract_dependencies.md"
         },
         {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.5.3.1.3.1",
+          "flow_index": "1.5.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -2510,7 +2105,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.5.3.1.3.1.1",
+        "flow_index": "1.5.3.4.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {extraction data}",
@@ -2520,19 +2115,13 @@
         "concept_name": "extraction data",
         "attached_comments": [
           {
-            "flow_index": "1.5.3.1.3.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.5.3.1.3.1.1"
-          },
-          {
-            "flow_index": "1.5.3.1.3.1.1",
+            "flow_index": "1.5.3.4.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.3.1.3.1.1",
+            "flow_index": "1.5.3.4.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: dict"
@@ -2553,12 +2142,6 @@
       "operator_type": null,
       "concept_name": "phase 4 already complete",
       "attached_comments": [
-        {
-          "flow_index": "1.5.4",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.5.4"
-        },
         {
           "flow_index": "1.5.4",
           "type": "comment",
@@ -2591,12 +2174,6 @@
       "attached_comments": [
         {
           "flow_index": "1.5.4.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.5.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.5.4.1",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean"
@@ -2623,7 +2200,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.5.4.1.1",
+        "flow_index": "1.5.4.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {current progress}",
@@ -2633,19 +2210,13 @@
         "concept_name": "current progress",
         "attached_comments": [
           {
-            "flow_index": "1.5.4.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.5.4.1.1"
-          },
-          {
-            "flow_index": "1.5.4.1.1",
+            "flow_index": "1.5.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.5.4.1.1",
+            "flow_index": "1.5.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -2666,12 +2237,6 @@
       "operator_type": null,
       "concept_name": "phase 3 complete",
       "attached_comments": [
-        {
-          "flow_index": "1.6",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.6"
-        },
         {
           "flow_index": "1.6",
           "type": "comment",
@@ -2704,12 +2269,6 @@
       "attached_comments": [
         {
           "flow_index": "1.6.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.6.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.6.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal"
@@ -2736,7 +2295,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.6.1.1",
+        "flow_index": "1.6.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}<:{1}>",
@@ -2746,19 +2305,13 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.6.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.6.1.1"
-          },
-          {
-            "flow_index": "1.6.1.1",
+            "flow_index": "1.6.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.6.1.1",
+            "flow_index": "1.6.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -2766,7 +2319,7 @@
         ]
       },
       {
-        "flow_index": "1.6.1.2",
+        "flow_index": "1.6.3",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {classifications file written}<:{2}>",
@@ -2776,19 +2329,13 @@
         "concept_name": "classifications file written",
         "attached_comments": [
           {
-            "flow_index": "1.6.1.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.6.1.2"
-          },
-          {
-            "flow_index": "1.6.1.2",
+            "flow_index": "1.6.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.6.1.2",
+            "flow_index": "1.6.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -2809,12 +2356,6 @@
       "operator_type": null,
       "concept_name": "classifications file written",
       "attached_comments": [
-        {
-          "flow_index": "1.7",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.7"
-        },
         {
           "flow_index": "1.7",
           "type": "comment",
@@ -2845,12 +2386,6 @@
       "operator_type": null,
       "concept_name": "write classifications to checkpoint file",
       "attached_comments": [
-        {
-          "flow_index": "1.7.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.7.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.7.1",
           "type": "comment",
@@ -2890,12 +2425,6 @@
         "attached_comments": [
           {
             "flow_index": "1.7.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.7.2"
-          },
-          {
-            "flow_index": "1.7.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -2918,12 +2447,6 @@
         "operator_type": null,
         "concept_name": "all classifications",
         "attached_comments": [
-          {
-            "flow_index": "1.7.3",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.7.3"
-          },
           {
             "flow_index": "1.7.3",
             "type": "comment",
@@ -2956,12 +2479,6 @@
         "attached_comments": [
           {
             "flow_index": "1.7.4",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.7.4"
-          },
-          {
-            "flow_index": "1.7.4",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -2990,12 +2507,6 @@
         "operator_type": null,
         "concept_name": "phase 2 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.7.5",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.7.5"
-          },
           {
             "flow_index": "1.7.5",
             "type": "comment",
@@ -3032,12 +2543,6 @@
       "attached_comments": [
         {
           "flow_index": "1.7.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.7.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.7.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal"
@@ -3071,14 +2576,7 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.7.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.7.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
@@ -3092,12 +2590,6 @@
         "operator_type": null,
         "concept_name": "phase 3 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.7.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.7.1.2"
-          },
           {
             "flow_index": "1.7.1.2",
             "type": "comment",
@@ -3119,12 +2611,6 @@
       "operator_type": null,
       "concept_name": "all classifications",
       "attached_comments": [
-        {
-          "flow_index": "1.7.3",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.7.3"
-        },
         {
           "flow_index": "1.7.3",
           "type": "comment",
@@ -3154,14 +2640,7 @@
       "concept_type": "operator",
       "operator_type": "looping",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.7.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.7.3.1 | ?{sequence}: looping"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
@@ -3174,12 +2653,6 @@
         "operator_type": null,
         "concept_name": "extracted operations",
         "attached_comments": [
-          {
-            "flow_index": "1.7.3.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.7.3.2"
-          },
           {
             "flow_index": "1.7.3.2",
             "type": "comment",
@@ -3214,12 +2687,6 @@
         "attached_comments": [
           {
             "flow_index": "1.7.3.3",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.7.3.3"
-          },
-          {
-            "flow_index": "1.7.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -3244,14 +2711,7 @@
       "concept_type": "operator",
       "operator_type": "looping",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.7.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.7.3.1 | ?{sequence}: looping"
-        }
-      ]
+      "attached_comments": []
     },
     "function_concept": {
       "flow_index": "1.7.3.1.1",
@@ -3262,18 +2722,11 @@
       "concept_type": "operator",
       "operator_type": "specification",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.7.3.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.7.3.1.1 | ?{sequence}: assigning"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
-        "flow_index": "1.7.3.1.1.1",
+        "flow_index": "1.7.3.1.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {classification}",
@@ -3283,25 +2736,19 @@
         "concept_name": "classification",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.1.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.7.3.1.1.1"
-          },
-          {
-            "flow_index": "1.7.3.1.1.1",
+            "flow_index": "1.7.3.1.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.1.1.1",
+            "flow_index": "1.7.3.1.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.7.3.1.1.1",
+            "flow_index": "1.7.3.1.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: dict(pattern: str, context: str)"
@@ -3313,7 +2760,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.7.3.1.1.1",
+      "flow_index": "1.7.3.1.2",
       "type": "main",
       "depth": 4,
       "nc_main": "<- {classification}",
@@ -3323,25 +2770,19 @@
       "concept_name": "classification",
       "attached_comments": [
         {
-          "flow_index": "1.7.3.1.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.7.3.1.1.1"
-        },
-        {
-          "flow_index": "1.7.3.1.1.1",
+          "flow_index": "1.7.3.1.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.7.3.1.1.1",
+          "flow_index": "1.7.3.1.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.7.3.1.1.1",
+          "flow_index": "1.7.3.1.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_element}: dict(pattern: str, context: str)"
@@ -3349,7 +2790,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.7.3.1.1.1.1",
+      "flow_index": "1.7.3.1.2.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= ::(determine pattern type for operation)",
@@ -3359,43 +2800,37 @@
       "concept_name": "determine pattern type for operation",
       "attached_comments": [
         {
-          "flow_index": "1.7.3.1.1.1.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1",
+          "flow_index": "1.7.3.1.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{o_shape}: dict in memory"
@@ -3404,7 +2839,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.7.3.1.1.1.1.1",
+        "flow_index": "1.7.3.1.2.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<- {current operation}<:{1}>",
@@ -3414,19 +2849,13 @@
         "concept_name": "current operation",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.1.1.1.1.1",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.1"
-          },
-          {
-            "flow_index": "1.7.3.1.1.1.1.1",
+            "flow_index": "1.7.3.1.2.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.1.1.1.1.1",
+            "flow_index": "1.7.3.1.2.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_element}: str"
@@ -3434,7 +2863,7 @@
         ]
       },
       {
-        "flow_index": "1.7.3.1.1.1.1.2",
+        "flow_index": "1.7.3.1.2.3",
         "type": "main",
         "depth": 5,
         "nc_main": "<- {operation context}<:{2}>",
@@ -3444,25 +2873,19 @@
         "concept_name": "operation context",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.1.1.1.1.2",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.2"
-          },
-          {
-            "flow_index": "1.7.3.1.1.1.1.2",
+            "flow_index": "1.7.3.1.2.3",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.1.1.1.1.2",
+            "flow_index": "1.7.3.1.2.3",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.7.3.1.1.1.1.2",
+            "flow_index": "1.7.3.1.2.3",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_element}: dict"
@@ -3474,7 +2897,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.7.3.1.1.1.1.2",
+      "flow_index": "1.7.3.1.2.3",
       "type": "main",
       "depth": 5,
       "nc_main": "<- {operation context}<:{2}>",
@@ -3484,25 +2907,19 @@
       "concept_name": "operation context",
       "attached_comments": [
         {
-          "flow_index": "1.7.3.1.1.1.1.2",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.2"
-        },
-        {
-          "flow_index": "1.7.3.1.1.1.1.2",
+          "flow_index": "1.7.3.1.2.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2",
+          "flow_index": "1.7.3.1.2.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2",
+          "flow_index": "1.7.3.1.2.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_element}: dict"
@@ -3510,7 +2927,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.7.3.1.1.1.1.2.1",
+      "flow_index": "1.7.3.1.2.3.1",
       "type": "main",
       "depth": 6,
       "nc_main": "<= ::(gather context from extraction data)",
@@ -3520,43 +2937,37 @@
       "concept_name": "gather context from extraction data",
       "attached_comments": [
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
-          "type": "inline_comment",
-          "depth": 6,
-          "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.7.3.1.1.1.1.2.1",
+          "flow_index": "1.7.3.1.2.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{o_shape}: dict in memory"
@@ -3565,7 +2976,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.7.3.1.1.1.1.2.1.1",
+        "flow_index": "1.7.3.1.2.3.2",
         "type": "main",
         "depth": 6,
         "nc_main": "<- {current operation}<:{1}>",
@@ -3575,19 +2986,13 @@
         "concept_name": "current operation",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.1.1.1.1.2.1.1",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.2.1.1"
-          },
-          {
-            "flow_index": "1.7.3.1.1.1.1.2.1.1",
+            "flow_index": "1.7.3.1.2.3.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.1.1.1.1.2.1.1",
+            "flow_index": "1.7.3.1.2.3.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: str"
@@ -3595,7 +3000,7 @@
         ]
       },
       {
-        "flow_index": "1.7.3.1.1.1.1.2.1.2",
+        "flow_index": "1.7.3.1.2.3.3",
         "type": "main",
         "depth": 6,
         "nc_main": "<- {extraction data}<:{2}>",
@@ -3605,19 +3010,13 @@
         "concept_name": "extraction data",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.1.1.1.1.2.1.2",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.7.3.1.1.1.1.2.1.2"
-          },
-          {
-            "flow_index": "1.7.3.1.1.1.1.2.1.2",
+            "flow_index": "1.7.3.1.2.3.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.1.1.1.1.2.1.2",
+            "flow_index": "1.7.3.1.2.3.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: dict"
@@ -3638,12 +3037,6 @@
       "operator_type": null,
       "concept_name": "extracted operations",
       "attached_comments": [
-        {
-          "flow_index": "1.7.3.2",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.7.3.2"
-        },
         {
           "flow_index": "1.7.3.2",
           "type": "comment",
@@ -3676,12 +3069,6 @@
       "attached_comments": [
         {
           "flow_index": "1.7.3.2.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.7.3.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.7.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_Data-c_ExtractField-o_Literal"
@@ -3708,7 +3095,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.7.3.2.1.1",
+        "flow_index": "1.7.3.2.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {extraction data}",
@@ -3718,19 +3105,13 @@
         "concept_name": "extraction data",
         "attached_comments": [
           {
-            "flow_index": "1.7.3.2.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.7.3.2.1.1"
-          },
-          {
-            "flow_index": "1.7.3.2.1.1",
+            "flow_index": "1.7.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.3.2.1.1",
+            "flow_index": "1.7.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: dict"
@@ -3751,12 +3132,6 @@
       "operator_type": null,
       "concept_name": "phase 3 already complete",
       "attached_comments": [
-        {
-          "flow_index": "1.7.4",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.7.4"
-        },
         {
           "flow_index": "1.7.4",
           "type": "comment",
@@ -3789,12 +3164,6 @@
       "attached_comments": [
         {
           "flow_index": "1.7.4.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.7.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.7.4.1",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean"
@@ -3821,7 +3190,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.7.4.1.1",
+        "flow_index": "1.7.4.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {current progress}",
@@ -3831,19 +3200,13 @@
         "concept_name": "current progress",
         "attached_comments": [
           {
-            "flow_index": "1.7.4.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.7.4.1.1"
-          },
-          {
-            "flow_index": "1.7.4.1.1",
+            "flow_index": "1.7.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.7.4.1.1",
+            "flow_index": "1.7.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -3864,12 +3227,6 @@
       "operator_type": null,
       "concept_name": "phase 2 complete",
       "attached_comments": [
-        {
-          "flow_index": "1.8",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.8"
-        },
         {
           "flow_index": "1.8",
           "type": "comment",
@@ -3902,12 +3259,6 @@
       "attached_comments": [
         {
           "flow_index": "1.8.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.8.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.8.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal"
@@ -3934,7 +3285,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.8.1.1",
+        "flow_index": "1.8.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}<:{1}>",
@@ -3944,19 +3295,13 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.8.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.8.1.1"
-          },
-          {
-            "flow_index": "1.8.1.1",
+            "flow_index": "1.8.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.8.1.1",
+            "flow_index": "1.8.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -3964,7 +3309,7 @@
         ]
       },
       {
-        "flow_index": "1.8.1.2",
+        "flow_index": "1.8.3",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {extraction file written}<:{2}>",
@@ -3974,19 +3319,13 @@
         "concept_name": "extraction file written",
         "attached_comments": [
           {
-            "flow_index": "1.8.1.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.8.1.2"
-          },
-          {
-            "flow_index": "1.8.1.2",
+            "flow_index": "1.8.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.8.1.2",
+            "flow_index": "1.8.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -4007,12 +3346,6 @@
       "operator_type": null,
       "concept_name": "extraction file written",
       "attached_comments": [
-        {
-          "flow_index": "1.9",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.9"
-        },
         {
           "flow_index": "1.9",
           "type": "comment",
@@ -4043,12 +3376,6 @@
       "operator_type": null,
       "concept_name": "write extraction results to checkpoint file",
       "attached_comments": [
-        {
-          "flow_index": "1.9.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.9.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.9.1",
           "type": "comment",
@@ -4088,12 +3415,6 @@
         "attached_comments": [
           {
             "flow_index": "1.9.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.9.2"
-          },
-          {
-            "flow_index": "1.9.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -4116,12 +3437,6 @@
         "operator_type": null,
         "concept_name": "extraction data",
         "attached_comments": [
-          {
-            "flow_index": "1.9.3",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.9.3"
-          },
           {
             "flow_index": "1.9.3",
             "type": "comment",
@@ -4154,12 +3469,6 @@
         "attached_comments": [
           {
             "flow_index": "1.9.4",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.9.4"
-          },
-          {
-            "flow_index": "1.9.4",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -4188,12 +3497,6 @@
         "operator_type": null,
         "concept_name": "phase 1 complete",
         "attached_comments": [
-          {
-            "flow_index": "1.9.5",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.9.5"
-          },
           {
             "flow_index": "1.9.5",
             "type": "comment",
@@ -4230,12 +3533,6 @@
       "attached_comments": [
         {
           "flow_index": "1.9.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.9.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.9.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal"
@@ -4269,14 +3566,7 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.9.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
@@ -4290,12 +3580,6 @@
         "operator_type": null,
         "concept_name": "phase 2 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.9.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.1.2"
-          },
           {
             "flow_index": "1.9.1.2",
             "type": "comment",
@@ -4317,12 +3601,6 @@
       "operator_type": null,
       "concept_name": "extraction data",
       "attached_comments": [
-        {
-          "flow_index": "1.9.3",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.9.3"
-        },
         {
           "flow_index": "1.9.3",
           "type": "comment",
@@ -4352,18 +3630,11 @@
       "concept_type": "operator",
       "operator_type": "grouping",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.9.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.3.1 | ?{sequence}: grouping"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.3.1.1",
+        "flow_index": "1.9.3.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {extracted concepts}",
@@ -4373,25 +3644,19 @@
         "concept_name": "extracted concepts",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.3.1.1"
-          },
-          {
-            "flow_index": "1.9.3.1.1",
+            "flow_index": "1.9.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [concept]"
           },
           {
-            "flow_index": "1.9.3.1.1",
+            "flow_index": "1.9.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (n_concept,)"
           },
           {
-            "flow_index": "1.9.3.1.1",
+            "flow_index": "1.9.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -4399,7 +3664,7 @@
         ]
       },
       {
-        "flow_index": "1.9.3.1.2",
+        "flow_index": "1.9.3.3",
         "type": "main",
         "depth": 3,
         "nc_main": "<- [extracted operations]",
@@ -4409,25 +3674,19 @@
         "concept_name": "extracted operations",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.3.1.2"
-          },
-          {
-            "flow_index": "1.9.3.1.2",
+            "flow_index": "1.9.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [operation]"
           },
           {
-            "flow_index": "1.9.3.1.2",
+            "flow_index": "1.9.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (n_operation,)"
           },
           {
-            "flow_index": "1.9.3.1.2",
+            "flow_index": "1.9.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -4435,7 +3694,7 @@
         ]
       },
       {
-        "flow_index": "1.9.3.1.3",
+        "flow_index": "1.9.3.4",
         "type": "main",
         "depth": 3,
         "nc_main": "<- [extracted dependencies]",
@@ -4445,25 +3704,19 @@
         "concept_name": "extracted dependencies",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.3",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.3.1.3"
-          },
-          {
-            "flow_index": "1.9.3.1.3",
+            "flow_index": "1.9.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [dependency]"
           },
           {
-            "flow_index": "1.9.3.1.3",
+            "flow_index": "1.9.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (n_dependency,)"
           },
           {
-            "flow_index": "1.9.3.1.3",
+            "flow_index": "1.9.3.4",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: dict(source: str, target: str)"
@@ -4471,7 +3724,7 @@
         ]
       },
       {
-        "flow_index": "1.9.3.1.4",
+        "flow_index": "1.9.3.5",
         "type": "main",
         "depth": 3,
         "nc_main": "<- [extracted control patterns]",
@@ -4481,25 +3734,19 @@
         "concept_name": "extracted control patterns",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.4",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.3.1.4"
-          },
-          {
-            "flow_index": "1.9.3.1.4",
+            "flow_index": "1.9.3.5",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [pattern]"
           },
           {
-            "flow_index": "1.9.3.1.4",
+            "flow_index": "1.9.3.5",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (n_pattern,)"
           },
           {
-            "flow_index": "1.9.3.1.4",
+            "flow_index": "1.9.3.5",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: dict(type: str, context: str)"
@@ -4511,7 +3758,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.9.3.1.1",
+      "flow_index": "1.9.3.2",
       "type": "main",
       "depth": 3,
       "nc_main": "<- {extracted concepts}",
@@ -4521,25 +3768,19 @@
       "concept_name": "extracted concepts",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.3.1.1"
-        },
-        {
-          "flow_index": "1.9.3.1.1",
+          "flow_index": "1.9.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [concept]"
         },
         {
-          "flow_index": "1.9.3.1.1",
+          "flow_index": "1.9.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (n_concept,)"
         },
         {
-          "flow_index": "1.9.3.1.1",
+          "flow_index": "1.9.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: str"
@@ -4547,7 +3788,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.9.3.1.1.1",
+      "flow_index": "1.9.3.2.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(identify all nouns and data entities)",
@@ -4557,43 +3798,37 @@
       "concept_name": "identify all nouns and data entities",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.9.3.1.1.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md"
         },
         {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.9.3.1.1.1",
+          "flow_index": "1.9.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -4602,7 +3837,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.3.1.1.1.1",
+        "flow_index": "1.9.3.2.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined instruction content}",
@@ -4612,19 +3847,13 @@
         "concept_name": "refined instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.1.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.1.1.1"
-          },
-          {
-            "flow_index": "1.9.3.1.1.1.1",
+            "flow_index": "1.9.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.9.3.1.1.1.1",
+            "flow_index": "1.9.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -4636,7 +3865,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.9.3.1.2",
+      "flow_index": "1.9.3.3",
       "type": "main",
       "depth": 3,
       "nc_main": "<- [extracted operations]",
@@ -4646,25 +3875,19 @@
       "concept_name": "extracted operations",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.2",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.3.1.2"
-        },
-        {
-          "flow_index": "1.9.3.1.2",
+          "flow_index": "1.9.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [operation]"
         },
         {
-          "flow_index": "1.9.3.1.2",
+          "flow_index": "1.9.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (n_operation,)"
         },
         {
-          "flow_index": "1.9.3.1.2",
+          "flow_index": "1.9.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: str"
@@ -4672,7 +3895,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.9.3.1.2.1",
+      "flow_index": "1.9.3.3.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(identify all verbs and actions)",
@@ -4682,43 +3905,37 @@
       "concept_name": "identify all verbs and actions",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.2.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.9.3.1.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_operations.md"
         },
         {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.9.3.1.2.1",
+          "flow_index": "1.9.3.3.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -4727,7 +3944,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.3.1.2.1.1",
+        "flow_index": "1.9.3.3.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined instruction content}",
@@ -4737,19 +3954,13 @@
         "concept_name": "refined instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.2.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.2.1.1"
-          },
-          {
-            "flow_index": "1.9.3.1.2.1.1",
+            "flow_index": "1.9.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.9.3.1.2.1.1",
+            "flow_index": "1.9.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -4761,7 +3972,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.9.3.1.3",
+      "flow_index": "1.9.3.4",
       "type": "main",
       "depth": 3,
       "nc_main": "<- [extracted dependencies]",
@@ -4771,25 +3982,19 @@
       "concept_name": "extracted dependencies",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.3",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.3.1.3"
-        },
-        {
-          "flow_index": "1.9.3.1.3",
+          "flow_index": "1.9.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [dependency]"
         },
         {
-          "flow_index": "1.9.3.1.3",
+          "flow_index": "1.9.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (n_dependency,)"
         },
         {
-          "flow_index": "1.9.3.1.3",
+          "flow_index": "1.9.3.4",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: dict(source: str, target: str)"
@@ -4797,7 +4002,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.9.3.1.3.1",
+      "flow_index": "1.9.3.4.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(identify what needs what)",
@@ -4807,43 +4012,37 @@
       "concept_name": "identify what needs what",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.3.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.9.3.1.3.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md"
         },
         {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.9.3.1.3.1",
+          "flow_index": "1.9.3.4.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -4852,7 +4051,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.3.1.3.1.1",
+        "flow_index": "1.9.3.4.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined instruction content}<:{1}>",
@@ -4862,19 +4061,13 @@
         "concept_name": "refined instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.3.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.3.1.1"
-          },
-          {
-            "flow_index": "1.9.3.1.3.1.1",
+            "flow_index": "1.9.3.4.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.9.3.1.3.1.1",
+            "flow_index": "1.9.3.4.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -4882,7 +4075,7 @@
         ]
       },
       {
-        "flow_index": "1.9.3.1.3.1.2",
+        "flow_index": "1.9.3.4.3",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {extracted concepts}<:{2}>",
@@ -4892,19 +4085,13 @@
         "concept_name": "extracted concepts",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.3.1.2",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.3.1.2"
-          },
-          {
-            "flow_index": "1.9.3.1.3.1.2",
+            "flow_index": "1.9.3.4.3",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [concept]"
           },
           {
-            "flow_index": "1.9.3.1.3.1.2",
+            "flow_index": "1.9.3.4.3",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -4912,7 +4099,7 @@
         ]
       },
       {
-        "flow_index": "1.9.3.1.3.1.3",
+        "flow_index": "1.9.3.4.4",
         "type": "main",
         "depth": 4,
         "nc_main": "<- [extracted operations]<:{3}>",
@@ -4922,19 +4109,13 @@
         "concept_name": "extracted operations",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.3.1.3",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.3.1.3"
-          },
-          {
-            "flow_index": "1.9.3.1.3.1.3",
+            "flow_index": "1.9.3.4.4",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [operation]"
           },
           {
-            "flow_index": "1.9.3.1.3.1.3",
+            "flow_index": "1.9.3.4.4",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -4946,7 +4127,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.9.3.1.4",
+      "flow_index": "1.9.3.5",
       "type": "main",
       "depth": 3,
       "nc_main": "<- [extracted control patterns]",
@@ -4956,25 +4137,19 @@
       "concept_name": "extracted control patterns",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.4",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.3.1.4"
-        },
-        {
-          "flow_index": "1.9.3.1.4",
+          "flow_index": "1.9.3.5",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [pattern]"
         },
         {
-          "flow_index": "1.9.3.1.4",
+          "flow_index": "1.9.3.5",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (n_pattern,)"
         },
         {
-          "flow_index": "1.9.3.1.4",
+          "flow_index": "1.9.3.5",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: dict(type: str, context: str)"
@@ -4982,7 +4157,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.9.3.1.4.1",
+      "flow_index": "1.9.3.5.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(identify loops and conditions)",
@@ -4992,43 +4167,37 @@
       "concept_name": "identify loops and conditions",
       "attached_comments": [
         {
-          "flow_index": "1.9.3.1.4.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.9.3.1.4.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md"
         },
         {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.9.3.1.4.1",
+          "flow_index": "1.9.3.5.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -5037,7 +4206,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.3.1.4.1.1",
+        "flow_index": "1.9.3.5.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined instruction content}",
@@ -5047,19 +4216,13 @@
         "concept_name": "refined instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.9.3.1.4.1.1",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.9.3.1.4.1.1"
-          },
-          {
-            "flow_index": "1.9.3.1.4.1.1",
+            "flow_index": "1.9.3.5.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.9.3.1.4.1.1",
+            "flow_index": "1.9.3.5.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -5080,12 +4243,6 @@
       "operator_type": null,
       "concept_name": "phase 2 already complete",
       "attached_comments": [
-        {
-          "flow_index": "1.9.4",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.9.4"
-        },
         {
           "flow_index": "1.9.4",
           "type": "comment",
@@ -5118,12 +4275,6 @@
       "attached_comments": [
         {
           "flow_index": "1.9.4.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.9.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.9.4.1",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean"
@@ -5150,7 +4301,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.9.4.1.1",
+        "flow_index": "1.9.4.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {current progress}",
@@ -5160,19 +4311,13 @@
         "concept_name": "current progress",
         "attached_comments": [
           {
-            "flow_index": "1.9.4.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.9.4.1.1"
-          },
-          {
-            "flow_index": "1.9.4.1.1",
+            "flow_index": "1.9.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.9.4.1.1",
+            "flow_index": "1.9.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -5193,12 +4338,6 @@
       "operator_type": null,
       "concept_name": "phase 1 complete",
       "attached_comments": [
-        {
-          "flow_index": "1.10",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.10"
-        },
         {
           "flow_index": "1.10",
           "type": "comment",
@@ -5231,12 +4370,6 @@
       "attached_comments": [
         {
           "flow_index": "1.10.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.10.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.10.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal"
@@ -5263,7 +4396,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.10.1.1",
+        "flow_index": "1.10.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}<:{1}>",
@@ -5273,19 +4406,13 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.10.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.10.1.1"
-          },
-          {
-            "flow_index": "1.10.1.1",
+            "flow_index": "1.10.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.10.1.1",
+            "flow_index": "1.10.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -5293,7 +4420,7 @@
         ]
       },
       {
-        "flow_index": "1.10.1.2",
+        "flow_index": "1.10.3",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {refined instruction file written}<:{2}>",
@@ -5303,19 +4430,13 @@
         "concept_name": "refined instruction file written",
         "attached_comments": [
           {
-            "flow_index": "1.10.1.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.10.1.2"
-          },
-          {
-            "flow_index": "1.10.1.2",
+            "flow_index": "1.10.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.10.1.2",
+            "flow_index": "1.10.3",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: str"
@@ -5336,12 +4457,6 @@
       "operator_type": null,
       "concept_name": "refined instruction file written",
       "attached_comments": [
-        {
-          "flow_index": "1.11",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.11"
-        },
         {
           "flow_index": "1.11",
           "type": "comment",
@@ -5372,12 +4487,6 @@
       "operator_type": null,
       "concept_name": "write refined instruction to checkpoint file",
       "attached_comments": [
-        {
-          "flow_index": "1.11.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.11.1 | ?{sequence}: imperative"
-        },
         {
           "flow_index": "1.11.1",
           "type": "comment",
@@ -5417,12 +4526,6 @@
         "attached_comments": [
           {
             "flow_index": "1.11.2",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.11.2"
-          },
-          {
-            "flow_index": "1.11.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
@@ -5445,12 +4548,6 @@
         "operator_type": null,
         "concept_name": "refined instruction content",
         "attached_comments": [
-          {
-            "flow_index": "1.11.3",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.11.3"
-          },
           {
             "flow_index": "1.11.3",
             "type": "comment",
@@ -5481,12 +4578,6 @@
         "operator_type": null,
         "concept_name": "phase 1 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.11.4",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.11.4"
-          },
           {
             "flow_index": "1.11.4",
             "type": "comment",
@@ -5523,12 +4614,6 @@
       "attached_comments": [
         {
           "flow_index": "1.11.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.11.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal"
@@ -5562,14 +4647,7 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.11.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
@@ -5583,12 +4661,6 @@
         "operator_type": null,
         "concept_name": "phase 1 already complete",
         "attached_comments": [
-          {
-            "flow_index": "1.11.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.11.1.2"
-          },
           {
             "flow_index": "1.11.1.2",
             "type": "comment",
@@ -5610,12 +4682,6 @@
       "operator_type": null,
       "concept_name": "refined instruction content",
       "attached_comments": [
-        {
-          "flow_index": "1.11.3",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.11.3"
-        },
         {
           "flow_index": "1.11.3",
           "type": "comment",
@@ -5645,18 +4711,11 @@
       "concept_type": "operator",
       "operator_type": "specification",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.11.3.1 | ?{sequence}: assigning"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.1",
+        "flow_index": "1.11.3.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {cached refined instruction}",
@@ -5666,25 +4725,19 @@
         "concept_name": "cached refined instruction",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.11.3.1.1"
-          },
-          {
-            "flow_index": "1.11.3.1.1",
+            "flow_index": "1.11.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.1",
+            "flow_index": "1.11.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.1",
+            "flow_index": "1.11.3.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -5692,7 +4745,7 @@
         ]
       },
       {
-        "flow_index": "1.11.3.1.2",
+        "flow_index": "1.11.3.3",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {freshly refined instruction}",
@@ -5702,25 +4755,19 @@
         "concept_name": "freshly refined instruction",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2"
-          },
-          {
-            "flow_index": "1.11.3.1.2",
+            "flow_index": "1.11.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2",
+            "flow_index": "1.11.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.2",
+            "flow_index": "1.11.3.3",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -5732,7 +4779,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.1",
+      "flow_index": "1.11.3.2",
       "type": "main",
       "depth": 3,
       "nc_main": "<- {cached refined instruction}",
@@ -5742,25 +4789,19 @@
       "concept_name": "cached refined instruction",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.11.3.1.1"
-        },
-        {
-          "flow_index": "1.11.3.1.1",
+          "flow_index": "1.11.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.1",
+          "flow_index": "1.11.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.1",
+          "flow_index": "1.11.3.2",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: str"
@@ -5768,7 +4809,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.1.1",
+      "flow_index": "1.11.3.2.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(read refined instruction from checkpoint)",
@@ -5778,31 +4819,25 @@
       "concept_name": "read refined instruction from checkpoint",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.1.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadFile-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: file_system"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -5811,7 +4846,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.1.2",
+        "flow_index": "1.11.3.2.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined instruction file path}",
@@ -5821,19 +4856,13 @@
         "concept_name": "refined instruction file path",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.1.2",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.11.3.1.1.2"
-          },
-          {
-            "flow_index": "1.11.3.1.1.2",
+            "flow_index": "1.11.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.1.2",
+            "flow_index": "1.11.3.2.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -5845,7 +4874,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.1.1",
+      "flow_index": "1.11.3.2.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= ::(read refined instruction from checkpoint)",
@@ -5855,31 +4884,25 @@
       "concept_name": "read refined instruction from checkpoint",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.1.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.1.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadFile-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{body_faculty}: file_system"
         },
         {
-          "flow_index": "1.11.3.1.1.1",
+          "flow_index": "1.11.3.2.1",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -5887,7 +4910,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.1.1.1",
+      "flow_index": "1.11.3.2.1.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= @:'(<phase 1 already complete>)",
@@ -5895,19 +4918,12 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.1.1.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.1.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
       {
-        "flow_index": "1.11.3.1.1.1.2",
+        "flow_index": "1.11.3.2.1.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<* <phase 1 already complete>",
@@ -5915,20 +4931,13 @@
         "concept_type": "proposition",
         "operator_type": null,
         "concept_name": "phase 1 already complete",
-        "attached_comments": [
-          {
-            "flow_index": "1.11.3.1.1.1.2",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.11.3.1.1.1.2"
-          }
-        ]
+        "attached_comments": []
       }
     ]
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2",
+      "flow_index": "1.11.3.3",
       "type": "main",
       "depth": 3,
       "nc_main": "<- {freshly refined instruction}",
@@ -5938,25 +4947,19 @@
       "concept_name": "freshly refined instruction",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2"
-        },
-        {
-          "flow_index": "1.11.3.1.2",
+          "flow_index": "1.11.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.2",
+          "flow_index": "1.11.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.2",
+          "flow_index": "1.11.3.3",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{ref_element}: str"
@@ -5964,7 +4967,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.1",
+      "flow_index": "1.11.3.3.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= $. %>[{refined version}, {original version}]",
@@ -5972,18 +4975,11 @@
       "concept_type": "operator",
       "operator_type": "specification",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.1 | ?{sequence}: assigning"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.2.2",
+        "flow_index": "1.11.3.3.2",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {refined version}",
@@ -5993,25 +4989,19 @@
         "concept_name": "refined version",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.2",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2",
+            "flow_index": "1.11.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.2",
+            "flow_index": "1.11.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.2.2",
+            "flow_index": "1.11.3.3.2",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -6019,7 +5009,37 @@
         ]
       },
       {
-        "flow_index": "1.11.3.1.2.3",
+        "flow_index": "1.11.3.3.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {refinement answers}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "refinement answers",
+        "attached_comments": [
+          {
+            "flow_index": "1.11.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [question]"
+          },
+          {
+            "flow_index": "1.11.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_shape}: (n_question,)"
+          },
+          {
+            "flow_index": "1.11.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict(question: str, answer: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.11.3.3.4",
         "type": "main",
         "depth": 4,
         "nc_main": "<- {original version}",
@@ -6029,25 +5049,19 @@
         "concept_name": "original version",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.3",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.3"
-          },
-          {
-            "flow_index": "1.11.3.1.2.3",
+            "flow_index": "1.11.3.3.4",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.3",
+            "flow_index": "1.11.3.3.4",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.2.3",
+            "flow_index": "1.11.3.3.4",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: str"
@@ -6055,7 +5069,7 @@
         ]
       },
       {
-        "flow_index": "1.11.3.1.2.4",
+        "flow_index": "1.11.3.3.5",
         "type": "main",
         "depth": 4,
         "nc_main": "<- <instruction is vague>",
@@ -6065,25 +5079,19 @@
         "concept_name": "instruction is vague",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.4",
-            "type": "inline_comment",
-            "depth": 4,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.4"
-          },
-          {
-            "flow_index": "1.11.3.1.2.4",
+            "flow_index": "1.11.3.3.5",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.4",
+            "flow_index": "1.11.3.3.5",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.2.4",
+            "flow_index": "1.11.3.3.5",
             "type": "comment",
             "depth": 5,
             "nc_comment": "| %{ref_element}: %{truth_value}"
@@ -6095,7 +5103,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.1",
+      "flow_index": "1.11.3.3.1",
       "type": "main",
       "depth": 4,
       "nc_main": "<= $. %>[{refined version}, {original version}]",
@@ -6103,17 +5111,10 @@
       "concept_type": "operator",
       "operator_type": "specification",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.1",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.1 | ?{sequence}: assigning"
-        }
-      ]
+      "attached_comments": []
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.1.1",
+      "flow_index": "1.11.3.3.1.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= @:!(<phase 1 already complete>)",
@@ -6121,19 +5122,12 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.1.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
       {
-        "flow_index": "1.11.3.1.2.1.2",
+        "flow_index": "1.11.3.3.1.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<* <phase 1 already complete>",
@@ -6141,20 +5135,13 @@
         "concept_type": "proposition",
         "operator_type": null,
         "concept_name": "phase 1 already complete",
-        "attached_comments": [
-          {
-            "flow_index": "1.11.3.1.2.1.2",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.1.2"
-          }
-        ]
+        "attached_comments": []
       }
     ]
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.2",
+      "flow_index": "1.11.3.3.2",
       "type": "main",
       "depth": 4,
       "nc_main": "<- {refined version}",
@@ -6164,25 +5151,19 @@
       "concept_name": "refined version",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2",
+          "flow_index": "1.11.3.3.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.2.2",
+          "flow_index": "1.11.3.3.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.2.2",
+          "flow_index": "1.11.3.3.2",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_element}: str"
@@ -6190,7 +5171,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.2.1",
+      "flow_index": "1.11.3.3.2.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= ::(synthesize from refinement answers)",
@@ -6200,189 +5181,74 @@
       "concept_name": "synthesize from refinement answers",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md"
         },
         {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.11.3.1.2.2.1",
+          "flow_index": "1.11.3.3.2.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{o_shape}: str in memory"
-        }
-      ]
-    },
-    "value_concepts": [
-      {
-        "flow_index": "1.11.3.1.2.2.2",
-        "type": "main",
-        "depth": 5,
-        "nc_main": "<- {refinement answers}",
-        "inference_marker": "<-",
-        "concept_type": "object",
-        "operator_type": null,
-        "concept_name": "refinement answers",
-        "attached_comments": [
-          {
-            "flow_index": "1.11.3.1.2.2.2",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2",
-            "type": "comment",
-            "depth": 6,
-            "nc_comment": "| %{ref_axes}: [question]"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2",
-            "type": "comment",
-            "depth": 6,
-            "nc_comment": "| %{ref_shape}: (n_question,)"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2",
-            "type": "comment",
-            "depth": 6,
-            "nc_comment": "| %{ref_element}: dict(question: str, answer: str)"
-          }
-        ]
-      }
-    ],
-    "other_concepts": []
-  },
-  {
-    "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.2.1",
-      "type": "main",
-      "depth": 5,
-      "nc_main": "<= ::(synthesize from refinement answers)",
-      "inference_marker": "<=",
-      "concept_type": "imperative",
-      "operator_type": null,
-      "concept_name": "synthesize from refinement answers",
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{v_input_norm}: {prompt_location}"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{h_input_norm}: in-memory"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{body_faculty}: llm"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.1",
-          "type": "comment",
-          "depth": 6,
-          "nc_comment": "| %{o_shape}: str in memory"
-        }
-      ]
-    },
-    "function_concept": {
-      "flow_index": "1.11.3.1.2.2.1.1",
-      "type": "main",
-      "depth": 6,
-      "nc_main": "<= @:'(<instruction is vague>)",
-      "inference_marker": "<=",
-      "concept_type": "operator",
-      "operator_type": "timing_conditional",
-      "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.2.1.1",
-          "type": "inline_comment",
-          "depth": 6,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.1.1 | ?{sequence}: timing"
         }
       ]
     },
     "value_concepts": [],
     "other_concepts": [
       {
-        "flow_index": "1.11.3.1.2.2.1.2",
+        "flow_index": "1.11.3.3.2.2",
         "type": "main",
-        "depth": 6,
+        "depth": 5,
+        "nc_main": "<= @:'(<instruction is vague>)",
+        "inference_marker": "<=",
+        "concept_type": "operator",
+        "operator_type": "timing_conditional",
+        "concept_name": null,
+        "attached_comments": []
+      },
+      {
+        "flow_index": "1.11.3.3.2.3",
+        "type": "main",
+        "depth": 5,
         "nc_main": "<* <instruction is vague>",
         "inference_marker": "<*",
         "concept_type": "proposition",
         "operator_type": null,
         "concept_name": "instruction is vague",
-        "attached_comments": [
-          {
-            "flow_index": "1.11.3.1.2.2.1.2",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2.1.2"
-          }
-        ]
+        "attached_comments": []
       }
     ]
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.2.2",
+      "flow_index": "1.11.3.3.3",
       "type": "main",
-      "depth": 5,
+      "depth": 4,
       "nc_main": "<- {refinement answers}",
       "inference_marker": "<-",
       "concept_type": "object",
@@ -6390,25 +5256,19 @@
       "concept_name": "refinement answers",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2.2",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.2",
+          "flow_index": "1.11.3.3.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_axes}: [question]"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2",
+          "flow_index": "1.11.3.3.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_shape}: (n_question,)"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2",
+          "flow_index": "1.11.3.3.3",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_element}: dict(question: str, answer: str)"
@@ -6416,9 +5276,9 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.2.2.1",
+      "flow_index": "1.11.3.3.3.1",
       "type": "main",
-      "depth": 6,
+      "depth": 5,
       "nc_main": "<= ::(apply each refinement question)",
       "inference_marker": "<=",
       "concept_type": "imperative",
@@ -6426,43 +5286,37 @@
       "concept_name": "apply each refinement question",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
-          "type": "inline_comment",
-          "depth": 6,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
-          "depth": 7,
+          "depth": 8,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
-          "depth": 7,
+          "depth": 8,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
-          "depth": 7,
+          "depth": 8,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1",
+          "flow_index": "1.11.3.3.3.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{o_shape}: list in memory"
@@ -6471,9 +5325,9 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.2.2.2.1.1",
+        "flow_index": "1.11.3.3.3.2",
         "type": "main",
-        "depth": 6,
+        "depth": 5,
         "nc_main": "<- {raw instruction content}<:{1}>",
         "inference_marker": "<-",
         "concept_type": "object",
@@ -6481,19 +5335,13 @@
         "concept_name": "raw instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.2.2.1.1",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1.1"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2.1.1",
+            "flow_index": "1.11.3.3.3.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.2.2.1.1",
+            "flow_index": "1.11.3.3.3.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: str"
@@ -6501,9 +5349,9 @@
         ]
       },
       {
-        "flow_index": "1.11.3.1.2.2.2.1.2",
+        "flow_index": "1.11.3.3.3.3",
         "type": "main",
-        "depth": 6,
+        "depth": 5,
         "nc_main": "<- {refinement questions content}<:{2}>",
         "inference_marker": "<-",
         "concept_type": "object",
@@ -6511,25 +5359,19 @@
         "concept_name": "refinement questions content",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.2.2.1.2",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1.2"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2.1.2",
+            "flow_index": "1.11.3.3.3.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.2.2.1.2",
+            "flow_index": "1.11.3.3.3.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.11.3.1.2.2.2.1.2",
+            "flow_index": "1.11.3.3.3.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: str"
@@ -6541,9 +5383,9 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.2.2.1.2",
+      "flow_index": "1.11.3.3.3.3",
       "type": "main",
-      "depth": 6,
+      "depth": 5,
       "nc_main": "<- {refinement questions content}<:{2}>",
       "inference_marker": "<-",
       "concept_type": "object",
@@ -6551,25 +5393,19 @@
       "concept_name": "refinement questions content",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2",
-          "type": "inline_comment",
-          "depth": 6,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1.2"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.2.1.2",
+          "flow_index": "1.11.3.3.3.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2",
+          "flow_index": "1.11.3.3.3.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2",
+          "flow_index": "1.11.3.3.3.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_element}: str"
@@ -6577,9 +5413,9 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.2.2.1.2.1",
+      "flow_index": "1.11.3.3.3.3.1",
       "type": "main",
-      "depth": 7,
+      "depth": 6,
       "nc_main": "<= ::(read refinement questions from file)",
       "inference_marker": "<=",
       "concept_type": "imperative",
@@ -6587,31 +5423,25 @@
       "concept_name": "read refinement questions from file",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2.1",
-          "type": "inline_comment",
-          "depth": 7,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1.2.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.2.2.1.2.1",
+          "flow_index": "1.11.3.3.3.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadFile-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2.1",
+          "flow_index": "1.11.3.3.3.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2.1",
+          "flow_index": "1.11.3.3.3.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{body_faculty}: file_system"
         },
         {
-          "flow_index": "1.11.3.1.2.2.2.1.2.1",
+          "flow_index": "1.11.3.3.3.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -6620,9 +5450,9 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.2.2.2.1.2.1.1",
+        "flow_index": "1.11.3.3.3.3.2",
         "type": "main",
-        "depth": 7,
+        "depth": 6,
         "nc_main": "<- {refinement questions file path}",
         "inference_marker": "<-",
         "concept_type": "object",
@@ -6630,19 +5460,13 @@
         "concept_name": "refinement questions file path",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.2.2.1.2.1.1",
-            "type": "inline_comment",
-            "depth": 7,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.2.2.1.2.1.1"
-          },
-          {
-            "flow_index": "1.11.3.1.2.2.2.1.2.1.1",
+            "flow_index": "1.11.3.3.3.3.2",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.2.2.1.2.1.1",
+            "flow_index": "1.11.3.3.3.3.2",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_element}: perceptual_sign"
@@ -6654,7 +5478,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.3",
+      "flow_index": "1.11.3.3.4",
       "type": "main",
       "depth": 4,
       "nc_main": "<- {original version}",
@@ -6664,25 +5488,19 @@
       "concept_name": "original version",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.3",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.3"
-        },
-        {
-          "flow_index": "1.11.3.1.2.3",
+          "flow_index": "1.11.3.3.4",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.2.3",
+          "flow_index": "1.11.3.3.4",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.2.3",
+          "flow_index": "1.11.3.3.4",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_element}: str"
@@ -6690,7 +5508,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.3.1",
+      "flow_index": "1.11.3.3.4.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= ::(pass through raw instruction)",
@@ -6700,31 +5518,25 @@
       "concept_name": "pass through raw instruction",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.3.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.3.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{norm_input}: h_Data-c_PassThrough-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{body_faculty}: python_interpreter"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -6733,7 +5545,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.2.3.2",
+        "flow_index": "1.11.3.3.4.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<- {raw instruction content}",
@@ -6743,19 +5555,13 @@
         "concept_name": "raw instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.3.2",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.3.2"
-          },
-          {
-            "flow_index": "1.11.3.1.2.3.2",
+            "flow_index": "1.11.3.3.4.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.3.2",
+            "flow_index": "1.11.3.3.4.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_element}: str"
@@ -6767,7 +5573,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.3.1",
+      "flow_index": "1.11.3.3.4.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= ::(pass through raw instruction)",
@@ -6777,31 +5583,25 @@
       "concept_name": "pass through raw instruction",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.3.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.3.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{norm_input}: h_Data-c_PassThrough-o_Literal"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{body_faculty}: python_interpreter"
         },
         {
-          "flow_index": "1.11.3.1.2.3.1",
+          "flow_index": "1.11.3.3.4.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{o_shape}: str in memory"
@@ -6809,7 +5609,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.3.1.1",
+      "flow_index": "1.11.3.3.4.1.1",
       "type": "main",
       "depth": 6,
       "nc_main": "<= @:!(<instruction is vague>)",
@@ -6817,19 +5617,12 @@
       "concept_type": "operator",
       "operator_type": "timing_conditional",
       "concept_name": null,
-      "attached_comments": [
-        {
-          "flow_index": "1.11.3.1.2.3.1.1",
-          "type": "inline_comment",
-          "depth": 6,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.3.1.1 | ?{sequence}: timing"
-        }
-      ]
+      "attached_comments": []
     },
     "value_concepts": [],
     "other_concepts": [
       {
-        "flow_index": "1.11.3.1.2.3.1.2",
+        "flow_index": "1.11.3.3.4.1.2",
         "type": "main",
         "depth": 6,
         "nc_main": "<* <instruction is vague>",
@@ -6837,20 +5630,13 @@
         "concept_type": "proposition",
         "operator_type": null,
         "concept_name": "instruction is vague",
-        "attached_comments": [
-          {
-            "flow_index": "1.11.3.1.2.3.1.2",
-            "type": "inline_comment",
-            "depth": 6,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.3.1.2"
-          }
-        ]
+        "attached_comments": []
       }
     ]
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.11.3.1.2.4",
+      "flow_index": "1.11.3.3.5",
       "type": "main",
       "depth": 4,
       "nc_main": "<- <instruction is vague>",
@@ -6860,25 +5646,19 @@
       "concept_name": "instruction is vague",
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.4",
-          "type": "inline_comment",
-          "depth": 4,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.4"
-        },
-        {
-          "flow_index": "1.11.3.1.2.4",
+          "flow_index": "1.11.3.3.5",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.11.3.1.2.4",
+          "flow_index": "1.11.3.3.5",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.11.3.1.2.4",
+          "flow_index": "1.11.3.3.5",
           "type": "comment",
           "depth": 5,
           "nc_comment": "| %{ref_element}: %{truth_value}"
@@ -6886,7 +5666,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.11.3.1.2.4.1",
+      "flow_index": "1.11.3.3.5.1",
       "type": "main",
       "depth": 5,
       "nc_main": "<= ::<{judge if instruction lacks concrete details}><ALL True>",
@@ -6896,43 +5676,37 @@
       "concept_name": null,
       "attached_comments": [
         {
-          "flow_index": "1.11.3.1.2.4.1",
-          "type": "inline_comment",
-          "depth": 5,
-          "nc_comment": "?{flow_index}: 1.11.3.1.2.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean"
         },
         {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{v_input_norm}: {prompt_location}"
         },
         {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
-          "depth": 6,
+          "depth": 7,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md"
         },
         {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{h_input_norm}: in-memory"
         },
         {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.11.3.1.2.4.1",
+          "flow_index": "1.11.3.3.5.1",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{o_shape}: boolean"
@@ -6941,7 +5715,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.3.1.2.4.1.1",
+        "flow_index": "1.11.3.3.5.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<- {raw instruction content}",
@@ -6951,19 +5725,13 @@
         "concept_name": "raw instruction content",
         "attached_comments": [
           {
-            "flow_index": "1.11.3.1.2.4.1.1",
-            "type": "inline_comment",
-            "depth": 5,
-            "nc_comment": "?{flow_index}: 1.11.3.1.2.4.1.1"
-          },
-          {
-            "flow_index": "1.11.3.1.2.4.1.1",
+            "flow_index": "1.11.3.3.5.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.3.1.2.4.1.1",
+            "flow_index": "1.11.3.3.5.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_element}: str"
@@ -6984,12 +5752,6 @@
       "operator_type": null,
       "concept_name": "phase 1 already complete",
       "attached_comments": [
-        {
-          "flow_index": "1.11.4",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.11.4"
-        },
         {
           "flow_index": "1.11.4",
           "type": "comment",
@@ -7022,12 +5784,6 @@
       "attached_comments": [
         {
           "flow_index": "1.11.4.1",
-          "type": "inline_comment",
-          "depth": 3,
-          "nc_comment": "?{flow_index}: 1.11.4.1 | ?{sequence}: judgement"
-        },
-        {
-          "flow_index": "1.11.4.1",
           "type": "comment",
           "depth": 4,
           "nc_comment": "| %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean"
@@ -7054,7 +5810,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.11.4.1.1",
+        "flow_index": "1.11.4.2",
         "type": "main",
         "depth": 3,
         "nc_main": "<- {current progress}",
@@ -7064,19 +5820,13 @@
         "concept_name": "current progress",
         "attached_comments": [
           {
-            "flow_index": "1.11.4.1.1",
-            "type": "inline_comment",
-            "depth": 3,
-            "nc_comment": "?{flow_index}: 1.11.4.1.1"
-          },
-          {
-            "flow_index": "1.11.4.1.1",
+            "flow_index": "1.11.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.11.4.1.1",
+            "flow_index": "1.11.4.2",
             "type": "comment",
             "depth": 4,
             "nc_comment": "| %{ref_element}: str"
@@ -7097,12 +5847,6 @@
       "operator_type": null,
       "concept_name": "raw instruction content",
       "attached_comments": [
-        {
-          "flow_index": "1.12",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.12"
-        },
         {
           "flow_index": "1.12",
           "type": "comment",
@@ -7135,12 +5879,6 @@
       "attached_comments": [
         {
           "flow_index": "1.12.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.12.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.12.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadFile-o_Literal"
@@ -7167,7 +5905,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.12.1.1",
+        "flow_index": "1.12.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {instruction file path}",
@@ -7177,19 +5915,13 @@
         "concept_name": "instruction file path",
         "attached_comments": [
           {
-            "flow_index": "1.12.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.12.1.1"
-          },
-          {
-            "flow_index": "1.12.1.1",
+            "flow_index": "1.12.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.12.1.1",
+            "flow_index": "1.12.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: perceptual_sign"
@@ -7210,12 +5942,6 @@
       "operator_type": null,
       "concept_name": "current progress",
       "attached_comments": [
-        {
-          "flow_index": "1.13",
-          "type": "inline_comment",
-          "depth": 1,
-          "nc_comment": "?{flow_index}: 1.13"
-        },
         {
           "flow_index": "1.13",
           "type": "comment",
@@ -7248,12 +5974,6 @@
       "attached_comments": [
         {
           "flow_index": "1.13.1",
-          "type": "inline_comment",
-          "depth": 2,
-          "nc_comment": "?{flow_index}: 1.13.1 | ?{sequence}: imperative"
-        },
-        {
-          "flow_index": "1.13.1",
           "type": "comment",
           "depth": 3,
           "nc_comment": "| %{norm_input}: h_FilePath-c_ReadFileIfExists-o_Literal"
@@ -7280,7 +6000,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.13.1.1",
+        "flow_index": "1.13.2",
         "type": "main",
         "depth": 2,
         "nc_main": "<- {progress file path}",
@@ -7290,37 +6010,31 @@
         "concept_name": "progress file path",
         "attached_comments": [
           {
-            "flow_index": "1.13.1.1",
-            "type": "inline_comment",
-            "depth": 2,
-            "nc_comment": "?{flow_index}: 1.13.1.1"
-          },
-          {
-            "flow_index": "1.13.1.1",
+            "flow_index": "1.13.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.13.1.1",
+            "flow_index": "1.13.2",
             "type": "comment",
             "depth": 3,
             "nc_comment": "| %{ref_element}: perceptual_sign"
           },
           {
-            "flow_index": "1.13.1.1",
+            "flow_index": "1.13.2",
             "type": "comment",
             "depth": 1,
             "nc_comment": "/: ========================================"
           },
           {
-            "flow_index": "1.13.1.1",
+            "flow_index": "1.13.2",
             "type": "comment",
             "depth": 1,
             "nc_comment": "/: FILE PATH CONFIGURATION (Ground Concepts)"
           },
           {
-            "flow_index": "1.13.1.1",
+            "flow_index": "1.13.2",
             "type": "comment",
             "depth": 1,
             "nc_comment": "/: ========================================"

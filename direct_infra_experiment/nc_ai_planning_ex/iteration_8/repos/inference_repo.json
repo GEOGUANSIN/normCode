@@ -484,6 +484,28 @@
   },
   {
     "flow_info": {
+      "flow_index": "1.7.3.1"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "function_concept": "<= $. %>({classification})",
+    "value_concepts": [
+      "{classification}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.7.3.1"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{classification}"
+      }
+    }
+  },
+  {
+    "flow_info": {
       "flow_index": "1.7.3.1.1"
     },
     "inference_sequence": "assigning",
@@ -506,7 +528,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1.1.1"
+      "flow_index": "1.7.3.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classification}",
@@ -519,7 +541,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.7.3.1.1.1"
+        "flow_index": "1.7.3.1.2"
       },
       "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -532,7 +554,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1.1.1.1.2"
+      "flow_index": "1.7.3.1.2.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{operation context}",
@@ -545,7 +567,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.7.3.1.1.1.1.2"
+        "flow_index": "1.7.3.1.2.3"
       },
       "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -945,7 +967,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.1"
+      "flow_index": "1.11.3.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{cached refined instruction}",
@@ -957,7 +979,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.1"
+        "flow_index": "1.11.3.2"
       },
       "paradigm": "h_FilePath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
@@ -968,7 +990,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.1.1"
+      "flow_index": "1.11.3.2.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{read refined instruction from checkpoint}",
@@ -980,7 +1002,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.1.1"
+        "flow_index": "1.11.3.2.1"
       },
       "syntax": {
         "marker": "if",
@@ -991,7 +1013,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2"
+      "flow_index": "1.11.3.3"
     },
     "inference_sequence": "assigning",
     "concept_to_infer": "{freshly refined instruction}",
@@ -1005,7 +1027,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2"
+        "flow_index": "1.11.3.3"
       },
       "syntax": {
         "marker": ".",
@@ -1015,7 +1037,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.1"
+      "flow_index": "1.11.3.3.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{timing_gate_phase_1_already_complete}",
@@ -1027,7 +1049,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.1"
+        "flow_index": "1.11.3.3.1"
       },
       "syntax": {
         "marker": "if!",
@@ -1038,7 +1060,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2"
+      "flow_index": "1.11.3.3.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refined version}",
@@ -1050,7 +1072,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.2"
+        "flow_index": "1.11.3.3.2"
       },
       "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -1062,7 +1084,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.1"
+      "flow_index": "1.11.3.3.2.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{synthesize from refinement answers}",
@@ -1074,7 +1096,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.2.1"
+        "flow_index": "1.11.3.3.2.1"
       },
       "syntax": {
         "marker": "if",
@@ -1085,7 +1107,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2"
+      "flow_index": "1.11.3.3.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refinement answers}",
@@ -1098,7 +1120,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.2.2"
+        "flow_index": "1.11.3.3.3"
       },
       "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -1111,7 +1133,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2.1.2"
+      "flow_index": "1.11.3.3.3.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{refinement questions content}",
@@ -1123,7 +1145,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.2.2.1.2"
+        "flow_index": "1.11.3.3.3.3"
       },
       "paradigm": "h_FilePath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
@@ -1134,7 +1156,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.3"
+      "flow_index": "1.11.3.3.4"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{original version}",
@@ -1146,7 +1168,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.3"
+        "flow_index": "1.11.3.3.4"
       },
       "paradigm": "h_Data-c_PassThrough-o_Literal",
       "body_faculty": "python_interpreter",
@@ -1157,7 +1179,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.3.1"
+      "flow_index": "1.11.3.3.4.1"
     },
     "inference_sequence": "timing",
     "concept_to_infer": "{pass through raw instruction}",
@@ -1169,7 +1191,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.3.1"
+        "flow_index": "1.11.3.3.4.1"
       },
       "syntax": {
         "marker": "if!",
@@ -1180,7 +1202,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.2.4"
+      "flow_index": "1.11.3.3.5"
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<instruction is vague>",
@@ -1192,7 +1214,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.4"
+        "flow_index": "1.11.3.3.5"
       },
       "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean",
       "body_faculty": "llm",
