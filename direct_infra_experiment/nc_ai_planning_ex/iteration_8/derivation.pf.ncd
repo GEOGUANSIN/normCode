@@ -3,6 +3,17 @@
 /: ========================================
 /: Post-Formalized NormCode Plan (.pf.ncd)
 /:
+/: GOAL: Transform natural language instruction into .ncds file
+/:
+/: DERIVATION (per documentation) means:
+/:   1. Extract concepts (nouns/data), operations (verbs/actions), dependencies
+/:   2. Build hierarchical structure (dependency tree)
+/:   3. Output as .ncds format
+/:
+/: This plan adds CHECKPOINTING for resumability:
+/:   - Each phase writes results to file
+/:   - On resume, completed phases load from cache
+/:
 /: INPUT:  instruction.txt (file path)
 /: OUTPUT: ncds_output.ncds (file path)
 /: CHECKPOINTS: progress.txt, 1_*.txt, 2_*.json, 3_*.json, 4_*.json
@@ -17,418 +28,123 @@
 /:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
 /:   Python:
 /:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+/:
+/: CUE FILES LEGEND:
+/:   %{cue_files} lists documentation that should be included as context
+/:   when writing prompts for semantic (LLM) operations
 /:
 /: NEW VISION ANNOTATIONS:
-/:   - h_input_norm: LiteralPath | Literal (not "in-memory")
+/:   - h_input_norm: LiteralPath | Literal
 /:   - Value concepts: |%{literal<$% file_path>} or perceptual sign from prior inference
 /:   - Prompts/Scripts as vertical inputs (v_PromptLocation, v_ScriptLocation)
 /:
+
 :<:{ncds}
     | %{ref_axes}: [_none_axis]
     | %{ref_shape}: (1,)
     | %{ref_element}: str
-    <= $. %>({ncds})
-    <- {derivation complete}
+    <= ::(return ncds output written)
+        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+        | %{v_input_norm}: script_location
+        | %{v_input_provision}: provisions/scripts/pass_through.py
+        | %{v_function_name}: pass_through
+        | %{h_input_norm}: Literal
+        | %{body_faculty}: python_interpreter
+    /: ROOT: Return the final ncds result
+    /: The real work happens in the dependency tree below
+    <- {ncds output written}<:{1}>
+        | %{ref_axes}: [_none_axis]
+        | %{ref_element}: str
+
+    /: ========================================
+    /: GROUND CONCEPTS (External Inputs)
+    /: ========================================
+    /: These are file paths provided externally - the "leaves" of our tree
+
+    <- {instruction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write completion status to progress file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-        <- {progress file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {ncds output written}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-    <- {ncds output written}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Where to read the natural language instruction from
+
+    <- {refinement questions file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write ncds file to output path)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            <= @:!(<phase 5 already complete>)
-            <* <phase 5 already complete>
-        /: PHASE 5: Serialize and write final output
-        <- {output file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {ncds content}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: str
-            <= ::(serialize dependency tree to ncds text format)
-                | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                | %{v_input_norm}: prompt_location
-                | %{v_input_provision}: provisions/prompts/phase_5/serialize_tree_to_ncds.md
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: llm
-            <- {dependency tree}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: dict(root: str, nodes: dict)
-        <- <phase 5 already complete>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: %{truth_value}
-            <= ::<{check if phase 5 already complete in progress}><ALL True>
-                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-                | %{v_input_norm}: script_location
-                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
-                | %{v_function_name}: check_phase_complete
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: python_interpreter
-            <- {current progress}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-            <- {phase_name: "phase_5"}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-                | %{literal<$% phase_name>}: phase_5
-        <- {phase 4 complete}
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-            /: Dependency: must complete tree construction first
-    <- {phase 4 complete}
+        | %{literal<$% file_path>}: provisions/data/refinement_questions.txt
+        /: Ground: 7 questions to clarify vague instructions (from derivation_v2.md)
+
+    <- {progress file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write phase 4 status to progress file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{write_mode}: append
-        <- {progress file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {tree file written}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-    <- {tree file written}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Tracks which phases completed (enables resume)
+
+    <- {refined instruction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write dependency tree to checkpoint file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{serialize}: json
-            <= @:!(<phase 4 already complete>)
-            <* <phase 4 already complete>
-        /: PHASE 4: Build and save tree
-        <- {tree file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {dependency tree}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: dict(root: str, nodes: dict)
-            <= ::(construct tree from classifications and extractions)
-                | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                | %{v_input_norm}: prompt_location
-                | %{v_input_provision}: provisions/prompts/phase_4/construct_dependency_tree.md
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: llm
-            <- {final output concept}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_shape}: (1,)
-                | %{ref_element}: str
-                <= ::(identify goal from extraction data)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_4/identify_goal.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {extraction data}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: dict
-            <- {classified operations}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_shape}: (1,)
-                | %{ref_element}: dict
-                <= ::(read classifications from checkpoint)
-                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
-                    | %{h_input_norm}: LiteralPath
-                    | %{body_faculty}: file_system
-                    | %{parse}: json
-                <- {classifications file path}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-            <- [all dependencies]<:{3}>
-                | %{ref_axes}: [dependency]
-                | %{ref_shape}: (n_dependency,)
-                | %{ref_element}: dict(source: str, target: str)
-                <= ::(extract dependencies from extraction data)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_4/extract_dependencies.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {extraction data}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: dict
-        <- <phase 4 already complete>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: %{truth_value}
-            <= ::<{check if phase 4 already complete in progress}><ALL True>
-                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-                | %{v_input_norm}: script_location
-                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
-                | %{v_function_name}: check_phase_complete
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: python_interpreter
-            <- {current progress}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-            <- {phase_name: "phase_4"}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-                | %{literal<$% phase_name>}: phase_4
-        <- {phase 3 complete}
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-            /: Dependency: must complete classification first
-    <- {phase 3 complete}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Phase 1 checkpoint - stores refined/original instruction
+
+    <- {extraction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write phase 3 status to progress file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{write_mode}: append
-        <- {progress file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {classifications file written}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-    <- {classifications file written}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Phase 2 checkpoint - stores extracted concepts/operations/deps
+
+    <- {classifications file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write classifications to checkpoint file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{serialize}: json
-            <= @:!(<phase 3 already complete>)
-            <* <phase 3 already complete>
-        /: PHASE 3: Classify and save
-        <- {classifications file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- [all classifications]<:{2}>
-            | %{ref_axes}: [operation]
-            | %{ref_shape}: (n_operation,)
-            | %{ref_element}: dict(pattern: str, context: str)
-            <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)
-                <= $. %>({classification})
-                <- {classification}
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_shape}: (1,)
-                    | %{ref_element}: dict(pattern: str, context: str)
-                    <= ::(determine pattern type for operation)
-                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                        | %{v_input_norm}: prompt_location
-                        | %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md
-                        | %{h_input_norm}: Literal
-                        | %{body_faculty}: llm
-                    <- {current operation}<:{1}>
-                        | %{ref_axes}: [_none_axis]
-                        | %{ref_element}: str
-                    <- {operation context}<:{2}>
-                        | %{ref_axes}: [_none_axis]
-                        | %{ref_shape}: (1,)
-                        | %{ref_element}: dict
-                        <= ::(gather context from extraction data)
-                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                            | %{v_input_norm}: prompt_location
-                            | %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md
-                            | %{h_input_norm}: Literal
-                            | %{body_faculty}: llm
-                        <- {current operation}<:{1}>
-                            | %{ref_axes}: [_none_axis]
-                            | %{ref_element}: str
-                        <- {extraction data}<:{2}>
-                            | %{ref_axes}: [_none_axis]
-                            | %{ref_element}: dict
-            <- [extracted operations]
-                | %{ref_axes}: [operation]
-                | %{ref_shape}: (n_operation,)
-                | %{ref_element}: str
-                <= ::(get operations from extraction data)
-                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
-                    | %{v_input_norm}: script_location
-                    | %{v_input_provision}: provisions/scripts/extract_field.py
-                    | %{v_function_name}: extract_field
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: python_interpreter
-                <- {extraction data}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: dict
-                <- {field_name: "operations"}<:{2}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-                    | %{literal<$% field_name>}: operations
-            <* {current operation}<$([extracted operations])*>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-        <- <phase 3 already complete>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: %{truth_value}
-            <= ::<{check if phase 3 already complete in progress}><ALL True>
-                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-                | %{v_input_norm}: script_location
-                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
-                | %{v_function_name}: check_phase_complete
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: python_interpreter
-            <- {current progress}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-            <- {phase_name: "phase_3"}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-                | %{literal<$% phase_name>}: phase_3
-        <- {phase 2 complete}
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-            /: Dependency: must complete extraction first
-    <- {phase 2 complete}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Phase 3 checkpoint - stores pattern types per operation
+
+    <- {tree file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write phase 2 status to progress file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{write_mode}: append
-        <- {progress file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {extraction file written}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-    <- {extraction file written}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Phase 4 checkpoint - stores the dependency tree structure
+
+    <- {output file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write extraction results to checkpoint file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
-            | %{body_faculty}: file_system
-            | %{serialize}: json
-            <= @:!(<phase 2 already complete>)
-            <* <phase 2 already complete>
-        /: PHASE 2: Extract and save
-        <- {extraction file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-        <- {extraction data}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)
-            <= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)
-            <- {extracted concepts}
-                | %{ref_axes}: [concept]
-                | %{ref_shape}: (n_concept,)
-                | %{ref_element}: str
-                <= ::(identify all nouns and data entities)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {refined instruction content}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-            <- [extracted operations]
-                | %{ref_axes}: [operation]
-                | %{ref_shape}: (n_operation,)
-                | %{ref_element}: str
-                <= ::(identify all verbs and actions)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_2/extract_operations.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {refined instruction content}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-            <- [extracted dependencies]
-                | %{ref_axes}: [dependency]
-                | %{ref_shape}: (n_dependency,)
-                | %{ref_element}: dict(source: str, target: str)
-                <= ::(identify what needs what)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {refined instruction content}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-                <- {extracted concepts}<:{2}>
-                    | %{ref_axes}: [concept]
-                    | %{ref_element}: str
-                <- [extracted operations]<:{3}>
-                    | %{ref_axes}: [operation]
-                    | %{ref_element}: str
-            <- [extracted control patterns]
-                | %{ref_axes}: [pattern]
-                | %{ref_shape}: (n_pattern,)
-                | %{ref_element}: dict(type: str, context: str)
-                <= ::(identify loops and conditions)
-                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: prompt_location
-                    | %{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md
-                    | %{h_input_norm}: Literal
-                    | %{body_faculty}: llm
-                <- {refined instruction content}<:{1}>
-                    | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: str
-        <- <phase 2 already complete>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: %{truth_value}
-            <= ::<{check if phase 2 already complete in progress}><ALL True>
-                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-                | %{v_input_norm}: script_location
-                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
-                | %{v_function_name}: check_phase_complete
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: python_interpreter
-            <- {current progress}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-            <- {phase_name: "phase_2"}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-                | %{literal<$% phase_name>}: phase_2
-        <- {phase 1 complete}
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-            /: Dependency: must complete refinement first
-    <- {phase 1 complete}
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: Final output - the .ncds file we're creating
+
+    /: ========================================
+    /: PHASE 0: READ RAW INPUT
+    /: ========================================
+
+    <- {raw instruction content}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(write phase 1 status to progress file)
-            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
-            | %{h_input_norm}: LiteralPath, Literal
+        <= ::(read instruction from input file)
+            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+            | %{h_input_norm}: LiteralPath
             | %{body_faculty}: file_system
-            | %{write_mode}: append
-        <- {progress file path}<:{1}>
+            /: FILE I/O: Load the natural language instruction
+            /: This is the starting point - what the user wants to derive
+        <- {instruction file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
-        <- {refined instruction file written}<:{2}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
+
+    /: ========================================
+    /: PHASE 1: REFINEMENT
+    /: ========================================
+    /: PURPOSE: Ensure instruction is concrete enough for extraction
+    /: 
+    /: Per derivation.md: "Natural language is ambiguous and unstructured"
+    /: Vague instructions like "analyze the data" can't be derived properly.
+    /: We either clarify them OR pass through if already concrete.
+
     <- {refined instruction file written}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
@@ -437,17 +153,48 @@
             | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
             | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            <= @:!(<phase 1 already complete>)
-            <* <phase 1 already complete>
-        /: PHASE 1: Refine and save
+            /: FILE I/O: Save refined instruction for Phase 2 to read
+            /: Checkpoint enables resume - if we crash after this, Phase 2 can still run
         <- {refined instruction file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
-        <- {refined instruction content}<:{2}>
+        <- {instruction to be written}<:{2}>
             | %{ref_axes}: [_none_axis]
             | %{ref_shape}: (1,)
             | %{ref_element}: str
-            <= $. %>[{cached refined instruction}, {freshly refined instruction}]
+            <= $. %>({instruction to be written})
+                /: SELECTION: Pick cache if available, else compute fresh
+                /: Pattern: [check, cache_if_done, compute_if_not_done]
+
+            <- <phase 1 already complete>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: %{truth_value}
+                <= ::<{check if phase 1 already complete in progress}><ALL True>
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                    | %{v_function_name}: check_phase_complete
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                /: RESUME CHECK: Did we already finish Phase 1 in a previous run?
+                <- {current progress}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read progress from file if exists)
+                        | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                    /: FILE I/O: Load progress tracker (may be empty/missing on first run)
+                    <- {progress file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {phase_name: "phase_1"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% phase_name>}: phase_1
+
             <- {cached refined instruction}
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
@@ -456,54 +203,49 @@
                     | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
                     | %{h_input_norm}: LiteralPath
                     | %{body_faculty}: file_system
+                    /: CACHE PATH: If Phase 1 done, just load the saved result
+                    /: Saves LLM calls on resume
                     <= @:'(<phase 1 already complete>)
+                        /: TIMING GATE: Only execute if phase already complete
                     <* <phase 1 already complete>
                 <- {refined instruction file path}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
+
             <- {freshly refined instruction}
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: str
-                <= $. %>[{refined version}, {original version}]
+                <= $. %>({freshly refined instruction})
+                    /: COMPUTATION PATH: Select refined or original based on vagueness
                     <= @:!(<phase 1 already complete>)
+                        /: TIMING GATE: Only execute if phase NOT complete
                     <* <phase 1 already complete>
-                <- {refined version}
+
+
+                <- <instruction is vague>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_shape}: (1,)
-                    | %{ref_element}: str
-                    <= ::(synthesize from refinement answers)
-                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{ref_element}: %{truth_value}
+                    <= ::<{judge if instruction lacks concrete details}><ALL True>
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
                         | %{v_input_norm}: prompt_location
-                        | %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
+                        | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
                         | %{h_input_norm}: Literal
                         | %{body_faculty}: llm
-                        <= @:'(<instruction is vague>)
-                        <* <instruction is vague>
-                    <- {refinement answers}<:{1}>
-                        | %{ref_axes}: [question]
-                        | %{ref_shape}: (n_question,)
-                        | %{ref_element}: dict(question: str, answer: str)
-                        <= ::(apply each refinement question)
-                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
-                            | %{v_input_norm}: prompt_location
-                            | %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
-                            | %{h_input_norm}: Literal
-                            | %{body_faculty}: llm
-                        <- {raw instruction content}<:{1}>
-                            | %{ref_axes}: [_none_axis]
-                            | %{ref_element}: str
-                        <- {refinement questions content}<:{2}>
-                            | %{ref_axes}: [_none_axis]
-                            | %{ref_shape}: (1,)
-                            | %{ref_element}: str
-                            <= ::(read refinement questions from file)
-                                | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
-                                | %{h_input_norm}: LiteralPath
-                                | %{body_faculty}: file_system
-                            <- {refinement questions file path}<:{1}>
-                                | %{ref_axes}: [_none_axis]
-                                | %{ref_element}: str
+                        /: LLM JUDGEMENT: Is this instruction too vague to derive?
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#before-derivation-instruction-refinement",
+                        /:   "documentation/current/4_compilation/derivation.md#the-derivation-problem"
+                        /: ]
+                        /: CONTEXT NEEDED: What makes an instruction "vague" vs "concrete"?
+                        /:   - Vague: implicit loops, unnamed data, unclear conditions
+                        /:   - Concrete: explicit loops, named entities, concrete operations
+                    <- {raw instruction content}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
                 <- {original version}
                     | %{ref_axes}: [_none_axis]
                     | %{ref_shape}: (1,)
@@ -515,113 +257,960 @@
                         | %{v_function_name}: pass_through
                         | %{h_input_norm}: Literal
                         | %{body_faculty}: python_interpreter
+                        /: PASSTHROUGH: If instruction is already concrete, use as-is
                         <= @:!(<instruction is vague>)
+                            /: TIMING GATE: Only if instruction is NOT vague
                         <* <instruction is vague>
                     <- {raw instruction content}<:{1}>
                         | %{ref_axes}: [_none_axis]
                         | %{ref_element}: str
-                <- <instruction is vague>
+
+                <- {refined version}
                     | %{ref_axes}: [_none_axis]
                     | %{ref_shape}: (1,)
-                    | %{ref_element}: %{truth_value}
-                    <= ::<{judge if instruction lacks concrete details}><ALL True>
-                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
+                    | %{ref_element}: str
+                    <= ::(synthesize from refinement answers)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
                         | %{v_input_norm}: prompt_location
-                        | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
+                        | %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
                         | %{h_input_norm}: Literal
                         | %{body_faculty}: llm
-                    <- {raw instruction content}<:{1}>
-                        | %{ref_axes}: [_none_axis]
-                        | %{ref_element}: str
-        <- <phase 1 already complete>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_shape}: (1,)
-            | %{ref_element}: %{truth_value}
-            <= ::<{check if phase 1 already complete in progress}><ALL True>
-                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-                | %{v_input_norm}: script_location
-                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
-                | %{v_function_name}: check_phase_complete
-                | %{h_input_norm}: Literal
-                | %{body_faculty}: python_interpreter
-            <- {current progress}<:{1}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-            <- {phase_name: "phase_1"}<:{2}>
-                | %{ref_axes}: [_none_axis]
-                | %{ref_element}: str
-                | %{literal<$% phase_name>}: phase_1
-    <- {raw instruction content}
+                        /: LLM SYNTHESIS: Combine Q&A answers into a concrete instruction
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-refinement-process",
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#rules-of-thumb-for-paraphrasing"
+                        /: ]
+                        /: CONTEXT NEEDED: How to synthesize a refined instruction
+                        /:   - Make implicit loops explicit
+                        /:   - Name all data entities
+                        /:   - Make conditions concrete
+                        /:   - Decompose compound operations
+                        <= @:'(<instruction is vague>)
+                            /: TIMING GATE: Only if instruction IS vague
+                        <* <instruction is vague>
+                    <- {refinement answers}<:{1}>
+                        | %{ref_axes}: [question]
+                        | %{ref_shape}: (n_question,)
+                        | %{ref_element}: dict(question: str, answer: str)
+                        <= ::(apply each refinement question)
+                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                            | %{v_input_norm}: prompt_location
+                            | %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
+                            | %{h_input_norm}: Literal
+                            | %{body_faculty}: llm
+                            /: LLM ITERATION: Ask each of 7 questions about the instruction
+                            /:
+                            /: %{cue_files}: [
+                            /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-refinement-questions"
+                            /: ]
+                            /: CONTEXT NEEDED: The 7 refinement questions
+                            /:   1. "What's the final output?"
+                            /:   2. "What data exists at the start?"
+                            /:   3. "Does this repeat?"
+                            /:   4. "What triggers each step?"
+                            /:   5. "When does it end?"
+                            /:   6. "What conditions affect behavior?"
+                            /:   7. "What's one atomic step?"
+                        <- {raw instruction content}<:{1}>
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_element}: str
+                        <- {refinement questions content}<:{2}>
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_shape}: (1,)
+                            | %{ref_element}: str
+                            <= ::(read refinement questions from file)
+                                | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                                | %{h_input_norm}: LiteralPath
+                                | %{body_faculty}: file_system
+                                /: FILE I/O: Load the 7 standard refinement questions
+                            <- {refinement questions file path}<:{1}>
+                                | %{ref_axes}: [_none_axis]
+                                | %{ref_element}: str
+
+    <- {phase 1 complete}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        <= ::(read instruction from input file)
-            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
-            | %{h_input_norm}: LiteralPath
+        <= ::(write phase 1 status to progress file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-        <- {instruction file path}<:{1}>
-            | %{ref_axes}: [_none_axis]
-            | %{ref_element}: str
-    <- {current progress}
-        | %{ref_axes}: [_none_axis]
-        | %{ref_shape}: (1,)
-        | %{ref_element}: str
-        <= ::(read progress from file if exists)
-            | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
-            | %{h_input_norm}: LiteralPath
-            | %{body_faculty}: file_system
+            | %{write_mode}: append
+        /: CHECKPOINT: Mark Phase 1 done in progress tracker
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
+        <- {refined instruction file written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
     /: ========================================
-    /: FILE PATH CONFIGURATION (Ground Concepts)
+    /: PHASE 2: EXTRACTION
     /: ========================================
-    /: Ground concepts with literal paths - MVP passes through, paradigm handles I/O
-    <- {instruction file path}
+    /: PURPOSE: Decompose instruction into raw materials for tree building
+    /: 
+    /: Per derivation.md Step 1-3:
+    /:   - Identify Concepts: "Extract all data entities mentioned"
+    /:   - Identify Operations: "Extract all actions/operations mentioned"  
+    /:   - Determine Dependencies: "Figure out which concepts feed into which operations"
+    /:
+    /: This is the CORE of derivation - understanding WHAT is in the instruction
+
+    <- {extraction file written}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to instruction.txt
-    <- {refinement questions file path}
+        <= ::(write extraction results to checkpoint file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{serialize}: json
+            /: FILE I/O: Save extractions for Phase 3 and 4 to read
+        <- {extraction file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {extraction to be written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_shape}: (1,)
+            | %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)
+            <= $. %>({extraction to be written})
+                /: SELECTION: Cache or compute pattern (same as Phase 1)
+
+            <- <phase 2 already complete>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: %{truth_value}
+                <= ::<{check if phase 2 already complete in progress}><ALL True>
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                    | %{v_function_name}: check_phase_complete
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: RESUME CHECK
+                <- {current progress}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read progress from file if exists)
+                        | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                    <- {progress file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {phase_name: "phase_2"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% phase_name>}: phase_2
+
+            <- {cached extraction data}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)
+                <= ::(read extraction from checkpoint)
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
+                    | %{body_faculty}: file_system
+                    | %{parse}: json
+                    /: CACHE PATH
+                    <= @:'(<phase 2 already complete>)
+                        /: TIMING GATE: Only execute if phase already complete
+                    <* <phase 2 already complete>
+                <- {extraction file path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            <- {freshly extracted data}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)
+                <= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)
+                    /: GROUPING: Bundle all 4 extraction results into one structured object
+                    /: Output: {concepts: [...], operations: [...], dependencies: [...], patterns: [...]}
+                    <= @:!(<phase 2 already complete>)
+                        /: TIMING GATE: Only execute if phase NOT complete
+                    <* <phase 2 already complete>
+
+                <- {refined instruction content}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read refined instruction file from path)
+                        | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                        /: FILE I/O: Load Phase 1 output (the concrete instruction)
+                    <- {refined instruction file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+                <- {extracted concepts}
+                    | %{ref_axes}: [concept]
+                    | %{ref_shape}: (n_concept,)
+                    | %{ref_element}: str
+                    <= ::(identify all nouns and data entities)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: LLM EXTRACTION: Find all DATA mentioned in instruction
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/derivation.md#step-1-identify-concepts",
+                        /:   "documentation/current/2_grammar/semantic_concepts.md#object",
+                        /:   "documentation/current/2_grammar/semantic_concepts.md#relation"
+                        /: ]
+                        /: CONTEXT NEEDED: What counts as a concept?
+                        /:   - Object {}: Nouns, singular entities ("the sum", "user input")
+                        /:   - Relation []: Plurals, collections ("the files", "all numbers")
+                        /:   - Look for: "the X", "a Y", "all Z", input/output mentions
+                    <- {refined instruction content}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+                <- [extracted operations]
+                    | %{ref_axes}: [operation]
+                    | %{ref_shape}: (n_operation,)
+                    | %{ref_element}: str
+                    <= ::(identify all verbs and actions)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_2/extract_operations.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: LLM EXTRACTION: Find all ACTIONS mentioned in instruction
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/derivation.md#step-2-identify-operations",
+                        /:   "documentation/current/2_grammar/semantic_concepts.md#imperative",
+                        /:   "documentation/current/2_grammar/semantic_concepts.md#judgement"
+                        /: ]
+                        /: CONTEXT NEEDED: What counts as an operation?
+                        /:   - Imperative ({}): Active verbs ("calculate", "extract", "generate")
+                        /:   - Judgement <{}>: Questions, checks ("is X valid?", "check if Y")
+                        /:   - Look for: action phrases, imperatives, "do X", "compute Y"
+                    <- {refined instruction content}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+                <- [extracted dependencies]
+                    | %{ref_axes}: [dependency]
+                    | %{ref_shape}: (n_dependency,)
+                    | %{ref_element}: dict(source: str, target: str)
+                    <= ::(identify what needs what)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: LLM EXTRACTION: Find DATA FLOW between concepts/operations
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/derivation.md#step-3-determine-dependencies",
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-derivation-question"
+                        /: ]
+                        /: CONTEXT NEEDED: How to identify dependencies?
+                        /:   - Temporal order: "after X, do Y" → X before Y
+                        /:   - Data flow: "analyze the cleaned data" → clean first
+                        /:   - Keywords: "using", "from", "based on", "with", "given"
+                        /:   - Ask: "What do I need to produce this?"
+                    <- {refined instruction content}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {extracted concepts}<:{2}>
+                        | %{ref_axes}: [concept]
+                        | %{ref_element}: str
+                    <- [extracted operations]<:{3}>
+                        | %{ref_axes}: [operation]
+                        | %{ref_element}: str
+
+                <- [extracted control patterns]
+                    | %{ref_axes}: [pattern]
+                    | %{ref_shape}: (n_pattern,)
+                    | %{ref_element}: dict(type: str, context: str)
+                    <= ::(identify loops and conditions)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: LLM EXTRACTION: Find CONTROL STRUCTURES
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-five-core-patterns",
+                        /:   "documentation/current/4_compilation/examples/ncds/README.md#loop-patterns",
+                        /:   "documentation/current/4_compilation/examples/ncds/README.md#control-flow-patterns"
+                        /: ]
+                        /: CONTEXT NEEDED: What control patterns to look for?
+                        /:   - Iteration: "for each X", "process all Y"
+                        /:   - Conditional: "if X then Y", "when Z"
+                        /:   - Self-seeding loop: "keep going until", "continuously"
+                        /:   - Conditional append: "add if valid", "collect matching"
+                    <- {refined instruction content}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+    <- {phase 2 complete}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: provisions/data/refinement_questions.txt
-        /: Ground: path to refinement_questions.txt
-    <- {progress file path}
+        <= ::(write phase 2 status to progress file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{write_mode}: append
+            /: CHECKPOINT: Mark Phase 2 done
+        <- {progress file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {extraction file written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+    /: ========================================
+    /: PHASE 3: CLASSIFICATION
+    /: ========================================
+    /: PURPOSE: Label each operation with its NormCode pattern type
+    /: 
+    /: Per derivation.md takeaways, patterns include:
+    /:   - Linear chain: A → B → C
+    /:   - Multiple inputs: combine(A, B) → C
+    /:   - Iteration: for each X in collection
+    /:   - Conditional: if condition then A else B
+    /:   - Grouping: bundle {A, B, C} together
+    /:
+    /: This PREPARES for tree construction by labeling HOW each operation behaves
+
+    <- {classifications file written}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to progress.txt (runtime provided)
-    <- {refined instruction file path}
+        <= ::(write classifications to checkpoint file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{serialize}: json
+            /: FILE I/O: Save classifications for Phase 4
+        <- {classifications file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {classifications to be written}<:{2}>
+            | %{ref_axes}: [operation]
+            | %{ref_shape}: (n_operation,)
+            | %{ref_element}: dict(pattern: str, context: str)
+            <= $. %>({classifications to be written})
+                /: SELECTION: Cache or compute pattern
+
+            <- <phase 3 already complete>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: %{truth_value}
+                <= ::<{check if phase 3 already complete in progress}><ALL True>
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                    | %{v_function_name}: check_phase_complete
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: RESUME CHECK
+                <- {current progress}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read progress from file if exists)
+                        | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                    <- {progress file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {phase_name: "phase_3"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% phase_name>}: phase_3
+
+            <- {cached classifications}
+                | %{ref_axes}: [operation]
+                | %{ref_shape}: (n_operation,)
+                | %{ref_element}: dict(pattern: str, context: str)
+                <= ::(read classifications from checkpoint)
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
+                    | %{body_faculty}: file_system
+                    | %{parse}: json
+                    /: CACHE PATH
+                    <= @:'(<phase 3 already complete>)
+                        /: TIMING GATE: Only execute if phase already complete
+                    <* <phase 3 already complete>
+                <- {classifications file path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            <- [freshly classified operations]
+                | %{ref_axes}: [operation]
+                | %{ref_shape}: (n_operation,)
+                | %{ref_element}: dict(pattern: str, context: str)
+                <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)
+                    /: ITERATION: For each operation, produce a classification
+                    /: %<() = output type, %:() = element name, %@() = axis index
+                    <= @:!(<phase 3 already complete>)
+                        /: TIMING GATE: Only execute if phase NOT complete
+                    <* <phase 3 already complete>
+
+
+                    <= $. %>({classification})
+                        /: LOOP BODY: Return the classification for this operation
+
+                    <- {classification}
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_shape}: (1,)
+                        | %{ref_element}: dict(pattern: str, context: str)
+                        <= ::(determine pattern type for operation)
+                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                            | %{v_input_norm}: prompt_location
+                            | %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md
+                            | %{h_input_norm}: Literal
+                            | %{body_faculty}: llm
+                            /: LLM CLASSIFICATION: What pattern does this operation match?
+                            /:
+                            /: %{cue_files}: [
+                            /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-five-core-patterns",
+                            /:   "documentation/current/4_compilation/examples/ncds/README.md#pattern-reference",
+                            /:   "documentation/current/4_compilation/derivation.md#derivation-takeaways-lessons-from-examples"
+                            /: ]
+                            /: CONTEXT NEEDED: The 5 core patterns
+                            /:   1. Linear chain: "Transform A into B" → single input, single output
+                            /:   2. Multiple inputs: "Combine A and B" → sibling inputs
+                            /:   3. Iteration: "For each X, do Y" → loop with <* marker
+                            /:   4. Conditional: "If X then Y" → timing gate with <* condition
+                            /:   5. Grouping: "Bundle A, B, C" → collect into structured output
+                        <- {current operation}<:{1}>
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_element}: str
+                        <- {operation context}<:{2}>
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_shape}: (1,)
+                            | %{ref_element}: dict
+                            <= ::(gather context from extraction data)
+                                | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                                | %{v_input_norm}: prompt_location
+                                | %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md
+                                | %{h_input_norm}: Literal
+                                | %{body_faculty}: llm
+                                /: PREPARATION: Pull relevant context for this operation
+                                /: Context = which concepts it touches, what dependencies involve it
+                            <- {current operation}<:{1}>
+                                | %{ref_axes}: [_none_axis]
+                                | %{ref_element}: str
+                            <- {extraction data}<:{2}>
+                                | %{ref_axes}: [_none_axis]
+                                | %{ref_element}: dict
+
+                <- [extracted operations]
+                    | %{ref_axes}: [operation]
+                    | %{ref_shape}: (n_operation,)
+                    | %{ref_element}: str
+                    <= ::(get operations from extraction data)
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/extract_field.py
+                        | %{v_function_name}: extract_field
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                        /: DATA ACCESS: Get the list of operations to iterate over
+                    <- {extraction data}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+                        <= ::(read extraction file from path)
+                            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                            | %{h_input_norm}: LiteralPath
+                            | %{body_faculty}: file_system
+                            | %{parse}: json
+                            /: FILE I/O: Load Phase 2 output
+                        <- {extraction file path}<:{1}>
+                            | %{ref_axes}: [_none_axis]
+                            | %{ref_element}: str
+                    <- {field_name: "operations"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% field_name>}: operations
+
+                <* {current operation}<$([extracted operations])*>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    /: LOOP CONTEXT: The current operation being classified
+
+    <- {phase 3 complete}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to 1_refined_instruction.txt (runtime provided)
-    <- {extraction file path}
+        <= ::(write phase 3 status to progress file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{write_mode}: append
+            /: CHECKPOINT: Mark Phase 3 done
+        <- {progress file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {classifications file written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+    /: ========================================
+    /: PHASE 4: TREE CONSTRUCTION
+    /: ========================================
+    /: PURPOSE: Build the hierarchical dependency structure
+    /: 
+    /: Per derivation.md Step 4:
+    /:   "Start with final output (root)"
+    /:   "For each concept, add its operation as child"
+    /:   "For each operation, add its inputs as children"
+    /:   "Recurse until all concepts placed"
+    /:
+    /: This is the STRUCTURE step - arranging pieces into a tree
+
+    <- {tree file written}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to 2_extraction.json (runtime provided)
-    <- {classifications file path}
+        <= ::(write dependency tree to checkpoint file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{serialize}: json
+            /: FILE I/O: Save tree for Phase 5
+        <- {tree file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {tree to be written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_shape}: (1,)
+            | %{ref_element}: dict(root: str, nodes: dict)
+            <= $. %>({tree to be written})
+                /: SELECTION: Cache or compute pattern
+
+            <- <phase 4 already complete>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: %{truth_value}
+                <= ::<{check if phase 4 already complete in progress}><ALL True>
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                    | %{v_function_name}: check_phase_complete
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: RESUME CHECK
+                <- {current progress}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read progress from file if exists)
+                        | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                    <- {progress file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {phase_name: "phase_4"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% phase_name>}: phase_4
+
+            <- {cached dependency tree}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: dict(root: str, nodes: dict)
+                <= ::(read dependency tree from checkpoint)
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
+                    | %{body_faculty}: file_system
+                    | %{parse}: json
+                    /: CACHE PATH
+                    <= @:'(<phase 4 already complete>)
+                        /: TIMING GATE: Only execute if phase already complete
+                    <* <phase 4 already complete>
+                <- {tree file path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            <- {freshly constructed tree}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: dict(root: str, nodes: dict)
+                <= ::(construct tree from classifications and extractions)
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
+                    | %{v_input_provision}: provisions/prompts/phase_4/construct_dependency_tree.md
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: llm
+                    /: LLM/ALGORITHMIC: Build the dependency tree
+                    /:
+                    /: %{cue_files}: [
+                    /:   "documentation/current/4_compilation/derivation.md#step-4-build-hierarchical-structure",
+                    /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-derivation-algorithm",
+                    /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#worked-example"
+                    /: ]
+                    /: CONTEXT NEEDED: Tree construction algorithm
+                    /:   1. Start with final output concept as root
+                    /:   2. Find operation that produces it → add as child (<=)
+                    /:   3. Find inputs to that operation → add as grandchildren (<-)
+                    /:   4. For each input with a producing operation → recurse
+                    /:   5. Stop when reaching ground concepts (external inputs)
+                    /:   6. Add <* markers for loop contexts and conditions
+
+                    <= @:!(<phase 4 already complete>)
+                        /: TIMING GATE: Only execute if phase NOT complete
+                    <* <phase 4 already complete>
+
+                <- {classifications data}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: dict
+                    <= ::(read classifications file from path)
+                        | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                        | %{parse}: json
+                    /: FILE I/O: Load Phase 3 output (pattern types)
+                    <- {classifications file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+                <- {extraction data}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: dict
+                    <= ::(read extraction file from path)
+                        | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                        | %{parse}: json
+                    /: FILE I/O: Load Phase 2 output (raw materials)
+                    <- {extraction file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+                <- {final output concept}<:{3}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(identify goal from extraction data)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_4/identify_goal.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: LLM IDENTIFICATION: What is the FINAL OUTPUT of this instruction?
+                        /:
+                        /: %{cue_files}: [
+                        /:   "documentation/current/4_compilation/examples/ncds/derivation_v2.md#step-1-identify-the-goal",
+                        /:   "documentation/current/4_compilation/derivation.md#strategy-1-top-down-goal-oriented"
+                        /: ]
+                        /: CONTEXT NEEDED: How to identify the goal
+                        /:   - The goal is the FINAL OUTPUT of the instruction
+                        /:   - Look for: "produce X", "generate Y", "return Z"
+                        /:   - This becomes the ROOT of the tree
+                        /:   - Example: "generate a summary" → root is "{summary}"
+                    <- {extraction data}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {classified operations}<:{4}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: dict
+                    <= ::(get classifications from classifications data)
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/pass_through.py
+                        | %{v_function_name}: pass_through
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                        /: DATA ACCESS: Get operation → pattern_type mappings
+                    <- {classifications data}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- [all dependencies]<:{5}>
+                    | %{ref_axes}: [dependency]
+                    | %{ref_shape}: (n_dependency,)
+                    | %{ref_element}: dict(source: str, target: str)
+                    <= ::(extract dependencies from extraction data)
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/extract_field.py
+                        | %{v_function_name}: extract_field
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                        /: DATA ACCESS: Get the dependency relationships
+                        /: Format: [{source: X, target: Y, type: "produces"|"feeds_into"}, ...]
+                    <- {extraction data}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+                    <- {field_name: "dependencies"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% field_name>}: dependencies
+
+    <- {phase 4 complete}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to 3_classifications.json (runtime provided)
-    <- {tree file path}
+        <= ::(write phase 4 status to progress file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{write_mode}: append
+            /: CHECKPOINT: Mark Phase 4 done
+        <- {progress file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {tree file written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+    /: ========================================
+    /: PHASE 5: SERIALIZATION
+    /: ========================================
+    /: PURPOSE: Convert internal tree structure to .ncds text format
+    /: 
+    /: Per derivation.md format:
+    /:   - <- for value concepts (data)
+    /:   - <= for functional concepts (operations)
+    /:   - <* for context concepts (loop base, conditions)
+    /:   - 4-space indentation for hierarchy
+    /:   - Root at level 0, children indented
+    /:
+    /: This is OUTPUT formatting - tree → text
+
+    <- {ncds output written}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to 4_dependency_tree.json (runtime provided)
-    <- {output file path}
+        <= ::(write ncds file to output path)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            /: FILE I/O: Write the final .ncds file
+        <- {output file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {ncds to be written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_shape}: (1,)
+            | %{ref_element}: str
+            <= $. %>({ncds to be written})
+                /: SELECTION: Cache or compute pattern
+
+            <- <phase 5 already complete>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: %{truth_value}
+                <= ::<{check if phase 5 already complete in progress}><ALL True>
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                    | %{v_function_name}: check_phase_complete
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: RESUME CHECK
+                <- {current progress}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(read progress from file if exists)
+                        | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                    <- {progress file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {phase_name: "phase_5"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% phase_name>}: phase_5
+
+            <- {cached ncds content}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= ::(read ncds from checkpoint)
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
+                    | %{body_faculty}: file_system
+                    /: CACHE PATH
+                    <= @:'(<phase 5 already complete>)
+                        /: TIMING GATE: Only execute if phase already complete
+                    <* <phase 5 already complete>
+                <- {output file path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            <- {freshly serialized ncds}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= ::(serialize dependency tree to ncds text format)
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
+                    | %{v_input_provision}: provisions/prompts/phase_5/serialize_tree_to_ncds.md
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: llm
+                    /: ALGORITHMIC/LLM: Convert tree JSON to .ncds text
+                    /:
+                    /: %{cue_files}: [
+                    /:   "documentation/current/4_compilation/derivation.md#the-ncds-format",
+                    /:   "documentation/current/4_compilation/examples/ncds/00_simple_linear.ncds",
+                    /:   "documentation/current/4_compilation/examples/ncds/02_multi_input.ncds",
+                    /:   "documentation/current/4_compilation/examples/ncds/03_iteration.ncds",
+                    /:   "documentation/current/4_compilation/examples/ncds/04_conditional.ncds",
+                    /:   "documentation/current/4_compilation/examples/ncds/05_grouping.ncds"
+                    /: ]
+                    /: CONTEXT NEEDED: .ncds format specification
+                    /:   Markers:
+                    /:     <- : Value concept (data/input/output)
+                    /:     <= : Functional concept (operation)
+                    /:     <* : Context concept (loop base, condition)
+                    /:   Structure:
+                    /:     - 4-space indentation per level
+                    /:     - Root at level 0
+                    /:     - Operation is first child of value
+                    /:     - Inputs are siblings after operation
+                    /:   Example:
+                    /:     <- final result
+                    /:         <= compute from inputs
+                    /:         <- input A
+                    /:         <- input B
+                    <= @:!(<phase 5 already complete>)
+                        /: TIMING GATE: Only execute if phase NOT complete
+                    <* <phase 5 already complete>
+
+                <- {dependency tree}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: dict(root: str, nodes: dict)
+                    <= ::(read dependency tree file from path)
+                        | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                        | %{parse}: json
+                        /: FILE I/O: Load Phase 4 output (the tree structure)
+                    <- {tree file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+
+    <- {phase 5 complete}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
-        | %{literal<$% file_path>}: (runtime provided)
-        /: Ground: path to ncds_output.ncds (runtime provided)
+        <= ::(write phase 5 status to progress file)
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
+            | %{body_faculty}: file_system
+            | %{write_mode}: append
+            /: CHECKPOINT: Mark Phase 5 done (derivation complete!)
+        <- {progress file path}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+        <- {ncds output written}<:{2}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+/: ========================================
+/: SUMMARY: How Operations Work Together
+/: ========================================
+/:
+/: DERIVATION CORE (per documentation):
+/:   Phase 2: EXTRACT → concepts, operations, dependencies, patterns
+/:   Phase 4: STRUCTURE → build dependency tree
+/:   Phase 5: OUTPUT → serialize to .ncds
+/:
+/: ENHANCEMENTS (operational):
+/:   Phase 1: PRE-PROCESS → handle vague instructions
+/:   Phase 3: CLASSIFY → label operations with pattern types
+/:   All phases: CHECKPOINT → enable resume on failure
+/:
+/: DATA FLOW:
+/:   instruction.txt 
+/:     → [refine if vague] 
+/:     → extract {concepts, operations, dependencies, patterns}
+/:     → classify each operation
+/:     → construct dependency tree
+/:     → serialize to .ncds
+/:     → ncds_output.ncds
+/:
+/: RESUME PATTERN (repeated 5x):
+/:   1. Check if phase already complete
+/:   2. If yes → read cached result
+/:   3. If no → compute fresh result
+/:   4. Write result to checkpoint
+/:   5. Update progress tracker
+/:
+/: PARADIGM SET USED:
+/:   File System (3):
+/:     - h_LiteralPath-c_ReadFile-o_Literal
+/:     - h_LiteralPath-c_ReadFileIfExists-o_Literal
+/:     - h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+/:   LLM (2):
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
+/:   Python (2):
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+/:
+/: ========================================
+/: CUE FILES SUMMARY (for prompt writing)
+/: ========================================
+/:
+/: PHASE 1 - REFINEMENT:
+/:   judge if instruction lacks concrete details:
+/:     - derivation_v2.md#before-derivation-instruction-refinement
+/:     - derivation.md#the-derivation-problem
+/:   apply each refinement question:
+/:     - derivation_v2.md#the-refinement-questions
+/:   synthesize from refinement answers:
+/:     - derivation_v2.md#the-refinement-process
+/:     - derivation_v2.md#rules-of-thumb-for-paraphrasing
+/:
+/: PHASE 2 - EXTRACTION:
+/:   identify all nouns and data entities:
+/:     - derivation.md#step-1-identify-concepts
+/:     - semantic_concepts.md#object
+/:     - semantic_concepts.md#relation
+/:   identify all verbs and actions:
+/:     - derivation.md#step-2-identify-operations
+/:     - semantic_concepts.md#imperative
+/:     - semantic_concepts.md#judgement
+/:   identify what needs what:
+/:     - derivation.md#step-3-determine-dependencies
+/:     - derivation_v2.md#the-derivation-question
+/:   identify loops and conditions:
+/:     - derivation_v2.md#the-five-core-patterns
+/:     - README.md#loop-patterns
+/:     - README.md#control-flow-patterns
+/:
+/: PHASE 3 - CLASSIFICATION:
+/:   determine pattern type for operation:
+/:     - derivation_v2.md#the-five-core-patterns
+/:     - README.md#pattern-reference
+/:     - derivation.md#derivation-takeaways-lessons-from-examples
+/:
+/: PHASE 4 - TREE CONSTRUCTION:
+/:   identify goal from extraction data:
+/:     - derivation_v2.md#step-1-identify-the-goal
+/:     - derivation.md#strategy-1-top-down-goal-oriented
+/:   construct tree from classifications and extractions:
+/:     - derivation.md#step-4-build-hierarchical-structure
+/:     - derivation_v2.md#the-derivation-algorithm
+/:     - derivation_v2.md#worked-example
+/:
+/: PHASE 5 - SERIALIZATION:
+/:   serialize dependency tree to ncds text format:
+/:     - derivation.md#the-ncds-format
+/:     - EXAMPLES: 00_simple_linear.ncds, 02_multi_input.ncds,
+/:       03_iteration.ncds, 04_conditional.ncds, 05_grouping.ncds
