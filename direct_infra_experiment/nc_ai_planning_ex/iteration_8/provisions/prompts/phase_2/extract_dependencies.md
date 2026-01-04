@@ -2,74 +2,136 @@
 
 ## Task
 
-Identify all **dependency relationships** between concepts and operations. These define the data flow and execution order in the NormCode plan.
+Identify all **dependency relationships** between concepts and operations. This defines data flow and execution order.
 
 ## Inputs
 
-You will receive:
-- `$input_1` — The refined instruction (refined instruction content)
-- `$input_2` — List of extracted value concepts (extracted concepts)
-- `$input_3` — List of extracted operations (extracted operations)
+- `input_1` — The refined instruction
+- `input_2` — Extracted concepts
+- `input_3` — Extracted operations
 
-## What to Extract
+---
 
-For each operation, determine:
-1. **Input concepts**: What data does this operation need?
-2. **Output concept**: What data does this operation produce?
-3. **Prerequisites**: What other operations must complete first?
+## The Core Question
+
+For every concept and operation, ask:
+
+> **"What do I need to produce this?"**
+
+This recursion builds the dependency graph:
+1. What's the final output?
+2. What operation produces it?
+3. What does that operation need?
+4. Repeat for each input...
+
+---
 
 ## Dependency Types
 
-| Type | Example | Meaning |
+| Type | Meaning | Example |
 |------|---------|---------|
-| **Data flow** | `{summary}` ← `summarize` ← `{document}` | Operation uses input to produce output |
-| **Sequence** | `validate` → `process` | One operation must complete before another |
-| **Aggregation** | `{all summaries}` ← `collect` ← `[{summary}]` | Collection of results from loop |
+| **produces** | Operation creates concept | "extract sentiment" → produces → "sentiment score" |
+| **needs** | Operation requires concept | "extract sentiment" ← needs ← "customer review" |
+| **sequence** | One after another | "generate report" ← after ← "iteration completes" |
+| **aggregates** | Collection built from items | "positive reviews" ← collects ← "review" (per iteration) |
+| **conditions** | Boolean controls execution | "add to list" ← gated by ← "is positive" |
+
+---
+
+## Indicator Phrases
+
+**Temporal order**:
+- "after X", "then", "once X is complete" → sequence dependency
+- "first X, then Y" → X before Y
+
+**Data flow**:
+- "using X", "from X", "based on X" → X is input
+- "produces Y", "results in Y" → Y is output
+
+**Aggregation**:
+- "collect all", "add to", "gather" → items → collection
+
+---
 
 ## Output Format
-
-Return a JSON object:
 
 ```json
 {
   "thinking": "Your dependency analysis",
   "dependencies": [
     {
-      "target": "concept or operation that depends",
-      "source": "concept or operation depended upon",
-      "relationship": "data_input" | "produces" | "sequence" | "aggregates",
+      "from": "source concept or operation",
+      "to": "target concept or operation",
+      "type": "produces" | "needs" | "sequence" | "aggregates" | "conditions",
       "description": "Why this dependency exists"
     }
   ],
   "data_flow": [
     {
       "operation": "operation name",
-      "inputs": ["list of input concepts"],
-      "output": "output concept"
+      "inputs": ["input concept names"],
+      "output": "output concept name"
     }
   ],
-  "execution_order_hints": ["operation1 before operation2", ...]
+  "summary": {
+    "root_output": "final output concept",
+    "ground_inputs": ["concepts with no producer"],
+    "execution_order": ["operation1", "operation2", "..."]
+  }
 }
 ```
+
+---
 
 ## Example
 
-Concepts: `[reviews]`, `{review}`, `{sentiment}`, `{report}`
-Operations: `for each review`, `extract sentiment`, `generate report`
+**Instruction**: "For each review, extract sentiment. If positive, add to positive reviews. Generate report from positive reviews."
 
-Dependencies:
+**Concepts**: customer reviews, customer review, sentiment score, is positive, positive reviews, summary report
+
+**Operations**: iterate, extract sentiment, check if positive, add to list, generate report
+
 ```json
 {
+  "thinking": "Report needs positive reviews. Positive reviews built by conditional append. Append needs review and condition. Condition needs sentiment. Sentiment needs review. Review comes from iteration over reviews.",
   "dependencies": [
-    {"target": "{sentiment}", "source": "extract sentiment", "relationship": "produces"},
-    {"target": "extract sentiment", "source": "{review}", "relationship": "data_input"},
-    {"target": "{report}", "source": "generate report", "relationship": "produces"},
-    {"target": "generate report", "source": "[{sentiment}]", "relationship": "data_input"}
-  ]
+    {"from": "generate report", "to": "summary report", "type": "produces", "description": "Report operation produces output"},
+    {"from": "positive reviews", "to": "generate report", "type": "needs", "description": "Report needs collected reviews"},
+    {"from": "add to list", "to": "positive reviews", "type": "aggregates", "description": "Collection built by appends"},
+    {"from": "is positive", "to": "add to list", "type": "conditions", "description": "Append only if positive"},
+    {"from": "check if positive", "to": "is positive", "type": "produces", "description": "Check produces condition"},
+    {"from": "sentiment score", "to": "check if positive", "type": "needs", "description": "Check needs score"},
+    {"from": "extract sentiment", "to": "sentiment score", "type": "produces", "description": "Extraction produces score"},
+    {"from": "customer review", "to": "extract sentiment", "type": "needs", "description": "Extract from current review"},
+    {"from": "iterate", "to": "customer review", "type": "produces", "description": "Iteration provides current item"},
+    {"from": "customer reviews", "to": "iterate", "type": "needs", "description": "Iterate over collection"}
+  ],
+  "data_flow": [
+    {"operation": "iterate", "inputs": ["customer reviews"], "output": "customer review"},
+    {"operation": "extract sentiment", "inputs": ["customer review"], "output": "sentiment score"},
+    {"operation": "check if positive", "inputs": ["sentiment score"], "output": "is positive"},
+    {"operation": "add to list", "inputs": ["customer review", "is positive"], "output": "positive reviews"},
+    {"operation": "generate report", "inputs": ["positive reviews"], "output": "summary report"}
+  ],
+  "summary": {
+    "root_output": "summary report",
+    "ground_inputs": ["customer reviews"],
+    "execution_order": ["iterate", "extract sentiment", "check if positive", "add to list", "generate report"]
+  }
 }
 ```
 
-## Data to Analyze
+---
+
+## Common Mistakes
+
+1. **Wrong direction**: Dependencies flow from inputs TO outputs, not reverse
+2. **Missing conditions**: Conditional operations depend on their condition
+3. **Missing aggregation**: Collections depend on their item source
+
+---
+
+## Now Extract
 
 ### Instruction
 $input_1
@@ -79,4 +141,3 @@ $input_2
 
 ### Operations
 $input_3
-

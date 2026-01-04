@@ -2,72 +2,149 @@
 
 ## Task
 
-For a specific operation, gather all relevant context from the extraction data that will help classify the operation's pattern type.
+For a specific operation, gather all relevant context from the extraction data to prepare for pattern classification.
 
 ## Inputs
 
-You will receive:
-- `$input_1` — The operation to analyze (current operation)
-- `$input_2` — Full extraction results (extraction data) containing concepts, operations, dependencies, patterns
+- `input_1` — The operation to analyze (current operation)
+- `input_2` — Full extraction results (extraction data)
 
-## Context to Gather
+---
 
-1. **Related concepts**: What concepts does this operation interact with?
-2. **Input/output role**: What are its inputs and outputs?
-3. **Dependency position**: Where is it in the dependency chain?
-4. **Control flow context**: Is it inside a loop? Conditional?
-5. **Similar operations**: Are there related operations?
+## What Context to Gather
+
+### 1. Data Flow
+- **Inputs**: What concepts does this operation consume?
+- **Output**: What concept does this operation produce?
+- **Input count**: Single input or multiple inputs?
+
+### 2. Position in Execution
+- **Upstream**: What operations must complete before this?
+- **Downstream**: What operations depend on this?
+- **Is root producer**: Does it produce the final output?
+- **Is leaf consumer**: Does it only consume inputs (no upstream ops)?
+
+### 3. Control Flow Context
+- **Inside loop?**: Is this operation executed per-iteration?
+- **Loop base**: If inside loop, what collection is being iterated?
+- **Is conditional?**: Is execution gated by a condition?
+- **Condition**: If conditional, what condition gates it?
+
+### 4. Operation Characteristics
+- **Produces boolean?**: Does output look like a true/false check?
+- **Is aggregation?**: Does it collect/bundle multiple items?
+- **Is iteration?**: Does it process a collection per-item?
+- **Execution type**: LLM (reasoning/generation) or Script (computation)?
+
+---
+
+## How to Extract from Extraction Data
+
+The extraction data contains:
+- `concepts`: List of all concepts with types and roles
+- `operations`: List of all operations with categories
+- `dependencies`: Relationships between concepts/operations
+- `patterns`: Identified control patterns (loops, conditionals)
+
+**For the current operation, find**:
+1. Dependencies where this operation is the target → these are inputs
+2. Dependencies where this operation is the source → this is output
+3. Patterns that mention this operation → control flow context
+
+---
 
 ## Output Format
-
-Return a JSON object:
 
 ```json
 {
   "thinking": "Your context gathering process",
   "context": {
-    "operation": "the operation being analyzed",
-    "input_concepts": ["list of concepts this operation takes as input"],
-    "output_concept": "concept this operation produces",
-    "is_inside_loop": true/false,
-    "loop_context": "if inside loop, what loop",
-    "is_conditional": true/false,
-    "condition_context": "if conditional, what condition",
-    "upstream_operations": ["operations that must complete before this"],
-    "downstream_operations": ["operations that depend on this"],
-    "similar_operations": ["other operations with similar pattern"],
-    "body_faculty_hint": "llm" | "file_system" | "python_interpreter"
+    "operation": "the operation name",
+    "inputs": {
+      "concepts": ["input concept names"],
+      "count": 0
+    },
+    "output": {
+      "concept": "output concept name",
+      "type": "object" | "collection" | "condition"
+    },
+    "position": {
+      "upstream_operations": ["operations before this"],
+      "downstream_operations": ["operations after this"],
+      "is_root_producer": true | false,
+      "is_leaf_consumer": true | false
+    },
+    "control_flow": {
+      "inside_loop": true | false,
+      "loop_collection": "collection being iterated (if applicable)",
+      "is_conditional": true | false,
+      "condition": "condition gating execution (if applicable)"
+    },
+    "characteristics": {
+      "produces_boolean": true | false,
+      "is_aggregation": true | false,
+      "is_iteration": true | false,
+      "execution_type": "llm" | "script"
+    }
   }
 }
 ```
+
+---
 
 ## Example
 
-For operation `extract sentiment` with extraction data showing it's inside a `for each review` loop:
+**Operation**: "extract sentiment score"
+
+**Extraction Data** (summary):
+- Concepts: reviews (collection, input), review (object, loop_var), sentiment score (object, intermediate), is positive (condition), positive reviews (collection), report (object, output)
+- Operations: iterate over reviews, extract sentiment score, check if positive, add to positive reviews, generate report
+- Dependencies: extract sentiment ← needs ← review; extract sentiment → produces → sentiment score
+- Patterns: iteration (for each review), conditional (if positive)
+
+**Context Gathered**:
 
 ```json
 {
+  "thinking": "Looking at dependencies: 'extract sentiment' needs 'review' (1 input) and produces 'sentiment score' (object). It's inside the 'iterate over reviews' loop. Not conditional itself. Downstream: 'check if positive' uses its output. Uses LLM for semantic extraction.",
   "context": {
-    "operation": "extract sentiment",
-    "input_concepts": ["{review}"],
-    "output_concept": "{sentiment}",
-    "is_inside_loop": true,
-    "loop_context": "for each review in [reviews]",
-    "is_conditional": false,
-    "condition_context": null,
-    "upstream_operations": [],
-    "downstream_operations": ["generate report"],
-    "similar_operations": ["extract key themes"],
-    "body_faculty_hint": "llm"
+    "operation": "extract sentiment score",
+    "inputs": {
+      "concepts": ["review"],
+      "count": 1
+    },
+    "output": {
+      "concept": "sentiment score",
+      "type": "object"
+    },
+    "position": {
+      "upstream_operations": ["iterate over reviews"],
+      "downstream_operations": ["check if positive"],
+      "is_root_producer": false,
+      "is_leaf_consumer": false
+    },
+    "control_flow": {
+      "inside_loop": true,
+      "loop_collection": "reviews",
+      "is_conditional": false,
+      "condition": null
+    },
+    "characteristics": {
+      "produces_boolean": false,
+      "is_aggregation": false,
+      "is_iteration": false,
+      "execution_type": "llm"
+    }
   }
 }
 ```
 
-## Operation to Analyze
+---
+
+## Now Gather Context
 
 ### Current Operation
 $input_1
 
 ### Extraction Data
 $input_2
-

@@ -2,40 +2,181 @@
 
 ## Task
 
-Build a **dependency tree** structure from the goal concept, classified operations, and dependency relationships. This tree will be serialized to the final .ncds format.
+Build a **dependency tree** structure from the goal concept, working backwards through operations and dependencies. This tree represents the complete computation structure.
 
 ## Inputs
 
-You will receive:
-- `$input_1` — The goal/root concept (final output concept)
-- `$input_2` — Operations with their pattern classifications (classified operations)
-- `$input_3` — Dependency relationships between concepts/operations (all dependencies)
+- `input_1` — The goal/root concept (final output concept)
+- `input_2` — Operations with their pattern classifications (classified operations)
+- `input_3` — Dependency relationships between concepts/operations (all dependencies)
 
-## Tree Structure
+---
 
-Each node in the tree has:
-- **concept**: The concept at this node
-- **operation**: The operation that produces this concept (if any)
-- **pattern**: The NormCode pattern type
-- **children**: Concepts/operations this node depends on
-- **context**: Loop iteration variable (if inside loop)
-- **condition**: Condition concept (if conditional)
+## The Core Derivation Algorithm
 
-## Building the Tree
+From `derivation_v2.md`, tree construction follows this recursive process:
 
-1. **Start from goal**: The root is the final output concept
-2. **Find producer**: What operation produces this concept?
-3. **Find inputs**: What does that operation need?
-4. **Recurse**: For each input, repeat steps 2-3
-5. **Handle patterns**:
-   - **Loops**: Add context marker for iteration variable
-   - **Conditionals**: Add condition concept reference
-   - **Grouping**: Children are the items being grouped
-   - **Selection**: Children are the options to select from
+> **"What do I need to produce this?"**
+
+Applied recursively:
+1. What's the final output? → This is the goal (root)
+2. What operation produces it? → First child of goal
+3. What inputs does that operation need? → Children of operation
+4. For each input: go back to step 2
+
+**This recursion builds the tree.**
+
+---
+
+## The Tree Structure
+
+Every node in the tree represents either:
+- A **concept** (data that exists)
+- An **operation** (transformation that produces data)
+
+Each node has:
+| Field | Description |
+|-------|-------------|
+| `concept` | The concept at this node |
+| `producer` | The operation that produces this concept (null if ground) |
+| `pattern` | The pattern type (linear, multi_input, iteration, etc.) |
+| `children` | Concepts this node's producer needs as inputs |
+| `context` | Loop/conditional context if inside control flow |
+| `is_ground` | True if this is an input (no producer) |
+
+---
+
+## The Five Core Patterns
+
+When constructing the tree, each operation maps to one of these patterns:
+
+### Pattern 1: Linear Chain
+**Structure**: Single input → operation → single output
+
+```
+output
+└── operation
+    └── input
+```
+
+### Pattern 2: Multiple Inputs
+**Structure**: Multiple inputs → operation → single output
+
+```
+output
+└── operation
+    ├── input 1
+    └── input 2
+```
+
+### Pattern 3: Iteration
+**Structure**: Collection → for-each → aggregated results
+
+```
+all results
+└── for each item
+    ├── result (per-item)
+    │   └── process item
+    │       └── current item (loop var)
+    └── items (collection) [context]
+```
+
+**Key**: The collection being iterated is marked as **context**.
+
+### Pattern 4: Conditional
+**Structure**: Condition gates execution
+
+```
+result
+└── operation (gated)
+    ├── inputs
+    └── condition [context]
+```
+
+**Key**: The condition is marked as **context**.
+
+### Pattern 5: Grouping
+**Structure**: Multiple items bundled together
+
+```
+bundle
+└── group operation
+    ├── item 1
+    ├── item 2
+    └── item 3
+```
+
+---
+
+## Building the Tree: Step by Step
+
+### Step 1: Start from Goal
+The goal becomes the root node.
+
+```json
+{
+  "root": "summary report",
+  "nodes": {
+    "summary report": { "is_ground": false, ... }
+  }
+}
+```
+
+### Step 2: Find Producer
+Look at dependencies to find what operation produces the goal.
+
+**Look for**: `dependency where target = goal`  
+**The source operation** is the producer.
+
+```json
+"summary report": {
+  "producer": "generate summary",
+  ...
+}
+```
+
+### Step 3: Find Inputs
+Look at dependencies to find what the producer operation needs.
+
+**Look for**: `dependency where source = producer operation and type = "needs"`
+
+```json
+"summary report": {
+  "producer": "generate summary",
+  "children": ["all sentiments", "review count"],
+  ...
+}
+```
+
+### Step 4: Recurse
+For each child that isn't a ground concept (input), repeat steps 2-3.
+
+### Step 5: Handle Control Flow
+
+**For Iterations**:
+- The loop operation's children include:
+  - The per-item result
+  - The collection being iterated (marked as context)
+
+**For Conditionals**:
+- The gated operation's children include:
+  - Normal inputs
+  - The condition (marked as context)
+
+---
+
+## Ground Concepts
+
+**Ground concepts** are the leaves of the tree:
+- They have no producer (no operation produces them)
+- They're the initial inputs to the plan
+- In dependencies, they only appear as sources, never as targets
+
+Mark these with `"is_ground": true`.
+
+---
 
 ## Output Format
-
-Return a JSON object:
 
 ```json
 {
@@ -43,68 +184,123 @@ Return a JSON object:
   "tree": {
     "root": "goal concept name",
     "nodes": {
-      "concept_name": {
-        "operation": "operation that produces this concept",
-        "pattern": "linear" | "multi-input" | "iteration" | etc.,
-        "children": ["list of child concept names"],
-        "context": "iteration variable if in loop, or null",
-        "condition": "condition concept if conditional, or null",
-        "is_ground": true/false
+      "concept name": {
+        "producer": "operation name or null if ground",
+        "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping | null",
+        "children": ["child concept names"],
+        "context": "context concept for loops/conditions, or null",
+        "is_ground": true | false
       }
     }
   },
-  "ground_concepts": ["list of concepts with no producer - inputs"],
-  "depth": <maximum tree depth>
+  "ground_concepts": ["list of input concepts with no producer"],
+  "depth": 0
 }
 ```
 
-## Example
+---
 
-For a review summarization task:
+## Complete Example
+
+**Goal**: `summary report`
+
+**Classified Operations**:
+- `generate summary` (multi_input, llm)
+- `for each review` (iteration, orchestrator)
+- `extract sentiment` (linear, llm)
+
+**Dependencies**:
+- generate summary needs all sentiments
+- generate summary needs review count
+- for each review needs reviews (collection)
+- for each review produces sentiment (per-item)
+- extract sentiment needs current review
+- extract sentiment produces sentiment
+
+**Tree Construction**:
 
 ```json
 {
+  "thinking": "Starting from goal 'summary report'. Producer is 'generate summary' (multi_input). It needs 'all sentiments' and 'review count'. 'review count' is ground (input). 'all sentiments' is produced by 'for each review' (iteration). The iteration needs 'reviews' (context, ground) and produces 'sentiment' per-item. Each 'sentiment' is produced by 'extract sentiment' (linear) which needs 'current review' (loop variable).",
   "tree": {
-    "root": "{summary report}",
+    "root": "summary report",
     "nodes": {
-      "{summary report}": {
-        "operation": "generate summary report",
-        "pattern": "multi-input",
-        "children": ["[all sentiments]", "[all themes]"],
+      "summary report": {
+        "producer": "generate summary",
+        "pattern": "multi_input",
+        "children": ["all sentiments", "review count"],
         "context": null,
-        "condition": null,
         "is_ground": false
       },
-      "[all sentiments]": {
-        "operation": "for each review extract sentiment",
+      "all sentiments": {
+        "producer": "for each review",
         "pattern": "iteration",
-        "children": ["{sentiment}", "[reviews]"],
-        "context": "{review}",
-        "condition": null,
+        "children": ["sentiment"],
+        "context": "reviews",
         "is_ground": false
       },
-      "{sentiment}": {
-        "operation": "extract sentiment",
+      "sentiment": {
+        "producer": "extract sentiment",
         "pattern": "linear",
-        "children": ["{review}"],
+        "children": ["current review"],
         "context": null,
-        "condition": null,
         "is_ground": false
       },
-      "[reviews]": {
-        "operation": null,
+      "current review": {
+        "producer": null,
         "pattern": null,
         "children": [],
         "context": null,
-        "condition": null,
+        "is_ground": false,
+        "note": "loop variable - bound by iteration context"
+      },
+      "reviews": {
+        "producer": null,
+        "pattern": null,
+        "children": [],
+        "context": null,
+        "is_ground": true
+      },
+      "review count": {
+        "producer": null,
+        "pattern": null,
+        "children": [],
+        "context": null,
         "is_ground": true
       }
     }
   },
-  "ground_concepts": ["[reviews]"],
+  "ground_concepts": ["reviews", "review count"],
   "depth": 4
 }
 ```
+
+**Visual Tree**:
+```
+summary report
+└── generate summary (multi_input)
+    ├── all sentiments
+    │   └── for each review (iteration)
+    │       ├── sentiment
+    │       │   └── extract sentiment (linear)
+    │       │       └── current review (loop var)
+    │       └── reviews [context, ground]
+    └── review count [ground]
+```
+
+---
+
+## Common Mistakes
+
+| Mistake | Why It's Wrong | Correct Approach |
+|---------|----------------|------------------|
+| Circular dependencies | Trees are acyclic | Check for cycles during construction |
+| Missing ground concepts | Every path must end at input | Trace all paths to leaves |
+| Wrong context placement | Context marks control, not data | Only loop base and conditions are context |
+| Orphan operations | Every operation must produce something | Verify all operations connect to tree |
+| Depth miscalculation | Depth is longest path | Count from root to deepest ground |
+
+---
 
 ## Data to Analyze
 
@@ -116,4 +312,3 @@ $input_2
 
 ### Dependencies
 $input_3
-
