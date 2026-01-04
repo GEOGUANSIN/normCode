@@ -7,8 +7,8 @@ For a specific operation, gather all relevant context from the extraction data t
 ## Inputs
 
 You will receive:
-- `{current operation}`: The operation to analyze
-- `{extraction data}`: Full extraction results (concepts, operations, dependencies, patterns)
+- `$input_1` — The operation to analyze (current operation)
+- `$input_2` — Full extraction results (extraction data) containing concepts, operations, dependencies, patterns
 
 ## Context to Gather
 
@@ -66,8 +66,8 @@ For operation `extract sentiment` with extraction data showing it's inside a `fo
 ## Operation to Analyze
 
 ### Current Operation
-{{current operation}}
+$input_1
 
 ### Extraction Data
-{{extraction data}}
+$input_2
 

@@ -7,9 +7,9 @@ Identify all **dependency relationships** between concepts and operations. These
 ## Inputs
 
 You will receive:
-- `{refined instruction content}`: The refined instruction
-- `{extracted concepts}`: List of extracted value concepts
-- `[extracted operations]`: List of extracted operations
+- `$input_1` — The refined instruction (refined instruction content)
+- `$input_2` — List of extracted value concepts (extracted concepts)
+- `$input_3` — List of extracted operations (extracted operations)
 
 ## What to Extract
 
@@ -72,11 +72,11 @@ Dependencies:
 ## Data to Analyze
 
 ### Instruction
-{{refined instruction content}}
+$input_1
 
 ### Concepts
-{{extracted concepts}}
+$input_2
 
 ### Operations
-{{extracted operations}}
+$input_3
 

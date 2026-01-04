@@ -7,7 +7,7 @@ Identify all **functional concepts** (operations, actions, transformations) from
 ## Input
 
 You will receive:
-- `{refined instruction content}`: The refined, concrete instruction
+- `$input_1` — The refined, concrete instruction (refined instruction content)
 
 ## What to Extract
 
@@ -65,5 +65,5 @@ Operations:
 
 ## Instruction to Analyze
 
-{{refined instruction content}}
+$input_1
 

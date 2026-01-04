@@ -7,8 +7,8 @@ Apply each of the 7 refinement questions to the given instruction and provide an
 ## Inputs
 
 You will receive:
-- `{raw instruction content}`: The original natural language instruction  
-- `{refinement questions content}`: The 7 refinement questions to apply
+- `$input_1` — The original natural language instruction (raw instruction content)
+- `$input_2` — The 7 refinement questions to apply (refinement questions content)
 
 ## Process
 
@@ -54,9 +54,9 @@ Return a JSON array of question-answer pairs:
 
 ## Instruction to Refine
 
-{{raw instruction content}}
+$input_1
 
 ## Refinement Questions
 
-{{refinement questions content}}
+$input_2
 

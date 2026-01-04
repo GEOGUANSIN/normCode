@@ -1,0 +1,75 @@
+{
+  "_comment": "Input file for the NormCode Derivation Algorithm (Iteration 8)",
+  "_instructions": "This provides the required ground concepts (file paths) for the derivation repository",
+  "_note": "All file paths use the perceptual sign format %() for literal values, or direct strings for paths",
+  "_execution_note": "These paths will be used by the paradigms to read/write checkpoint files during execution",
+  
+  "_ground_concepts_overview": {
+    "instruction_file_path": "Input file containing the natural language instruction to derive",
+    "refinement_questions_file_path": "File containing 7 refinement questions (already provided in provisions)",
+    "progress_file_path": "File to track which phases have completed (for resume capability)",
+    "refined_instruction_file_path": "Checkpoint: refined instruction after phase 1",
+    "extraction_file_path": "Checkpoint: extraction results after phase 2",
+    "classifications_file_path": "Checkpoint: classified operations after phase 3",
+    "tree_file_path": "Checkpoint: dependency tree after phase 4",
+    "output_file_path": "Final output: the generated .ncds file"
+  },
+  
+  "{instruction file path}": {
+    "_description": "Path to the input instruction file",
+    "_type": "perceptual_sign (will be perceived by PerceptionRouter to load content)",
+    "data": [["%(instruction.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{refinement questions file path}": {
+    "_description": "Path to refinement questions file (already in provisions)",
+    "_type": "perceptual_sign (will be perceived by PerceptionRouter to load content)",
+    "_note": "This is already provided in provisions/data/refinement_questions.txt",
+    "data": [["%(provisions/data/refinement_questions.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{progress file path}": {
+    "_description": "Path to progress tracking file (for checkpointing)",
+    "_type": "literal<$% file_path> (passed as-is to paradigm for file I/O)",
+    "data": [["%(progress.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{refined instruction file path}": {
+    "_description": "Checkpoint file path for phase 1 output",
+    "_type": "perceptual_sign (for reading cached results if phase already complete)",
+    "data": [["%(1_refined_instruction.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{extraction file path}": {
+    "_description": "Checkpoint file path for phase 2 output",
+    "_type": "perceptual_sign (for reading cached results if phase already complete)",
+    "data": [["%(2_extraction.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{classifications file path}": {
+    "_description": "Checkpoint file path for phase 3 output",
+    "_type": "literal<$% file_path> (passed as-is to paradigm for file I/O)",
+    "data": [["%(3_classifications.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{tree file path}": {
+    "_description": "Checkpoint file path for phase 4 output",
+    "_type": "literal<$% file_path> (passed as-is to paradigm for file I/O)",
+    "data": [["%(4_dependency_tree.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{output file path}": {
+    "_description": "Final output file path for the generated .ncds",
+    "_type": "literal<$% file_path> (passed as-is to paradigm for file I/O)",
+    "data": [["%(ncds_output.ncds)"]],
+    "axes": ["_none_axis"]
+  }
+}
+

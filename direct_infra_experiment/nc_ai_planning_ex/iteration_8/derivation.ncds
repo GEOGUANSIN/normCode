@@ -8,183 +8,7 @@
 /: OUTPUT: ncds_output.ncds (file path)
 /: CHECKPOINTS: progress.txt, 1_*.txt, 2_*.json, 3_*.json, 4_*.json
 :<: ncds 
-    <= return the ncds 
-    <- derivation complete
-        <= write completion status to progress file
-        <- progress file path
-        <- ncds output written
-        
-    <- ncds output written
-        <= write ncds file to output path
-            <= if phase 5 NOT already complete
-            <* phase 5 already complete?
-        /: PHASE 5: Serialize and write final output
-        <- output file path
-        <- ncds content
-            <= serialize dependency tree to ncds text format
-            <- dependency tree
-        <- phase 5 already complete?
-            <= check if phase 5 already complete in progress
-            <- current progress
-        <- phase 4 complete
-            /: Dependency: must complete tree construction first
-
-    <- phase 4 complete
-        <= write phase 4 status to progress file
-        <- progress file path
-        <- tree file written
-
-    <- tree file written
-        <= write dependency tree to checkpoint file
-            <= if phase 4 NOT already complete
-            <* phase 4 already complete?
-        /: PHASE 4: Build and save tree
-        <- tree file path
-        <- dependency tree
-            <= construct tree from classifications and extractions
-            <- final output concept
-                <= identify goal from extraction data
-                <- extraction data
-            <- classified operations
-                <= read classifications from checkpoint
-                <- classifications file path
-            <- all dependencies
-                <= extract dependencies from extraction data
-                <- extraction data
-        <- phase 4 already complete?
-            <= check if phase 4 already complete in progress
-            <- current progress
-        <- phase 3 complete
-            /: Dependency: must complete classification first
-
-    <- phase 3 complete
-        <= write phase 3 status to progress file
-        <- progress file path
-        <- classifications file written
-
-    <- classifications file written
-        <= write classifications to checkpoint file
-            <= if phase 3 NOT already complete
-            <* phase 3 already complete?
-        /: PHASE 3: Classify and save
-        <- classifications file path
-        <- all classifications
-            <= for each extracted operation
-            
-                <= return classification for this operation
-                
-                <- classification
-                    <= determine pattern type for operation
-                    <- current operation
-                    <- operation context
-                        <= gather context from extraction data
-                        <- current operation
-                        <- extraction data
-            
-            <- extracted operations
-                <= get operations from extraction data
-                <- extraction data
-            <* current operation
-        <- phase 3 already complete?
-            <= check if phase 3 already complete in progress
-            <- current progress
-        <- phase 2 complete
-            /: Dependency: must complete extraction first
-
-    <- phase 2 complete
-        <= write phase 2 status to progress file
-        <- progress file path
-        <- extraction file written
-
-    <- extraction file written
-        <= write extraction results to checkpoint file
-            <= if phase 2 NOT already complete
-            <* phase 2 already complete?
-        /: PHASE 2: Extract and save
-        <- extraction file path
-        <- extraction data
-            <= bundle all extractions together
-            
-            <- extracted concepts
-                <= identify all nouns and data entities
-                <- refined instruction content
-            
-            <- extracted operations
-                <= identify all verbs and actions
-                <- refined instruction content
-            
-            <- extracted dependencies
-                <= identify what needs what
-                <- refined instruction content
-                <- extracted concepts
-                <- extracted operations
-            
-            <- extracted control patterns
-                <= identify loops and conditions
-                <- refined instruction content
-        <- phase 2 already complete?
-            <= check if phase 2 already complete in progress
-            <- current progress
-        <- phase 1 complete
-            /: Dependency: must complete refinement first
-
-    <- phase 1 complete
-        <= write phase 1 status to progress file
-        <- progress file path
-        <- refined instruction file written
-
-    <- refined instruction file written
-        <= write refined instruction to checkpoint file
-            <= if phase 1 NOT already complete
-            <* phase 1 already complete?
-        /: PHASE 1: Refine and save
-        <- refined instruction file path
-        <- refined instruction content
-            <= select first available result
-            
-            <- cached refined instruction
-                <= read refined instruction from checkpoint
-                    <= if phase 1 already complete
-                    <* phase 1 already complete?
-                <- refined instruction file path
-            
-            <- freshly refined instruction
-                <= select refined or original based on check
-                    <= if phase 1 NOT already complete
-                    <* phase 1 already complete?
-                
-                <- refined version
-                    <= synthesize from refinement answers
-                        <= if instruction is vague
-                        <* instruction is vague?
-                    <- refinement answers
-                        <= apply each refinement question
-                        <- raw instruction content
-                        <- refinement questions content
-                            <= read refinement questions from file
-                            <- refinement questions file path
-                
-                <- original version
-                    <= pass through raw instruction
-                        <= if instruction is NOT vague
-                        <* instruction is vague?
-                    <- raw instruction content
-                
-                <- instruction is vague?
-                    <= judge if instruction lacks concrete details
-                    <- raw instruction content
-        
-        <- phase 1 already complete?
-            <= check if phase 1 already complete in progress
-            <- current progress
-        
-    <- raw instruction content
-        <= read instruction from input file
-        <- instruction file path
-
-    <- current progress
-        <= read progress from file if exists
-        <- progress file path
+    <= return ncds output written 
 
     /: ========================================
     /: FILE PATH CONFIGURATION (Ground Concepts)
@@ -213,3 +37,239 @@
 
     <- output file path
         /: Ground: path to ncds_output.ncds
+
+    <- raw instruction content
+        <= read instruction from input file
+        <- instruction file path
+
+    <- refined instruction file written
+        <= write refined instruction to checkpoint file
+
+        <- refined instruction file path
+        <- instruction to be written
+            <= select first available result
+
+            <- phase 1 already complete?
+                <= check if phase 1 already complete in progress
+                <- current progress
+                    <= read progress from file if exists
+                    <- progress file path    
+                    
+            <- cached refined instruction
+                <= read refined instruction from checkpoint
+                    <= if phase 1 already complete
+                    <* phase 1 already complete?
+                <- refined instruction file path
+        
+            <- freshly refined instruction
+                <= select refined or original based on check
+                    <= if phase 1 NOT already complete
+                    <* phase 1 already complete?
+
+                <- instruction is vague?
+                    <= judge if instruction lacks concrete details
+                    <- raw instruction content
+
+                <- original version
+                    <= pass through raw instruction
+                        <= if instruction is NOT vague
+                        <* instruction is vague?
+                    <- raw instruction content
+                
+                <- refined version
+                    <= synthesize from refinement answers
+                        <= if instruction is vague
+                        <* instruction is vague?
+                    <- refinement answers
+                        <= apply each refinement question
+                        <- raw instruction content
+                        <- refinement questions content
+                            <= read refinement questions from file
+                            <- refinement questions file path   
+        
+    <- phase 1 complete
+        <= write phase 1 status to progress file
+        <- progress file path
+        <- refined instruction file written
+
+    <- extraction file written
+        <= write extraction results to checkpoint file
+        /: PHASE 2: Extract and save
+
+        <- extraction to be written
+            <= select first available result
+
+            <- phase 2 already complete?
+                <= check if phase 2 already complete in progress
+                <- current progress
+                    <= read progress from file if exists
+                    <- progress file path
+
+            <- cached extraction data
+                <= read extraction from checkpoint
+                    <= if phase 2 already complete
+                    <* phase 2 already complete?
+                <- extraction file path
+
+            <- freshly extracted data
+                <= bundle all extractions together
+                    <= if phase 2 NOT already complete
+                    <* phase 2 already complete?
+
+                <- refined instruction content
+                    <= read refined instruction file from path
+                    <- refined instruction file path
+
+                <- extracted concepts
+                    <= identify all nouns and data entities
+                    <- refined instruction content
+
+                <- extracted operations
+                    <= identify all verbs and actions
+                    <- refined instruction content
+
+                <- extracted dependencies
+                    <= identify what needs what
+                    <- refined instruction content
+                    <- extracted concepts
+                    <- extracted operations
+
+                <- extracted control patterns
+                    <= identify loops and conditions
+                    <- refined instruction content
+
+    <- phase 2 complete
+        <= write phase 2 status to progress file
+        <- progress file path
+        <- extraction file written
+
+    <- classifications file written
+        <= write classifications to checkpoint file
+        /: PHASE 3: Classify and save
+
+        <- classifications file path
+        <- classifications to be written
+            <= select first available result
+
+            <- phase 3 already complete?
+                <= check if phase 3 already complete in progress
+                <- current progress
+                    <= read progress from file if exists
+                    <- progress file path
+
+            <- cached classifications
+                <= read classifications from checkpoint
+                    <= if phase 3 already complete
+                    <* phase 3 already complete?
+                <- classifications file path
+
+            <- freshly classified operations
+                <= for each extracted operation
+                    <= return classification for this operation
+                        <= if phase 3 NOT already complete
+                        <* phase 3 already complete?
+
+                    <- classification
+                        <= determine pattern type for operation
+                        <- current operation
+                        <- operation context
+                            <= gather context from extraction data
+                            <- current operation
+                            <- extraction data
+
+                <- extracted operations
+                    <= get operations from extraction data
+                    <- extraction data
+                        <= read extraction file from path
+                        <- extraction file path
+                <* current operation
+
+    <- phase 3 complete
+        <= write phase 3 status to progress file
+        <- progress file path
+        <- classifications file written
+
+    <- tree file written
+        <= write dependency tree to checkpoint file
+        /: PHASE 4: Build and save tree
+
+        <- tree file path
+        <- tree to be written
+            <= select first available result
+
+            <- phase 4 already complete?
+                <= check if phase 4 already complete in progress
+                <- current progress
+                    <= read progress from file if exists
+                    <- progress file path
+
+            <- cached dependency tree
+                <= read dependency tree from checkpoint
+                    <= if phase 4 already complete
+                    <* phase 4 already complete?
+                <- tree file path
+
+            <- freshly constructed tree
+                <= construct tree from classifications and extractions
+                    <= if phase 4 NOT already complete
+                    <* phase 4 already complete?
+
+                <- classifications data
+                    <= read classifications file from path
+                    <- classifications file path
+
+                <- extraction data
+                    <= read extraction file from path
+                    <- extraction file path
+
+                <- final output concept
+                    <= identify goal from extraction data
+                    <- extraction data
+
+                <- classified operations
+                    <= get classifications from classifications data
+                    <- classifications data
+
+                <- all dependencies
+                    <= extract dependencies from extraction data
+                    <- extraction data
+
+    <- phase 4 complete
+        <= write phase 4 status to progress file
+        <- progress file path
+        <- tree file written
+
+    <- ncds output written
+        <= write ncds file to output path
+        /: PHASE 5: Serialize and write final output
+
+        <- output file path
+        <- ncds to be written
+            <= select first available result
+
+            <- phase 5 already complete?
+                <= check if phase 5 already complete in progress
+                <- current progress
+                    <= read progress from file if exists
+                    <- progress file path
+
+            <- cached ncds content
+                <= read ncds from checkpoint
+                    <= if phase 5 already complete
+                    <* phase 5 already complete?
+                <- output file path
+
+            <- freshly serialized ncds
+                <= serialize dependency tree to ncds text format
+                    <= if phase 5 NOT already complete
+                    <* phase 5 already complete?
+
+                <- dependency tree
+                    <= read dependency tree file from path
+                    <- tree file path
+
+    <- phase 5 complete
+        <= write phase 5 status to progress file
+        <- progress file path
+        <- ncds output written
+

@@ -2,30 +2,47 @@
 Extract Field Script
 
 Extracts a specific field from a dictionary or structured data.
-Used by paradigm: h_Data-c_ExtractField-o_Literal
+Used by paradigm: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+
+Function Signature Requirements (New Vision):
+- Parameters named input_1, input_2, etc. matching value concept order
+- Optional 'body' parameter for tool access
+- Direct return value (no 'result' variable)
 """
 
-from typing import Any, Optional, List
+from typing import Any, Optional
 
 
-def extract_field(data: Any, field_path: str) -> Any:
+def extract_field(
+    input_1: Any,          # data (from {extraction data})
+    input_2: str = None,   # field_name (from {field_name: "operations"})
+    body=None              # Optional Body instance
+) -> Any:
     """
-    Extract a field from data using a dot-separated path.
+    Extract a field from data using a field name or dot-separated path.
     
     Args:
-        data: Dictionary or nested structure
-        field_path: Path like "operations" or "nested.field.value"
+        input_1: Dictionary or nested structure
+        input_2: Field name like "operations" or path like "nested.field.value"
+        body: Optional Body instance (not used, but available)
     
     Returns:
-        The value at the specified path
+        The value at the specified field/path
     
     Raises:
-        KeyError: If path doesn't exist
-        TypeError: If data isn't subscriptable at some point in path
+        KeyError: If field doesn't exist
+        TypeError: If data isn't a dict
     """
-    if not field_path:
-        return data
+    data = input_1
+    field_path = input_2
     
+    if not field_path:
+        raise ValueError("No field_name specified (input_2)")
+    
+    if not data:
+        raise ValueError("No data provided (input_1)")
+    
+    # Handle dot-separated paths
     parts = field_path.split('.')
     current = data
     
@@ -41,63 +58,19 @@ def extract_field(data: Any, field_path: str) -> Any:
     return current
 
 
-def extract_field_safe(data: Any, field_path: str, default: Any = None) -> Any:
+def extract_field_safe(
+    input_1: Any,
+    input_2: str = None,
+    default: Any = None,
+    body=None
+) -> Any:
     """
-    Safe version that returns default if path doesn't exist.
+    Safe version that returns default if field doesn't exist.
     """
     try:
-        return extract_field(data, field_path)
-    except (KeyError, IndexError, TypeError):
+        return extract_field(input_1, input_2, body)
+    except (KeyError, IndexError, TypeError, ValueError):
         return default
-
-
-def infer_field_from_context(context: str) -> Optional[str]:
-    """
-    Infer field name from natural language context.
-    
-    Examples:
-        "get operations from extraction data" -> "operations"
-        "extract concepts from data" -> "concepts"
-    """
-    # Common extraction patterns
-    patterns = [
-        ("operations", ["operations", "operation list"]),
-        ("concepts", ["concepts", "concept list"]),
-        ("dependencies", ["dependencies", "dependency list"]),
-        ("control_patterns", ["control patterns", "patterns"]),
-    ]
-    
-    context_lower = context.lower()
-    for field_name, keywords in patterns:
-        for keyword in keywords:
-            if keyword in context_lower:
-                return field_name
-    
-    return None
-
-
-# Entry point for orchestrator
-def main(inputs: dict) -> Any:
-    """
-    Main entry point called by orchestrator.
-    
-    Args:
-        inputs: Dict with 'data' and optionally 'field_path' or context
-    
-    Returns:
-        The extracted field value
-    """
-    data = inputs.get('data')
-    field_path = inputs.get('field_path')
-    
-    # If no explicit field path, try to infer from context
-    if not field_path and 'context' in inputs:
-        field_path = infer_field_from_context(inputs['context'])
-    
-    if not field_path:
-        raise ValueError("No field_path specified and couldn't infer from context")
-    
-    return extract_field(data, field_path)
 
 
 if __name__ == "__main__":
@@ -114,4 +87,3 @@ if __name__ == "__main__":
     
     print(f"operations: {extract_field(test_data, 'operations')}")
     print(f"nested.field.value: {extract_field(test_data, 'nested.field.value')}")
-

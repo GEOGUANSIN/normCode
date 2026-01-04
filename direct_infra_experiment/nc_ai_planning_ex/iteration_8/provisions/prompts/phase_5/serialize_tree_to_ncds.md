@@ -7,7 +7,7 @@ Convert the dependency tree structure into **NormCode Draft Straightforward (.nc
 ## Input
 
 You will receive:
-- `{dependency tree}`: The tree structure with nodes, operations, and patterns
+- `$input_1` — The tree structure with nodes, operations, and patterns (dependency tree)
 
 ## NCDS Format Rules
 
@@ -145,5 +145,5 @@ For a simple summarization tree:
 
 ## Dependency Tree to Serialize
 
-{{dependency tree}}
+$input_1
 

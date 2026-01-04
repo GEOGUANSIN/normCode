@@ -57,7 +57,7 @@
       "flow_info": {
         "flow_index": "1.2"
       },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
@@ -84,7 +84,7 @@
       "flow_info": {
         "flow_index": "1.3"
       },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{output file path}": 1,
@@ -133,7 +133,7 @@
       "flow_info": {
         "flow_index": "1.3.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{dependency tree}": 1
@@ -157,7 +157,7 @@
       "flow_info": {
         "flow_index": "1.3.4"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{current progress}": 1
@@ -187,12 +187,13 @@
       "flow_info": {
         "flow_index": "1.4"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
         "{tree file written}": 2
-      }
+      },
+      "write_mode": "append"
     }
   },
   {
@@ -214,14 +215,15 @@
       "flow_info": {
         "flow_index": "1.5"
       },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{tree file path}": 1,
         "{dependency tree}": 2,
         "<phase 4 already complete>": 3,
         "{phase 3 complete}": 4
-      }
+      },
+      "serialize": "json"
     }
   },
   {
@@ -265,7 +267,7 @@
       "flow_info": {
         "flow_index": "1.5.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{final output concept}": 1,
@@ -291,7 +293,7 @@
       "flow_info": {
         "flow_index": "1.5.3.1.1"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{extraction data}": 1
@@ -315,11 +317,12 @@
       "flow_info": {
         "flow_index": "1.5.3.1.2"
       },
-      "paradigm": "h_FilePath-c_ReadJsonFile-o_Struct",
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{classifications file path}": 1
-      }
+      },
+      "parse": "json"
     }
   },
   {
@@ -338,7 +341,7 @@
       "flow_info": {
         "flow_index": "1.5.3.1.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{extraction data}": 1
@@ -362,7 +365,7 @@
       "flow_info": {
         "flow_index": "1.5.4"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{current progress}": 1
@@ -392,12 +395,13 @@
       "flow_info": {
         "flow_index": "1.6"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
         "{classifications file written}": 2
-      }
+      },
+      "write_mode": "append"
     }
   },
   {
@@ -419,14 +423,15 @@
       "flow_info": {
         "flow_index": "1.7"
       },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{classifications file path}": 1,
         "[all classifications]": 2,
         "<phase 3 already complete>": 3,
         "{phase 2 complete}": 4
-      }
+      },
+      "serialize": "json"
     }
   },
   {
@@ -543,7 +548,7 @@
       "flow_info": {
         "flow_index": "1.7.3.1.2"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{current operation}": 1,
@@ -569,11 +574,11 @@
       "flow_info": {
         "flow_index": "1.7.3.1.2.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{current operation}": 1,
-        "{extraction data}": 2
+        "{operation context}": 2
       },
       "prompt_path": "provisions/prompts/phase_3/gather_operation_context.md"
     }
@@ -594,7 +599,7 @@
       "flow_info": {
         "flow_index": "1.7.3.2"
       },
-      "paradigm": "h_Data-c_ExtractField-o_Literal",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{extraction data}": 1
@@ -617,7 +622,7 @@
       "flow_info": {
         "flow_index": "1.7.4"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{current progress}": 1
@@ -647,12 +652,13 @@
       "flow_info": {
         "flow_index": "1.8"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
         "{extraction file written}": 2
-      }
+      },
+      "write_mode": "append"
     }
   },
   {
@@ -674,14 +680,15 @@
       "flow_info": {
         "flow_index": "1.9"
       },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{extraction file path}": 1,
         "{extraction data}": 2,
         "<phase 2 already complete>": 3,
         "{phase 1 complete}": 4
-      }
+      },
+      "serialize": "json"
     }
   },
   {
@@ -754,7 +761,7 @@
       "flow_info": {
         "flow_index": "1.9.3.1.1"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
@@ -778,7 +785,7 @@
       "flow_info": {
         "flow_index": "1.9.3.1.2"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
@@ -804,7 +811,7 @@
       "flow_info": {
         "flow_index": "1.9.3.1.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1,
@@ -830,7 +837,7 @@
       "flow_info": {
         "flow_index": "1.9.3.1.4"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
@@ -854,7 +861,7 @@
       "flow_info": {
         "flow_index": "1.9.4"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{current progress}": 1
@@ -884,12 +891,13 @@
       "flow_info": {
         "flow_index": "1.10"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
         "{refined instruction file written}": 2
-      }
+      },
+      "write_mode": "append"
     }
   },
   {
@@ -910,7 +918,7 @@
       "flow_info": {
         "flow_index": "1.11"
       },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{refined instruction file path}": 1,
@@ -981,7 +989,7 @@
       "flow_info": {
         "flow_index": "1.11.3.2"
       },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{refined instruction file path}": 1
@@ -1074,7 +1082,7 @@
       "flow_info": {
         "flow_index": "1.11.3.3.2"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refinement answers}": 1
@@ -1122,7 +1130,7 @@
       "flow_info": {
         "flow_index": "1.11.3.3.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{raw instruction content}": 1,
@@ -1147,7 +1155,7 @@
       "flow_info": {
         "flow_index": "1.11.3.3.3.3"
       },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{refinement questions file path}": 1
@@ -1170,7 +1178,7 @@
       "flow_info": {
         "flow_index": "1.11.3.3.4"
       },
-      "paradigm": "h_Data-c_PassThrough-o_Literal",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{raw instruction content}": 1
@@ -1216,7 +1224,7 @@
       "flow_info": {
         "flow_index": "1.11.3.3.5"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean",
       "body_faculty": "llm",
       "value_order": {
         "{raw instruction content}": 1
@@ -1246,7 +1254,7 @@
       "flow_info": {
         "flow_index": "1.11.4"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
         "{current progress}": 1
@@ -1275,7 +1283,7 @@
       "flow_info": {
         "flow_index": "1.12"
       },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{instruction file path}": 1
@@ -1298,7 +1306,7 @@
       "flow_info": {
         "flow_index": "1.13"
       },
-      "paradigm": "h_FilePath-c_ReadFileIfExists-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1

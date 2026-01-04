@@ -7,7 +7,7 @@ Identify the **final output concept** (goal) from the extraction data. This will
 ## Input
 
 You will receive:
-- `{extraction data}`: Full extraction results (concepts, operations, dependencies, patterns)
+- `$input_1` — Full extraction results (extraction data) containing concepts, operations, dependencies, patterns
 
 ## How to Identify the Goal
 
@@ -58,5 +58,5 @@ Goal: `{summary report}` because:
 
 ## Extraction Data to Analyze
 
-{{extraction data}}
+$input_1
 

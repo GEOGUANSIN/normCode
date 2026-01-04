@@ -24,7 +24,7 @@
       "1.1"
     ],
     "description": "<= $. %>({ncds})",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -58,7 +58,7 @@
       "1.2.1"
     ],
     "description": "write completion status to progress file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -110,7 +110,7 @@
       "1.3.1"
     ],
     "description": "write ncds file to output path",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -127,7 +127,7 @@
       "1.3.1.1"
     ],
     "description": "<= @:!(<phase 5 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -179,7 +179,7 @@
       "1.3.3.1"
     ],
     "description": "serialize dependency tree to ncds text format",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -214,7 +214,7 @@
       "1.3.4.1"
     ],
     "description": "check if phase 5 already complete in progress",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -249,7 +249,7 @@
       "1.4.1"
     ],
     "description": "write phase 4 status to progress file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -301,7 +301,7 @@
       "1.5.1"
     ],
     "description": "write dependency tree to checkpoint file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -318,7 +318,7 @@
       "1.5.1.1"
     ],
     "description": "<= @:!(<phase 4 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -353,7 +353,7 @@
       "1.5.3.1"
     ],
     "description": "construct tree from classifications and extractions",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -387,7 +387,7 @@
       "1.5.3.1.1.1"
     ],
     "description": "identify goal from extraction data",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -442,7 +442,7 @@
       "1.5.3.1.2.1"
     ],
     "description": "read classifications from checkpoint",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -476,7 +476,7 @@
       "1.5.3.1.3.1"
     ],
     "description": "extract dependencies from extraction data",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -493,7 +493,7 @@
       "1.5.4.1"
     ],
     "description": "check if phase 4 already complete in progress",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -528,7 +528,7 @@
       "1.6.1"
     ],
     "description": "write phase 3 status to progress file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -580,7 +580,7 @@
       "1.7.1"
     ],
     "description": "write classifications to checkpoint file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -597,7 +597,7 @@
       "1.7.1.1"
     ],
     "description": "<= @:!(<phase 3 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -649,7 +649,7 @@
       "1.7.3.1"
     ],
     "description": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -666,7 +666,7 @@
       "1.7.3.1.1"
     ],
     "description": "<= $. %>({classification})",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -700,7 +700,7 @@
       "1.7.3.1.2.1"
     ],
     "description": "determine pattern type for operation",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -753,7 +753,7 @@
       "1.7.3.1.2.3.1"
     ],
     "description": "gather context from extraction data",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -789,7 +789,7 @@
       "1.7.3.2.1"
     ],
     "description": "get operations from extraction data",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -806,7 +806,7 @@
       "1.7.4.1"
     ],
     "description": "check if phase 3 already complete in progress",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -841,7 +841,7 @@
       "1.8.1"
     ],
     "description": "write phase 2 status to progress file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -893,7 +893,7 @@
       "1.9.1"
     ],
     "description": "write extraction results to checkpoint file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -910,7 +910,7 @@
       "1.9.1.1"
     ],
     "description": "<= @:!(<phase 2 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -945,7 +945,7 @@
       "1.9.3.1"
     ],
     "description": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -980,7 +980,7 @@
       "1.9.3.1.1.1"
     ],
     "description": "identify all nouns and data entities",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -997,7 +997,7 @@
       "1.9.3.1.2.1"
     ],
     "description": "identify all verbs and actions",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1031,7 +1031,7 @@
       "1.9.3.1.3.1"
     ],
     "description": "identify what needs what",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1065,7 +1065,7 @@
       "1.9.3.1.4.1"
     ],
     "description": "identify loops and conditions",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1082,7 +1082,7 @@
       "1.9.4.1"
     ],
     "description": "check if phase 2 already complete in progress",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1117,7 +1117,7 @@
       "1.10.1"
     ],
     "description": "write phase 1 status to progress file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1146,7 +1146,8 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
+    "literal_annotation": "literal<$% file_path>",
     "natural_name": "progress file path"
   },
   {
@@ -1192,7 +1193,7 @@
       "1.11.1"
     ],
     "description": "write refined instruction to checkpoint file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1210,7 +1211,7 @@
       "1.11.3.3.1.1"
     ],
     "description": "<= @:!(<phase 1 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1227,7 +1228,7 @@
       "1.11.3.3.1"
     ],
     "description": "Timing gate for phase 1 completion check",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1304,7 +1305,7 @@
       "1.11.3.1"
     ],
     "description": "<= $. %>[{cached refined instruction}, {freshly refined instruction}]",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1355,7 +1356,7 @@
       "1.11.3.2.1"
     ],
     "description": "read refined instruction from checkpoint",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1365,14 +1366,14 @@
     "natural_name": "read refined instruction from checkpoint"
   },
   {
-    "id": "fc-phase-1-already-complete",
+    "id": "fc-phase-1-already-complete-gate",
     "concept_name": "<= @:'(<phase 1 already complete>)",
     "type": "({})",
     "flow_indices": [
       "1.11.3.2.1.1"
     ],
     "description": "<= @:'(<phase 1 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1406,7 +1407,7 @@
       "1.11.3.3.1"
     ],
     "description": "<= $. %>[{refined version}, {original version}]",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1457,7 +1458,7 @@
       "1.11.3.3.2.1"
     ],
     "description": "synthesize from refinement answers",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1474,7 +1475,7 @@
       "1.11.3.3.2.2"
     ],
     "description": "<= @:'(<instruction is vague>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1527,7 +1528,7 @@
       "1.11.3.3.3.1"
     ],
     "description": "apply each refinement question",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1581,7 +1582,7 @@
       "1.11.3.3.3.3.1"
     ],
     "description": "read refinement questions from file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1602,7 +1603,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{file_location}(provisions/data/refinement_questions.txt)"
+      "%(provisions/data/refinement_questions.txt)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1652,7 +1653,7 @@
       "1.11.3.3.4.1"
     ],
     "description": "pass through raw instruction",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1669,7 +1670,7 @@
       "1.11.3.3.4.1.1"
     ],
     "description": "<= @:!(<instruction is vague>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1686,7 +1687,7 @@
       "1.11.3.3.5.1"
     ],
     "description": "judge if instruction lacks concrete details",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1703,7 +1704,7 @@
       "1.11.4.1"
     ],
     "description": "check if phase 1 already complete in progress",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1742,7 +1743,7 @@
       "1.12.1"
     ],
     "description": "read instruction from input file",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1777,7 +1778,7 @@
       "1.13.1"
     ],
     "description": "read progress from file if exists",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1820,7 +1821,8 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
+    "literal_annotation": "literal<$% file_path>",
     "natural_name": "classifications file path"
   },
   {
@@ -1838,7 +1840,8 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
+    "literal_annotation": "literal<$% file_path>",
     "natural_name": "tree file path"
   },
   {
@@ -1856,7 +1859,8 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
+    "literal_annotation": "literal<$% file_path>",
     "natural_name": "output file path"
   }
 ]

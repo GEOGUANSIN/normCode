@@ -1,5 +1,5 @@
 {
-  "_comment": "Maps inference_repo prompt_path references to actual file locations",
+  "_comment": "Maps inference_repo references to actual file locations",
   "_base_dir": "provisions",
   
   "prompts": {
@@ -17,6 +17,7 @@
     
     "provisions/prompts/phase_4/identify_goal.md": "prompts/phase_4/identify_goal.md",
     "provisions/prompts/phase_4/construct_dependency_tree.md": "prompts/phase_4/construct_dependency_tree.md",
+    "provisions/prompts/phase_4/extract_dependencies.md": "prompts/phase_4/extract_dependencies.md",
     
     "provisions/prompts/phase_5/serialize_tree_to_ncds.md": "prompts/phase_5/serialize_tree_to_ncds.md"
   },
@@ -26,24 +27,25 @@
   },
   
   "paradigms": {
-    "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal": "paradigms/llm/h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal.json",
-    "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean": "paradigms/llm/h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean.json",
+    "_comment": "MINIMAL PARADIGM SET (6 paradigms per new vision)",
     
-    "h_FilePath-c_ReadFile-o_Literal": "paradigms/file_system/h_FilePath-c_ReadFile-o_Literal.json",
-    "h_FilePath-c_ReadFileIfExists-o_Literal": "paradigms/file_system/h_FilePath-c_ReadFileIfExists-o_Literal.json",
-    "h_FilePath-c_ReadJsonFile-o_Struct": "paradigms/file_system/h_FilePath-c_ReadJsonFile-o_Struct.json",
-    "h_FilePath-h_Content-c_WriteFile-o_Literal": "paradigms/file_system/h_FilePath-h_Content-c_WriteFile-o_Literal.json",
-    "h_FilePath-h_Data-c_WriteJsonFile-o_Literal": "paradigms/file_system/h_FilePath-h_Data-c_WriteJsonFile-o_Literal.json",
-    "h_FilePath-h_Content-c_AppendFile-o_Literal": "paradigms/file_system/h_FilePath-h_Content-c_AppendFile-o_Literal.json",
+    "_file_system": "File System Paradigms (3)",
+    "h_LiteralPath-c_ReadFile-o_Literal": "paradigms/file_system/h_LiteralPath-c_ReadFile-o_Literal.json",
+    "h_LiteralPath-c_ReadFileIfExists-o_Literal": "paradigms/file_system/h_LiteralPath-c_ReadFileIfExists-o_Literal.json",
+    "h_LiteralPath-h_Literal-c_WriteFile-o_Literal": "paradigms/file_system/h_LiteralPath-h_Literal-c_WriteFile-o_Literal.json",
     
-    "h_Data-c_CheckPhaseComplete-o_Boolean": "paradigms/python_interpreter/h_Data-c_CheckPhaseComplete-o_Boolean.json",
-    "h_Data-c_ExtractField-o_Literal": "paradigms/python_interpreter/h_Data-c_ExtractField-o_Literal.json",
-    "h_Data-c_PassThrough-o_Literal": "paradigms/python_interpreter/h_Data-c_PassThrough-o_Literal.json"
+    "_llm": "LLM Paradigms (2)",
+    "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal": "paradigms/llm/v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal.json",
+    "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean": "paradigms/llm/v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean.json",
+    
+    "_python": "Python Paradigms (1)",
+    "v_ScriptLocation-h_Literal-c_Execute-o_Literal": "paradigms/python_interpreter/v_ScriptLocation-h_Literal-c_Execute-o_Literal.json",
+    "v_ScriptLocation-h_Literal-c_Execute-o_Boolean": "paradigms/python_interpreter/v_ScriptLocation-h_Literal-c_Execute-o_Boolean.json"
   },
   
   "scripts": {
-    "scripts/check_phase_complete.py": "scripts/check_phase_complete.py",
-    "scripts/extract_field.py": "scripts/extract_field.py",
-    "scripts/pass_through.py": "scripts/pass_through.py"
+    "provisions/scripts/check_phase_complete.py": "scripts/check_phase_complete.py",
+    "provisions/scripts/extract_field.py": "scripts/extract_field.py",
+    "provisions/scripts/pass_through.py": "scripts/pass_through.py"
   }
 }

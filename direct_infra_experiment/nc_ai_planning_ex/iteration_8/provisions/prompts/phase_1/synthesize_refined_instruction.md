@@ -7,7 +7,7 @@ Combine the answers to the 7 refinement questions into a single, clear, comprehe
 ## Input
 
 You will receive:
-- `{refinement answers}`: Array of question-answer pairs from refinement
+- `$input_1` — Array of question-answer pairs from refinement (refinement answers)
 
 ## Requirements
 
@@ -65,5 +65,5 @@ Output: {summary report} - a JSON object with structure:
 
 ## Refinement Answers to Synthesize
 
-{{refinement answers}}
+$input_1
 

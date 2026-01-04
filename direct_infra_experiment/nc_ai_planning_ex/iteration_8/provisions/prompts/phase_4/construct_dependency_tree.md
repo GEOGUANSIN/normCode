@@ -7,9 +7,9 @@ Build a **dependency tree** structure from the goal concept, classified operatio
 ## Inputs
 
 You will receive:
-- `{final output concept}`: The goal/root concept
-- `{classified operations}`: Operations with their pattern classifications
-- `[all dependencies]`: Dependency relationships between concepts/operations
+- `$input_1` — The goal/root concept (final output concept)
+- `$input_2` — Operations with their pattern classifications (classified operations)
+- `$input_3` — Dependency relationships between concepts/operations (all dependencies)
 
 ## Tree Structure
 
@@ -109,11 +109,11 @@ For a review summarization task:
 ## Data to Analyze
 
 ### Goal
-{{final output concept}}
+$input_1
 
 ### Classified Operations
-{{classified operations}}
+$input_2
 
 ### Dependencies
-{{all dependencies}}
+$input_3
 

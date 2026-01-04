@@ -7,7 +7,7 @@ Identify all **control flow patterns** in the instruction. These become syntacti
 ## Input
 
 You will receive:
-- `{refined instruction content}`: The refined instruction
+- `$input_1` — The refined instruction (refined instruction content)
 
 ## Control Pattern Types
 
@@ -99,5 +99,5 @@ Patterns:
 
 ## Instruction to Analyze
 
-{{refined instruction content}}
+$input_1
 

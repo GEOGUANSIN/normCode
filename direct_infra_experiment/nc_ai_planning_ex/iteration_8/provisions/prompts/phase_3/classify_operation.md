@@ -7,8 +7,8 @@ Determine the **NormCode pattern type** for a specific operation based on the op
 ## Inputs
 
 You will receive:
-- `{current operation}`: The operation to classify
-- `{operation context}`: Gathered context about this operation
+- `$input_1` — The operation to classify (current operation)
+- `$input_2` — Gathered context about this operation (operation context)
 
 ## Pattern Classification
 
@@ -87,8 +87,8 @@ Return a JSON object:
 ## Operation to Classify
 
 ### Operation
-{{current operation}}
+$input_1
 
 ### Context
-{{operation context}}
+$input_2
 

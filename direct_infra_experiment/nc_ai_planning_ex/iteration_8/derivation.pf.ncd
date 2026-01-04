@@ -7,10 +7,22 @@
 /: OUTPUT: ncds_output.ncds (file path)
 /: CHECKPOINTS: progress.txt, 1_*.txt, 2_*.json, 3_*.json, 4_*.json
 /:
-/: POST-FORMALIZATION ANNOTATIONS:
-/:   - Re-composition: Paradigms, body faculties, perception norms
-/:   - Provision: Concrete resource paths
-/:   - Syntax Re-confirmation: Axes, shapes, element types
+/: MINIMAL PARADIGM SET (6 paradigms):
+/:   File System:
+/:     - h_LiteralPath-c_ReadFile-o_Literal
+/:     - h_LiteralPath-c_ReadFileIfExists-o_Literal
+/:     - h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+/:   LLM:
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
+/:   Python:
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal
+/:
+/: NEW VISION ANNOTATIONS:
+/:   - h_input_norm: LiteralPath | Literal (not "in-memory")
+/:   - Value concepts: |%{literal<$% file_path>} or perceptual sign from prior inference
+/:   - Prompts/Scripts as vertical inputs (v_PromptLocation, v_ScriptLocation)
+/:
 :<:{ncds}
     | %{ref_axes}: [_none_axis]
     | %{ref_shape}: (1,)
@@ -21,10 +33,9 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write completion status to progress file)
-            | %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -36,10 +47,9 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write ncds file to output path)
-            | %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
             <= @:!(<phase 5 already complete>)
             <* <phase 5 already complete>
         /: PHASE 5: Serialize and write final output
@@ -51,13 +61,12 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: str
             <= ::(serialize dependency tree to ncds text format)
-                | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                | %{v_input_norm}: {prompt_location}
+                | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                | %{v_input_norm}: prompt_location
                 | %{v_input_provision}: provisions/prompts/phase_5/serialize_tree_to_ncds.md
-                | %{h_input_norm}: in-memory
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: llm
-                | %{o_shape}: str in memory
-            <- {dependency tree}
+            <- {dependency tree}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: dict(root: str, nodes: dict)
         <- <phase 5 already complete>
@@ -65,13 +74,19 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: %{truth_value}
             <= ::<{check if phase 5 already complete in progress}><ALL True>
-                | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
-                | %{h_input_norm}: in-memory
+                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                | %{v_input_norm}: script_location
+                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                | %{v_function_name}: check_phase_complete
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: python_interpreter
-                | %{o_shape}: boolean
-            <- {current progress}
+            <- {current progress}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
+            <- {phase_name: "phase_5"}<:{2}>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: str
+                | %{literal<$% phase_name>}: phase_5
         <- {phase 4 complete}
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -81,10 +96,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write phase 4 status to progress file)
-            | %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{write_mode}: append
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -96,10 +111,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write dependency tree to checkpoint file)
-            | %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{serialize}: json
             <= @:!(<phase 4 already complete>)
             <* <phase 4 already complete>
         /: PHASE 4: Build and save tree
@@ -111,36 +126,34 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: dict(root: str, nodes: dict)
             <= ::(construct tree from classifications and extractions)
-                | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                | %{v_input_norm}: {prompt_location}
+                | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                | %{v_input_norm}: prompt_location
                 | %{v_input_provision}: provisions/prompts/phase_4/construct_dependency_tree.md
-                | %{h_input_norm}: in-memory
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: llm
-                | %{o_shape}: dict in memory
             <- {final output concept}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: str
                 <= ::(identify goal from extraction data)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_4/identify_goal.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: str in memory
-                <- {extraction data}
+                <- {extraction data}<:{1}>
                     | %{ref_axes}: [_none_axis]
-                    | %{ref_element}: dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)
+                    | %{ref_element}: dict
             <- {classified operations}<:{2}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: dict
                 <= ::(read classifications from checkpoint)
-                    | %{norm_input}: h_FilePath-c_ReadJsonFile-o_Struct
-                    | %{h_input_norm}: in-memory
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
                     | %{body_faculty}: file_system
-                    | %{o_shape}: dict in memory
-                <- {classifications file path}
+                    | %{parse}: json
+                <- {classifications file path}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
             <- [all dependencies]<:{3}>
@@ -148,13 +161,12 @@
                 | %{ref_shape}: (n_dependency,)
                 | %{ref_element}: dict(source: str, target: str)
                 <= ::(extract dependencies from extraction data)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_4/extract_dependencies.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: list in memory
-                <- {extraction data}
+                <- {extraction data}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: dict
         <- <phase 4 already complete>
@@ -162,13 +174,19 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: %{truth_value}
             <= ::<{check if phase 4 already complete in progress}><ALL True>
-                | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
-                | %{h_input_norm}: in-memory
+                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                | %{v_input_norm}: script_location
+                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                | %{v_function_name}: check_phase_complete
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: python_interpreter
-                | %{o_shape}: boolean
-            <- {current progress}
+            <- {current progress}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
+            <- {phase_name: "phase_4"}<:{2}>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: str
+                | %{literal<$% phase_name>}: phase_4
         <- {phase 3 complete}
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -178,10 +196,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write phase 3 status to progress file)
-            | %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{write_mode}: append
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -193,10 +211,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write classifications to checkpoint file)
-            | %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{serialize}: json
             <= @:!(<phase 3 already complete>)
             <* <phase 3 already complete>
         /: PHASE 3: Classify and save
@@ -214,12 +232,11 @@
                     | %{ref_shape}: (1,)
                     | %{ref_element}: dict(pattern: str, context: str)
                     <= ::(determine pattern type for operation)
-                        | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                        | %{v_input_norm}: {prompt_location}
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
                         | %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md
-                        | %{h_input_norm}: in-memory
+                        | %{h_input_norm}: Literal
                         | %{body_faculty}: llm
-                        | %{o_shape}: dict in memory
                     <- {current operation}<:{1}>
                         | %{ref_axes}: [_none_axis]
                         | %{ref_element}: str
@@ -228,12 +245,11 @@
                         | %{ref_shape}: (1,)
                         | %{ref_element}: dict
                         <= ::(gather context from extraction data)
-                            | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                            | %{v_input_norm}: {prompt_location}
+                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                            | %{v_input_norm}: prompt_location
                             | %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md
-                            | %{h_input_norm}: in-memory
+                            | %{h_input_norm}: Literal
                             | %{body_faculty}: llm
-                            | %{o_shape}: dict in memory
                         <- {current operation}<:{1}>
                             | %{ref_axes}: [_none_axis]
                             | %{ref_element}: str
@@ -245,13 +261,19 @@
                 | %{ref_shape}: (n_operation,)
                 | %{ref_element}: str
                 <= ::(get operations from extraction data)
-                    | %{norm_input}: h_Data-c_ExtractField-o_Literal
-                    | %{h_input_norm}: in-memory
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/extract_field.py
+                    | %{v_function_name}: extract_field
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: python_interpreter
-                    | %{o_shape}: list in memory
-                <- {extraction data}
+                <- {extraction data}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: dict
+                <- {field_name: "operations"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% field_name>}: operations
             <* {current operation}<$([extracted operations])*>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
@@ -260,13 +282,19 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: %{truth_value}
             <= ::<{check if phase 3 already complete in progress}><ALL True>
-                | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
-                | %{h_input_norm}: in-memory
+                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                | %{v_input_norm}: script_location
+                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                | %{v_function_name}: check_phase_complete
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: python_interpreter
-                | %{o_shape}: boolean
-            <- {current progress}
+            <- {current progress}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
+            <- {phase_name: "phase_3"}<:{2}>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: str
+                | %{literal<$% phase_name>}: phase_3
         <- {phase 2 complete}
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -276,10 +304,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write phase 2 status to progress file)
-            | %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{write_mode}: append
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -291,10 +319,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write extraction results to checkpoint file)
-            | %{norm_input}: h_FilePath-h_Data-c_WriteJsonFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{serialize}: json
             <= @:!(<phase 2 already complete>)
             <* <phase 2 already complete>
         /: PHASE 2: Extract and save
@@ -311,13 +339,12 @@
                 | %{ref_shape}: (n_concept,)
                 | %{ref_element}: str
                 <= ::(identify all nouns and data entities)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_2/extract_concepts.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: list in memory
-                <- {refined instruction content}
+                <- {refined instruction content}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
             <- [extracted operations]
@@ -325,13 +352,12 @@
                 | %{ref_shape}: (n_operation,)
                 | %{ref_element}: str
                 <= ::(identify all verbs and actions)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_2/extract_operations.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: list in memory
-                <- {refined instruction content}
+                <- {refined instruction content}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
             <- [extracted dependencies]
@@ -339,12 +365,11 @@
                 | %{ref_shape}: (n_dependency,)
                 | %{ref_element}: dict(source: str, target: str)
                 <= ::(identify what needs what)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_2/extract_dependencies.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: list in memory
                 <- {refined instruction content}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
@@ -359,13 +384,12 @@
                 | %{ref_shape}: (n_pattern,)
                 | %{ref_element}: dict(type: str, context: str)
                 <= ::(identify loops and conditions)
-                    | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                    | %{v_input_norm}: {prompt_location}
+                    | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                    | %{v_input_norm}: prompt_location
                     | %{v_input_provision}: provisions/prompts/phase_2/extract_control_patterns.md
-                    | %{h_input_norm}: in-memory
+                    | %{h_input_norm}: Literal
                     | %{body_faculty}: llm
-                    | %{o_shape}: list in memory
-                <- {refined instruction content}
+                <- {refined instruction content}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
         <- <phase 2 already complete>
@@ -373,13 +397,19 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: %{truth_value}
             <= ::<{check if phase 2 already complete in progress}><ALL True>
-                | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
-                | %{h_input_norm}: in-memory
+                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                | %{v_input_norm}: script_location
+                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                | %{v_function_name}: check_phase_complete
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: python_interpreter
-                | %{o_shape}: boolean
-            <- {current progress}
+            <- {current progress}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
+            <- {phase_name: "phase_2"}<:{2}>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: str
+                | %{literal<$% phase_name>}: phase_2
         <- {phase 1 complete}
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -389,10 +419,10 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write phase 1 status to progress file)
-            | %{norm_input}: h_FilePath-h_Content-c_AppendFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
+            | %{write_mode}: append
         <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
             | %{ref_element}: str
@@ -404,10 +434,9 @@
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(write refined instruction to checkpoint file)
-            | %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+            | %{h_input_norm}: LiteralPath, Literal
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
             <= @:!(<phase 1 already complete>)
             <* <phase 1 already complete>
         /: PHASE 1: Refine and save
@@ -424,13 +453,12 @@
                 | %{ref_shape}: (1,)
                 | %{ref_element}: str
                 <= ::(read refined instruction from checkpoint)
-                    | %{norm_input}: h_FilePath-c_ReadFile-o_Literal
-                    | %{h_input_norm}: in-memory
+                    | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                    | %{h_input_norm}: LiteralPath
                     | %{body_faculty}: file_system
-                    | %{o_shape}: str in memory
                     <= @:'(<phase 1 already complete>)
                     <* <phase 1 already complete>
-                <- {refined instruction file path}
+                <- {refined instruction file path}<:{1}>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
             <- {freshly refined instruction}
@@ -445,52 +473,51 @@
                     | %{ref_shape}: (1,)
                     | %{ref_element}: str
                     <= ::(synthesize from refinement answers)
-                            | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                            | %{v_input_norm}: {prompt_location}
-                            | %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
-                        | %{h_input_norm}: in-memory
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
+                        | %{h_input_norm}: Literal
                         | %{body_faculty}: llm
-                        | %{o_shape}: str in memory
-                    <= @:'(<instruction is vague>)
-                    <* <instruction is vague>
-                <- {refinement answers}
+                        <= @:'(<instruction is vague>)
+                        <* <instruction is vague>
+                    <- {refinement answers}<:{1}>
                         | %{ref_axes}: [question]
                         | %{ref_shape}: (n_question,)
                         | %{ref_element}: dict(question: str, answer: str)
-                    <= ::(apply each refinement question)
-                                | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
-                                | %{v_input_norm}: {prompt_location}
-                                | %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
-                            | %{h_input_norm}: in-memory
+                        <= ::(apply each refinement question)
+                            | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                            | %{v_input_norm}: prompt_location
+                            | %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
+                            | %{h_input_norm}: Literal
                             | %{body_faculty}: llm
-                            | %{o_shape}: list in memory
-                    <- {raw instruction content}<:{1}>
+                        <- {raw instruction content}<:{1}>
                             | %{ref_axes}: [_none_axis]
                             | %{ref_element}: str
-                    <- {refinement questions content}<:{2}>
+                        <- {refinement questions content}<:{2}>
                             | %{ref_axes}: [_none_axis]
                             | %{ref_shape}: (1,)
                             | %{ref_element}: str
-                        <= ::(read refinement questions from file)
-                                | %{norm_input}: h_FilePath-c_ReadFile-o_Literal
-                                | %{h_input_norm}: in-memory
+                            <= ::(read refinement questions from file)
+                                | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                                | %{h_input_norm}: LiteralPath
                                 | %{body_faculty}: file_system
-                                | %{o_shape}: str in memory
-                        <- {refinement questions file path}
+                            <- {refinement questions file path}<:{1}>
                                 | %{ref_axes}: [_none_axis]
-                                | %{ref_element}: perceptual_sign
+                                | %{ref_element}: str
                 <- {original version}
                     | %{ref_axes}: [_none_axis]
                     | %{ref_shape}: (1,)
                     | %{ref_element}: str
                     <= ::(pass through raw instruction)
-                        | %{norm_input}: h_Data-c_PassThrough-o_Literal
-                        | %{h_input_norm}: in-memory
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/pass_through.py
+                        | %{v_function_name}: pass_through
+                        | %{h_input_norm}: Literal
                         | %{body_faculty}: python_interpreter
-                        | %{o_shape}: str in memory
                         <= @:!(<instruction is vague>)
                         <* <instruction is vague>
-                    <- {raw instruction content}
+                    <- {raw instruction content}<:{1}>
                         | %{ref_axes}: [_none_axis]
                         | %{ref_element}: str
                 <- <instruction is vague>
@@ -498,13 +525,12 @@
                     | %{ref_shape}: (1,)
                     | %{ref_element}: %{truth_value}
                     <= ::<{judge if instruction lacks concrete details}><ALL True>
-                            | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean
-                            | %{v_input_norm}: {prompt_location}
-                            | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
-                        | %{h_input_norm}: in-memory
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
+                        | %{h_input_norm}: Literal
                         | %{body_faculty}: llm
-                        | %{o_shape}: boolean
-                    <- {raw instruction content}
+                    <- {raw instruction content}<:{1}>
                         | %{ref_axes}: [_none_axis]
                         | %{ref_element}: str
         <- <phase 1 already complete>
@@ -512,78 +538,90 @@
             | %{ref_shape}: (1,)
             | %{ref_element}: %{truth_value}
             <= ::<{check if phase 1 already complete in progress}><ALL True>
-                | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
-                | %{h_input_norm}: in-memory
+                | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                | %{v_input_norm}: script_location
+                | %{v_input_provision}: provisions/scripts/check_phase_complete.py
+                | %{v_function_name}: check_phase_complete
+                | %{h_input_norm}: Literal
                 | %{body_faculty}: python_interpreter
-                | %{o_shape}: boolean
-            <- {current progress}
+            <- {current progress}<:{1}>
                 | %{ref_axes}: [_none_axis]
                 | %{ref_element}: str
+            <- {phase_name: "phase_1"}<:{2}>
+                | %{ref_axes}: [_none_axis]
+                | %{ref_element}: str
+                | %{literal<$% phase_name>}: phase_1
     <- {raw instruction content}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(read instruction from input file)
-            | %{norm_input}: h_FilePath-c_ReadFile-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+            | %{h_input_norm}: LiteralPath
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
-        <- {instruction file path}
+        <- {instruction file path}<:{1}>
             | %{ref_axes}: [_none_axis]
-            | %{ref_element}: perceptual_sign
+            | %{ref_element}: str
     <- {current progress}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
         | %{ref_element}: str
         <= ::(read progress from file if exists)
-            | %{norm_input}: h_FilePath-c_ReadFileIfExists-o_Literal
-            | %{h_input_norm}: in-memory
+            | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+            | %{h_input_norm}: LiteralPath
             | %{body_faculty}: file_system
-            | %{o_shape}: str in memory
-        <- {progress file path}
+        <- {progress file path}<:{1}>
             | %{ref_axes}: [_none_axis]
-            | %{ref_element}: perceptual_sign
+            | %{ref_element}: str
     /: ========================================
     /: FILE PATH CONFIGURATION (Ground Concepts)
     /: ========================================
+    /: Ground concepts with literal paths - MVP passes through, paradigm handles I/O
     <- {instruction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to instruction.txt
     <- {refinement questions file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
-        | %{file_location}: provisions/data/refinement_questions.txt
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: provisions/data/refinement_questions.txt
         /: Ground: path to refinement_questions.txt
     <- {progress file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to progress.txt (runtime provided)
     <- {refined instruction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to 1_refined_instruction.txt (runtime provided)
     <- {extraction file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to 2_extraction.json (runtime provided)
     <- {classifications file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to 3_classifications.json (runtime provided)
     <- {tree file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to 4_dependency_tree.json (runtime provided)
     <- {output file path}
         | %{ref_axes}: [_none_axis]
         | %{ref_shape}: (1,)
-        | %{ref_element}: perceptual_sign
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
         /: Ground: path to ncds_output.ncds (runtime provided)

@@ -459,6 +459,10 @@ class ExecutionController:
                 self.node_statuses[flow_index] = NodeStatus.PENDING
                 self.total_count += 1
         
+        # Sync ground concept statuses from blackboard
+        # Ground concepts are already marked 'complete' in blackboard during initialization
+        self._sync_ground_concept_statuses()
+        
         # Build graph for visualization (stored for when "view" is clicked)
         # This cached graph_data enables fast tab switching without disk I/O
         try:
@@ -1163,6 +1167,53 @@ class ExecutionController:
         )
         
         return concepts_data, inferences_data, base_dir
+    
+    def _sync_ground_concept_statuses(self):
+        """
+        Sync node statuses for ground concepts from the blackboard.
+        
+        Ground concepts are marked 'complete' in the blackboard during initialization.
+        This method updates the node_statuses dict to reflect that, so the UI shows
+        ground concept nodes as 'completed' instead of 'pending'.
+        
+        Note: Ground concept VALUE nodes may not have corresponding inferences,
+        so we also ADD entries for flow_indices that aren't already tracked.
+        """
+        if not self.orchestrator or not self.orchestrator.blackboard:
+            logger.debug("Cannot sync ground concept statuses: no orchestrator or blackboard")
+            return
+        
+        if not self.concept_repo:
+            logger.debug("Cannot sync ground concept statuses: no concept_repo")
+            return
+        
+        ground_concepts_synced = 0
+        ground_concepts_added = 0
+        
+        for concept_entry in self.concept_repo.get_all_concepts():
+            if not concept_entry.is_ground_concept:
+                continue
+            
+            concept_name = concept_entry.concept_name
+            concept_status = self.orchestrator.blackboard.get_concept_status(concept_name)
+            
+            if concept_status == 'complete':
+                # Mark all flow indices for this ground concept as completed
+                flow_indices = concept_entry.flow_indices or []
+                for flow_index in flow_indices:
+                    if flow_index in self.node_statuses:
+                        # Update existing entry
+                        if self.node_statuses[flow_index] == NodeStatus.PENDING:
+                            self.node_statuses[flow_index] = NodeStatus.COMPLETED
+                            self.completed_count += 1
+                            ground_concepts_synced += 1
+                    else:
+                        # Add new entry for ground concept node that has no inference
+                        self.node_statuses[flow_index] = NodeStatus.COMPLETED
+                        ground_concepts_added += 1
+        
+        if ground_concepts_synced > 0 or ground_concepts_added > 0:
+            logger.info(f"Ground concept sync: {ground_concepts_synced} updated, {ground_concepts_added} added as COMPLETED")
     
     def _sync_node_statuses_from_orchestrator(self):
         """Sync node statuses from orchestrator's blackboard after loading checkpoint."""

@@ -7,7 +7,7 @@ Determine whether the given instruction is vague or underspecified and needs ref
 ## Input
 
 You will receive:
-- `{raw instruction content}`: The original natural language instruction
+- `$input_1` — The original natural language instruction (raw instruction content)
 
 ## Evaluation Criteria
 
@@ -55,5 +55,6 @@ Return a JSON object:
 ## Now Evaluate
 
 Instruction to evaluate:
-{{raw instruction content}}
+
+$input_1
 
