@@ -291,6 +291,32 @@ def build_concept_repo(nci_data: list) -> list:
         # Strip the <= marker from concept_name (it's inference syntax, not part of the concept)
         concept_name = re.sub(r"^<=\s*", "", nc_main)
         
+        # Build reference field for paradigms with vertical inputs
+        reference_data = None
+        if element_type == "paradigm":
+            # Check for vertical inputs (v_input_provision annotation)
+            v_input_provision = get_annotation_value(attached_comments, "v_input_provision")
+            v_function_name = get_annotation_value(attached_comments, "v_function_name")
+            
+            if v_input_provision:
+                # Determine norm based on file extension
+                if v_input_provision.endswith(".md"):
+                    norm = "prompt_location"
+                elif v_input_provision.endswith(".py"):
+                    norm = "script_location"
+                else:
+                    norm = "file_location"
+                
+                # Generate random 3-char hex ID
+                import random
+                hex_id = ''.join(random.choices('0123456789abcdef', k=3))
+                
+                # Create perceptual sign
+                reference_data = [f"%{{{norm}}}{hex_id}({v_input_provision})"]
+            else:
+                # No vertical inputs - use dummy reference
+                reference_data = ["%{dummy}(_)"]
+        
         concept_entry = {
             "id": func_id,
             "concept_name": concept_name,
@@ -299,7 +325,7 @@ def build_concept_repo(nci_data: list) -> list:
             "description": natural_name,
             "is_ground_concept": True,  # Function concepts are ground (predefined, not computed)
             "is_final_concept": False,
-            "reference_data": None,
+            "reference_data": reference_data,
             "reference_axis_names": ["_none_axis"],
             "reference_element_type": element_type,
             "natural_name": natural_name,
@@ -338,7 +364,6 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
         # Extract paradigm from norm_input
         paradigm = get_annotation_value(func_comments, "norm_input")
         body_faculty = get_annotation_value(func_comments, "body_faculty")
-        v_input_provision = get_annotation_value(func_comments, "v_input_provision")
         
         # Build value_order from value concepts - ONLY those with explicit <:{N}> bindings
         value_order = {}
@@ -360,14 +385,11 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
         wi["paradigm"] = paradigm
         wi["body_faculty"] = body_faculty
         wi["value_order"] = value_order
-        if v_input_provision:
-            wi["prompt_path"] = v_input_provision
     
     elif sequence_type == "judgement":
         # Same as imperative plus assertion_condition
         paradigm = get_annotation_value(func_comments, "norm_input")
         body_faculty = get_annotation_value(func_comments, "body_faculty")
-        v_input_provision = get_annotation_value(func_comments, "v_input_provision")
         
         # Build value_order - ONLY those with explicit <:{N}> bindings
         value_order = {}
@@ -386,8 +408,6 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
         wi["paradigm"] = paradigm
         wi["body_faculty"] = body_faculty
         wi["value_order"] = value_order
-        if v_input_provision:
-            wi["prompt_path"] = v_input_provision
         
         # Extract assertion from function concept
         nc_main = func_concept.get("nc_main", "")

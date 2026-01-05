@@ -26,7 +26,9 @@
     "description": "return ncds output written",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}fe6(provisions/scripts/pass_through.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -101,7 +103,9 @@
     "description": "read instruction from input file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -154,7 +158,9 @@
     "description": "write refined instruction to checkpoint file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -244,7 +250,9 @@
     "description": "check if phase 1 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}a79(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -286,7 +294,9 @@
     "description": "read progress from file if exists",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -381,7 +391,9 @@
     "description": "read refined instruction from checkpoint",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -485,7 +497,9 @@
     "description": "judge if instruction lacks concrete details",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}df2(provisions/prompts/phase_1/judge_instruction_vagueness.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -536,7 +550,9 @@
     "description": "pass through raw instruction",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}061(provisions/scripts/pass_through.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -604,7 +620,9 @@
     "description": "synthesize from refinement answers",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}f51(provisions/prompts/phase_1/synthesize_refined_instruction.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -655,7 +673,9 @@
     "description": "apply each refinement question",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}cfd(provisions/prompts/phase_1/apply_refinement_questions.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -689,7 +709,9 @@
     "description": "read refinement questions from file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -741,7 +763,9 @@
     "description": "write phase 1 status to progress file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -776,7 +800,9 @@
     "description": "write extraction results to checkpoint file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -867,7 +893,9 @@
     "description": "check if phase 2 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}852(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -935,7 +963,9 @@
     "description": "read extraction from checkpoint",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1041,7 +1071,9 @@
     "description": "read refined instruction file from path",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1076,7 +1108,9 @@
     "description": "identify all nouns and data entities",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}f01(provisions/prompts/phase_2/extract_concepts.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1112,7 +1146,9 @@
     "description": "identify all verbs and actions",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}2d5(provisions/prompts/phase_2/extract_operations.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1146,7 +1182,9 @@
     "description": "identify what needs what",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}d98(provisions/prompts/phase_2/extract_dependencies.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1180,7 +1218,9 @@
     "description": "identify loops and conditions",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}0ab(provisions/prompts/phase_2/extract_control_patterns.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1214,7 +1254,9 @@
     "description": "write phase 2 status to progress file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1249,7 +1291,9 @@
     "description": "write classifications to checkpoint file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1339,7 +1383,9 @@
     "description": "check if phase 3 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}842(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1407,7 +1453,9 @@
     "description": "read classifications from checkpoint",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1509,7 +1557,9 @@
     "description": "determine pattern type for operation",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}cc8(provisions/prompts/phase_3/classify_operation.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1562,7 +1612,9 @@
     "description": "gather context from extraction data",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}53d(provisions/prompts/phase_3/gather_operation_context.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1600,7 +1652,9 @@
     "description": "get operations from extraction data",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}c59(provisions/scripts/extract_field.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1618,7 +1672,9 @@
     "description": "read extraction file from path",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1669,7 +1725,9 @@
     "description": "write phase 3 status to progress file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1704,7 +1762,9 @@
     "description": "write dependency tree to checkpoint file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1794,7 +1854,9 @@
     "description": "check if phase 4 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}f05(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1862,7 +1924,9 @@
     "description": "read dependency tree from checkpoint",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1930,7 +1994,9 @@
     "description": "construct tree from classifications and extractions",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}600(provisions/prompts/phase_4/construct_dependency_tree.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1982,7 +2048,9 @@
     "description": "read classifications file from path",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2016,7 +2084,9 @@
     "description": "identify goal from extraction data",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}de8(provisions/prompts/phase_4/identify_goal.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2050,7 +2120,9 @@
     "description": "get classifications from classifications data",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}2e7(provisions/scripts/pass_through.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2084,7 +2156,9 @@
     "description": "extract dependencies from extraction data",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}39d(provisions/scripts/extract_field.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2135,7 +2209,9 @@
     "description": "write phase 4 status to progress file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2152,7 +2228,9 @@
     "description": "write ncds file to output path",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2222,7 +2300,9 @@
     "description": "check if phase 5 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}f7e(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2290,7 +2370,9 @@
     "description": "read ncds from checkpoint",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2358,7 +2440,9 @@
     "description": "serialize dependency tree to ncds text format",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{prompt_location}704(provisions/prompts/phase_5/serialize_tree_to_ncds.md)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2409,7 +2493,9 @@
     "description": "read dependency tree file from path",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2443,7 +2529,9 @@
     "description": "write phase 5 status to progress file",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],

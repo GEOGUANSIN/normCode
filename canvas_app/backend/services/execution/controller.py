@@ -493,9 +493,11 @@ class ExecutionController:
         await self._emit("execution:loaded", {
             "run_id": getattr(self.orchestrator, 'run_id', 'unknown'),
             "total_inferences": self.total_count,
+            "completed_count": self.completed_count,
+            "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
         })
         
-        self._add_log("info", "", f"Loaded {len(self.concepts_data)} concepts and {self.total_count} inferences")
+        self._add_log("info", "", f"Loaded {len(self.concepts_data)} concepts and {self.total_count} inferences (inputs: {self.completed_count} pre-completed)")
         self._add_log("info", "", f"Config: model={llm_model}, max_cycles={max_cycles}, db={db_path}")
         
         if self.orchestrator and self.orchestrator.checkpoint_manager:
@@ -1170,11 +1172,18 @@ class ExecutionController:
     
     def _sync_ground_concept_statuses(self):
         """
-        Sync node statuses for ground concepts from the blackboard.
+        Sync node statuses for concepts that have actual reference data (input values).
         
-        Ground concepts are marked 'complete' in the blackboard during initialization.
+        Only concepts with actual reference data should be marked as complete.
+        This includes:
+        - Concepts that received data from inputs.json
+        - Ground VALUE concepts that have initial reference_data in concepts.json
+        
+        Ground FUNCTION concepts (like functional specifications) should NOT be marked
+        complete just because they're "ground" - they need to be executed to produce output.
+        
         This method updates the node_statuses dict to reflect that, so the UI shows
-        ground concept nodes as 'completed' instead of 'pending'.
+        input concept nodes as 'completed' instead of 'pending'.
         
         Note: Ground concept VALUE nodes may not have corresponding inferences,
         so we also ADD entries for flow_indices that aren't already tracked.
@@ -1187,18 +1196,25 @@ class ExecutionController:
             logger.debug("Cannot sync ground concept statuses: no concept_repo")
             return
         
-        ground_concepts_synced = 0
-        ground_concepts_added = 0
+        input_concepts_synced = 0
+        input_concepts_added = 0
         
         for concept_entry in self.concept_repo.get_all_concepts():
-            if not concept_entry.is_ground_concept:
-                continue
-            
             concept_name = concept_entry.concept_name
-            concept_status = self.orchestrator.blackboard.get_concept_status(concept_name)
             
-            if concept_status == 'complete':
-                # Mark all flow indices for this ground concept as completed
+            # Only mark concept as complete if it has ACTUAL reference data
+            # This includes data from inputs.json or initial reference_data in concepts.json
+            # Don't rely on is_ground_concept flag - only the presence of data matters
+            has_reference_data = (
+                concept_entry.concept is not None and 
+                concept_entry.concept.reference is not None
+            )
+            
+            if has_reference_data:
+                # Mark in blackboard as complete since it has data
+                self.orchestrator.blackboard.set_concept_status(concept_name, 'complete')
+                
+                # Mark all flow indices for this concept as completed
                 flow_indices = concept_entry.flow_indices or []
                 for flow_index in flow_indices:
                     if flow_index in self.node_statuses:
@@ -1206,14 +1222,16 @@ class ExecutionController:
                         if self.node_statuses[flow_index] == NodeStatus.PENDING:
                             self.node_statuses[flow_index] = NodeStatus.COMPLETED
                             self.completed_count += 1
-                            ground_concepts_synced += 1
+                            input_concepts_synced += 1
                     else:
                         # Add new entry for ground concept node that has no inference
                         self.node_statuses[flow_index] = NodeStatus.COMPLETED
-                        ground_concepts_added += 1
+                        input_concepts_added += 1
+                
+                logger.debug(f"Marked concept '{concept_name}' as complete (has reference data)")
         
-        if ground_concepts_synced > 0 or ground_concepts_added > 0:
-            logger.info(f"Ground concept sync: {ground_concepts_synced} updated, {ground_concepts_added} added as COMPLETED")
+        if input_concepts_synced > 0 or input_concepts_added > 0:
+            logger.info(f"Input concept sync: {input_concepts_synced} updated, {input_concepts_added} added as COMPLETED")
     
     def _sync_node_statuses_from_orchestrator(self):
         """Sync node statuses from orchestrator's blackboard after loading checkpoint."""
@@ -1286,6 +1304,8 @@ class ExecutionController:
         )
         
         self._sync_node_statuses_from_orchestrator()
+        # Also sync ground/input concept statuses (for concepts with initial data)
+        self._sync_ground_concept_statuses()
         
         self.status = ExecutionStatus.IDLE
         self._retries = []
@@ -1306,6 +1326,7 @@ class ExecutionController:
             "run_id": self.orchestrator.run_id,
             "total_inferences": self.total_count,
             "completed_count": self.completed_count,
+            "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
             "mode": "resume",
         })
         
@@ -1374,6 +1395,8 @@ class ExecutionController:
         )
         
         self._sync_node_statuses_from_orchestrator()
+        # Also sync ground/input concept statuses (for concepts with initial data)
+        self._sync_ground_concept_statuses()
         
         self.status = ExecutionStatus.IDLE
         self._retries = []
@@ -1394,6 +1417,7 @@ class ExecutionController:
             "run_id": new_run_id,
             "total_inferences": self.total_count,
             "completed_count": self.completed_count,
+            "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
             "mode": "fork",
             "forked_from": source_run_id,
         })

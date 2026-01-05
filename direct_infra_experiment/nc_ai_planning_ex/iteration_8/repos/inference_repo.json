@@ -38,8 +38,7 @@
       "body_faculty": "python_interpreter",
       "value_order": {
         "{ncds output written}": 1
-      },
-      "prompt_path": "provisions/scripts/pass_through.py"
+      }
     }
   },
   {
@@ -137,7 +136,6 @@
         "{current progress}": 1,
         "{phase_name: \"phase_1\"}": 2
       },
-      "prompt_path": "provisions/scripts/check_phase_complete.py",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -283,7 +281,6 @@
       "value_order": {
         "{raw instruction content}": 1
       },
-      "prompt_path": "provisions/prompts/phase_1/judge_instruction_vagueness.md",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -312,8 +309,7 @@
       "body_faculty": "python_interpreter",
       "value_order": {
         "{raw instruction content}": 1
-      },
-      "prompt_path": "provisions/scripts/pass_through.py"
+      }
     }
   },
   {
@@ -359,8 +355,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{refinement answers}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_1/synthesize_refined_instruction.md"
+      }
     }
   },
   {
@@ -408,8 +403,7 @@
       "value_order": {
         "{raw instruction content}": 1,
         "{refinement questions content}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_1/apply_refinement_questions.md"
+      }
     }
   },
   {
@@ -532,7 +526,6 @@
         "{current progress}": 1,
         "{phase_name: \"phase_2\"}": 2
       },
-      "prompt_path": "provisions/scripts/check_phase_complete.py",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -708,8 +701,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_concepts.md"
+      }
     }
   },
   {
@@ -732,8 +724,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_operations.md"
+      }
     }
   },
   {
@@ -760,8 +751,7 @@
         "{refined instruction content}": 1,
         "{extracted concepts}": 2,
         "[extracted operations]": 3
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_dependencies.md"
+      }
     }
   },
   {
@@ -784,8 +774,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_control_patterns.md"
+      }
     }
   },
   {
@@ -885,7 +874,6 @@
         "{current progress}": 1,
         "{phase_name: \"phase_3\"}": 2
       },
-      "prompt_path": "provisions/scripts/check_phase_complete.py",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -1040,8 +1028,7 @@
       "value_order": {
         "{current operation}": 1,
         "{operation context}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_3/classify_operation.md"
+      }
     }
   },
   {
@@ -1066,8 +1053,7 @@
       "value_order": {
         "{current operation}": 1,
         "{extraction data}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_3/gather_operation_context.md"
+      }
     }
   },
   {
@@ -1092,8 +1078,7 @@
       "value_order": {
         "{extraction data}": 1,
         "{field_name: \"operations\"}": 2
-      },
-      "prompt_path": "provisions/scripts/extract_field.py"
+      }
     }
   },
   {
@@ -1216,7 +1201,6 @@
         "{current progress}": 1,
         "{phase_name: \"phase_4\"}": 2
       },
-      "prompt_path": "provisions/scripts/check_phase_complete.py",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -1322,8 +1306,7 @@
         "{final output concept}": 3,
         "{classified operations}": 4,
         "[all dependencies]": 5
-      },
-      "prompt_path": "provisions/prompts/phase_4/construct_dependency_tree.md"
+      }
     }
   },
   {
@@ -1415,8 +1398,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{extraction data}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_4/identify_goal.md"
+      }
     }
   },
   {
@@ -1439,8 +1421,7 @@
       "body_faculty": "python_interpreter",
       "value_order": {
         "{classifications data}": 1
-      },
-      "prompt_path": "provisions/scripts/pass_through.py"
+      }
     }
   },
   {
@@ -1465,8 +1446,7 @@
       "value_order": {
         "{extraction data}": 1,
         "{field_name: \"dependencies\"}": 2
-      },
-      "prompt_path": "provisions/scripts/extract_field.py"
+      }
     }
   },
   {
@@ -1566,7 +1546,6 @@
         "{current progress}": 1,
         "{phase_name: \"phase_5\"}": 2
       },
-      "prompt_path": "provisions/scripts/check_phase_complete.py",
       "assertion_condition": {
         "quantifiers": {
           "axis": "all"
@@ -1664,8 +1643,7 @@
       "body_faculty": "llm",
       "value_order": {
         "{dependency tree}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_5/serialize_tree_to_ncds.md"
+      }
     }
   },
   {
