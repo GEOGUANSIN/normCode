@@ -13,6 +13,23 @@
 
 **Core Task**: Extract and structure all information needed by the Orchestrator's execution engine.
 
+### Key Sub-Tasks
+
+| Sub-Task | Purpose | Details |
+|----------|---------|---------|
+| **Extraction** | Parse `.ncd` structure | Extract concepts, inferences, annotations |
+| **Provision (Supply)** | Validate and resolve resources | See [Provision in Activation](provision_in_activation.md) |
+| **Structuring** | Build JSON repositories | Create `working_interpretation` for each sequence |
+
+### The Demand/Supply Model
+
+Post-Formalization **declares demands** (resource paths as annotations). Activation **supplies resources**:
+
+| Phase | Role | What Happens |
+|-------|------|--------------|
+| **Post-Formalization** | **Demand** | Annotates paths: "I need a prompt at X" |
+| **Activation (Provision)** | **Supply** | Validates and resolves: "X exists and is valid" |
+
 ---
 
 ## The Activation Problem
@@ -24,6 +41,7 @@ The `.ncd` format is optimized for human readability and editability, but:
 - Each sequence type expects specific `working_interpretation` fields
 - References need initialization data
 - Execution order needs to be determinable
+- **Resource demands must be validated and resolved**
 
 **Activation bridges the gap** between human-readable `.ncd` and machine-executable JSON.
 
@@ -446,6 +464,30 @@ The orchestrator's execution engine looks up each `function_concept` string from
 
 ---
 
+## Provision: The Supply Side
+
+During activation, resource demands from Post-Formalization are validated and resolved.
+
+**For detailed documentation, see [Provision in Activation](provision_in_activation.md).**
+
+### Summary
+
+| Resource Type | Demand (Post-Formalization) | Supply (Activation) |
+|---------------|----------------------------|---------------------|
+| **Paradigms** | `\|%{norm_input}: paradigm-id` | Load JSON, validate structure |
+| **Prompts** | `\|%{v_input_provision}: path` | Validate file exists |
+| **Data files** | `\|%{file_location}: path` | Validate, create perceptual signs |
+| **Scripts** | Referenced by paradigm | Validate script exists |
+
+### Key Outputs
+
+After provision, the `working_interpretation` contains:
+- Validated paradigm IDs
+- Resolved prompt paths
+- Ground concept `reference_data` with perceptual signs
+
+---
+
 ## Extraction Strategy
 
 ### Meet from Both Ends
@@ -743,6 +785,11 @@ def deactivate(concept_repo, inference_repo):
 3. **Lazy validation**: Only validate on demand
 
 ---
+
+## Related Topics
+
+- **[Provision in Activation](provision_in_activation.md)** - How resource demands are validated and resolved (the supply side)
+- **[Post-Formalization](post_formalization.md)** - How resource demands are declared (the demand side)
 
 ## Next Steps
 

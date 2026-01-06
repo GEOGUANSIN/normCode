@@ -22,6 +22,8 @@ class Blackboard:
     # Concept aliases for identity ($=) - maps alias_name -> canonical_name
     # When two concepts are merged via $=, both names resolve to the same canonical concept
     concept_aliases: Dict[str, str] = field(default_factory=dict)
+    # Concept reset counts - tracks how many times a concept reference has been reset (loop iterations)
+    concept_reset_counts: Dict[str, int] = field(default_factory=dict)
 
     def resolve_concept_name(self, concept_name: str) -> str:
         """
@@ -142,6 +144,17 @@ class Blackboard:
         self.item_execution_counts[flow_index] = 0
         logging.debug(f"Execution count for item {flow_index} reset to 0.")
 
+    def get_concept_reset_count(self, concept_name: str) -> int:
+        """Get the number of times a concept has been reset (loop iteration count)."""
+        canonical = self.resolve_concept_name(concept_name)
+        return self.concept_reset_counts.get(canonical, 0)
+
+    def increment_concept_reset_count(self, concept_name: str):
+        """Increment the reset count for a concept (called when entering a new loop iteration)."""
+        canonical = self.resolve_concept_name(concept_name)
+        self.concept_reset_counts[canonical] = self.get_concept_reset_count(canonical) + 1
+        logging.debug(f"Concept '{canonical}' reset count incremented to {self.concept_reset_counts[canonical]}")
+
     def get_all_pending_or_in_progress_items(self) -> bool:
         return any(s in ['pending', 'in_progress'] for s in self.item_statuses.values())
 
@@ -210,6 +223,8 @@ class Blackboard:
                                     for k, v in self.concept_truth_masks.items()},
             # Concept aliases for identity ($=) merging
             "concept_aliases": self.concept_aliases.copy(),
+            # Concept reset counts for iteration history tracking
+            "concept_reset_counts": self.concept_reset_counts.copy(),
         }
 
     def load_from_dict(self, data: Dict[str, Any]):
@@ -225,4 +240,5 @@ class Blackboard:
         self.concept_to_flow_index.update(data.get("concept_to_flow_index", {}))
         self.concept_truth_masks.update(data.get("concept_truth_masks", {}))
         self.concept_aliases.update(data.get("concept_aliases", {}))
+        self.concept_reset_counts.update(data.get("concept_reset_counts", {}))
         logging.info("Blackboard state loaded from dictionary.")

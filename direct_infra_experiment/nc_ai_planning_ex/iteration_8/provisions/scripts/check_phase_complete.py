@@ -2,7 +2,12 @@
 Check Phase Complete Script
 
 Checks if a specific phase is marked as complete in the progress file content.
-Used by paradigm: h_Data-c_CheckPhaseComplete-o_Boolean
+Used by paradigm: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+
+Function Signature Requirements (New Vision):
+- Parameters named input_1, input_2, etc. matching value concept order
+- Optional 'body' parameter for tool access
+- Direct return value (no 'result' variable)
 """
 
 import re
@@ -10,17 +15,17 @@ from typing import Optional
 
 
 def check_phase_complete(
-    progress_content: str,
-    phase_number: Optional[int] = None,
-    phase_name: Optional[str] = None
+    input_1: str,          # progress_content (from {current progress})
+    input_2: str = None,   # phase_name (from {phase_name: "phase_N"})
+    body=None              # Optional Body instance
 ) -> bool:
     """
     Check if a phase is complete based on progress content.
     
     Args:
-        progress_content: Content of progress.txt file
-        phase_number: Phase number to check (1-5)
-        phase_name: Alternative: full phase name like "phase_3_complete"
+        input_1: Content of progress.txt file (the progress string)
+        input_2: Phase name like "phase_1", "phase_2", etc.
+        body: Optional Body instance (not used, but available)
     
     Returns:
         True if phase is complete, False otherwise
@@ -30,6 +35,9 @@ def check_phase_complete(
         phase_2_complete
         ...
     """
+    progress_content = input_1 or ""
+    phase_name = input_2
+    
     if not progress_content:
         return False
     
@@ -39,49 +47,28 @@ def check_phase_complete(
     
     # Build the phase marker to look for
     if phase_name:
+        # Handle both "phase_1" and "phase_1_complete" formats
         marker = phase_name.lower().strip()
-    elif phase_number is not None:
-        marker = f"phase_{phase_number}_complete"
+        if not marker.endswith('_complete'):
+            marker = f"{marker}_complete"
     else:
-        # Try to extract from calling context (would be passed by orchestrator)
         return False
     
     return marker in completed_phases
 
 
-def extract_phase_number_from_context(context: str) -> Optional[int]:
+def extract_phase_number_from_name(phase_name: str) -> Optional[int]:
     """
-    Extract phase number from context string.
+    Extract phase number from phase name.
     
     Examples:
-        "check if phase 3 already complete" -> 3
-        "phase 5 already complete" -> 5
+        "phase_3" -> 3
+        "phase_5" -> 5
     """
-    match = re.search(r'phase\s+(\d+)', context.lower())
+    match = re.search(r'phase[_\s]*(\d+)', phase_name.lower())
     if match:
         return int(match.group(1))
     return None
-
-
-# Entry point for orchestrator
-def main(inputs: dict) -> bool:
-    """
-    Main entry point called by orchestrator.
-    
-    Args:
-        inputs: Dict with 'progress_content' and optionally 'phase_number' or context
-    
-    Returns:
-        Boolean indicating if phase is complete
-    """
-    progress_content = inputs.get('progress_content', '')
-    phase_number = inputs.get('phase_number')
-    
-    # If no phase number, try to extract from context
-    if phase_number is None and 'context' in inputs:
-        phase_number = extract_phase_number_from_context(inputs['context'])
-    
-    return check_phase_complete(progress_content, phase_number)
 
 
 if __name__ == "__main__":
@@ -89,7 +76,6 @@ if __name__ == "__main__":
     test_progress = """phase_1_complete
 phase_2_complete
 """
-    print(f"Phase 1 complete: {check_phase_complete(test_progress, 1)}")  # True
-    print(f"Phase 2 complete: {check_phase_complete(test_progress, 2)}")  # True
-    print(f"Phase 3 complete: {check_phase_complete(test_progress, 3)}")  # False
-
+    print(f"Phase 1 complete: {check_phase_complete(test_progress, 'phase_1')}")  # True
+    print(f"Phase 2 complete: {check_phase_complete(test_progress, 'phase_2')}")  # True
+    print(f"Phase 3 complete: {check_phase_complete(test_progress, 'phase_3')}")  # False

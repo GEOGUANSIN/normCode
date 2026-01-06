@@ -17,63 +17,32 @@
     "natural_name": "ncds"
   },
   {
-    "id": "fc-ncds",
-    "concept_name": "<= $. %>({ncds})",
+    "id": "fc-return-ncds-output-written",
+    "concept_name": "::(return ncds output written)",
     "type": "({})",
     "flow_indices": [
       "1.1"
     ],
-    "description": "<= $. %>({ncds})",
-    "is_ground_concept": false,
+    "description": "return ncds output written",
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
+    "reference_data": [
+      "%{script_location}0be(provisions/scripts/pass_through.py)"
     ],
-    "reference_element_type": "operator",
-    "natural_name": "<= $. %>({ncds})"
-  },
-  {
-    "id": "c-derivation-complete",
-    "concept_name": "{derivation complete}",
-    "type": "{}",
-    "flow_indices": [
-      "1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "derivation complete"
-  },
-  {
-    "id": "fc-write-completion-status-to-progress-file",
-    "concept_name": "<= ::(write completion status to progress file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.2.1"
-    ],
-    "description": "write completion status to progress file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
     "reference_element_type": "paradigm",
-    "natural_name": "write completion status to progress file"
+    "natural_name": "return ncds output written"
   },
   {
     "id": "c-ncds-output-written",
     "concept_name": "{ncds output written}",
     "type": "{}",
     "flow_indices": [
-      "1.2.1.2",
-      "1.3"
+      "1.2",
+      "1.20",
+      "1.21.3"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -86,1058 +55,13 @@
     "natural_name": "ncds output written"
   },
   {
-    "id": "c-write-ncds-file-to-output-path",
-    "concept_name": "{write ncds file to output path}",
-    "type": "{}",
-    "flow_indices": [
-      "1.3.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "write ncds file to output path"
-  },
-  {
-    "id": "fc-write-ncds-file-to-output-path",
-    "concept_name": "<= ::(write ncds file to output path)",
-    "type": "({})",
-    "flow_indices": [
-      "1.3.1"
-    ],
-    "description": "write ncds file to output path",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write ncds file to output path"
-  },
-  {
-    "id": "fc-phase-5-already-complete",
-    "concept_name": "<= @:!(<phase 5 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.3.1.1"
-    ],
-    "description": "<= @:!(<phase 5 already complete>)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 5 already complete>)"
-  },
-  {
-    "id": "c-phase-5-already-complete",
-    "concept_name": "<phase 5 already complete>",
-    "type": "<>",
-    "flow_indices": [
-      "1.3.1.2",
-      "1.3.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "%{truth_value}",
-    "natural_name": "phase 5 already complete"
-  },
-  {
-    "id": "c-ncds-content",
-    "concept_name": "{ncds content}",
-    "type": "{}",
-    "flow_indices": [
-      "1.3.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "ncds content"
-  },
-  {
-    "id": "fc-serialize-dependency-tree-to-ncds-text-format",
-    "concept_name": "<= ::(serialize dependency tree to ncds text format)",
-    "type": "({})",
-    "flow_indices": [
-      "1.3.3.1"
-    ],
-    "description": "serialize dependency tree to ncds text format",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "serialize dependency tree to ncds text format"
-  },
-  {
-    "id": "c-dependency-tree",
-    "concept_name": "{dependency tree}",
-    "type": "{}",
-    "flow_indices": [
-      "1.3.3.1.1",
-      "1.5.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict(root: str, nodes: dict)",
-    "natural_name": "dependency tree"
-  },
-  {
-    "id": "fc-check-if-phase-5-already-complete-in-progress",
-    "concept_name": "<= ::<{check if phase 5 already complete in progress}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.3.4.1"
-    ],
-    "description": "check if phase 5 already complete in progress",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "check if phase 5 already complete in progress"
-  },
-  {
-    "id": "c-phase-4-complete",
-    "concept_name": "{phase 4 complete}",
-    "type": "{}",
-    "flow_indices": [
-      "1.3.5",
-      "1.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "phase 4 complete"
-  },
-  {
-    "id": "fc-write-phase-4-status-to-progress-file",
-    "concept_name": "<= ::(write phase 4 status to progress file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.4.1"
-    ],
-    "description": "write phase 4 status to progress file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write phase 4 status to progress file"
-  },
-  {
-    "id": "c-tree-file-written",
-    "concept_name": "{tree file written}",
-    "type": "{}",
-    "flow_indices": [
-      "1.4.1.2",
-      "1.5"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "tree file written"
-  },
-  {
-    "id": "c-write-dependency-tree-to-checkpoint-file",
-    "concept_name": "{write dependency tree to checkpoint file}",
-    "type": "{}",
-    "flow_indices": [
-      "1.5.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "write dependency tree to checkpoint file"
-  },
-  {
-    "id": "fc-write-dependency-tree-to-checkpoint-file",
-    "concept_name": "<= ::(write dependency tree to checkpoint file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.1"
-    ],
-    "description": "write dependency tree to checkpoint file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write dependency tree to checkpoint file"
-  },
-  {
-    "id": "fc-phase-4-already-complete",
-    "concept_name": "<= @:!(<phase 4 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.1.1"
-    ],
-    "description": "<= @:!(<phase 4 already complete>)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 4 already complete>)"
-  },
-  {
-    "id": "c-phase-4-already-complete",
-    "concept_name": "<phase 4 already complete>",
-    "type": "<>",
-    "flow_indices": [
-      "1.5.1.2",
-      "1.5.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "%{truth_value}",
-    "natural_name": "phase 4 already complete"
-  },
-  {
-    "id": "fc-construct-tree-from-classifications-and-extraction",
-    "concept_name": "<= ::(construct tree from classifications and extractions)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.3.1"
-    ],
-    "description": "construct tree from classifications and extractions",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "construct tree from classifications and extractions"
-  },
-  {
-    "id": "c-final-output-concept",
-    "concept_name": "{final output concept}",
-    "type": "{}",
-    "flow_indices": [
-      "1.5.3.1.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "final output concept"
-  },
-  {
-    "id": "fc-identify-goal-from-extraction-data",
-    "concept_name": "<= ::(identify goal from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.3.1.1.1"
-    ],
-    "description": "identify goal from extraction data",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "identify goal from extraction data"
-  },
-  {
-    "id": "c-extraction-data",
-    "concept_name": "{extraction data}",
-    "type": "{}",
-    "flow_indices": [
-      "1.5.3.1.1.1.1",
-      "1.5.3.1.3.1.1",
-      "1.7.3.1.1.1.1.2.1.2",
-      "1.7.3.2.1.1",
-      "1.9.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)",
-    "natural_name": "extraction data"
-  },
-  {
-    "id": "c-classified-operations",
-    "concept_name": "{classified operations}",
-    "type": "{}",
-    "flow_indices": [
-      "1.5.3.1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict",
-    "natural_name": "classified operations"
-  },
-  {
-    "id": "fc-read-classifications-from-checkpoint",
-    "concept_name": "<= ::(read classifications from checkpoint)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.3.1.2.1"
-    ],
-    "description": "read classifications from checkpoint",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "read classifications from checkpoint"
-  },
-  {
-    "id": "c-all-dependencies",
-    "concept_name": "[all dependencies]",
-    "type": "[]",
-    "flow_indices": [
-      "1.5.3.1.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "dependency"
-    ],
-    "reference_element_type": "dict(source: str, target: str)",
-    "natural_name": "all dependencies"
-  },
-  {
-    "id": "fc-extract-dependencies-from-extraction-data",
-    "concept_name": "<= ::(extract dependencies from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.5.3.1.3.1"
-    ],
-    "description": "extract dependencies from extraction data",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "extract dependencies from extraction data"
-  },
-  {
-    "id": "fc-check-if-phase-4-already-complete-in-progress",
-    "concept_name": "<= ::<{check if phase 4 already complete in progress}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.5.4.1"
-    ],
-    "description": "check if phase 4 already complete in progress",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "check if phase 4 already complete in progress"
-  },
-  {
-    "id": "c-phase-3-complete",
-    "concept_name": "{phase 3 complete}",
-    "type": "{}",
-    "flow_indices": [
-      "1.5.5",
-      "1.6"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "phase 3 complete"
-  },
-  {
-    "id": "fc-write-phase-3-status-to-progress-file",
-    "concept_name": "<= ::(write phase 3 status to progress file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.6.1"
-    ],
-    "description": "write phase 3 status to progress file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write phase 3 status to progress file"
-  },
-  {
-    "id": "c-classifications-file-written",
-    "concept_name": "{classifications file written}",
-    "type": "{}",
-    "flow_indices": [
-      "1.6.1.2",
-      "1.7"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "classifications file written"
-  },
-  {
-    "id": "c-write-classifications-to-checkpoint-file",
-    "concept_name": "{write classifications to checkpoint file}",
-    "type": "{}",
-    "flow_indices": [
-      "1.7.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "write classifications to checkpoint file"
-  },
-  {
-    "id": "fc-write-classifications-to-checkpoint-file",
-    "concept_name": "<= ::(write classifications to checkpoint file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.1"
-    ],
-    "description": "write classifications to checkpoint file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write classifications to checkpoint file"
-  },
-  {
-    "id": "fc-phase-3-already-complete",
-    "concept_name": "<= @:!(<phase 3 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.1.1"
-    ],
-    "description": "<= @:!(<phase 3 already complete>)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 3 already complete>)"
-  },
-  {
-    "id": "c-phase-3-already-complete",
-    "concept_name": "<phase 3 already complete>",
-    "type": "<>",
-    "flow_indices": [
-      "1.7.1.2",
-      "1.7.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "%{truth_value}",
-    "natural_name": "phase 3 already complete"
-  },
-  {
-    "id": "c-all-classifications",
-    "concept_name": "[all classifications]",
-    "type": "[]",
-    "flow_indices": [
-      "1.7.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "operation"
-    ],
-    "reference_element_type": "dict(pattern: str, context: str)",
-    "natural_name": "all classifications"
-  },
-  {
-    "id": "fc-extracted-operations-classification-operation-1",
-    "concept_name": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.3.1"
-    ],
-    "description": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)"
-  },
-  {
-    "id": "fc-classification",
-    "concept_name": "<= $. %>({classification})",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.3.1.1"
-    ],
-    "description": "<= $. %>({classification})",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= $. %>({classification})"
-  },
-  {
-    "id": "c-classification",
-    "concept_name": "{classification}",
-    "type": "{}",
-    "flow_indices": [
-      "1.7.3.1.1.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict(pattern: str, context: str)",
-    "natural_name": "classification"
-  },
-  {
-    "id": "fc-determine-pattern-type-for-operation",
-    "concept_name": "<= ::(determine pattern type for operation)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.3.1.1.1.1"
-    ],
-    "description": "determine pattern type for operation",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "determine pattern type for operation"
-  },
-  {
-    "id": "c-current-operation",
-    "concept_name": "{current operation}",
-    "type": "{}",
-    "flow_indices": [
-      "1.7.3.1.1.1.1.1",
-      "1.7.3.1.1.1.1.2.1.1",
-      "1.7.3.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "current operation"
-  },
-  {
-    "id": "c-operation-context",
-    "concept_name": "{operation context}",
-    "type": "{}",
-    "flow_indices": [
-      "1.7.3.1.1.1.1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict",
-    "natural_name": "operation context"
-  },
-  {
-    "id": "fc-gather-context-from-extraction-data",
-    "concept_name": "<= ::(gather context from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.3.1.1.1.1.2.1"
-    ],
-    "description": "gather context from extraction data",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "gather context from extraction data"
-  },
-  {
-    "id": "c-extracted-operations",
-    "concept_name": "[extracted operations]",
-    "type": "[]",
-    "flow_indices": [
-      "1.7.3.2",
-      "1.9.3.1.2",
-      "1.9.3.1.3.1.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "operation"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "extracted operations"
-  },
-  {
-    "id": "fc-get-operations-from-extraction-data",
-    "concept_name": "<= ::(get operations from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.7.3.2.1"
-    ],
-    "description": "get operations from extraction data",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "get operations from extraction data"
-  },
-  {
-    "id": "fc-check-if-phase-3-already-complete-in-progress",
-    "concept_name": "<= ::<{check if phase 3 already complete in progress}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.7.4.1"
-    ],
-    "description": "check if phase 3 already complete in progress",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "check if phase 3 already complete in progress"
-  },
-  {
-    "id": "c-phase-2-complete",
-    "concept_name": "{phase 2 complete}",
-    "type": "{}",
-    "flow_indices": [
-      "1.7.5",
-      "1.8"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "phase 2 complete"
-  },
-  {
-    "id": "fc-write-phase-2-status-to-progress-file",
-    "concept_name": "<= ::(write phase 2 status to progress file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.8.1"
-    ],
-    "description": "write phase 2 status to progress file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write phase 2 status to progress file"
-  },
-  {
-    "id": "c-extraction-file-written",
-    "concept_name": "{extraction file written}",
-    "type": "{}",
-    "flow_indices": [
-      "1.8.1.2",
-      "1.9"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "extraction file written"
-  },
-  {
-    "id": "c-write-extraction-results-to-checkpoint-file",
-    "concept_name": "{write extraction results to checkpoint file}",
-    "type": "{}",
-    "flow_indices": [
-      "1.9.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "write extraction results to checkpoint file"
-  },
-  {
-    "id": "fc-write-extraction-results-to-checkpoint-file",
-    "concept_name": "<= ::(write extraction results to checkpoint file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.1"
-    ],
-    "description": "write extraction results to checkpoint file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write extraction results to checkpoint file"
-  },
-  {
-    "id": "fc-phase-2-already-complete",
-    "concept_name": "<= @:!(<phase 2 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.1.1"
-    ],
-    "description": "<= @:!(<phase 2 already complete>)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 2 already complete>)"
-  },
-  {
-    "id": "c-phase-2-already-complete",
-    "concept_name": "<phase 2 already complete>",
-    "type": "<>",
-    "flow_indices": [
-      "1.9.1.2",
-      "1.9.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "%{truth_value}",
-    "natural_name": "phase 2 already complete"
-  },
-  {
-    "id": "fc-extracted-concepts-extracted-operations-extracted-",
-    "concept_name": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.3.1"
-    ],
-    "description": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)"
-  },
-  {
-    "id": "c-extracted-concepts",
-    "concept_name": "{extracted concepts}",
-    "type": "{}",
-    "flow_indices": [
-      "1.9.3.1.1",
-      "1.9.3.1.3.1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "concept"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "extracted concepts"
-  },
-  {
-    "id": "fc-identify-all-nouns-and-data-entities",
-    "concept_name": "<= ::(identify all nouns and data entities)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.3.1.1.1"
-    ],
-    "description": "identify all nouns and data entities",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "identify all nouns and data entities"
-  },
-  {
-    "id": "fc-identify-all-verbs-and-actions",
-    "concept_name": "<= ::(identify all verbs and actions)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.3.1.2.1"
-    ],
-    "description": "identify all verbs and actions",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "identify all verbs and actions"
-  },
-  {
-    "id": "c-extracted-dependencies",
-    "concept_name": "[extracted dependencies]",
-    "type": "[]",
-    "flow_indices": [
-      "1.9.3.1.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "dependency"
-    ],
-    "reference_element_type": "dict(source: str, target: str)",
-    "natural_name": "extracted dependencies"
-  },
-  {
-    "id": "fc-identify-what-needs-what",
-    "concept_name": "<= ::(identify what needs what)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.3.1.3.1"
-    ],
-    "description": "identify what needs what",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "identify what needs what"
-  },
-  {
-    "id": "c-extracted-control-patterns",
-    "concept_name": "[extracted control patterns]",
-    "type": "[]",
-    "flow_indices": [
-      "1.9.3.1.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "pattern"
-    ],
-    "reference_element_type": "dict(type: str, context: str)",
-    "natural_name": "extracted control patterns"
-  },
-  {
-    "id": "fc-identify-loops-and-conditions",
-    "concept_name": "<= ::(identify loops and conditions)",
-    "type": "({})",
-    "flow_indices": [
-      "1.9.3.1.4.1"
-    ],
-    "description": "identify loops and conditions",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "identify loops and conditions"
-  },
-  {
-    "id": "fc-check-if-phase-2-already-complete-in-progress",
-    "concept_name": "<= ::<{check if phase 2 already complete in progress}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.9.4.1"
-    ],
-    "description": "check if phase 2 already complete in progress",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "check if phase 2 already complete in progress"
-  },
-  {
-    "id": "c-phase-1-complete",
-    "concept_name": "{phase 1 complete}",
+    "id": "c-output-file-path",
+    "concept_name": "{output file path}",
     "type": "{}",
     "flow_indices": [
       "1.10",
-      "1.9.5"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "phase 1 complete"
-  },
-  {
-    "id": "fc-write-phase-1-status-to-progress-file",
-    "concept_name": "<= ::(write phase 1 status to progress file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.10.1"
-    ],
-    "description": "write phase 1 status to progress file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write phase 1 status to progress file"
-  },
-  {
-    "id": "c-progress-file-path",
-    "concept_name": "{progress file path}",
-    "type": "{}",
-    "flow_indices": [
-      "1.10.1.1",
-      "1.13.1.1",
-      "1.16",
-      "1.2.1.1",
-      "1.4.1.1",
-      "1.6.1.1",
-      "1.8.1.1"
+      "1.20.2",
+      "1.20.3.3.2"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1146,16 +70,73 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
-    "natural_name": "progress file path"
+    "reference_element_type": "str",
+    "natural_name": "output file path"
+  },
+  {
+    "id": "c-raw-instruction-content",
+    "concept_name": "{raw instruction content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.11",
+      "1.12.3.4.2.2",
+      "1.12.3.4.3.2",
+      "1.12.3.4.4.2.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "raw instruction content"
+  },
+  {
+    "id": "fc-read-instruction-from-input-file",
+    "concept_name": "::(read instruction from input file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.11.1"
+    ],
+    "description": "read instruction from input file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read instruction from input file"
+  },
+  {
+    "id": "c-instruction-file-path",
+    "concept_name": "{instruction file path}",
+    "type": "{}",
+    "flow_indices": [
+      "1.11.2",
+      "1.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "instruction file path"
   },
   {
     "id": "c-refined-instruction-file-written",
     "concept_name": "{refined instruction file written}",
     "type": "{}",
     "flow_indices": [
-      "1.10.1.2",
-      "1.11"
+      "1.12",
+      "1.13.3"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1168,11 +149,50 @@
     "natural_name": "refined instruction file written"
   },
   {
-    "id": "c-write-refined-instruction-to-checkpoint-file",
-    "concept_name": "{write refined instruction to checkpoint file}",
+    "id": "fc-write-refined-instruction-to-checkpoint-file",
+    "concept_name": "::(write refined instruction to checkpoint file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.12.1"
+    ],
+    "description": "write refined instruction to checkpoint file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write refined instruction to checkpoint file"
+  },
+  {
+    "id": "c-refined-instruction-file-path",
+    "concept_name": "{refined instruction file path}",
     "type": "{}",
     "flow_indices": [
-      "1.11.1"
+      "1.12.2",
+      "1.12.3.3.2",
+      "1.14.3.4.2.2",
+      "1.6"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "refined instruction file path"
+  },
+  {
+    "id": "c-instruction-to-be-written",
+    "concept_name": "{instruction to be written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.12.3"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1181,70 +201,34 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": null,
-    "natural_name": "write refined instruction to checkpoint file"
+    "reference_element_type": "str",
+    "natural_name": "instruction to be written"
   },
   {
-    "id": "fc-write-refined-instruction-to-checkpoint-file",
-    "concept_name": "<= ::(write refined instruction to checkpoint file)",
+    "id": "fc-instruction-to-be-written",
+    "concept_name": "$. %>({instruction to be written})",
     "type": "({})",
     "flow_indices": [
-      "1.11.1"
+      "1.12.3.1"
     ],
-    "description": "write refined instruction to checkpoint file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "write refined instruction to checkpoint file"
-  },
-  {
-    "id": "fc-phase-1-already-complete",
-    "concept_name": "<= @:!(<phase 1 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.11.1.1",
-      "1.11.3.1.2.1.1"
-    ],
-    "description": "<= @:!(<phase 1 already complete>)",
-    "is_ground_concept": false,
+    "description": "<= $. %>({instruction to be written})",
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
     "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 1 already complete>)"
-  },
-  {
-    "id": "c-timing-gate-phase-1-already-complete",
-    "concept_name": "{timing_gate_phase_1_already_complete}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.1"
-    ],
-    "description": "Timing gate for phase 1 completion check",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "timing gate phase 1 already complete"
+    "natural_name": "<= $. %>({instruction to be written})"
   },
   {
     "id": "c-phase-1-already-complete",
     "concept_name": "<phase 1 already complete>",
     "type": "<>",
     "flow_indices": [
-      "1.11.1.2",
-      "1.11.3.1.1.1.2",
-      "1.11.3.1.2.1.2",
-      "1.11.4"
+      "1.12.3.2",
+      "1.12.3.3.1.2",
+      "1.12.3.4.1.2"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1257,34 +241,34 @@
     "natural_name": "phase 1 already complete"
   },
   {
-    "id": "c-refined-instruction-file-path",
-    "concept_name": "{refined instruction file path}",
-    "type": "{}",
+    "id": "fc-check-if-phase-1-already-complete-in-progress",
+    "concept_name": "::<{check if phase 1 already complete in progress}><ALL True>",
+    "type": "<{}>",
     "flow_indices": [
-      "1.11.2",
-      "1.11.3.1.1.2",
-      "1.17"
+      "1.12.3.2.1"
     ],
-    "description": null,
+    "description": "check if phase 1 already complete in progress",
     "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}369(provisions/scripts/check_phase_complete.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
-    "natural_name": "refined instruction file path"
+    "reference_element_type": "paradigm",
+    "natural_name": "check if phase 1 already complete in progress"
   },
   {
-    "id": "c-refined-instruction-content",
-    "concept_name": "{refined instruction content}",
+    "id": "c-current-progress",
+    "concept_name": "{current progress}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3",
-      "1.9.3.1.1.1.1",
-      "1.9.3.1.2.1.1",
-      "1.9.3.1.3.1.1",
-      "1.9.3.1.4.1.1"
+      "1.12.3.2.2",
+      "1.14.3.2.2",
+      "1.16.3.2.2",
+      "1.18.3.2.2",
+      "1.20.3.2.2"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1294,31 +278,81 @@
       "_none_axis"
     ],
     "reference_element_type": "str",
-    "natural_name": "refined instruction content"
+    "natural_name": "current progress"
   },
   {
-    "id": "fc-cached-refined-instruction-freshly-refined-instruc",
-    "concept_name": "<= $. %>[{cached refined instruction}, {freshly refined instruction}]",
+    "id": "fc-read-progress-from-file-if-exists",
+    "concept_name": "::(read progress from file if exists)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1"
+      "1.12.3.2.2.1",
+      "1.14.3.2.2.1",
+      "1.16.3.2.2.1",
+      "1.18.3.2.2.1",
+      "1.20.3.2.2.1"
     ],
-    "description": "<= $. %>[{cached refined instruction}, {freshly refined instruction}]",
+    "description": "read progress from file if exists",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read progress from file if exists"
+  },
+  {
+    "id": "c-progress-file-path",
+    "concept_name": "{progress file path}",
+    "type": "{}",
+    "flow_indices": [
+      "1.12.3.2.2.2",
+      "1.13.2",
+      "1.14.3.2.2.2",
+      "1.15.2",
+      "1.16.3.2.2.2",
+      "1.17.2",
+      "1.18.3.2.2.2",
+      "1.19.2",
+      "1.20.3.2.2.2",
+      "1.21.2",
+      "1.5"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "progress file path"
+  },
+  {
+    "id": "c-phasename-phase1",
+    "concept_name": "{phase_name: \"phase_1\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.12.3.2.3"
+    ],
+    "description": null,
     "is_ground_concept": false,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "operator",
-    "natural_name": "<= $. %>[{cached refined instruction}, {freshly refined instruction}]"
+    "reference_element_type": "str",
+    "natural_name": "phase_name: \"phase_1\""
   },
   {
     "id": "c-cached-refined-instruction",
     "concept_name": "{cached refined instruction}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3.1.1"
+      "1.12.3.3"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1335,7 +369,7 @@
     "concept_name": "{read refined instruction from checkpoint}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3.1.1.1"
+      "1.12.3.3.1"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1349,15 +383,17 @@
   },
   {
     "id": "fc-read-refined-instruction-from-checkpoint",
-    "concept_name": "<= ::(read refined instruction from checkpoint)",
+    "concept_name": "::(read refined instruction from checkpoint)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.1.1"
+      "1.12.3.3.1"
     ],
     "description": "read refined instruction from checkpoint",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1366,13 +402,13 @@
   },
   {
     "id": "fc-phase-1-already-complete",
-    "concept_name": "<= @:'(<phase 1 already complete>)",
+    "concept_name": "@:'(<phase 1 already complete>)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.1.1.1"
+      "1.12.3.3.1.1"
     ],
     "description": "<= @:'(<phase 1 already complete>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1386,7 +422,7 @@
     "concept_name": "{freshly refined instruction}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3.1.2"
+      "1.12.3.4"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1399,98 +435,47 @@
     "natural_name": "freshly refined instruction"
   },
   {
-    "id": "fc-refined-version-original-version",
-    "concept_name": "<= $. %>[{refined version}, {original version}]",
+    "id": "fc-freshly-refined-instruction",
+    "concept_name": "$. %>({freshly refined instruction})",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.2.1"
+      "1.12.3.4.1"
     ],
-    "description": "<= $. %>[{refined version}, {original version}]",
-    "is_ground_concept": false,
+    "description": "<= $. %>({freshly refined instruction})",
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
     "reference_element_type": "operator",
-    "natural_name": "<= $. %>[{refined version}, {original version}]"
+    "natural_name": "<= $. %>({freshly refined instruction})"
   },
   {
-    "id": "c-refined-version",
-    "concept_name": "{refined version}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "refined version"
-  },
-  {
-    "id": "c-synthesize-from-refinement-answers",
-    "concept_name": "{synthesize from refinement answers}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.2.1"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": null,
-    "natural_name": "synthesize from refinement answers"
-  },
-  {
-    "id": "fc-synthesize-from-refinement-answers",
-    "concept_name": "<= ::(synthesize from refinement answers)",
+    "id": "fc-phase-1-already-complete",
+    "concept_name": "@:!(<phase 1 already complete>)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.2.2.1"
+      "1.12.3.4.1.1"
     ],
-    "description": "synthesize from refinement answers",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "synthesize from refinement answers"
-  },
-  {
-    "id": "fc-instruction-is-vague",
-    "concept_name": "<= @:'(<instruction is vague>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.11.3.1.2.2.1.1"
-    ],
-    "description": "<= @:'(<instruction is vague>)",
-    "is_ground_concept": false,
+    "description": "<= @:!(<phase 1 already complete>)",
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
     "reference_element_type": "operator",
-    "natural_name": "<= @:'(<instruction is vague>)"
+    "natural_name": "<= @:!(<phase 1 already complete>)"
   },
   {
     "id": "c-instruction-is-vague",
     "concept_name": "<instruction is vague>",
     "type": "<>",
     "flow_indices": [
-      "1.11.3.1.2.2.1.2",
-      "1.11.3.1.2.3.1.2",
-      "1.11.3.1.2.4"
+      "1.12.3.4.2",
+      "1.12.3.4.3.1.2",
+      "1.12.3.4.4.1.2"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1503,119 +488,30 @@
     "natural_name": "instruction is vague"
   },
   {
-    "id": "c-refinement-answers",
-    "concept_name": "{refinement answers}",
-    "type": "{}",
+    "id": "fc-judge-if-instruction-lacks-concrete-details",
+    "concept_name": "::<{judge if instruction lacks concrete details}><ALL True>",
+    "type": "<{}>",
     "flow_indices": [
-      "1.11.3.1.2.2.2"
+      "1.12.3.4.2.1"
     ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "question"
-    ],
-    "reference_element_type": "dict(question: str, answer: str)",
-    "natural_name": "refinement answers"
-  },
-  {
-    "id": "fc-apply-each-refinement-question",
-    "concept_name": "<= ::(apply each refinement question)",
-    "type": "({})",
-    "flow_indices": [
-      "1.11.3.1.2.2.2.1"
-    ],
-    "description": "apply each refinement question",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "apply each refinement question"
-  },
-  {
-    "id": "c-raw-instruction-content",
-    "concept_name": "{raw instruction content}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.2.2.1.1",
-      "1.11.3.1.2.3.2",
-      "1.11.3.1.2.4.1.1",
-      "1.12"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "raw instruction content"
-  },
-  {
-    "id": "c-refinement-questions-content",
-    "concept_name": "{refinement questions content}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.2.2.1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "refinement questions content"
-  },
-  {
-    "id": "fc-read-refinement-questions-from-file",
-    "concept_name": "<= ::(read refinement questions from file)",
-    "type": "({})",
-    "flow_indices": [
-      "1.11.3.1.2.2.2.1.2.1"
-    ],
-    "description": "read refinement questions from file",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "read refinement questions from file"
-  },
-  {
-    "id": "c-refinement-questions-file-path",
-    "concept_name": "{refinement questions file path}",
-    "type": "{}",
-    "flow_indices": [
-      "1.11.3.1.2.2.2.1.2.1.1",
-      "1.15"
-    ],
-    "description": null,
+    "description": "judge if instruction lacks concrete details",
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{file_location}(provisions/data/refinement_questions.txt)"
+      "%{prompt_location}b44(provisions/prompts/phase_1/judge_instruction_vagueness.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
-    "natural_name": "refinement questions file path"
+    "reference_element_type": "paradigm",
+    "natural_name": "judge if instruction lacks concrete details"
   },
   {
     "id": "c-original-version",
     "concept_name": "{original version}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3.1.2.3"
+      "1.12.3.4.3"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1632,7 +528,7 @@
     "concept_name": "{pass through raw instruction}",
     "type": "{}",
     "flow_indices": [
-      "1.11.3.1.2.3.1"
+      "1.12.3.4.3.1"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1646,15 +542,17 @@
   },
   {
     "id": "fc-pass-through-raw-instruction",
-    "concept_name": "<= ::(pass through raw instruction)",
+    "concept_name": "::(pass through raw instruction)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.2.3.1"
+      "1.12.3.4.3.1"
     ],
     "description": "pass through raw instruction",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "%{script_location}23f(provisions/scripts/pass_through.py)"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1663,13 +561,13 @@
   },
   {
     "id": "fc-instruction-is-vague",
-    "concept_name": "<= @:!(<instruction is vague>)",
+    "concept_name": "@:!(<instruction is vague>)",
     "type": "({})",
     "flow_indices": [
-      "1.11.3.1.2.3.1.1"
+      "1.12.3.4.3.1.1"
     ],
     "description": "<= @:!(<instruction is vague>)",
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
@@ -1679,50 +577,11 @@
     "natural_name": "<= @:!(<instruction is vague>)"
   },
   {
-    "id": "fc-judge-if-instruction-lacks-concrete-details",
-    "concept_name": "<= ::<{judge if instruction lacks concrete details}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.11.3.1.2.4.1"
-    ],
-    "description": "judge if instruction lacks concrete details",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "judge if instruction lacks concrete details"
-  },
-  {
-    "id": "fc-check-if-phase-1-already-complete-in-progress",
-    "concept_name": "<= ::<{check if phase 1 already complete in progress}><ALL True>",
-    "type": "<{}>",
-    "flow_indices": [
-      "1.11.4.1"
-    ],
-    "description": "check if phase 1 already complete in progress",
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "check if phase 1 already complete in progress"
-  },
-  {
-    "id": "c-current-progress",
-    "concept_name": "{current progress}",
+    "id": "c-refined-version",
+    "concept_name": "{refined version}",
     "type": "{}",
     "flow_indices": [
-      "1.11.4.1.1",
-      "1.13",
-      "1.3.4.1.1",
-      "1.5.4.1.1",
-      "1.7.4.1.1",
-      "1.9.4.1.1"
+      "1.12.3.4.4"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1732,32 +591,140 @@
       "_none_axis"
     ],
     "reference_element_type": "str",
-    "natural_name": "current progress"
+    "natural_name": "refined version"
   },
   {
-    "id": "fc-read-instruction-from-input-file",
-    "concept_name": "<= ::(read instruction from input file)",
-    "type": "({})",
+    "id": "c-synthesize-from-refinement-answers",
+    "concept_name": "{synthesize from refinement answers}",
+    "type": "{}",
     "flow_indices": [
-      "1.12.1"
+      "1.12.3.4.4.1"
     ],
-    "description": "read instruction from input file",
+    "description": null,
     "is_ground_concept": false,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "paradigm",
-    "natural_name": "read instruction from input file"
+    "reference_element_type": null,
+    "natural_name": "synthesize from refinement answers"
   },
   {
-    "id": "c-instruction-file-path",
-    "concept_name": "{instruction file path}",
+    "id": "fc-synthesize-from-refinement-answers",
+    "concept_name": "::(synthesize from refinement answers)",
+    "type": "({})",
+    "flow_indices": [
+      "1.12.3.4.4.1"
+    ],
+    "description": "synthesize from refinement answers",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}2b9(provisions/prompts/phase_1/synthesize_refined_instruction.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "synthesize from refinement answers"
+  },
+  {
+    "id": "fc-instruction-is-vague",
+    "concept_name": "@:'(<instruction is vague>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.12.3.4.4.1.1"
+    ],
+    "description": "<= @:'(<instruction is vague>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<instruction is vague>)"
+  },
+  {
+    "id": "c-refinement-answers",
+    "concept_name": "{refinement answers}",
     "type": "{}",
     "flow_indices": [
-      "1.12.1.1",
-      "1.14"
+      "1.12.3.4.4.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "question"
+    ],
+    "reference_element_type": "dict(question: str, answer: str)",
+    "natural_name": "refinement answers"
+  },
+  {
+    "id": "fc-apply-each-refinement-question",
+    "concept_name": "::(apply each refinement question)",
+    "type": "({})",
+    "flow_indices": [
+      "1.12.3.4.4.2.1"
+    ],
+    "description": "apply each refinement question",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}758(provisions/prompts/phase_1/apply_refinement_questions.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "apply each refinement question"
+  },
+  {
+    "id": "c-refinement-questions-content",
+    "concept_name": "{refinement questions content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.12.3.4.4.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "refinement questions content"
+  },
+  {
+    "id": "fc-read-refinement-questions-from-file",
+    "concept_name": "::(read refinement questions from file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.12.3.4.4.2.3.1"
+    ],
+    "description": "read refinement questions from file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read refinement questions from file"
+  },
+  {
+    "id": "c-refinement-questions-file-path",
+    "concept_name": "{refinement questions file path}",
+    "type": "{}",
+    "flow_indices": [
+      "1.12.3.4.4.2.3.2",
+      "1.4"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1766,33 +733,92 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
-    "natural_name": "instruction file path"
+    "reference_element_type": "str",
+    "natural_name": "refinement questions file path"
   },
   {
-    "id": "fc-read-progress-from-file-if-exists",
-    "concept_name": "<= ::(read progress from file if exists)",
-    "type": "({})",
+    "id": "c-phase-1-complete",
+    "concept_name": "{phase 1 complete}",
+    "type": "{}",
     "flow_indices": [
-      "1.13.1"
+      "1.13"
     ],
-    "description": "read progress from file if exists",
+    "description": null,
     "is_ground_concept": false,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
+    "reference_element_type": "str",
+    "natural_name": "phase 1 complete"
+  },
+  {
+    "id": "fc-write-phase-1-status-to-progress-file",
+    "concept_name": "::(write phase 1 status to progress file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.13.1"
+    ],
+    "description": "write phase 1 status to progress file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
     "reference_element_type": "paradigm",
-    "natural_name": "read progress from file if exists"
+    "natural_name": "write phase 1 status to progress file"
+  },
+  {
+    "id": "c-extraction-file-written",
+    "concept_name": "{extraction file written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14",
+      "1.15.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "extraction file written"
+  },
+  {
+    "id": "fc-write-extraction-results-to-checkpoint-file",
+    "concept_name": "::(write extraction results to checkpoint file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.1"
+    ],
+    "description": "write extraction results to checkpoint file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write extraction results to checkpoint file"
   },
   {
     "id": "c-extraction-file-path",
     "concept_name": "{extraction file path}",
     "type": "{}",
     "flow_indices": [
-      "1.18",
-      "1.9.2"
+      "1.14.2",
+      "1.14.3.3.2",
+      "1.16.3.4.2.2.2",
+      "1.18.3.4.3.2",
+      "1.7"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1801,17 +827,488 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
     "natural_name": "extraction file path"
+  },
+  {
+    "id": "c-extraction-to-be-written",
+    "concept_name": "{extraction to be written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)",
+    "natural_name": "extraction to be written"
+  },
+  {
+    "id": "fc-extraction-to-be-written",
+    "concept_name": "$. %>({extraction to be written})",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.1"
+    ],
+    "description": "<= $. %>({extraction to be written})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({extraction to be written})"
+  },
+  {
+    "id": "c-phase-2-already-complete",
+    "concept_name": "<phase 2 already complete>",
+    "type": "<>",
+    "flow_indices": [
+      "1.14.3.2",
+      "1.14.3.3.1.2",
+      "1.14.3.4.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "phase 2 already complete"
+  },
+  {
+    "id": "fc-check-if-phase-2-already-complete-in-progress",
+    "concept_name": "::<{check if phase 2 already complete in progress}><ALL True>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.14.3.2.1"
+    ],
+    "description": "check if phase 2 already complete in progress",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}f53(provisions/scripts/check_phase_complete.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if phase 2 already complete in progress"
+  },
+  {
+    "id": "c-phasename-phase2",
+    "concept_name": "{phase_name: \"phase_2\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase_name: \"phase_2\""
+  },
+  {
+    "id": "c-cached-extraction-data",
+    "concept_name": "{cached extraction data}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)",
+    "natural_name": "cached extraction data"
+  },
+  {
+    "id": "c-read-extraction-from-checkpoint",
+    "concept_name": "{read extraction from checkpoint}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.3.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "read extraction from checkpoint"
+  },
+  {
+    "id": "fc-read-extraction-from-checkpoint",
+    "concept_name": "::(read extraction from checkpoint)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.3.1"
+    ],
+    "description": "read extraction from checkpoint",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read extraction from checkpoint"
+  },
+  {
+    "id": "fc-phase-2-already-complete",
+    "concept_name": "@:'(<phase 2 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.3.1.1"
+    ],
+    "description": "<= @:'(<phase 2 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<phase 2 already complete>)"
+  },
+  {
+    "id": "c-freshly-extracted-data",
+    "concept_name": "{freshly extracted data}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(concepts: list, operations: list, dependencies: dict, control_patterns: dict)",
+    "natural_name": "freshly extracted data"
+  },
+  {
+    "id": "fc-extracted-concepts-extracted-operations-extracted-",
+    "concept_name": "&[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.1"
+    ],
+    "description": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)"
+  },
+  {
+    "id": "fc-phase-2-already-complete",
+    "concept_name": "@:!(<phase 2 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.1.1"
+    ],
+    "description": "<= @:!(<phase 2 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:!(<phase 2 already complete>)"
+  },
+  {
+    "id": "c-refined-instruction-content",
+    "concept_name": "{refined instruction content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.4.2",
+      "1.14.3.4.3.2",
+      "1.14.3.4.4.2",
+      "1.14.3.4.5.2",
+      "1.14.3.4.6.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "refined instruction content"
+  },
+  {
+    "id": "fc-read-refined-instruction-file-from-path",
+    "concept_name": "::(read refined instruction file from path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.2.1"
+    ],
+    "description": "read refined instruction file from path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read refined instruction file from path"
+  },
+  {
+    "id": "c-extracted-concepts",
+    "concept_name": "{extracted concepts}",
+    "type": "{}",
+    "flow_indices": [
+      "1.14.3.4.3",
+      "1.14.3.4.5.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "concept"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "extracted concepts"
+  },
+  {
+    "id": "fc-identify-all-nouns-and-data-entities",
+    "concept_name": "::(identify all nouns and data entities)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.3.1"
+    ],
+    "description": "identify all nouns and data entities",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}344(provisions/prompts/phase_2/extract_concepts.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "identify all nouns and data entities"
+  },
+  {
+    "id": "c-extracted-operations",
+    "concept_name": "[extracted operations]",
+    "type": "[]",
+    "flow_indices": [
+      "1.14.3.4.4",
+      "1.14.3.4.5.4",
+      "1.16.3.4.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "operation"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "extracted operations"
+  },
+  {
+    "id": "fc-identify-all-verbs-and-actions",
+    "concept_name": "::(identify all verbs and actions)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.4.1"
+    ],
+    "description": "identify all verbs and actions",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}2e5(provisions/prompts/phase_2/extract_operations.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "identify all verbs and actions"
+  },
+  {
+    "id": "c-extracted-dependencies",
+    "concept_name": "[extracted dependencies]",
+    "type": "[]",
+    "flow_indices": [
+      "1.14.3.4.5"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "dependency"
+    ],
+    "reference_element_type": "dict(source: str, target: str)",
+    "natural_name": "extracted dependencies"
+  },
+  {
+    "id": "fc-identify-what-needs-what",
+    "concept_name": "::(identify what needs what)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.5.1"
+    ],
+    "description": "identify what needs what",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}71a(provisions/prompts/phase_2/extract_dependencies.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "identify what needs what"
+  },
+  {
+    "id": "c-extracted-control-patterns",
+    "concept_name": "[extracted control patterns]",
+    "type": "[]",
+    "flow_indices": [
+      "1.14.3.4.6"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "pattern"
+    ],
+    "reference_element_type": "dict(type: str, context: str)",
+    "natural_name": "extracted control patterns"
+  },
+  {
+    "id": "fc-identify-loops-and-conditions",
+    "concept_name": "::(identify loops and conditions)",
+    "type": "({})",
+    "flow_indices": [
+      "1.14.3.4.6.1"
+    ],
+    "description": "identify loops and conditions",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}bb0(provisions/prompts/phase_2/extract_control_patterns.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "identify loops and conditions"
+  },
+  {
+    "id": "c-phase-2-complete",
+    "concept_name": "{phase 2 complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1.15"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase 2 complete"
+  },
+  {
+    "id": "fc-write-phase-2-status-to-progress-file",
+    "concept_name": "::(write phase 2 status to progress file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.15.1"
+    ],
+    "description": "write phase 2 status to progress file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write phase 2 status to progress file"
+  },
+  {
+    "id": "c-classifications-file-written",
+    "concept_name": "{classifications file written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16",
+      "1.17.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "classifications file written"
+  },
+  {
+    "id": "fc-write-classifications-to-checkpoint-file",
+    "concept_name": "::(write classifications to checkpoint file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.1"
+    ],
+    "description": "write classifications to checkpoint file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write classifications to checkpoint file"
   },
   {
     "id": "c-classifications-file-path",
     "concept_name": "{classifications file path}",
     "type": "{}",
     "flow_indices": [
-      "1.19",
-      "1.5.3.1.2.1.1",
-      "1.7.2"
+      "1.16.2",
+      "1.16.3.3.2",
+      "1.18.3.4.2.2",
+      "1.8"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1820,16 +1317,469 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
     "natural_name": "classifications file path"
+  },
+  {
+    "id": "c-classifications-to-be-written",
+    "concept_name": "{classifications to be written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "operation"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "classifications to be written"
+  },
+  {
+    "id": "fc-classifications-to-be-written",
+    "concept_name": "$. %>({classifications to be written})",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.1"
+    ],
+    "description": "<= $. %>({classifications to be written})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({classifications to be written})"
+  },
+  {
+    "id": "c-phase-3-already-complete",
+    "concept_name": "<phase 3 already complete>",
+    "type": "<>",
+    "flow_indices": [
+      "1.16.3.2",
+      "1.16.3.3.1.2",
+      "1.16.3.4.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "phase 3 already complete"
+  },
+  {
+    "id": "fc-check-if-phase-3-already-complete-in-progress",
+    "concept_name": "::<{check if phase 3 already complete in progress}><ALL True>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.16.3.2.1"
+    ],
+    "description": "check if phase 3 already complete in progress",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}785(provisions/scripts/check_phase_complete.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if phase 3 already complete in progress"
+  },
+  {
+    "id": "c-phasename-phase3",
+    "concept_name": "{phase_name: \"phase_3\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase_name: \"phase_3\""
+  },
+  {
+    "id": "c-cached-classifications",
+    "concept_name": "{cached classifications}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "operation"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "cached classifications"
+  },
+  {
+    "id": "c-read-classifications-from-checkpoint",
+    "concept_name": "{read classifications from checkpoint}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.3.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "read classifications from checkpoint"
+  },
+  {
+    "id": "fc-read-classifications-from-checkpoint",
+    "concept_name": "::(read classifications from checkpoint)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.3.1"
+    ],
+    "description": "read classifications from checkpoint",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read classifications from checkpoint"
+  },
+  {
+    "id": "fc-phase-3-already-complete",
+    "concept_name": "@:'(<phase 3 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.3.1.1"
+    ],
+    "description": "<= @:'(<phase 3 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<phase 3 already complete>)"
+  },
+  {
+    "id": "c-freshly-classified-operations",
+    "concept_name": "[freshly classified operations]",
+    "type": "[]",
+    "flow_indices": [
+      "1.16.3.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "operation"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "freshly classified operations"
+  },
+  {
+    "id": "fc-extracted-operations-classification-operation-1",
+    "concept_name": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.1"
+    ],
+    "description": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)"
+  },
+  {
+    "id": "fc-phase-3-already-complete",
+    "concept_name": "@:!(<phase 3 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.1.1"
+    ],
+    "description": "<= @:!(<phase 3 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:!(<phase 3 already complete>)"
+  },
+  {
+    "id": "c-classification",
+    "concept_name": "{classification}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.4.1.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "classification"
+  },
+  {
+    "id": "fc-determine-pattern-type-for-operation",
+    "concept_name": "::(determine pattern type for operation)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.1.4.1"
+    ],
+    "description": "determine pattern type for operation",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}c42(provisions/prompts/phase_3/classify_operation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "determine pattern type for operation"
+  },
+  {
+    "id": "c-current-operation",
+    "concept_name": "{current operation}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.4.1.4.2",
+      "1.16.3.4.1.4.3.2",
+      "1.16.3.4.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "current operation"
+  },
+  {
+    "id": "c-operation-context",
+    "concept_name": "{operation context}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.4.1.4.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "operation context"
+  },
+  {
+    "id": "fc-gather-context-from-extraction-data",
+    "concept_name": "::(gather context from extraction data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.1.4.3.1"
+    ],
+    "description": "gather context from extraction data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}9e4(provisions/prompts/phase_3/gather_operation_context.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "gather context from extraction data"
+  },
+  {
+    "id": "c-extraction-data",
+    "concept_name": "{extraction data}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.4.1.4.3.3",
+      "1.16.3.4.2.2",
+      "1.18.3.4.3",
+      "1.18.3.4.4.2",
+      "1.18.3.4.6.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "extraction data"
+  },
+  {
+    "id": "fc-get-operations-from-extraction-data",
+    "concept_name": "::(get operations from extraction data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.2.1"
+    ],
+    "description": "get operations from extraction data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}a90(provisions/scripts/extract_field.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "get operations from extraction data"
+  },
+  {
+    "id": "fc-read-extraction-file-from-path",
+    "concept_name": "::(read extraction file from path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.4.2.2.1",
+      "1.18.3.4.3.1"
+    ],
+    "description": "read extraction file from path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read extraction file from path"
+  },
+  {
+    "id": "c-fieldname-operations",
+    "concept_name": "{field_name: \"operations\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.4.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "field_name: \"operations\""
+  },
+  {
+    "id": "c-phase-3-complete",
+    "concept_name": "{phase 3 complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1.17"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase 3 complete"
+  },
+  {
+    "id": "fc-write-phase-3-status-to-progress-file",
+    "concept_name": "::(write phase 3 status to progress file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.17.1"
+    ],
+    "description": "write phase 3 status to progress file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write phase 3 status to progress file"
+  },
+  {
+    "id": "c-tree-file-written",
+    "concept_name": "{tree file written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18",
+      "1.19.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "tree file written"
+  },
+  {
+    "id": "fc-write-dependency-tree-to-checkpoint-file",
+    "concept_name": "::(write dependency tree to checkpoint file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.1"
+    ],
+    "description": "write dependency tree to checkpoint file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write dependency tree to checkpoint file"
   },
   {
     "id": "c-tree-file-path",
     "concept_name": "{tree file path}",
     "type": "{}",
     "flow_indices": [
-      "1.20",
-      "1.5.2"
+      "1.18.2",
+      "1.18.3.3.2",
+      "1.20.3.4.2.2",
+      "1.9"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1838,25 +1788,754 @@
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
+    "reference_element_type": "str",
     "natural_name": "tree file path"
   },
   {
-    "id": "c-output-file-path",
-    "concept_name": "{output file path}",
+    "id": "c-tree-to-be-written",
+    "concept_name": "{tree to be written}",
     "type": "{}",
     "flow_indices": [
-      "1.21",
-      "1.3.2"
+      "1.18.3"
     ],
     "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(root: str, nodes: dict)",
+    "natural_name": "tree to be written"
+  },
+  {
+    "id": "fc-tree-to-be-written",
+    "concept_name": "$. %>({tree to be written})",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.1"
+    ],
+    "description": "<= $. %>({tree to be written})",
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": null,
     "reference_axis_names": [
       "_none_axis"
     ],
-    "reference_element_type": "perceptual_sign",
-    "natural_name": "output file path"
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({tree to be written})"
+  },
+  {
+    "id": "c-phase-4-already-complete",
+    "concept_name": "<phase 4 already complete>",
+    "type": "<>",
+    "flow_indices": [
+      "1.18.3.2",
+      "1.18.3.3.1.2",
+      "1.18.3.4.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "phase 4 already complete"
+  },
+  {
+    "id": "fc-check-if-phase-4-already-complete-in-progress",
+    "concept_name": "::<{check if phase 4 already complete in progress}><ALL True>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.18.3.2.1"
+    ],
+    "description": "check if phase 4 already complete in progress",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}a36(provisions/scripts/check_phase_complete.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if phase 4 already complete in progress"
+  },
+  {
+    "id": "c-phasename-phase4",
+    "concept_name": "{phase_name: \"phase_4\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase_name: \"phase_4\""
+  },
+  {
+    "id": "c-cached-dependency-tree",
+    "concept_name": "{cached dependency tree}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(root: str, nodes: dict)",
+    "natural_name": "cached dependency tree"
+  },
+  {
+    "id": "c-read-dependency-tree-from-checkpoint",
+    "concept_name": "{read dependency tree from checkpoint}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.3.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "read dependency tree from checkpoint"
+  },
+  {
+    "id": "fc-read-dependency-tree-from-checkpoint",
+    "concept_name": "::(read dependency tree from checkpoint)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.3.1"
+    ],
+    "description": "read dependency tree from checkpoint",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read dependency tree from checkpoint"
+  },
+  {
+    "id": "fc-phase-4-already-complete",
+    "concept_name": "@:'(<phase 4 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.3.1.1"
+    ],
+    "description": "<= @:'(<phase 4 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<phase 4 already complete>)"
+  },
+  {
+    "id": "c-freshly-constructed-tree",
+    "concept_name": "{freshly constructed tree}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(root: str, nodes: dict)",
+    "natural_name": "freshly constructed tree"
+  },
+  {
+    "id": "c-construct-tree-from-classifications-and-extractions",
+    "concept_name": "{construct tree from classifications and extractions}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "construct tree from classifications and extractions"
+  },
+  {
+    "id": "fc-construct-tree-from-classifications-and-extraction",
+    "concept_name": "::(construct tree from classifications and extractions)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.1"
+    ],
+    "description": "construct tree from classifications and extractions",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}5ff(provisions/prompts/phase_4/construct_dependency_tree.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "construct tree from classifications and extractions"
+  },
+  {
+    "id": "fc-phase-4-already-complete",
+    "concept_name": "@:!(<phase 4 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.1.1"
+    ],
+    "description": "<= @:!(<phase 4 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:!(<phase 4 already complete>)"
+  },
+  {
+    "id": "c-classifications-data",
+    "concept_name": "{classifications data}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4.2",
+      "1.18.3.4.5.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "classifications data"
+  },
+  {
+    "id": "fc-read-classifications-file-from-path",
+    "concept_name": "::(read classifications file from path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.2.1"
+    ],
+    "description": "read classifications file from path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read classifications file from path"
+  },
+  {
+    "id": "c-final-output-concept",
+    "concept_name": "{final output concept}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "final output concept"
+  },
+  {
+    "id": "fc-identify-goal-from-extraction-data",
+    "concept_name": "::(identify goal from extraction data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.4.1"
+    ],
+    "description": "identify goal from extraction data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}ccd(provisions/prompts/phase_4/identify_goal.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "identify goal from extraction data"
+  },
+  {
+    "id": "c-classified-operations",
+    "concept_name": "{classified operations}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4.5"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "classified operations"
+  },
+  {
+    "id": "fc-get-classifications-from-classifications-data",
+    "concept_name": "::(get classifications from classifications data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.5.1"
+    ],
+    "description": "get classifications from classifications data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}64d(provisions/scripts/pass_through.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "get classifications from classifications data"
+  },
+  {
+    "id": "c-all-dependencies",
+    "concept_name": "[all dependencies]",
+    "type": "[]",
+    "flow_indices": [
+      "1.18.3.4.6"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "dependency"
+    ],
+    "reference_element_type": "dict(source: str, target: str)",
+    "natural_name": "all dependencies"
+  },
+  {
+    "id": "fc-extract-dependencies-from-extraction-data",
+    "concept_name": "::(extract dependencies from extraction data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.18.3.4.6.1"
+    ],
+    "description": "extract dependencies from extraction data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}657(provisions/scripts/extract_field.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "extract dependencies from extraction data"
+  },
+  {
+    "id": "c-fieldname-dependencies",
+    "concept_name": "{field_name: \"dependencies\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.18.3.4.6.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "field_name: \"dependencies\""
+  },
+  {
+    "id": "c-phase-4-complete",
+    "concept_name": "{phase 4 complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1.19"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase 4 complete"
+  },
+  {
+    "id": "fc-write-phase-4-status-to-progress-file",
+    "concept_name": "::(write phase 4 status to progress file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.19.1"
+    ],
+    "description": "write phase 4 status to progress file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write phase 4 status to progress file"
+  },
+  {
+    "id": "fc-write-ncds-file-to-output-path",
+    "concept_name": "::(write ncds file to output path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.1"
+    ],
+    "description": "write ncds file to output path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write ncds file to output path"
+  },
+  {
+    "id": "c-ncds-to-be-written",
+    "concept_name": "{ncds to be written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "ncds to be written"
+  },
+  {
+    "id": "fc-ncds-to-be-written",
+    "concept_name": "$. %>({ncds to be written})",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.1"
+    ],
+    "description": "<= $. %>({ncds to be written})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({ncds to be written})"
+  },
+  {
+    "id": "c-phase-5-already-complete",
+    "concept_name": "<phase 5 already complete>",
+    "type": "<>",
+    "flow_indices": [
+      "1.20.3.2",
+      "1.20.3.3.1.2",
+      "1.20.3.4.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "phase 5 already complete"
+  },
+  {
+    "id": "fc-check-if-phase-5-already-complete-in-progress",
+    "concept_name": "::<{check if phase 5 already complete in progress}><ALL True>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.20.3.2.1"
+    ],
+    "description": "check if phase 5 already complete in progress",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}77e(provisions/scripts/check_phase_complete.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if phase 5 already complete in progress"
+  },
+  {
+    "id": "c-phasename-phase5",
+    "concept_name": "{phase_name: \"phase_5\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase_name: \"phase_5\""
+  },
+  {
+    "id": "c-cached-ncds-content",
+    "concept_name": "{cached ncds content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "cached ncds content"
+  },
+  {
+    "id": "c-read-ncds-from-checkpoint",
+    "concept_name": "{read ncds from checkpoint}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.3.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "read ncds from checkpoint"
+  },
+  {
+    "id": "fc-read-ncds-from-checkpoint",
+    "concept_name": "::(read ncds from checkpoint)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.3.1"
+    ],
+    "description": "read ncds from checkpoint",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read ncds from checkpoint"
+  },
+  {
+    "id": "fc-phase-5-already-complete",
+    "concept_name": "@:'(<phase 5 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.3.1.1"
+    ],
+    "description": "<= @:'(<phase 5 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<phase 5 already complete>)"
+  },
+  {
+    "id": "c-freshly-serialized-ncds",
+    "concept_name": "{freshly serialized ncds}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "freshly serialized ncds"
+  },
+  {
+    "id": "c-serialize-dependency-tree-to-ncds-text-format",
+    "concept_name": "{serialize dependency tree to ncds text format}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.4.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "serialize dependency tree to ncds text format"
+  },
+  {
+    "id": "fc-serialize-dependency-tree-to-ncds-text-format",
+    "concept_name": "::(serialize dependency tree to ncds text format)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.4.1"
+    ],
+    "description": "serialize dependency tree to ncds text format",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}8cc(provisions/prompts/phase_5/serialize_tree_to_ncds.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "serialize dependency tree to ncds text format"
+  },
+  {
+    "id": "fc-phase-5-already-complete",
+    "concept_name": "@:!(<phase 5 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.4.1.1"
+    ],
+    "description": "<= @:!(<phase 5 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:!(<phase 5 already complete>)"
+  },
+  {
+    "id": "c-dependency-tree",
+    "concept_name": "{dependency tree}",
+    "type": "{}",
+    "flow_indices": [
+      "1.20.3.4.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(root: str, nodes: dict)",
+    "natural_name": "dependency tree"
+  },
+  {
+    "id": "fc-read-dependency-tree-file-from-path",
+    "concept_name": "::(read dependency tree file from path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.20.3.4.2.1"
+    ],
+    "description": "read dependency tree file from path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read dependency tree file from path"
+  },
+  {
+    "id": "c-phase-5-complete",
+    "concept_name": "{phase 5 complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1.21"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "phase 5 complete"
+  },
+  {
+    "id": "fc-write-phase-5-status-to-progress-file",
+    "concept_name": "::(write phase 5 status to progress file)",
+    "type": "({})",
+    "flow_indices": [
+      "1.21.1"
+    ],
+    "description": "write phase 5 status to progress file",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write phase 5 status to progress file"
   }
 ]

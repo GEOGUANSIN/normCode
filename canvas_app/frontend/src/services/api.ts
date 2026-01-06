@@ -154,6 +154,17 @@ export const executionApi = {
   getAllReferences: (): Promise<Record<string, ReferenceData>> =>
     fetchJson(`${API_BASE}/execution/references`),
   
+  // Iteration history - get past values from loop iterations
+  getReferenceHistory: (conceptName: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/reference/${encodeURIComponent(conceptName)}/history?limit=${limit}`),
+  
+  getFlowHistory: (flowIndex: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/flow/${encodeURIComponent(flowIndex)}/history?limit=${limit}`),
+  
+  // Worker-specific iteration history (for chat controller, etc.)
+  getWorkerReferenceHistory: (workerId: string, conceptName: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/reference/${encodeURIComponent(conceptName)}/history?limit=${limit}`),
+  
   setVerboseLogging: (enabled: boolean): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/verbose-logging`, {
       method: 'POST',
@@ -219,6 +230,28 @@ export interface ReferenceData {
   data: unknown;
   axes: string[];
   shape: number[];
+}
+
+// Iteration history types - for viewing past loop iteration values
+export interface IterationHistoryEntry {
+  iteration_index: number;
+  cycle_number: number;
+  flow_index?: string;
+  concept_name?: string;
+  data: unknown;
+  axes: string[];
+  shape: number[];
+  timestamp: number;
+  has_data: boolean;
+}
+
+export interface IterationHistoryResponse {
+  concept_name?: string;
+  flow_index?: string;
+  run_id: string | null;
+  history: IterationHistoryEntry[];
+  total_iterations: number;
+  message?: string;
 }
 
 // Phase 4: Modification response types

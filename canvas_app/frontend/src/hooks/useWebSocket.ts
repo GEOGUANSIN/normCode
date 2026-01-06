@@ -116,7 +116,12 @@ export function useWebSocket() {
             setRunId(data.run_id as string);
           }
           if (data.total_inferences !== undefined) {
-            setProgress(0, data.total_inferences as number);
+            const completed = (data.completed_count as number) || 0;
+            setProgress(completed, data.total_inferences as number);
+          }
+          // Set initial node statuses (e.g., input concepts marked as complete)
+          if (data.node_statuses) {
+            setNodeStatuses(data.node_statuses as Record<string, NodeStatus>);
           }
           break;
 

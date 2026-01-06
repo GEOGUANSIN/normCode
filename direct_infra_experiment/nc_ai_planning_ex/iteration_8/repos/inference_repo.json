@@ -3,22 +3,11 @@
     "flow_info": {
       "flow_index": "1"
     },
-    "inference_sequence": "assigning",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{ncds}",
-    "function_concept": "<= $. %>({ncds})",
+    "function_concept": "::(return ncds output written)",
     "value_concepts": [
-      "{derivation complete}",
       "{ncds output written}",
-      "{phase 4 complete}",
-      "{tree file written}",
-      "{phase 3 complete}",
-      "{classifications file written}",
-      "{phase 2 complete}",
-      "{extraction file written}",
-      "{phase 1 complete}",
-      "{refined instruction file written}",
-      "{raw instruction content}",
-      "{current progress}",
       "{instruction file path}",
       "{refinement questions file path}",
       "{progress file path}",
@@ -26,7 +15,18 @@
       "{extraction file path}",
       "{classifications file path}",
       "{tree file path}",
-      "{output file path}"
+      "{output file path}",
+      "{raw instruction content}",
+      "{refined instruction file written}",
+      "{phase 1 complete}",
+      "{extraction file written}",
+      "{phase 2 complete}",
+      "{classifications file written}",
+      "{phase 3 complete}",
+      "{tree file written}",
+      "{phase 4 complete}",
+      "{ncds output written}",
+      "{phase 5 complete}"
     ],
     "context_concepts": [],
     "working_interpretation": {
@@ -34,571 +34,107 @@
       "flow_info": {
         "flow_index": "1"
       },
-      "syntax": {
-        "marker": ".",
-        "assign_source": "{ncds}"
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{derivation complete}",
-    "function_concept": "<= ::(write completion status to progress file)",
-    "value_concepts": [
-      "{progress file path}",
-      "{ncds output written}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.2"
-      },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{progress file path}": 1,
-        "{ncds output written}": 2
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.3"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{ncds output written}",
-    "function_concept": "<= ::(write ncds file to output path)",
-    "value_concepts": [
-      "{output file path}",
-      "{ncds content}",
-      "<phase 5 already complete>",
-      "{phase 4 complete}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.3"
-      },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{output file path}": 1,
-        "{ncds content}": 2,
-        "<phase 5 already complete>": 3,
-        "{phase 4 complete}": 4
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.3.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{write ncds file to output path}",
-    "function_concept": "<= @:!(<phase 5 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 5 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.3.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<phase 5 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.3.3"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{ncds content}",
-    "function_concept": "<= ::(serialize dependency tree to ncds text format)",
-    "value_concepts": [
-      "{dependency tree}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.3.3"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{dependency tree}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_5/serialize_tree_to_ncds.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.3.4"
-    },
-    "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<phase 5 already complete>",
-    "function_concept": "<= ::<{check if phase 5 already complete in progress}><ALL True>",
-    "value_concepts": [
-      "{current progress}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.3.4"
-      },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
       "body_faculty": "python_interpreter",
       "value_order": {
-        "{current progress}": 1
-      },
-      "assertion_condition": {
-        "quantifiers": {
-          "axis": "all"
-        },
-        "condition": true
+        "{ncds output written}": 1
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.4"
+      "flow_index": "1.11"
     },
     "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{phase 4 complete}",
-    "function_concept": "<= ::(write phase 4 status to progress file)",
+    "concept_to_infer": "{raw instruction content}",
+    "function_concept": "::(read instruction from input file)",
     "value_concepts": [
-      "{progress file path}",
-      "{tree file written}"
+      "{instruction file path}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.4"
+        "flow_index": "1.11"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
-        "{progress file path}": 1,
-        "{tree file written}": 2
+        "{instruction file path}": 1
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.5"
+      "flow_index": "1.12"
     },
     "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{tree file written}",
-    "function_concept": "<= ::(write dependency tree to checkpoint file)",
+    "concept_to_infer": "{refined instruction file written}",
+    "function_concept": "::(write refined instruction to checkpoint file)",
     "value_concepts": [
-      "{tree file path}",
-      "{dependency tree}",
-      "<phase 4 already complete>",
-      "{phase 3 complete}"
+      "{refined instruction file path}",
+      "{instruction to be written}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.5"
+        "flow_index": "1.12"
       },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
-        "{tree file path}": 1,
-        "{dependency tree}": 2,
-        "<phase 4 already complete>": 3,
-        "{phase 3 complete}": 4
+        "{refined instruction file path}": 1,
+        "{instruction to be written}": 2
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.5.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{write dependency tree to checkpoint file}",
-    "function_concept": "<= @:!(<phase 4 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 4 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<phase 4 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.5.3"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{dependency tree}",
-    "function_concept": "<= ::(construct tree from classifications and extractions)",
-    "value_concepts": [
-      "{final output concept}",
-      "{classified operations}",
-      "[all dependencies]"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.3"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{final output concept}": 1,
-        "{classified operations}": 2,
-        "[all dependencies]": 3
-      },
-      "prompt_path": "provisions/prompts/phase_4/construct_dependency_tree.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.5.3.1.1"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{final output concept}",
-    "function_concept": "<= ::(identify goal from extraction data)",
-    "value_concepts": [
-      "{extraction data}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.3.1.1"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{extraction data}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_4/identify_goal.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.5.3.1.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{classified operations}",
-    "function_concept": "<= ::(read classifications from checkpoint)",
-    "value_concepts": [
-      "{classifications file path}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.3.1.2"
-      },
-      "paradigm": "h_FilePath-c_ReadJsonFile-o_Struct",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{classifications file path}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.5.3.1.3"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "[all dependencies]",
-    "function_concept": "<= ::(extract dependencies from extraction data)",
-    "value_concepts": [
-      "{extraction data}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.3.1.3"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{extraction data}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_4/extract_dependencies.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.5.4"
-    },
-    "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<phase 4 already complete>",
-    "function_concept": "<= ::<{check if phase 4 already complete in progress}><ALL True>",
-    "value_concepts": [
-      "{current progress}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.5.4"
-      },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
-      "body_faculty": "python_interpreter",
-      "value_order": {
-        "{current progress}": 1
-      },
-      "assertion_condition": {
-        "quantifiers": {
-          "axis": "all"
-        },
-        "condition": true
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.6"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{phase 3 complete}",
-    "function_concept": "<= ::(write phase 3 status to progress file)",
-    "value_concepts": [
-      "{progress file path}",
-      "{classifications file written}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.6"
-      },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{progress file path}": 1,
-        "{classifications file written}": 2
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{classifications file written}",
-    "function_concept": "<= ::(write classifications to checkpoint file)",
-    "value_concepts": [
-      "{classifications file path}",
-      "[all classifications]",
-      "<phase 3 already complete>",
-      "{phase 2 complete}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7"
-      },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{classifications file path}": 1,
-        "[all classifications]": 2,
-        "<phase 3 already complete>": 3,
-        "{phase 2 complete}": 4
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{write classifications to checkpoint file}",
-    "function_concept": "<= @:!(<phase 3 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 3 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<phase 3 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.3"
-    },
-    "inference_sequence": "looping",
-    "concept_to_infer": "[all classifications]",
-    "function_concept": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
-    "value_concepts": [
-      "[extracted operations]"
-    ],
-    "context_concepts": [
-      "{current operation}"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7.3"
-      },
-      "syntax": {
-        "marker": "every",
-        "loop_index": 1,
-        "LoopBaseConcept": "[extracted operations]",
-        "CurrentLoopBaseConcept": "{current operation}*1",
-        "group_base": "operation",
-        "ConceptToInfer": [
-          "{classification}"
-        ]
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.3.1.1"
+      "flow_index": "1.12.3"
     },
     "inference_sequence": "assigning",
-    "concept_to_infer": "{classification}",
-    "function_concept": "<= $. %>({classification})",
+    "concept_to_infer": "{instruction to be written}",
+    "function_concept": "$. %>({instruction to be written})",
     "value_concepts": [
-      "{classification}"
+      "<phase 1 already complete>",
+      "{cached refined instruction}",
+      "{freshly refined instruction}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.7.3.1.1"
+        "flow_index": "1.12.3"
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{classification}"
+        "assign_source": "{instruction to be written}"
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.7.3.1.1.1"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{classification}",
-    "function_concept": "<= ::(determine pattern type for operation)",
-    "value_concepts": [
-      "{current operation}",
-      "{operation context}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7.3.1.1.1"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{current operation}": 1,
-        "{operation context}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_3/classify_operation.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.3.1.1.1.1.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{operation context}",
-    "function_concept": "<= ::(gather context from extraction data)",
-    "value_concepts": [
-      "{current operation}",
-      "{extraction data}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7.3.1.1.1.1.2"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{current operation}": 1,
-        "{extraction data}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_3/gather_operation_context.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.3.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "[extracted operations]",
-    "function_concept": "<= ::(get operations from extraction data)",
-    "value_concepts": [
-      "{extraction data}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.7.3.2"
-      },
-      "paradigm": "h_Data-c_ExtractField-o_Literal",
-      "body_faculty": "python_interpreter",
-      "value_order": {
-        "{extraction data}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.7.4"
+      "flow_index": "1.12.3.2"
     },
     "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<phase 3 already complete>",
-    "function_concept": "<= ::<{check if phase 3 already complete in progress}><ALL True>",
+    "concept_to_infer": "<phase 1 already complete>",
+    "function_concept": "::<{check if phase 1 already complete in progress}><ALL True>",
     "value_concepts": [
-      "{current progress}"
+      "{current progress}",
+      "{phase_name: \"phase_1\"}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.7.4"
+        "flow_index": "1.12.3.2"
       },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
-        "{current progress}": 1
+        "{current progress}": 1,
+        "{phase_name: \"phase_1\"}": 2
       },
       "assertion_condition": {
         "quantifiers": {
@@ -610,76 +146,468 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.8"
+      "flow_index": "1.12.3.2.2"
     },
     "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{phase 2 complete}",
-    "function_concept": "<= ::(write phase 2 status to progress file)",
+    "concept_to_infer": "{current progress}",
+    "function_concept": "::(read progress from file if exists)",
     "value_concepts": [
-      "{progress file path}",
-      "{extraction file written}"
+      "{progress file path}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.8"
+        "flow_index": "1.12.3.2.2"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
-        "{progress file path}": 1,
-        "{extraction file written}": 2
+        "{progress file path}": 1
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9"
+      "flow_index": "1.12.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{cached refined instruction}",
+    "function_concept": "::(read refined instruction from checkpoint)",
+    "value_concepts": [
+      "{refined instruction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{refined instruction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(read refined instruction from checkpoint)",
+    "function_concept": "@:'(<phase 1 already complete>)",
+    "value_concepts": [
+      "<phase 1 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 1 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.3.1"
+      },
+      "syntax": {
+        "marker": "if",
+        "condition": "<phase 1 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{freshly refined instruction}",
+    "function_concept": "$. %>({freshly refined instruction})",
+    "value_concepts": [
+      "<instruction is vague>",
+      "{original version}",
+      "{refined version}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{freshly refined instruction}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "$. %>({freshly refined instruction})",
+    "function_concept": "@:!(<phase 1 already complete>)",
+    "value_concepts": [
+      "<phase 1 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 1 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<phase 1 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.2"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<instruction is vague>",
+    "function_concept": "::<{judge if instruction lacks concrete details}><ALL True>",
+    "value_concepts": [
+      "{raw instruction content}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.2"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean",
+      "body_faculty": "llm",
+      "value_order": {
+        "{raw instruction content}": 1
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{original version}",
+    "function_concept": "::(pass through raw instruction)",
+    "value_concepts": [
+      "{raw instruction content}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.3"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{raw instruction content}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(pass through raw instruction)",
+    "function_concept": "@:!(<instruction is vague>)",
+    "value_concepts": [
+      "<instruction is vague>"
+    ],
+    "context_concepts": [
+      "<instruction is vague>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.3.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<instruction is vague>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{refined version}",
+    "function_concept": "::(synthesize from refinement answers)",
+    "value_concepts": [
+      "{refinement answers}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.4"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{refinement answers}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(synthesize from refinement answers)",
+    "function_concept": "@:'(<instruction is vague>)",
+    "value_concepts": [
+      "<instruction is vague>"
+    ],
+    "context_concepts": [
+      "<instruction is vague>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.4.1"
+      },
+      "syntax": {
+        "marker": "if",
+        "condition": "<instruction is vague>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{refinement answers}",
+    "function_concept": "::(apply each refinement question)",
+    "value_concepts": [
+      "{raw instruction content}",
+      "{refinement questions content}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.4.2"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{raw instruction content}": 1,
+        "{refinement questions content}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.12.3.4.4.2.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{refinement questions content}",
+    "function_concept": "::(read refinement questions from file)",
+    "value_concepts": [
+      "{refinement questions file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.12.3.4.4.2.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{refinement questions file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.13"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{phase 1 complete}",
+    "function_concept": "::(write phase 1 status to progress file)",
+    "value_concepts": [
+      "{progress file path}",
+      "{refined instruction file written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.13"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1,
+        "{refined instruction file written}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{extraction file written}",
-    "function_concept": "<= ::(write extraction results to checkpoint file)",
+    "function_concept": "::(write extraction results to checkpoint file)",
     "value_concepts": [
       "{extraction file path}",
-      "{extraction data}",
-      "<phase 2 already complete>",
-      "{phase 1 complete}"
+      "{extraction to be written}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9"
+        "flow_index": "1.14"
       },
-      "paradigm": "h_FilePath-h_Data-c_WriteJsonFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{extraction file path}": 1,
-        "{extraction data}": 2,
-        "<phase 2 already complete>": 3,
-        "{phase 1 complete}": 4
+        "{extraction to be written}": 2
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.1"
+      "flow_index": "1.14.3"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{extraction to be written}",
+    "function_concept": "$. %>({extraction to be written})",
+    "value_concepts": [
+      "<phase 2 already complete>",
+      "{cached extraction data}",
+      "{freshly extracted data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{extraction to be written}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.2"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<phase 2 already complete>",
+    "function_concept": "::<{check if phase 2 already complete in progress}><ALL True>",
+    "value_concepts": [
+      "{current progress}",
+      "{phase_name: \"phase_2\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3.2"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{current progress}": 1,
+        "{phase_name: \"phase_2\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.2.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{current progress}",
+    "function_concept": "::(read progress from file if exists)",
+    "value_concepts": [
+      "{progress file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3.2.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{cached extraction data}",
+    "function_concept": "::(read extraction from checkpoint)",
+    "value_concepts": [
+      "{extraction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{extraction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.3.1"
     },
     "inference_sequence": "timing",
-    "concept_to_infer": "{write extraction results to checkpoint file}",
-    "function_concept": "<= @:!(<phase 2 already complete>)",
-    "value_concepts": [],
+    "concept_to_infer": "::(read extraction from checkpoint)",
+    "function_concept": "@:'(<phase 2 already complete>)",
+    "value_concepts": [
+      "<phase 2 already complete>"
+    ],
     "context_concepts": [
       "<phase 2 already complete>"
     ],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.1"
+        "flow_index": "1.14.3.3.1"
       },
       "syntax": {
-        "marker": "if!",
+        "marker": "if",
         "condition": "<phase 2 already complete>"
       },
       "blackboard": null
@@ -687,12 +615,13 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3"
+      "flow_index": "1.14.3.4"
     },
     "inference_sequence": "grouping",
-    "concept_to_infer": "{extraction data}",
-    "function_concept": "<= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
+    "concept_to_infer": "{freshly extracted data}",
+    "function_concept": "&[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
     "value_concepts": [
+      "{refined instruction content}",
       "{extracted concepts}",
       "[extracted operations]",
       "[extracted dependencies]",
@@ -702,7 +631,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.3"
+        "flow_index": "1.14.3.4"
       },
       "syntax": {
         "marker": "in",
@@ -718,11 +647,59 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.1"
+      "flow_index": "1.14.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "&[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
+    "function_concept": "@:!(<phase 2 already complete>)",
+    "value_concepts": [
+      "<phase 2 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 2 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3.4.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<phase 2 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{refined instruction content}",
+    "function_concept": "::(read refined instruction file from path)",
+    "value_concepts": [
+      "{refined instruction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.14.3.4.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{refined instruction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.14.3.4.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{extracted concepts}",
-    "function_concept": "<= ::(identify all nouns and data entities)",
+    "function_concept": "::(identify all nouns and data entities)",
     "value_concepts": [
       "{refined instruction content}"
     ],
@@ -730,23 +707,22 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.3.1.1"
+        "flow_index": "1.14.3.4.3"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_concepts.md"
+      }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.2"
+      "flow_index": "1.14.3.4.4"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted operations]",
-    "function_concept": "<= ::(identify all verbs and actions)",
+    "function_concept": "::(identify all verbs and actions)",
     "value_concepts": [
       "{refined instruction content}"
     ],
@@ -754,23 +730,22 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.3.1.2"
+        "flow_index": "1.14.3.4.4"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_operations.md"
+      }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.3"
+      "flow_index": "1.14.3.4.5"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted dependencies]",
-    "function_concept": "<= ::(identify what needs what)",
+    "function_concept": "::(identify what needs what)",
     "value_concepts": [
       "{refined instruction content}",
       "{extracted concepts}",
@@ -780,25 +755,24 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.3.1.3"
+        "flow_index": "1.14.3.4.5"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1,
         "{extracted concepts}": 2,
         "[extracted operations]": 3
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_dependencies.md"
+      }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.9.3.1.4"
+      "flow_index": "1.14.3.4.6"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "[extracted control patterns]",
-    "function_concept": "<= ::(identify loops and conditions)",
+    "function_concept": "::(identify loops and conditions)",
     "value_concepts": [
       "{refined instruction content}"
     ],
@@ -806,428 +780,111 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.9.3.1.4"
+        "flow_index": "1.14.3.4.6"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{refined instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_2/extract_control_patterns.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.9.4"
-    },
-    "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<phase 2 already complete>",
-    "function_concept": "<= ::<{check if phase 2 already complete in progress}><ALL True>",
-    "value_concepts": [
-      "{current progress}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.9.4"
-      },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
-      "body_faculty": "python_interpreter",
-      "value_order": {
-        "{current progress}": 1
-      },
-      "assertion_condition": {
-        "quantifiers": {
-          "axis": "all"
-        },
-        "condition": true
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.10"
+      "flow_index": "1.15"
     },
     "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{phase 1 complete}",
-    "function_concept": "<= ::(write phase 1 status to progress file)",
+    "concept_to_infer": "{phase 2 complete}",
+    "function_concept": "::(write phase 2 status to progress file)",
     "value_concepts": [
       "{progress file path}",
-      "{refined instruction file written}"
+      "{extraction file written}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.10"
+        "flow_index": "1.15"
       },
-      "paradigm": "h_FilePath-h_Content-c_AppendFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1,
-        "{refined instruction file written}": 2
+        "{extraction file written}": 2
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.11"
+      "flow_index": "1.16"
     },
     "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{refined instruction file written}",
-    "function_concept": "<= ::(write refined instruction to checkpoint file)",
+    "concept_to_infer": "{classifications file written}",
+    "function_concept": "::(write classifications to checkpoint file)",
     "value_concepts": [
-      "{refined instruction file path}",
-      "{refined instruction content}",
-      "<phase 1 already complete>"
+      "{classifications file path}",
+      "{classifications to be written}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11"
+        "flow_index": "1.16"
       },
-      "paradigm": "h_FilePath-h_Content-c_WriteFile-o_Literal",
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
-        "{refined instruction file path}": 1,
-        "{refined instruction content}": 2,
-        "<phase 1 already complete>": 3
+        "{classifications file path}": 1,
+        "{classifications to be written}": 2
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.11.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{write refined instruction to checkpoint file}",
-    "function_concept": "<= @:!(<phase 1 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 1 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<phase 1 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3"
+      "flow_index": "1.16.3"
     },
     "inference_sequence": "assigning",
-    "concept_to_infer": "{refined instruction content}",
-    "function_concept": "<= $. %>[{cached refined instruction}, {freshly refined instruction}]",
+    "concept_to_infer": "{classifications to be written}",
+    "function_concept": "$. %>({classifications to be written})",
     "value_concepts": [
-      "{cached refined instruction}",
-      "{freshly refined instruction}"
+      "<phase 3 already complete>",
+      "{cached classifications}",
+      "[freshly classified operations]"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3"
+        "flow_index": "1.16.3"
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{cached refined instruction}, {freshly refined instruction}"
+        "assign_source": "{classifications to be written}"
       }
     }
   },
   {
     "flow_info": {
-      "flow_index": "1.11.3.1.1"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{cached refined instruction}",
-    "function_concept": "<= ::(read refined instruction from checkpoint)",
-    "value_concepts": [
-      "{refined instruction file path}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.1"
-      },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{refined instruction file path}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.1.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{read refined instruction from checkpoint}",
-    "function_concept": "<= @:'(<phase 1 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 1 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.1.1"
-      },
-      "syntax": {
-        "marker": "if",
-        "condition": "<phase 1 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2"
-    },
-    "inference_sequence": "assigning",
-    "concept_to_infer": "{freshly refined instruction}",
-    "function_concept": "<= $. %>[{refined version}, {original version}]",
-    "value_concepts": [
-      "{refined version}",
-      "{original version}",
-      "<instruction is vague>"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2"
-      },
-      "syntax": {
-        "marker": ".",
-        "assign_source": "{refined version}, {original version}"
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{timing_gate_phase_1_already_complete}",
-    "function_concept": "<= @:!(<phase 1 already complete>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<phase 1 already complete>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<phase 1 already complete>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{refined version}",
-    "function_concept": "<= ::(synthesize from refinement answers)",
-    "value_concepts": [
-      "{refinement answers}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.2"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{refinement answers}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_1/synthesize_refined_instruction.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.2.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{synthesize from refinement answers}",
-    "function_concept": "<= @:'(<instruction is vague>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<instruction is vague>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.2.1"
-      },
-      "syntax": {
-        "marker": "if",
-        "condition": "<instruction is vague>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{refinement answers}",
-    "function_concept": "<= ::(apply each refinement question)",
-    "value_concepts": [
-      "{raw instruction content}",
-      "{refinement questions content}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.2.2"
-      },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal",
-      "body_faculty": "llm",
-      "value_order": {
-        "{raw instruction content}": 1,
-        "{refinement questions content}": 2
-      },
-      "prompt_path": "provisions/prompts/phase_1/apply_refinement_questions.md"
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.2.2.1.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{refinement questions content}",
-    "function_concept": "<= ::(read refinement questions from file)",
-    "value_concepts": [
-      "{refinement questions file path}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.2.2.1.2"
-      },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{refinement questions file path}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.3"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{original version}",
-    "function_concept": "<= ::(pass through raw instruction)",
-    "value_concepts": [
-      "{raw instruction content}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.3"
-      },
-      "paradigm": "h_Data-c_PassThrough-o_Literal",
-      "body_faculty": "python_interpreter",
-      "value_order": {
-        "{raw instruction content}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.3.1"
-    },
-    "inference_sequence": "timing",
-    "concept_to_infer": "{pass through raw instruction}",
-    "function_concept": "<= @:!(<instruction is vague>)",
-    "value_concepts": [],
-    "context_concepts": [
-      "<instruction is vague>"
-    ],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.3.1.2.3.1"
-      },
-      "syntax": {
-        "marker": "if!",
-        "condition": "<instruction is vague>"
-      },
-      "blackboard": null
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.3.1.2.4"
+      "flow_index": "1.16.3.2"
     },
     "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<instruction is vague>",
-    "function_concept": "<= ::<{judge if instruction lacks concrete details}><ALL True>",
+    "concept_to_infer": "<phase 3 already complete>",
+    "function_concept": "::<{check if phase 3 already complete in progress}><ALL True>",
     "value_concepts": [
-      "{raw instruction content}"
+      "{current progress}",
+      "{phase_name: \"phase_3\"}"
     ],
     "context_concepts": [],
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.11.3.1.2.4"
+        "flow_index": "1.16.3.2"
       },
-      "paradigm": "h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean",
-      "body_faculty": "llm",
-      "value_order": {
-        "{raw instruction content}": 1
-      },
-      "prompt_path": "provisions/prompts/phase_1/judge_instruction_vagueness.md",
-      "assertion_condition": {
-        "quantifiers": {
-          "axis": "all"
-        },
-        "condition": true
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.11.4"
-    },
-    "inference_sequence": "judgement_in_composition",
-    "concept_to_infer": "<phase 1 already complete>",
-    "function_concept": "<= ::<{check if phase 1 already complete in progress}><ALL True>",
-    "value_concepts": [
-      "{current progress}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.11.4"
-      },
-      "paradigm": "h_Data-c_CheckPhaseComplete-o_Boolean",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
       "body_faculty": "python_interpreter",
       "value_order": {
-        "{current progress}": 1
+        "{current progress}": 1,
+        "{phase_name: \"phase_3\"}": 2
       },
       "assertion_condition": {
         "quantifiers": {
@@ -1239,34 +896,11 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.12"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{raw instruction content}",
-    "function_concept": "<= ::(read instruction from input file)",
-    "value_concepts": [
-      "{instruction file path}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.12"
-      },
-      "paradigm": "h_FilePath-c_ReadFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{instruction file path}": 1
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.13"
+      "flow_index": "1.16.3.2.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{current progress}",
-    "function_concept": "<= ::(read progress from file if exists)",
+    "function_concept": "::(read progress from file if exists)",
     "value_concepts": [
       "{progress file path}"
     ],
@@ -1274,12 +908,835 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.13"
+        "flow_index": "1.16.3.2.2"
       },
-      "paradigm": "h_FilePath-c_ReadFileIfExists-o_Literal",
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
       "body_faculty": "file_system",
       "value_order": {
         "{progress file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{cached classifications}",
+    "function_concept": "::(read classifications from checkpoint)",
+    "value_concepts": [
+      "{classifications file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{classifications file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(read classifications from checkpoint)",
+    "function_concept": "@:'(<phase 3 already complete>)",
+    "value_concepts": [
+      "<phase 3 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 3 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.3.1"
+      },
+      "syntax": {
+        "marker": "if",
+        "condition": "<phase 3 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4"
+    },
+    "inference_sequence": "looping",
+    "concept_to_infer": "[freshly classified operations]",
+    "function_concept": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "value_concepts": [
+      "[extracted operations]"
+    ],
+    "context_concepts": [
+      "{current operation}"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4"
+      },
+      "syntax": {
+        "marker": "every",
+        "loop_index": 1,
+        "LoopBaseConcept": "[extracted operations]",
+        "CurrentLoopBaseConcept": "{current operation}*1",
+        "group_base": "operation",
+        "ConceptToInfer": [
+          "{classification}"
+        ]
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "function_concept": "@:!(<phase 3 already complete>)",
+    "value_concepts": [
+      "{classification}",
+      "<phase 3 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 3 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<phase 3 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.1.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{classification}",
+    "function_concept": "::(determine pattern type for operation)",
+    "value_concepts": [
+      "{current operation}",
+      "{operation context}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.1.4"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{current operation}": 1,
+        "{operation context}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.1.4.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{operation context}",
+    "function_concept": "::(gather context from extraction data)",
+    "value_concepts": [
+      "{current operation}",
+      "{extraction data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.1.4.3"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{current operation}": 1,
+        "{extraction data}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[extracted operations]",
+    "function_concept": "::(get operations from extraction data)",
+    "value_concepts": [
+      "{extraction data}",
+      "{field_name: \"operations\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.2"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{extraction data}": 1,
+        "{field_name: \"operations\"}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.2.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{extraction data}",
+    "function_concept": "::(read extraction file from path)",
+    "value_concepts": [
+      "{extraction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.2.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{extraction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.17"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{phase 3 complete}",
+    "function_concept": "::(write phase 3 status to progress file)",
+    "value_concepts": [
+      "{progress file path}",
+      "{classifications file written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.17"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1,
+        "{classifications file written}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{tree file written}",
+    "function_concept": "::(write dependency tree to checkpoint file)",
+    "value_concepts": [
+      "{tree file path}",
+      "{tree to be written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{tree file path}": 1,
+        "{tree to be written}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{tree to be written}",
+    "function_concept": "$. %>({tree to be written})",
+    "value_concepts": [
+      "<phase 4 already complete>",
+      "{cached dependency tree}",
+      "{freshly constructed tree}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{tree to be written}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.2"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<phase 4 already complete>",
+    "function_concept": "::<{check if phase 4 already complete in progress}><ALL True>",
+    "value_concepts": [
+      "{current progress}",
+      "{phase_name: \"phase_4\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.2"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{current progress}": 1,
+        "{phase_name: \"phase_4\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.2.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{current progress}",
+    "function_concept": "::(read progress from file if exists)",
+    "value_concepts": [
+      "{progress file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.2.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{cached dependency tree}",
+    "function_concept": "::(read dependency tree from checkpoint)",
+    "value_concepts": [
+      "{tree file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{tree file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(read dependency tree from checkpoint)",
+    "function_concept": "@:'(<phase 4 already complete>)",
+    "value_concepts": [
+      "<phase 4 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 4 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.3.1"
+      },
+      "syntax": {
+        "marker": "if",
+        "condition": "<phase 4 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{freshly constructed tree}",
+    "function_concept": "::(construct tree from classifications and extractions)",
+    "value_concepts": [
+      "{classifications data}",
+      "{extraction data}",
+      "{final output concept}",
+      "{classified operations}",
+      "[all dependencies]"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{classifications data}": 1,
+        "{extraction data}": 2,
+        "{final output concept}": 3,
+        "{classified operations}": 4,
+        "[all dependencies]": 5
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(construct tree from classifications and extractions)",
+    "function_concept": "@:!(<phase 4 already complete>)",
+    "value_concepts": [
+      "<phase 4 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 4 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<phase 4 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{classifications data}",
+    "function_concept": "::(read classifications file from path)",
+    "value_concepts": [
+      "{classifications file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{classifications file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{extraction data}",
+    "function_concept": "::(read extraction file from path)",
+    "value_concepts": [
+      "{extraction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{extraction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{final output concept}",
+    "function_concept": "::(identify goal from extraction data)",
+    "value_concepts": [
+      "{extraction data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.4"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{extraction data}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.5"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{classified operations}",
+    "function_concept": "::(get classifications from classifications data)",
+    "value_concepts": [
+      "{classifications data}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.5"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{classifications data}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.18.3.4.6"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[all dependencies]",
+    "function_concept": "::(extract dependencies from extraction data)",
+    "value_concepts": [
+      "{extraction data}",
+      "{field_name: \"dependencies\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.18.3.4.6"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{extraction data}": 1,
+        "{field_name: \"dependencies\"}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.19"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{phase 4 complete}",
+    "function_concept": "::(write phase 4 status to progress file)",
+    "value_concepts": [
+      "{progress file path}",
+      "{tree file written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.19"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1,
+        "{tree file written}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{ncds output written}",
+    "function_concept": "::(write ncds file to output path)",
+    "value_concepts": [
+      "{output file path}",
+      "{ncds to be written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{output file path}": 1,
+        "{ncds to be written}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{ncds to be written}",
+    "function_concept": "$. %>({ncds to be written})",
+    "value_concepts": [
+      "<phase 5 already complete>",
+      "{cached ncds content}",
+      "{freshly serialized ncds}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{ncds to be written}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.2"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<phase 5 already complete>",
+    "function_concept": "::<{check if phase 5 already complete in progress}><ALL True>",
+    "value_concepts": [
+      "{current progress}",
+      "{phase_name: \"phase_5\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.2"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Boolean",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{current progress}": 1,
+        "{phase_name: \"phase_5\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.2.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{current progress}",
+    "function_concept": "::(read progress from file if exists)",
+    "value_concepts": [
+      "{progress file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.2.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFileIfExists-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{cached ncds content}",
+    "function_concept": "::(read ncds from checkpoint)",
+    "value_concepts": [
+      "{output file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.3"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{output file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(read ncds from checkpoint)",
+    "function_concept": "@:'(<phase 5 already complete>)",
+    "value_concepts": [
+      "<phase 5 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 5 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.3.1"
+      },
+      "syntax": {
+        "marker": "if",
+        "condition": "<phase 5 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{freshly serialized ncds}",
+    "function_concept": "::(serialize dependency tree to ncds text format)",
+    "value_concepts": [
+      "{dependency tree}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.4"
+      },
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{dependency tree}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "::(serialize dependency tree to ncds text format)",
+    "function_concept": "@:!(<phase 5 already complete>)",
+    "value_concepts": [
+      "<phase 5 already complete>"
+    ],
+    "context_concepts": [
+      "<phase 5 already complete>"
+    ],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.4.1"
+      },
+      "syntax": {
+        "marker": "if!",
+        "condition": "<phase 5 already complete>"
+      },
+      "blackboard": null
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.20.3.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{dependency tree}",
+    "function_concept": "::(read dependency tree file from path)",
+    "value_concepts": [
+      "{tree file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.20.3.4.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{tree file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.21"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{phase 5 complete}",
+    "function_concept": "::(write phase 5 status to progress file)",
+    "value_concepts": [
+      "{progress file path}",
+      "{ncds output written}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.21"
+      },
+      "paradigm": "h_LiteralPath-h_Literal-c_WriteFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{progress file path}": 1,
+        "{ncds output written}": 2
       }
     }
   }

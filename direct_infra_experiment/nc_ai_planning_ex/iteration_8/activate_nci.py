@@ -288,15 +288,44 @@ def build_concept_repo(nci_data: list) -> list:
         # Generate unique ID
         func_id = "fc-" + re.sub(r"[^a-z0-9]+", "-", natural_name.lower()).strip("-")[:50]
         
+        # Strip the <= marker from concept_name (it's inference syntax, not part of the concept)
+        concept_name = re.sub(r"^<=\s*", "", nc_main)
+        
+        # Build reference field for paradigms with vertical inputs
+        reference_data = None
+        if element_type == "paradigm":
+            # Check for vertical inputs (v_input_provision annotation)
+            v_input_provision = get_annotation_value(attached_comments, "v_input_provision")
+            v_function_name = get_annotation_value(attached_comments, "v_function_name")
+            
+            if v_input_provision:
+                # Determine norm based on file extension
+                if v_input_provision.endswith(".md"):
+                    norm = "prompt_location"
+                elif v_input_provision.endswith(".py"):
+                    norm = "script_location"
+                else:
+                    norm = "file_location"
+                
+                # Generate random 3-char hex ID
+                import random
+                hex_id = ''.join(random.choices('0123456789abcdef', k=3))
+                
+                # Create perceptual sign
+                reference_data = [f"%{{{norm}}}{hex_id}({v_input_provision})"]
+            else:
+                # No vertical inputs - use dummy reference
+                reference_data = ["%{dummy}(_)"]
+        
         concept_entry = {
             "id": func_id,
-            "concept_name": nc_main,
+            "concept_name": concept_name,
             "type": func_type_marker,
             "flow_indices": sorted(list(set(data["flow_indices"]))),
             "description": natural_name,
-            "is_ground_concept": False,
+            "is_ground_concept": True,  # Function concepts are ground (predefined, not computed)
             "is_final_concept": False,
-            "reference_data": None,
+            "reference_data": reference_data,
             "reference_axis_names": ["_none_axis"],
             "reference_element_type": element_type,
             "natural_name": natural_name,
@@ -335,34 +364,37 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
         # Extract paradigm from norm_input
         paradigm = get_annotation_value(func_comments, "norm_input")
         body_faculty = get_annotation_value(func_comments, "body_faculty")
-        v_input_provision = get_annotation_value(func_comments, "v_input_provision")
         
-        # Build value_order from value concepts
+        # Build value_order from value concepts - ONLY those with explicit <:{N}> bindings
         value_order = {}
+        has_any_binding = any(re.search(r"<:\{(\d+)\}>", vc.get("nc_main", "")) for vc in value_concepts)
+        
         for i, vc in enumerate(value_concepts):
             vc_name = vc.get("concept_name")
             if vc_name:
-                # Check for explicit binding like <:{1}>
                 nc_main = vc.get("nc_main", "")
                 binding_match = re.search(r"<:\{(\d+)\}>", nc_main)
                 if binding_match:
+                    # Explicit binding - use the specified order
                     value_order[format_concept_name(vc_name, vc.get("concept_type", "object"))] = int(binding_match.group(1))
-                else:
+                elif not has_any_binding:
+                    # No bindings in any value_concept - fall back to position-based ordering
                     value_order[format_concept_name(vc_name, vc.get("concept_type", "object"))] = i + 1
+                # If has_any_binding but this concept doesn't have one, skip it (it's a tree descendant, not an input)
         
         wi["paradigm"] = paradigm
         wi["body_faculty"] = body_faculty
         wi["value_order"] = value_order
-        if v_input_provision:
-            wi["prompt_path"] = v_input_provision
     
     elif sequence_type == "judgement":
         # Same as imperative plus assertion_condition
         paradigm = get_annotation_value(func_comments, "norm_input")
         body_faculty = get_annotation_value(func_comments, "body_faculty")
-        v_input_provision = get_annotation_value(func_comments, "v_input_provision")
         
+        # Build value_order - ONLY those with explicit <:{N}> bindings
         value_order = {}
+        has_any_binding = any(re.search(r"<:\{(\d+)\}>", vc.get("nc_main", "")) for vc in value_concepts)
+        
         for i, vc in enumerate(value_concepts):
             vc_name = vc.get("concept_name")
             if vc_name:
@@ -370,14 +402,12 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
                 binding_match = re.search(r"<:\{(\d+)\}>", nc_main)
                 if binding_match:
                     value_order[format_concept_name(vc_name, vc.get("concept_type", "object"))] = int(binding_match.group(1))
-                else:
+                elif not has_any_binding:
                     value_order[format_concept_name(vc_name, vc.get("concept_type", "object"))] = i + 1
         
         wi["paradigm"] = paradigm
         wi["body_faculty"] = body_faculty
         wi["value_order"] = value_order
-        if v_input_provision:
-            wi["prompt_path"] = v_input_provision
         
         # Extract assertion from function concept
         nc_main = func_concept.get("nc_main", "")
@@ -523,13 +553,34 @@ def build_inference_repo(nci_data: list) -> list:
         sequence_type = get_sequence_type(func_comments)
         
         if not sequence_type:
-            # Try to infer from operator_type or concept_type
-            if func_concept.get("operator_type"):
+            # Try to infer from nc_main pattern first (most reliable)
+            nc_main = func_concept.get("nc_main", "")
+            
+            # Judgement: ::<{...}><...>
+            if "::<{" in nc_main and "}>" in nc_main:
+                sequence_type = "judgement"
+            # Grouping: &[{}] or &[#]
+            elif "&[{}]" in nc_main or "&[#]" in nc_main:
+                sequence_type = "grouping"
+            # Looping: *. %>
+            elif "*." in nc_main and "%>" in nc_main:
+                sequence_type = "looping"
+            # Assigning: $. %> or $= %> etc.
+            elif re.match(r"<=\s*\$[.=%+-]", nc_main):
+                sequence_type = "assigning"
+            # Timing: @:' or @:! or @.
+            elif "@:'" in nc_main or "@:!" in nc_main or "@." in nc_main:
+                sequence_type = "timing"
+            # Try to infer from operator_type
+            elif func_concept.get("operator_type"):
                 op_type = func_concept["operator_type"]
                 if "timing" in op_type:
                     sequence_type = "timing"
                 elif op_type in ["specification", "identity", "abstraction", "continuation", "derelation"]:
                     sequence_type = "assigning"
+            # Imperative: ::(...) without judgement markers
+            elif "::" in nc_main and "::<{" not in nc_main:
+                sequence_type = "imperative"
             elif func_concept.get("concept_type") == "imperative":
                 sequence_type = "imperative"
         
@@ -539,7 +590,16 @@ def build_inference_repo(nci_data: list) -> list:
         # Build concept_to_infer name
         cti_name = cti.get("concept_name")
         cti_type = cti.get("concept_type", "object")
-        concept_to_infer = format_concept_name(cti_name, cti_type) if cti_name else None
+        cti_nc_main = cti.get("nc_main", "")
+        
+        # For function concept types (imperative, judgement, operator), use nc_main stripped of <=
+        # For value concept types (object, proposition, relation), use formatted name
+        if cti_type in ["imperative", "judgement", "operator"]:
+            # Function concept - strip <= and use the function notation
+            concept_to_infer = re.sub(r"^<=\s*", "", cti_nc_main) if cti_nc_main else None
+        else:
+            # Value concept - use formatted name with {} [] <> markers
+            concept_to_infer = format_concept_name(cti_name, cti_type) if cti_name else None
         
         # Handle null concept_to_infer for specific sequence types
         if concept_to_infer is None:
@@ -559,20 +619,14 @@ def build_inference_repo(nci_data: list) -> list:
                     concept_to_infer = f"{{assigning_{flow_idx.replace('.', '_')}}}"
             
             elif sequence_type == "timing":
-                # For timing, derive from the parent function concept it's attached to
-                # Extract the action name from the timing target
-                condition_match = re.search(r"@[:'!\.]+\s*\(<?([^>)]+)>?\)", func_nc_main)
-                if condition_match:
-                    # Create a synthetic name based on the condition
-                    cond_name = condition_match.group(1).replace(" ", "_")
-                    flow_idx = func_concept.get("flow_index", "unknown")
-                    concept_to_infer = f"{{timing_gate_{cond_name}}}"
-                else:
-                    flow_idx = func_concept.get("flow_index", "unknown")
-                    concept_to_infer = f"{{timing_{flow_idx.replace('.', '_')}}}"
+                # For timing, the concept_to_infer should already be set from nc_main
+                # If still null, use the function concept's nc_main as fallback
+                func_nc_main_stripped = re.sub(r"^<=\s*", "", func_nc_main)
+                concept_to_infer = func_nc_main_stripped
         
-        # Build function_concept string
+        # Build function_concept string (strip <= marker - it's inference syntax, not part of concept)
         func_nc_main = func_concept.get("nc_main", "")
+        func_concept_name = re.sub(r"^<=\s*", "", func_nc_main)
         
         # Build value_concepts list
         vc_list = []
@@ -588,6 +642,11 @@ def build_inference_repo(nci_data: list) -> list:
                 oc_name = oc.get("concept_name")
                 if oc_name:
                     ctx_list.append(format_concept_name(oc_name, oc.get("concept_type", "object")))
+        
+        # For timing sequences, context concepts should also be value concepts
+        if sequence_type == "timing" and ctx_list:
+            # Add context concepts to value_concepts for timing
+            vc_list.extend(ctx_list)
         
         # Build working_interpretation
         wi = build_working_interpretation(inference, sequence_type)
@@ -609,7 +668,7 @@ def build_inference_repo(nci_data: list) -> list:
             "flow_info": {"flow_index": cti_flow_index},
             "inference_sequence": sequence_mapping.get(sequence_type, sequence_type),
             "concept_to_infer": concept_to_infer,
-            "function_concept": func_nc_main,
+            "function_concept": func_concept_name,
             "value_concepts": vc_list,
             "context_concepts": ctx_list,
             "working_interpretation": wi,

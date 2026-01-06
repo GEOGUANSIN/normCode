@@ -2,68 +2,127 @@
 
 ## Task
 
-Identify all **functional concepts** (operations, actions, transformations) from the refined instruction. These will become `<=` (functional concept) markers in the NormCode plan.
+Identify all **operations** (actions, transformations, evaluations) from the refined instruction. These are the "verbs" that transform or evaluate data.
 
 ## Input
 
-You will receive:
-- `{refined instruction content}`: The refined, concrete instruction
+- `input_1` — The refined instruction
+
+---
+
+## What Are Operations?
+
+Operations are the **verbs** of your plan—they transform data or evaluate conditions.
+
+### Two Main Types
+
+| Type | What It Does | Output | How to Recognize |
+|------|--------------|--------|------------------|
+| **Imperative** | Executes an action | New data | "calculate", "extract", "generate", "read", "write" |
+| **Judgement** | Evaluates a condition | True/False | "check if", "is X?", "determine whether", "validate" |
+
+### Operation Categories
+
+| Category | Examples | Execution |
+|----------|----------|-----------|
+| **Generation** | Generate text, create response | LLM |
+| **Analysis** | Analyze sentiment, understand intent | LLM |
+| **Extraction** | Extract entities, parse meaning | LLM |
+| **Evaluation** | Judge quality, check validity | LLM or Script |
+| **File I/O** | Read file, write to file | Script |
+| **Computation** | Calculate sum, divide | Script |
+| **Iteration** | For each X, process all | Control flow |
+| **Aggregation** | Collect, bundle, combine | Control flow |
+
+---
+
+## LLM vs Script
+
+| Use LLM when... | Use Script when... |
+|-----------------|-------------------|
+| Understanding/reasoning needed | Exact computation required |
+| Natural language generation | Structured data parsing |
+| Subjective judgment | Numeric comparison |
+| "Analyze", "Understand", "Generate" | "Calculate", "Parse", "Check if equals" |
+
+---
 
 ## What to Extract
 
 **Include**:
-- Action verbs (extract, generate, analyze, calculate, etc.)
-- Transformations (convert, parse, format, etc.)
-- I/O operations (read, write, load, save, etc.)
-- Evaluations (check, validate, determine if, etc.)
-- Aggregations (combine, collect, merge, etc.)
+- Action verbs (calculate, extract, generate, read, write)
+- Transformations (convert, parse, format, clean)
+- Evaluations (check, validate, determine if)
+- I/O operations (read, write, load, save)
+- Aggregations (combine, collect, merge, bundle)
+- Loop operations (for each, process all)
 
 **Exclude**:
-- Static descriptions (not actions)
-- Data objects (these are concepts, not operations)
+- Data objects (nouns are concepts, not operations)
+- Static descriptions
 
-## Operation Type Hints
-
-| Pattern | Type | Example |
-|---------|------|---------|
-| Action verb | Imperative | `extract entities`, `generate summary` |
-| "check if", "determine if", "is X?" | Judgement | `check if valid`, `is complete?` |
-| "for each X do Y" | Looping | `for each document summarize` |
-| "if X then Y" | Conditional | `if invalid then retry` |
-| "collect", "bundle", "group" | Grouping | `collect all results` |
-| "select", "pick", "choose first" | Selection | `select first valid` |
+---
 
 ## Output Format
 
-Return a JSON object:
-
 ```json
 {
-  "thinking": "Your analysis of the instruction",
+  "thinking": "Your analysis identifying each operation",
   "operations": [
     {
       "name": "operation description",
-      "type": "imperative" | "judgement" | "looping" | "conditional" | "grouping" | "selection",
-      "description": "What this operation does",
-      "likely_body_faculty": "llm" | "file_system" | "python_interpreter",
-      "source_phrase": "The phrase in the instruction this came from"
+      "type": "imperative" | "judgement",
+      "category": "generation" | "analysis" | "extraction" | "evaluation" | "file_io" | "computation" | "iteration" | "aggregation",
+      "execution": "llm" | "script",
+      "source_phrase": "The phrase from the instruction",
+      "inputs_hint": ["likely input concepts"],
+      "output_hint": "likely output concept"
     }
   ],
-  "operation_count": <number of operations found>
+  "summary": {
+    "imperative_count": 0,
+    "judgement_count": 0,
+    "llm_operations": 0,
+    "script_operations": 0
+  }
 }
 ```
 
+---
+
 ## Example
 
-Instruction: "For each customer review, extract sentiment and key themes, then generate a summary report"
+**Instruction**: "For each customer review, extract sentiment. If positive (score > 0.7), add to positive reviews. Generate a summary report."
 
-Operations:
-- `for each customer review` (looping)
-- `extract sentiment` (imperative, llm)
-- `extract key themes` (imperative, llm)  
-- `generate summary report` (imperative, llm)
+```json
+{
+  "thinking": "'For each' is iteration. 'extract sentiment' is LLM extraction. 'If positive (score > 0.7)' is a comparison judgement. 'add to' is aggregation. 'Generate report' is LLM generation.",
+  "operations": [
+    {"name": "iterate over customer reviews", "type": "imperative", "category": "iteration", "execution": "script", "source_phrase": "For each customer review", "inputs_hint": ["customer reviews"], "output_hint": "customer review"},
+    {"name": "extract sentiment score", "type": "imperative", "category": "extraction", "execution": "llm", "source_phrase": "extract sentiment", "inputs_hint": ["customer review"], "output_hint": "sentiment score"},
+    {"name": "check if score is positive", "type": "judgement", "category": "evaluation", "execution": "script", "source_phrase": "If positive (score > 0.7)", "inputs_hint": ["sentiment score"], "output_hint": "is positive"},
+    {"name": "add review to positive reviews", "type": "imperative", "category": "aggregation", "execution": "script", "source_phrase": "add to positive reviews", "inputs_hint": ["customer review", "is positive"], "output_hint": "positive reviews"},
+    {"name": "generate summary report", "type": "imperative", "category": "generation", "execution": "llm", "source_phrase": "Generate a summary report", "inputs_hint": ["positive reviews"], "output_hint": "summary report"}
+  ],
+  "summary": {
+    "imperative_count": 4,
+    "judgement_count": 1,
+    "llm_operations": 2,
+    "script_operations": 3
+  }
+}
+```
 
-## Instruction to Analyze
+---
 
-{{refined instruction content}}
+## Common Mistakes
 
+1. **Missing judgement type**: "check if X" produces boolean → it's a judgement
+2. **Wrong execution**: "score > 0.7" is exact comparison → script, not LLM
+3. **Missing iteration**: "for each" is an operation, not just context
+
+---
+
+## Now Extract
+
+$input_1

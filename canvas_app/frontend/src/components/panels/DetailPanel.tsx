@@ -5,13 +5,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Workflow, Maximize2, Minimize2, Edit3, RotateCcw, Settings } from 'lucide-react';
+import { X, Circle, Layers, GitBranch, FileJson, RefreshCw, Database, Play, Workflow, Maximize2, Minimize2, Edit3, RotateCcw, Settings, History, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSelectionStore } from '../../stores/selectionStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useProjectStore } from '../../stores/projectStore';
 import { useWorkerStore } from '../../stores/workerStore';
-import { executionApi, ReferenceData } from '../../services/api';
+import { executionApi, ReferenceData, IterationHistoryEntry } from '../../services/api';
 import { TensorInspector } from './TensorInspector';
 import { StepPipeline } from './StepPipeline';
 import { ValueOverrideModal } from './ValueOverrideModal';
@@ -43,13 +43,19 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
   const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
   
   // Worker store for fetching references from bound workers
-  const getMainPanelWorkerId = useWorkerStore((s) => s.getMainPanelWorkerId);
+  const getActiveWorkerId = useWorkerStore((s) => s.getActiveWorkerId);
   const fetchWorkerReference = useWorkerStore((s) => s.fetchWorkerReference);
 
   // Reference data state
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null);
   const [isLoadingRef, setIsLoadingRef] = useState(false);
   const [refError, setRefError] = useState<string | null>(null);
+  
+  // Iteration history state - for viewing past loop iteration values
+  const [iterationHistory, setIterationHistory] = useState<IterationHistoryEntry[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [expandedHistoryIndex, setExpandedHistoryIndex] = useState<number | null>(null);
   
   // Run-to state
   const [isRunningTo, setIsRunningTo] = useState(false);
@@ -86,11 +92,12 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
       setRefError(null);
       try {
         let data: ReferenceData | null = null;
-        const boundWorkerId = getMainPanelWorkerId();
+        // Use getActiveWorkerId to check both main_panel and chat_panel bindings
+        const activeWorkerId = getActiveWorkerId();
         
-        if (boundWorkerId) {
-          // Use worker-specific endpoint for bound workers (e.g., assistant)
-          const workerData = await fetchWorkerReference(boundWorkerId, conceptName);
+        if (activeWorkerId) {
+          // Use worker-specific endpoint for bound workers (e.g., assistant, chat controller)
+          const workerData = await fetchWorkerReference(activeWorkerId, conceptName);
           if (workerData && workerData.has_reference) {
             data = workerData as ReferenceData;
           }
@@ -114,7 +121,49 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     };
 
     fetchReference();
-  }, [selectedNodeId, getNode, getMainPanelWorkerId, fetchWorkerReference]);
+  }, [selectedNodeId, getNode, getActiveWorkerId, fetchWorkerReference]);
+
+  // Fetch iteration history when node changes
+  useEffect(() => {
+    if (!selectedNodeId) {
+      setIterationHistory([]);
+      setShowHistory(false);
+      return;
+    }
+
+    const node = getNode(selectedNodeId);
+    if (!node) return;
+
+    const conceptName = node.data.concept_name || node.label;
+    if (!conceptName) return;
+
+    // Fetch iteration history - use worker-specific endpoint if a worker is bound
+    const fetchHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        // Use getActiveWorkerId to check both main_panel and chat_panel bindings
+        const activeWorkerId = getActiveWorkerId();
+        let response;
+        
+        if (activeWorkerId) {
+          // Use worker-specific endpoint for bound workers (e.g., chat controller)
+          response = await executionApi.getWorkerReferenceHistory(activeWorkerId, conceptName, 20);
+        } else {
+          // Use default endpoint for regular projects
+          response = await executionApi.getReferenceHistory(conceptName, 20);
+        }
+        
+        setIterationHistory(response.history || []);
+      } catch (e) {
+        console.error('Failed to load iteration history:', e);
+        setIterationHistory([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    fetchHistory();
+  }, [selectedNodeId, getNode, getActiveWorkerId]);
 
   // Refresh reference data
   const refreshReference = async () => {
@@ -129,11 +178,11 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
     setRefError(null);
     try {
       let data: ReferenceData | null = null;
-      const boundWorkerId = getMainPanelWorkerId();
+      const activeWorkerId = getActiveWorkerId();
       
-      if (boundWorkerId) {
+      if (activeWorkerId) {
         // Use worker-specific endpoint for bound workers
-        const workerData = await fetchWorkerReference(boundWorkerId, conceptName);
+        const workerData = await fetchWorkerReference(activeWorkerId, conceptName);
         if (workerData && workerData.has_reference) {
           data = workerData as ReferenceData;
         }
@@ -669,13 +718,13 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
 
           {/* Right Column (only in fullscreen mode) - Reference Data */}
           {isFullscreen && (
-            <div className="space-y-4 overflow-y-auto">
+            <div className="flex flex-col gap-4 h-full overflow-hidden">
               {/* Reference Data Section (for value nodes) - Expanded in fullscreen */}
               {node.node_type === 'value' && (
-                <section className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 h-full flex flex-col">
-                  <div className="flex items-center justify-between mb-3">
+                <section className={`bg-blue-50/50 p-4 rounded-lg border border-blue-100 flex flex-col min-h-0 overflow-hidden ${iterationHistory.length > 0 ? 'flex-1' : 'flex-[2]'}`}>
+                  <div className="flex items-center justify-between mb-3 flex-shrink-0">
                     <h4 className="text-sm font-semibold text-slate-600 uppercase flex items-center gap-2">
-                      <Database size={14} /> Reference Data
+                      <Database size={14} /> Current Reference Data
                     </h4>
                     <button
                       onClick={refreshReference}
@@ -687,7 +736,7 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                     </button>
                   </div>
                   
-                  <div className="flex-1 overflow-auto">
+                  <div className="flex-1 overflow-auto min-h-0">
                     {isLoadingRef ? (
                       <div className="text-sm text-slate-400 flex items-center gap-2">
                         <RefreshCw size={14} className="animate-spin" />
@@ -710,6 +759,90 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                           ? 'Ground concept - load repositories to see data'
                           : 'No reference data yet - execute to compute'}
                       </div>
+                    )}
+                  </div>
+                </section>
+              )}
+              
+              {/* Iteration History Section (fullscreen mode) - shares space with current data */}
+              {iterationHistory.length > 0 && (
+                <section className={`bg-amber-50/50 p-4 rounded-lg border border-amber-200 flex flex-col min-h-0 overflow-hidden ${node.node_type === 'value' && referenceData ? 'flex-1' : 'flex-[2]'}`}>
+                  <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                    <h4 className="text-sm font-semibold text-amber-700 uppercase flex items-center gap-2">
+                      <History size={14} /> Iteration History
+                      <span className="text-xs font-normal text-amber-500">
+                        ({iterationHistory.length} past iterations)
+                      </span>
+                    </h4>
+                  </div>
+                  
+                  <div className="flex-1 overflow-auto space-y-2 min-h-0">
+                    {isLoadingHistory ? (
+                      <div className="text-sm text-slate-400 flex items-center gap-2">
+                        <RefreshCw size={14} className="animate-spin" />
+                        Loading history...
+                      </div>
+                    ) : (
+                      iterationHistory.map((entry, idx) => (
+                        <details 
+                          key={idx}
+                          className="bg-white border border-amber-200 rounded overflow-hidden"
+                          open={expandedHistoryIndex === idx}
+                        >
+                          <summary 
+                            className="flex justify-between items-center text-xs text-amber-700 p-3 cursor-pointer hover:bg-amber-50 list-none"
+                            onClick={(e) => { 
+                              e.preventDefault(); 
+                              setExpandedHistoryIndex(expandedHistoryIndex === idx ? null : idx); 
+                            }}
+                          >
+                            <span className="font-medium flex items-center gap-2">
+                              {expandedHistoryIndex === idx ? <ChevronDown size={12} /> : <ChevronUp size={12} className="rotate-180" />}
+                              Iteration {entry.iteration_index}
+                            </span>
+                            <span className="text-amber-500">Cycle {entry.cycle_number}</span>
+                            <span className="text-slate-500 font-mono text-xs">
+                              {entry.has_data ? (
+                                Array.isArray(entry.data) 
+                                  ? `Shape: [${entry.data.length}]` 
+                                  : typeof entry.data === 'string'
+                                    ? `"${entry.data.slice(0, 20)}${entry.data.length > 20 ? '...' : ''}"`
+                                    : typeof entry.data
+                              ) : 'No data'}
+                            </span>
+                          </summary>
+                          
+                          {/* Show full data when expanded */}
+                          {expandedHistoryIndex === idx && entry.has_data && (
+                            <div className="p-3 pt-0 border-t border-amber-100">
+                              <TensorInspector
+                                data={entry.data}
+                                axes={entry.axes}
+                                shape={entry.shape}
+                                isCompact={false}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Quick preview when collapsed */}
+                          {expandedHistoryIndex !== idx && entry.has_data && (
+                            <div className="px-3 pb-3 text-xs font-mono text-slate-600 bg-slate-50 mx-3 mb-3 rounded border border-slate-200 p-2 max-h-20 overflow-hidden">
+                              {typeof entry.data === 'string' ? (
+                                <div className="whitespace-pre-wrap">{entry.data.slice(0, 200)}{entry.data.length > 200 ? '...' : ''}</div>
+                              ) : Array.isArray(entry.data) && entry.data.length > 0 ? (
+                                <div className="whitespace-pre-wrap">
+                                  {typeof entry.data[0] === 'string' 
+                                    ? entry.data[0].slice(0, 200)
+                                    : JSON.stringify(entry.data[0], null, 2).slice(0, 200)}
+                                  {(typeof entry.data[0] === 'string' ? entry.data[0].length : JSON.stringify(entry.data[0]).length) > 200 ? '...' : ''}
+                                </div>
+                              ) : (
+                                <div className="whitespace-pre-wrap">{JSON.stringify(entry.data, null, 2).slice(0, 200)}</div>
+                              )}
+                            </div>
+                          )}
+                        </details>
+                      ))
                     )}
                   </div>
                 </section>
@@ -814,6 +947,94 @@ export function DetailPanel({ isFullscreen = false, onToggleFullscreen }: Detail
                   </div>
                 )}
               </div>
+            </details>
+          )}
+          
+          {/* Iteration History Section - Shows past loop iteration values */}
+          {!isFullscreen && iterationHistory.length > 0 && (
+            <details className="group pt-2" open={showHistory}>
+              <summary 
+                className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1.5 cursor-pointer hover:text-slate-700 list-none"
+                onClick={(e) => { e.preventDefault(); setShowHistory(!showHistory); }}
+              >
+                <History size={12} className="text-amber-600" /> 
+                <span>Iteration History</span>
+                <span className="text-[10px] font-normal text-amber-600 ml-1">
+                  ({iterationHistory.length} past)
+                </span>
+                {showHistory ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
+              </summary>
+              {showHistory && (
+                <div className="mt-2 space-y-2 max-h-80 overflow-y-auto">
+                  {isLoadingHistory ? (
+                    <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <RefreshCw size={10} className="animate-spin" />
+                      Loading history...
+                    </div>
+                  ) : (
+                    iterationHistory.map((entry, idx) => (
+                      <details 
+                        key={idx}
+                        className="bg-amber-50 border border-amber-200 rounded overflow-hidden"
+                        open={expandedHistoryIndex === idx}
+                      >
+                        <summary 
+                          className="flex justify-between items-center text-[10px] text-amber-700 p-2 cursor-pointer hover:bg-amber-100 list-none"
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            setExpandedHistoryIndex(expandedHistoryIndex === idx ? null : idx); 
+                          }}
+                        >
+                          <span className="font-medium flex items-center gap-1">
+                            {expandedHistoryIndex === idx ? <ChevronDown size={10} /> : <ChevronUp size={10} className="rotate-180" />}
+                            Iter {entry.iteration_index}
+                          </span>
+                          <span className="text-amber-500">Cycle {entry.cycle_number}</span>
+                          <span className="text-slate-500 font-mono">
+                            {entry.has_data ? (
+                              Array.isArray(entry.data) 
+                                ? `[${entry.data.length}]` 
+                                : typeof entry.data === 'string'
+                                  ? `"${entry.data.slice(0, 15)}${entry.data.length > 15 ? '...' : ''}"`
+                                  : 'obj'
+                            ) : '∅'}
+                          </span>
+                        </summary>
+                        
+                        {/* Show data content when expanded */}
+                        {expandedHistoryIndex === idx && entry.has_data && (
+                          <div className="p-2 pt-0 border-t border-amber-200 bg-white">
+                            <TensorInspector
+                              data={entry.data}
+                              axes={entry.axes}
+                              shape={entry.shape}
+                              isCompact={true}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Quick preview when collapsed - show first item or value */}
+                        {expandedHistoryIndex !== idx && entry.has_data && (
+                          <div className="px-2 pb-2 text-[10px] font-mono text-slate-600 bg-white mx-2 mb-2 rounded border border-slate-200 max-h-16 overflow-hidden">
+                            {typeof entry.data === 'string' ? (
+                              <div className="truncate">{entry.data}</div>
+                            ) : Array.isArray(entry.data) && entry.data.length > 0 ? (
+                              <div className="truncate">
+                                {typeof entry.data[0] === 'string' 
+                                  ? entry.data[0].slice(0, 100)
+                                  : JSON.stringify(entry.data[0]).slice(0, 100)}
+                                {(typeof entry.data[0] === 'string' ? entry.data[0].length : JSON.stringify(entry.data[0]).length) > 100 ? '...' : ''}
+                              </div>
+                            ) : (
+                              <div className="truncate">{JSON.stringify(entry.data).slice(0, 100)}</div>
+                            )}
+                          </div>
+                        )}
+                      </details>
+                    ))
+                  )}
+                </div>
+              )}
             </details>
           )}
         </div>

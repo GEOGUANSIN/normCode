@@ -3,6 +3,7 @@ data/
 local_phil/
 editor_app/data/
 editor_app/editor_app_data/
+c_contracts/
 
 # Python
 __pycache__/
