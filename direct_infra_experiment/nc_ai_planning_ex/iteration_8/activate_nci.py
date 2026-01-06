@@ -643,6 +643,11 @@ def build_inference_repo(nci_data: list) -> list:
                 if oc_name:
                     ctx_list.append(format_concept_name(oc_name, oc.get("concept_type", "object")))
         
+        # For timing sequences, context concepts should also be value concepts
+        if sequence_type == "timing" and ctx_list:
+            # Add context concepts to value_concepts for timing
+            vc_list.extend(ctx_list)
+        
         # Build working_interpretation
         wi = build_working_interpretation(inference, sequence_type)
         

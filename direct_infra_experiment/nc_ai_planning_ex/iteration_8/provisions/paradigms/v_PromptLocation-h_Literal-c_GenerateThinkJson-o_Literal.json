@@ -113,7 +113,7 @@
           "plan": [
             {
               "output_key": "prompt_path",
-              "function": {"__type__": "StateValue", "path": "states.function.paradigm_config.vertical.prompt_path"},
+              "function": {"__type__": "MetaValue", "key": "states.function.paradigm_config.vertical.prompt_path"},
               "params": {}
             },
             {

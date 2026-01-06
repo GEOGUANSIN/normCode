@@ -448,6 +448,14 @@ class ExecutionController:
             db_path=db_path
         )
         
+        # Initialize iteration history service and set callback for loop snapshot saving
+        from .iteration_history_service import iteration_history_service
+        iteration_history_service.initialize(db_path)
+        self.orchestrator.set_before_reset_callback(
+            iteration_history_service.save_iteration_snapshot
+        )
+        logger.info("Iteration history service initialized and callback registered")
+        
         # Initialize node statuses
         self.node_statuses = {}
         self.total_count = 0
@@ -908,6 +916,36 @@ class ExecutionController:
         """Find all nodes downstream from a flow_index."""
         from .value_service import value_service
         return value_service.find_descendants(self.inference_repo, self.concept_repo, flow_index)
+    
+    # =========================================================================
+    # Iteration History Access
+    # =========================================================================
+    
+    def get_iteration_history(self, concept_name: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get historical iteration values for a concept."""
+        from .iteration_history_service import iteration_history_service
+        
+        if not self.orchestrator:
+            return []
+        
+        return iteration_history_service.get_iteration_history(
+            run_id=self.orchestrator.run_id,
+            concept_name=concept_name,
+            limit=limit
+        )
+    
+    def get_flow_iteration_history(self, flow_index: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get historical iteration values for a specific flow_index."""
+        from .iteration_history_service import iteration_history_service
+        
+        if not self.orchestrator:
+            return []
+        
+        return iteration_history_service.get_flow_iteration_history(
+            run_id=self.orchestrator.run_id,
+            flow_index=flow_index,
+            limit=limit
+        )
     
     # =========================================================================
     # Value Override Methods

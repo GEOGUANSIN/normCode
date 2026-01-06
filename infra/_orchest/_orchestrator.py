@@ -69,6 +69,10 @@ class Orchestrator:
         # Track execution IDs for status updates
         self._current_execution_ids: Dict[str, int] = {}  # flow_index -> execution_id
         
+        # Callback for iteration history - called before concept references are reset
+        # Signature: callback(run_id, flow_index, concept_name, iteration_index, cycle, reference)
+        self._on_before_reset_callback: Optional[Any] = None
+        
         self._create_waitlist()
         self._initialize_blackboard()
 
@@ -545,11 +549,50 @@ class Orchestrator:
                     # Only reset the item status, not the concept status
                     logging.info(f"  - Invariant concept '{inferred_concept_entry.concept_name}' keeps 'complete' status and reference intact.")
                 else:
+                    # ITERATION HISTORY: Save snapshot before clearing reference
+                    if (self._on_before_reset_callback and 
+                        inferred_concept_entry.concept and 
+                        inferred_concept_entry.concept.reference is not None):
+                        try:
+                            # Get current iteration count from blackboard
+                            iteration_index = self._get_current_iteration_index(inferred_concept_entry.concept_name)
+                            self._on_before_reset_callback(
+                                self.run_id,
+                                support_flow_index,
+                                inferred_concept_entry.concept_name,
+                                iteration_index,
+                                self.tracker.cycle_count,
+                                inferred_concept_entry.concept.reference
+                            )
+                        except Exception as e:
+                            logging.warning(f"Failed to save iteration snapshot for {inferred_concept_entry.concept_name}: {e}")
+                    
+                    # Increment reset count for iteration tracking
+                    self.blackboard.increment_concept_reset_count(inferred_concept_entry.concept_name)
+                    
                     # Normal reset behavior for non-invariant concepts
                     self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
                     if inferred_concept_entry.concept:
                         inferred_concept_entry.concept.reference = None
                     logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
+    
+    def _get_current_iteration_index(self, concept_name: str) -> int:
+        """Get the current iteration index for a concept based on execution history."""
+        # Count how many times this concept has been reset (i.e., completed iterations)
+        # This is tracked via the execution count in the blackboard
+        try:
+            return self.blackboard.get_concept_reset_count(concept_name)
+        except Exception:
+            return 0
+    
+    def set_before_reset_callback(self, callback):
+        """
+        Set a callback to be called before concept references are reset during loop iterations.
+        
+        The callback receives: (run_id, flow_index, concept_name, iteration_index, cycle, reference)
+        This allows external systems to save iteration snapshots for historical viewing.
+        """
+        self._on_before_reset_callback = callback
 
     def _clear_quantifier_workspace_state(self, item: WaitlistItem):
         """Clears the state of a quantifier from the workspace."""

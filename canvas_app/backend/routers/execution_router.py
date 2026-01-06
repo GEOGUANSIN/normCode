@@ -238,6 +238,83 @@ async def get_all_references():
     return execution_controller.get_all_reference_data()
 
 
+@router.get("/reference/{concept_name}/history")
+async def get_reference_history(
+    concept_name: str, 
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a concept.
+    
+    During loop iterations, concept values are cleared and recomputed.
+    This endpoint returns historical snapshots from previous iterations,
+    allowing the UI to display past values.
+    
+    Returns:
+        - concept_name: The queried concept name
+        - run_id: The current run ID
+        - history: List of historical entries (newest first), each containing:
+            - iteration_index: The iteration number
+            - cycle_number: The orchestrator cycle when saved
+            - data: The tensor data
+            - axes: Axis names
+            - shape: Tensor shape
+            - timestamp: When the snapshot was saved
+        - total_iterations: Total number of historical entries
+    """
+    if not execution_controller.orchestrator:
+        return {
+            "concept_name": concept_name,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution"
+        }
+    
+    history = execution_controller.get_iteration_history(concept_name, limit)
+    
+    return {
+        "concept_name": concept_name,
+        "run_id": execution_controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
+
+
+@router.get("/flow/{flow_index}/history")
+async def get_flow_history(
+    flow_index: str, 
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a specific flow_index.
+    
+    Similar to /reference/{concept_name}/history but queries by flow_index
+    instead of concept name. Useful for the DetailPanel which has flow_index.
+    
+    Returns:
+        - flow_index: The queried flow_index
+        - run_id: The current run ID
+        - history: List of historical entries (newest first)
+        - total_iterations: Total number of historical entries
+    """
+    if not execution_controller.orchestrator:
+        return {
+            "flow_index": flow_index,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution"
+        }
+    
+    history = execution_controller.get_flow_iteration_history(flow_index, limit)
+    
+    return {
+        "flow_index": flow_index,
+        "run_id": execution_controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
+
+
 class VerboseLoggingRequest(BaseModel):
     """Request to toggle verbose logging."""
     enabled: bool
@@ -813,6 +890,46 @@ async def get_worker_reference_data(worker_id: str, concept_name: str):
     
     logger.debug(f"Got reference data for {concept_name} from worker {worker_id}")
     return ref_data
+
+
+@router.get("/workers/{worker_id}/reference/{concept_name}/history")
+async def get_worker_reference_history(
+    worker_id: str, 
+    concept_name: str,
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a concept from a specific worker.
+    
+    This allows fetching iteration history from workers like the chat controller,
+    not just the main execution controller.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.orchestrator:
+        return {
+            "concept_name": concept_name,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution for worker"
+        }
+    
+    history = controller.get_iteration_history(concept_name, limit)
+    
+    logger.debug(f"Got {len(history)} history entries for {concept_name} from worker {worker_id}")
+    return {
+        "concept_name": concept_name,
+        "run_id": controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
 
 
 @router.get("/workers/{worker_id}/references")

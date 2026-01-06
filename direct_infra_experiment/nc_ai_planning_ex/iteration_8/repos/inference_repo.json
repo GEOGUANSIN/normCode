@@ -197,7 +197,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(read refined instruction from checkpoint)",
     "function_concept": "@:'(<phase 1 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 1 already complete>"
+    ],
     "context_concepts": [
       "<phase 1 already complete>"
     ],
@@ -244,7 +246,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "$. %>({freshly refined instruction})",
     "function_concept": "@:!(<phase 1 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 1 already complete>"
+    ],
     "context_concepts": [
       "<phase 1 already complete>"
     ],
@@ -319,7 +323,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(pass through raw instruction)",
     "function_concept": "@:!(<instruction is vague>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<instruction is vague>"
+    ],
     "context_concepts": [
       "<instruction is vague>"
     ],
@@ -365,7 +371,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(synthesize from refinement answers)",
     "function_concept": "@:'(<instruction is vague>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<instruction is vague>"
+    ],
     "context_concepts": [
       "<instruction is vague>"
     ],
@@ -587,7 +595,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(read extraction from checkpoint)",
     "function_concept": "@:'(<phase 2 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 2 already complete>"
+    ],
     "context_concepts": [
       "<phase 2 already complete>"
     ],
@@ -642,7 +652,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "&[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)",
     "function_concept": "@:!(<phase 2 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 2 already complete>"
+    ],
     "context_concepts": [
       "<phase 2 already complete>"
     ],
@@ -935,7 +947,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(read classifications from checkpoint)",
     "function_concept": "@:'(<phase 3 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 3 already complete>"
+    ],
     "context_concepts": [
       "<phase 3 already complete>"
     ],
@@ -989,7 +1003,8 @@
     "concept_to_infer": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
     "function_concept": "@:!(<phase 3 already complete>)",
     "value_concepts": [
-      "{classification}"
+      "{classification}",
+      "<phase 3 already complete>"
     ],
     "context_concepts": [
       "<phase 3 already complete>"
@@ -1262,7 +1277,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(read dependency tree from checkpoint)",
     "function_concept": "@:'(<phase 4 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 4 already complete>"
+    ],
     "context_concepts": [
       "<phase 4 already complete>"
     ],
@@ -1316,7 +1333,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(construct tree from classifications and extractions)",
     "function_concept": "@:!(<phase 4 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 4 already complete>"
+    ],
     "context_concepts": [
       "<phase 4 already complete>"
     ],
@@ -1607,7 +1626,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(read ncds from checkpoint)",
     "function_concept": "@:'(<phase 5 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 5 already complete>"
+    ],
     "context_concepts": [
       "<phase 5 already complete>"
     ],
@@ -1653,7 +1674,9 @@
     "inference_sequence": "timing",
     "concept_to_infer": "::(serialize dependency tree to ncds text format)",
     "function_concept": "@:!(<phase 5 already complete>)",
-    "value_concepts": [],
+    "value_concepts": [
+      "<phase 5 already complete>"
+    ],
     "context_concepts": [
       "<phase 5 already complete>"
     ],

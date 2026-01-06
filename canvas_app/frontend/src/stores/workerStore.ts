@@ -100,6 +100,8 @@ interface WorkerStoreState {
     shape: number[];
   } | null>;
   getMainPanelWorkerId: () => string | null;
+  getChatPanelWorkerId: () => string | null;
+  getActiveWorkerId: () => string | null;
 }
 
 const API_BASE = '/api/execution';
@@ -302,6 +304,26 @@ export const useWorkerStore = create<WorkerStoreState>((set, get) => ({
     const { panelBindings } = get();
     const mainBinding = panelBindings['main_panel'];
     return mainBinding?.worker_id || null;
+  },
+  
+  // Get the worker ID bound to the chat panel (if any)
+  getChatPanelWorkerId: () => {
+    const { panelBindings } = get();
+    const chatBinding = panelBindings['chat_panel'];
+    return chatBinding?.worker_id || null;
+  },
+  
+  // Get any active worker ID (checks main_panel first, then chat_panel)
+  getActiveWorkerId: () => {
+    const { panelBindings } = get();
+    // Check main panel first
+    const mainBinding = panelBindings['main_panel'];
+    if (mainBinding?.worker_id) {
+      return mainBinding.worker_id;
+    }
+    // Fall back to chat panel
+    const chatBinding = panelBindings['chat_panel'];
+    return chatBinding?.worker_id || null;
   },
 }));
 
