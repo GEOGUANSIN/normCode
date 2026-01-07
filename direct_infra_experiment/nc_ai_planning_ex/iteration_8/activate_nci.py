@@ -445,20 +445,56 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
     elif sequence_type == "assigning":
         operator_type = func_concept.get("operator_type", "specification")
         nc_main = func_concept.get("nc_main", "")
-        
-        # Extract source from %>({...})
-        source_match = re.search(r"%>\(\{([^}]+)\}\)", nc_main)
-        source_match_list = re.search(r"%>\[([^\]]+)\]", nc_main)
+        marker = extract_operator_marker(operator_type)
         
         assign_source = None
-        if source_match:
-            assign_source = f"{{{source_match.group(1)}}}"
-        elif source_match_list:
-            # Multiple sources
-            assign_source = source_match_list.group(1)
+        
+        if marker == ".":
+            # SPECIFICATION ($.) - "select first available"
+            # The assign_source should be a LIST of candidate sources from value_concepts,
+            # EXCLUDING condition concepts (propositions like <...>)
+            # 
+            # Example: $. %>({freshly refined instruction})
+            #   value_concepts: [<instruction is vague>, {original version}, {refined version}]
+            #   assign_source should be: ["{original version}", "{refined version}"]
+            #
+            # The %>({...}) gives the OUTPUT concept (what we're assigning TO), NOT the sources!
+            
+            candidate_sources = []
+            for vc in value_concepts:
+                vc_name = vc.get("concept_name")
+                vc_type = vc.get("concept_type", "object")
+                if vc_name and vc_type != "proposition":
+                    # Not a condition - it's a candidate source
+                    candidate_sources.append(format_concept_name(vc_name, vc_type))
+            
+            if len(candidate_sources) >= 2:
+                # Multiple candidates - use list for "select first available"
+                assign_source = candidate_sources
+            elif len(candidate_sources) == 1:
+                # Single source - use string
+                assign_source = candidate_sources[0]
+            else:
+                # No sources found - this is an error condition
+                import logging
+                logging.warning(
+                    f"Assigning inference with marker '.' has no valid source candidates. "
+                    f"value_concepts: {[vc.get('concept_name') for vc in value_concepts]}"
+                )
+        
+        else:
+            # Other assigning operators (=, %, +, -) - use legacy extraction
+            source_match = re.search(r"%>\(\{([^}]+)\}\)", nc_main)
+            source_match_list = re.search(r"%>\[([^\]]+)\]", nc_main)
+            
+            if source_match:
+                assign_source = f"{{{source_match.group(1)}}}"
+            elif source_match_list:
+                # Multiple sources from explicit list
+                assign_source = source_match_list.group(1)
         
         wi["syntax"] = {
-            "marker": extract_operator_marker(operator_type),
+            "marker": marker,
             "assign_source": assign_source,
         }
     

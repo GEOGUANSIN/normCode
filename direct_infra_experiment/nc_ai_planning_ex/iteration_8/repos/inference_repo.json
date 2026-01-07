@@ -109,7 +109,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{instruction to be written}"
+        "assign_source": [
+          "{cached refined instruction}",
+          "{freshly refined instruction}"
+        ]
       }
     }
   },
@@ -235,7 +238,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{freshly refined instruction}"
+        "assign_source": [
+          "{original version}",
+          "{refined version}"
+        ]
       }
     }
   },
@@ -507,7 +513,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{extraction to be written}"
+        "assign_source": [
+          "{cached extraction data}",
+          "{freshly extracted data}"
+        ]
       }
     }
   },
@@ -859,7 +868,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{classifications to be written}"
+        "assign_source": [
+          "{cached classifications}",
+          "[freshly classified operations]"
+        ]
       }
     }
   },
@@ -1189,7 +1201,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{tree to be written}"
+        "assign_source": [
+          "{cached dependency tree}",
+          "{freshly constructed tree}"
+        ]
       }
     }
   },
@@ -1538,7 +1553,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{ncds to be written}"
+        "assign_source": [
+          "{cached ncds content}",
+          "{freshly serialized ncds}"
+        ]
       }
     }
   },
