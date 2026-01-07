@@ -76,6 +76,20 @@ def get_sequence_type(attached_comments: list) -> str | None:
     return None
 
 
+def extract_literal_value(concept_name: str) -> str | None:
+    """Extract literal value from concept names like 'phase_name: "phase_1"' or 'field_name: "operations"'"""
+    # Pattern: key: "value" or key: 'value'
+    match = re.search(r':\s*["\']([^"\']+)["\']', concept_name)
+    if match:
+        return match.group(1)
+    return None
+
+
+def is_literal_concept(concept_name: str) -> bool:
+    """Check if concept name represents a literal value like 'phase_name: "phase_1"'"""
+    return extract_literal_value(concept_name) is not None
+
+
 def is_ground_concept(concept_data: dict, attached_comments: list) -> bool:
     """Determine if a concept is a ground concept"""
     # Check for /: Ground: comment
@@ -91,6 +105,11 @@ def is_ground_concept(concept_data: dict, attached_comments: list) -> bool:
     # Check for perceptual_sign element type
     element_type = get_annotation_value(attached_comments, "ref_element")
     if element_type == "perceptual_sign":
+        return True
+    
+    # Check for literal concepts like {phase_name: "phase_1"}
+    concept_name = concept_data.get("concept_name", "")
+    if is_literal_concept(concept_name):
         return True
     
     return False
@@ -236,8 +255,14 @@ def build_concept_repo(nci_data: list) -> list:
         
         # Build reference_data for ground concepts
         reference_data = None
-        if is_ground and file_location:
-            reference_data = [f"%{{file_location}}({file_location})"]
+        if is_ground:
+            if file_location:
+                reference_data = [f"%{{file_location}}({file_location})"]
+            elif is_literal_concept(name):
+                # Extract literal value from concept name like 'phase_name: "phase_1"'
+                literal_value = extract_literal_value(name)
+                if literal_value:
+                    reference_data = [literal_value]
         
         concept_entry = {
             "id": concept_name_to_id(name),

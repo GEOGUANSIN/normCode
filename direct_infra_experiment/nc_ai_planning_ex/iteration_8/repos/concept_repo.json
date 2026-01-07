@@ -338,9 +338,11 @@
       "1.12.3.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "phase_1"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -910,9 +912,11 @@
       "1.14.3.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "phase_2"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1400,9 +1404,11 @@
       "1.16.3.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "phase_3"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1689,9 +1695,11 @@
       "1.16.3.4.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "operations"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -1871,9 +1879,11 @@
       "1.18.3.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "phase_4"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2173,9 +2183,11 @@
       "1.18.3.4.6.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "dependencies"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
@@ -2317,9 +2329,11 @@
       "1.20.3.2.3"
     ],
     "description": null,
-    "is_ground_concept": false,
+    "is_ground_concept": true,
     "is_final_concept": false,
-    "reference_data": null,
+    "reference_data": [
+      "phase_5"
+    ],
     "reference_axis_names": [
       "_none_axis"
     ],
