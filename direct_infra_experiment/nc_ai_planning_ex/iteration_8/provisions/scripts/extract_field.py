@@ -73,6 +73,12 @@ def extract_field_safe(
         return default
 
 
+# Main entry point for paradigm (calls extract_field)
+def main(input_1: Any = None, input_2: str = None, body=None, **kwargs) -> Any:
+    """Main entry point for paradigm execution."""
+    return extract_field(input_1, input_2, body)
+
+
 if __name__ == "__main__":
     # Test
     test_data = {

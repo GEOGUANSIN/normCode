@@ -71,6 +71,12 @@ def extract_phase_number_from_name(phase_name: str) -> Optional[int]:
     return None
 
 
+# Main entry point for paradigm (calls check_phase_complete)
+def main(input_1: str = None, input_2: str = None, body=None, **kwargs) -> bool:
+    """Main entry point for paradigm execution."""
+    return check_phase_complete(input_1, input_2, body)
+
+
 if __name__ == "__main__":
     # Test
     test_progress = """phase_1_complete
