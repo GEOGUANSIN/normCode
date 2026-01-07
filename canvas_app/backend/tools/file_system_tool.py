@@ -132,7 +132,12 @@ class CanvasFileSystemTool:
         
         try:
             if self._tool:
-                result = self._tool.write(path, content)
+                # Use the write method (which wraps save with correct param order)
+                write_result = self._tool.write(path, content)
+                if write_result.get("status") == "success":
+                    result = f"Successfully wrote to {write_result.get('location', path)}"
+                else:
+                    raise IOError(write_result.get("message", "Write failed"))
             else:
                 # Fallback implementation
                 resolved.parent.mkdir(parents=True, exist_ok=True)

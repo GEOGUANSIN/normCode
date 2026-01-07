@@ -110,6 +110,22 @@ class FileSystemTool:
             logger.error(f"An error occurred in save_from_dict: {e}")
             return {"status": "error", "message": str(e)}
 
+    def write(self, path: str, content: str) -> dict:
+        """
+        Writes content to a specified file path.
+        
+        This is an alias for save() with swapped parameter order for paradigm compatibility.
+
+        Args:
+            path (str): The file path to write to. Can be absolute, or relative
+                        to the base_dir.
+            content (str): The content to be saved.
+
+        Returns:
+            dict: A dictionary with the status of the operation.
+        """
+        return self.save(content=content, location=path)
+
     def read(self, location: str) -> dict:
         """
         Reads content from a specified file location.
