@@ -238,6 +238,20 @@ async def get_all_references():
     return execution_controller.get_all_reference_data()
 
 
+@router.get("/concept-statuses")
+async def get_concept_statuses():
+    """Get concept statuses directly from the blackboard.
+    
+    Returns a dict mapping concept_name -> status ('complete' | 'empty' | etc.)
+    This queries the infra layer directly, making it the source of truth
+    for whether a concept has data.
+    
+    This is useful for the frontend to determine if a concept has data
+    without needing to maintain parallel state in the canvas app.
+    """
+    return execution_controller.get_concept_statuses()
+
+
 @router.get("/reference/{concept_name}/history")
 async def get_reference_history(
     concept_name: str, 

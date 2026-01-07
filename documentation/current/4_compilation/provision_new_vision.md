@@ -439,6 +439,150 @@ For script paradigms where the vertical input contains multiple fields (script p
 | **Script** (`v_ScriptLocation`) | `states.vertical.script_path`, `states.vertical.function_name` | `perception_router.strip_sign(...)` on each |
 | **Template** (`v_LiteralTemplate`) | `states.vertical` | Direct access (already literal) |
 
+### Critical: Read Prompts During MFP, Not in Composition
+
+**The composed function (TVA) cannot access step results from MFP.** Resources must be fully loaded during MFP steps, not inside the composition plan.
+
+#### ❌ Wrong Pattern: Reading in Composition
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "result_key": "raw_prompt_path"
+},
+{
+  "step_index": 2,
+  "affordance": "file_system.read",
+  "result_key": "read_fn"
+},
+{
+  "step_index": 3,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "prompt_content",
+        "function": {"__type__": "MetaValue", "key": "read_fn"},
+        "params": {"__positional__": {"__type__": "MetaValue", "key": "raw_prompt_path"}}
+      }
+    ]
+  }
+}
+```
+
+**Error**: `Key 'path/to/prompt.md' not found in context` — The `raw_prompt_path` value from step 1 isn't available in the composition's execution context.
+
+#### ✅ Correct Pattern: Reading During MFP
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "result_key": "raw_prompt_path"
+},
+{
+  "step_index": 2,
+  "affordance": "prompt_tool.read_now",
+  "params": {
+    "template_name": {"__type__": "MetaValue", "key": "raw_prompt_path"}
+  },
+  "result_key": "prompt_obj"
+},
+{
+  "step_index": 3,
+  "affordance": "prompt_tool.create_template_function",
+  "params": {
+    "template": {"__type__": "MetaValue", "key": "prompt_obj"}
+  },
+  "result_key": "template_fn"
+},
+{
+  "step_index": 4,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "filled_prompt",
+        "function": {"__type__": "MetaValue", "key": "template_fn"},
+        "params": {"__positional__": "__initial_input__"}
+      }
+    ]
+  }
+}
+```
+
+**Why this works**: The prompt is read and transformed into a function (`template_fn`) during MFP. The composition only uses the resulting function, not raw data from earlier steps.
+
+### Critical: Script Paradigms Must Also Read During MFP
+
+Script paradigms follow the same pattern — read the script file and create a bound executor function during MFP:
+
+#### ✅ Correct Pattern for Script Execution
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "params": {
+    "token": {"__type__": "MetaValue", "key": "states.vertical"}
+  },
+  "result_key": "raw_script_path"
+},
+{
+  "step_index": 2,
+  "affordance": "file_system.read_now",
+  "params": {
+    "path": {"__type__": "MetaValue", "key": "raw_script_path"}
+  },
+  "result_key": "script_read_result"
+},
+{
+  "step_index": 3,
+  "affordance": "formatter_tool.extract_content",
+  "params": {
+    "data": {"__type__": "MetaValue", "key": "script_read_result"}
+  },
+  "result_key": "script_content"
+},
+{
+  "step_index": 4,
+  "affordance": "python_interpreter.create_function_executor",
+  "params": {
+    "script": {"__type__": "MetaValue", "key": "script_content"},
+    "function_name": "main"
+  },
+  "result_key": "execute_fn"
+},
+{
+  "step_index": 5,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "execution_result",
+        "function": {"__type__": "MetaValue", "key": "execute_fn"},
+        "params": {"__positional__": "__initial_input__"}
+      }
+    ]
+  }
+}
+```
+
+**Key steps**:
+1. **Strip sign** → get raw file path
+2. **Read file immediately** → get `{"status": "success", "content": "..."}` dict
+3. **Extract content** → get just the script code string
+4. **Create bound executor** → `python_interpreter.create_function_executor` binds script content into a callable
+5. **Composition uses bound executor** → only needs to pass input params
+
+**Note**: The `extract_content` affordance uses this call_code pattern:
+```json
+"call_code": "result = params['data']['content']"
+```
+
+This extracts the `content` field from the file read result during MFP, since MetaValue keys don't support nested access like `script_read_result.content`.
+
 ---
 
 # Part IV: Resource Types & Directory Structure
@@ -871,6 +1015,7 @@ python compiler.py validate-provisions provisions/ --plan enriched.ncd
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `KeyError: 'paradigm_config'` | Paradigm tries to access `states.function.paradigm_config.vertical.*` | Use `perception_router.strip_sign` on `states.vertical` instead (see Section 3.5) |
+| `Key 'path/to/file' not found in context` | Composition plan references a step result that isn't available during TVA | Read resources during MFP steps, not inside composition (see Section 3.5) |
 | `AttributeError: 'NoneType' has no attribute 'main'` | Paradigm calls `main` but script doesn't define it | Add a `main` function alias to the script (see Section 4.1) |
 | `KeyError: 'input_1'` | Script expects named parameters but receives different names | Use `input_1`, `input_2`, etc. pattern in function signature |
 

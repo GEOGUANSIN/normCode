@@ -847,6 +847,12 @@ class ExecutionController:
                     })
                     self._add_log("info", flow_index, f"Completed in {duration:.2f}s")
                     
+                    # NOTE: We intentionally do NOT propagate status to alias nodes here.
+                    # Each node's status reflects whether the INFERENCE at that position has run,
+                    # not just whether the underlying concept has data. Alias nodes that are
+                    # inputs to other inferences should stay "pending" until those inferences run.
+                    # Ground concepts (initial inputs) are handled separately by _sync_ground_concept_statuses().
+                    
                     if self._run_to_target and flow_index == self._run_to_target:
                         self._run_to_target = None
                         self.status = ExecutionStatus.PAUSED
@@ -906,6 +912,19 @@ class ExecutionController:
         """Get reference data for all concepts that have references."""
         from .value_service import value_service
         return value_service.get_all_reference_data(self.concept_repo)
+    
+    def get_concept_statuses(self) -> Dict[str, str]:
+        """Get concept statuses directly from the blackboard.
+        
+        Returns a dict mapping concept_name -> status ('complete' | 'empty' | etc.)
+        This queries the infra layer directly, making it the source of truth
+        for whether a concept has data.
+        """
+        if not self.orchestrator or not self.orchestrator.blackboard:
+            return {}
+        
+        # Get all concept statuses from the blackboard
+        return dict(self.orchestrator.blackboard.concept_statuses)
     
     def _find_dependents(self, concept_name: str) -> List[str]:
         """Find all flow_indices that depend on a concept."""
@@ -1270,6 +1289,58 @@ class ExecutionController:
         
         if input_concepts_synced > 0 or input_concepts_added > 0:
             logger.info(f"Input concept sync: {input_concepts_synced} updated, {input_concepts_added} added as COMPLETED")
+    
+    def _sync_alias_node_statuses(self, concept_name: str, new_status: NodeStatus) -> List[str]:
+        """
+        Propagate status to all alias nodes (twin nodes) of the same concept.
+        
+        When a concept is inferred at one flow_index, all other nodes representing
+        the same concept (alias/twin nodes connected by ≡ edges) should also be
+        updated to reflect the same status.
+        
+        Args:
+            concept_name: The name of the concept that was completed
+            new_status: The status to set for all alias nodes
+            
+        Returns:
+            List of flow_indices that were updated (excluding the original)
+        """
+        if not self.concept_repo:
+            return []
+        
+        updated_aliases = []
+        
+        try:
+            concept_entry = self.concept_repo.get_concept(concept_name)
+            if not concept_entry:
+                return []
+            
+            # Get all flow indices where this concept appears
+            flow_indices = concept_entry.flow_indices or []
+            
+            for flow_index in flow_indices:
+                if flow_index in self.node_statuses:
+                    # This flow_index is an INFERENCE TARGET - it has its own inference to run.
+                    # Don't mark it as completed just because the concept has data elsewhere.
+                    # Its status should only change when ITS OWN inference executes.
+                    # Skip this node - the user is right that it "needs to be run again".
+                    logger.debug(f"Alias sync: {concept_name}@{flow_index} SKIPPED (is inference target, needs own execution)")
+                    continue
+                else:
+                    # This flow_index exists in the graph but isn't an inference target
+                    # (e.g., it's a value concept that appears in an inference but isn't the concept_to_infer)
+                    # Safe to mark as completed since it just represents "data availability"
+                    self.node_statuses[flow_index] = new_status
+                    updated_aliases.append(flow_index)
+                    logger.debug(f"Alias sync: {concept_name}@{flow_index} (value node) -> {new_status.value}")
+            
+            if updated_aliases:
+                logger.info(f"Alias sync for '{concept_name}': updated {len(updated_aliases)} twin nodes to {new_status.value}")
+                
+        except Exception as e:
+            logger.warning(f"Failed to sync alias statuses for '{concept_name}': {e}")
+        
+        return updated_aliases
     
     def _sync_node_statuses_from_orchestrator(self):
         """Sync node statuses from orchestrator's blackboard after loading checkpoint."""
