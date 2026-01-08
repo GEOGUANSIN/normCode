@@ -30,7 +30,7 @@ class NormCodeParser(BaseParser):
     
     @property
     def supported_formats(self) -> List[str]:
-        return ['ncd', 'ncn', 'ncdn', 'ncds']
+        return ['ncd', 'ncn', 'ncdn', 'ncds', 'nci']
     
     @property
     def category(self) -> str:
@@ -42,11 +42,14 @@ class NormCodeParser(BaseParser):
         
         Args:
             content: Raw file content
-            format: One of 'ncd', 'ncn', 'ncdn', 'ncds'
+            format: One of 'ncd', 'ncn', 'ncdn', 'ncds', 'nci'
             ncn_content: Optional NCN content when parsing NCD
         """
         try:
-            if format in ('ncdn', 'ncds'):
+            if format == 'nci':
+                # Parse NCI JSON back to parsed format
+                parsed = self._parse_nci(content)
+            elif format in ('ncdn', 'ncds'):
                 parsed = self._parse_ncdn(content)
             elif format == 'ncn':
                 # NCN alone has the same structure
@@ -640,6 +643,22 @@ class NormCodeParser(BaseParser):
                 nci_groups.append(group)
         
         return nci_groups
+    
+    def _parse_nci(self, nci_content: str) -> Dict[str, Any]:
+        """
+        Parse NCI JSON content back to parsed format.
+        
+        This enables round-trip conversion: NCDS → NCI → NCDS
+        
+        Args:
+            nci_content: NCI JSON string (list of inference groups)
+            
+        Returns:
+            Dict with 'lines' key containing reconstructed parsed structure
+        """
+        import json
+        nci_data = json.loads(nci_content)
+        return self._from_nci(nci_data)
     
     def _from_nci(self, nci_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Convert nci.json structure back to nc.json format."""

@@ -149,6 +149,91 @@ class ParserService:
         import json
         return json.loads(result.content)
     
+    def from_nci(self, nci_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Convert NCI (inference) format back to parsed JSON.
+        
+        This enables round-trip conversion: NCDS → NCI → NCDS
+        
+        Args:
+            nci_data: List of inference groups (or JSON string)
+            
+        Returns:
+            Dict with 'lines' key containing parsed line structures
+        """
+        import json
+        
+        parser = get_parser('nci')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
+        
+        # If it's already a list, convert to JSON string for parsing
+        if isinstance(nci_data, list):
+            nci_content = json.dumps(nci_data)
+        else:
+            nci_content = nci_data
+        
+        result = parser.parse(nci_content, 'nci')
+        if not result.success:
+            raise RuntimeError(f"Parse error: {', '.join(result.errors)}")
+        
+        return {"lines": result.lines}
+    
+    def parse_nci(self, nci_content: str) -> Dict[str, Any]:
+        """
+        Parse NCI JSON content to structured JSON.
+        
+        Args:
+            nci_content: The NCI JSON content (as string)
+            
+        Returns:
+            Dict with 'lines' key containing parsed line structures
+        """
+        parser = get_parser('nci')
+        if not parser:
+            raise RuntimeError("NormCode parser not available")
+        
+        result = parser.parse(nci_content, 'nci')
+        if not result.success:
+            raise RuntimeError(f"Parse error: {', '.join(result.errors)}")
+        
+        return {"lines": result.lines}
+    
+    def activate(self, nci_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Activate NCI data into concept_repo and inference_repo.
+        
+        This is the final phase of NormCode compilation:
+        NCDS → NCI → concept_repo.json + inference_repo.json
+        
+        Args:
+            nci_data: List of inference groups from NCI format
+            
+        Returns:
+            Dict with:
+            - concept_repo: List of concept entries (ready for ConceptRepo)
+            - inference_repo: List of inference entries (ready for InferenceRepo)
+            - summary: Statistics about the activation
+        """
+        from .parsers.activation import activate_nci
+        return activate_nci(nci_data)
+    
+    def activate_ncds(self, ncds_content: str) -> Dict[str, Any]:
+        """
+        Full pipeline: NCDS → NCI → repos.
+        
+        Convenience method that chains parse_ncdn → to_nci → activate.
+        
+        Args:
+            ncds_content: NCDS file content
+            
+        Returns:
+            Dict with concept_repo, inference_repo, and summary
+        """
+        parsed = self.parse_ncdn(ncds_content)
+        nci = self.to_nci(parsed)
+        return self.activate(nci)
+    
     # =========================================================================
     # Generic Methods
     # =========================================================================

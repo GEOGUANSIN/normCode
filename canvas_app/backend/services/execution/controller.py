@@ -79,6 +79,7 @@ class ExecutionController:
     user_input_tool: Optional[Any] = None
     chat_tool: Optional[Any] = None
     canvas_tool: Optional[Any] = None
+    parser_tool: Optional[Any] = None
     
     # Pre-built graph for visualization (built when repositories are loaded)
     graph_data: Optional[Any] = None
@@ -424,6 +425,7 @@ class ExecutionController:
         self.user_input_tool = canvas_tools.user_input_tool
         self.chat_tool = canvas_tools.chat_tool
         self.canvas_tool = canvas_tools.canvas_tool
+        self.parser_tool = canvas_tools.parser_tool
         
         # Set up tool monitoring
         setup_tool_monitoring(
@@ -1244,6 +1246,7 @@ class ExecutionController:
         self.user_input_tool = canvas_tools.user_input_tool
         self.chat_tool = canvas_tools.chat_tool
         self.canvas_tool = canvas_tools.canvas_tool
+        self.parser_tool = canvas_tools.parser_tool
         
         setup_tool_monitoring(
             self.body,
