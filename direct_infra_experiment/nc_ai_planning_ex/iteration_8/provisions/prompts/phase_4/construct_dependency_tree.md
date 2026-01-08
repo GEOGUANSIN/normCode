@@ -181,22 +181,26 @@ Mark these with `"is_ground": true`.
 ```json
 {
   "thinking": "Your tree construction process",
-  "tree": {
-    "root": "goal concept name",
-    "nodes": {
-      "concept name": {
-        "producer": "operation name or null if ground",
-        "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping | null",
-        "children": ["child concept names"],
-        "context": "context concept for loops/conditions, or null",
-        "is_ground": true | false
+  "result": {
+    "tree": {
+      "root": "goal concept name",
+      "nodes": {
+        "concept name": {
+          "producer": "operation name or null if ground",
+          "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping | null",
+          "children": ["child concept names"],
+          "context": "context concept for loops/conditions, or null",
+          "is_ground": true | false
+        }
       }
-    }
-  },
-  "ground_concepts": ["list of input concepts with no producer"],
-  "depth": 0
+    },
+    "ground_concepts": ["list of input concepts with no producer"],
+    "depth": 0
+  }
 }
 ```
+
+**Important**: Put the tree in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -222,56 +226,58 @@ Mark these with `"is_ground": true`.
 ```json
 {
   "thinking": "Starting from goal 'summary report'. Producer is 'generate summary' (multi_input). It needs 'all sentiments' and 'review count'. 'review count' is ground (input). 'all sentiments' is produced by 'for each review' (iteration). The iteration needs 'reviews' (context, ground) and produces 'sentiment' per-item. Each 'sentiment' is produced by 'extract sentiment' (linear) which needs 'current review' (loop variable).",
-  "tree": {
-    "root": "summary report",
-    "nodes": {
-      "summary report": {
-        "producer": "generate summary",
-        "pattern": "multi_input",
-        "children": ["all sentiments", "review count"],
-        "context": null,
-        "is_ground": false
-      },
-      "all sentiments": {
-        "producer": "for each review",
-        "pattern": "iteration",
-        "children": ["sentiment"],
-        "context": "reviews",
-        "is_ground": false
-      },
-      "sentiment": {
-        "producer": "extract sentiment",
-        "pattern": "linear",
-        "children": ["current review"],
-        "context": null,
-        "is_ground": false
-      },
-      "current review": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": false,
-        "note": "loop variable - bound by iteration context"
-      },
-      "reviews": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": true
-      },
-      "review count": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": true
+  "result": {
+    "tree": {
+      "root": "summary report",
+      "nodes": {
+        "summary report": {
+          "producer": "generate summary",
+          "pattern": "multi_input",
+          "children": ["all sentiments", "review count"],
+          "context": null,
+          "is_ground": false
+        },
+        "all sentiments": {
+          "producer": "for each review",
+          "pattern": "iteration",
+          "children": ["sentiment"],
+          "context": "reviews",
+          "is_ground": false
+        },
+        "sentiment": {
+          "producer": "extract sentiment",
+          "pattern": "linear",
+          "children": ["current review"],
+          "context": null,
+          "is_ground": false
+        },
+        "current review": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": false,
+          "note": "loop variable - bound by iteration context"
+        },
+        "reviews": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": true
+        },
+        "review count": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": true
+        }
       }
-    }
-  },
-  "ground_concepts": ["reviews", "review count"],
-  "depth": 4
+    },
+    "ground_concepts": ["reviews", "review count"],
+    "depth": 4
+  }
 }
 ```
 

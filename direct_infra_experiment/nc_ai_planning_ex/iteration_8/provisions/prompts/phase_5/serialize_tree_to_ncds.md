@@ -246,17 +246,12 @@ Comments explain the plan:
 
 ```json
 {
-  "thinking": "Your serialization process",
-  "ncds_content": "The complete .ncds file content as a string",
-  "stats": {
-    "line_count": 0,
-    "concept_count": 0,
-    "operation_count": 0,
-    "ground_count": 0,
-    "max_depth": 0
-  }
+  "thinking": "Your serialization process - explain your approach",
+  "result": "The complete .ncds file content as a string (the actual NCDS text)"
 }
 ```
+
+**Important**: The `result` field should contain ONLY the NCDS text content, ready to be written to a `.ncds` file. Do NOT include stats or metadata in the result.
 
 ---
 

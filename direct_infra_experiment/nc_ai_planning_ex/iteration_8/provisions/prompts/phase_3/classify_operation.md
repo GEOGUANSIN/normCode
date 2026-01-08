@@ -131,17 +131,19 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Your classification reasoning using the decision tree",
-  "classification": {
-    "pattern": "linear" | "multi_input" | "judgement" | "iteration" | "conditional" | "selection" | "grouping",
-    "category": "semantic" | "syntactic",
-    "execution": "llm" | "script" | "orchestrator",
+  "result": {
+    "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping",
+    "category": "semantic | syntactic",
+    "execution": "llm | script | orchestrator",
     "input_count": 0,
-    "output_type": "object" | "collection" | "condition",
+    "output_type": "object | collection | condition",
     "confidence": 0.0-1.0,
     "reasoning": "Brief explanation of why this pattern"
   }
 }
 ```
+
+**Important**: Put the classification in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -155,7 +157,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Produces object (not boolean) → not judgement. Not iterating itself. Not conditional. Not selecting. Not grouping. Single input → linear.",
-  "classification": {
+  "result": {
     "pattern": "linear",
     "category": "semantic",
     "execution": "llm",
@@ -175,7 +177,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Produces boolean/condition → judgement. Exact numeric comparison (> 0.7) → script.",
-  "classification": {
+  "result": {
     "pattern": "judgement",
     "category": "semantic",
     "execution": "script",
@@ -195,7 +197,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Iterates over collection → iteration. Control flow handled by orchestrator.",
-  "classification": {
+  "result": {
     "pattern": "iteration",
     "category": "syntactic",
     "execution": "orchestrator",
@@ -215,7 +217,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Execution gated by 'is positive' condition → conditional.",
-  "classification": {
+  "result": {
     "pattern": "conditional",
     "category": "syntactic",
     "execution": "orchestrator",
@@ -235,7 +237,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Multiple inputs (count, reviews) combined → multi_input. Uses LLM for generation.",
-  "classification": {
+  "result": {
     "pattern": "multi_input",
     "category": "semantic",
     "execution": "llm",

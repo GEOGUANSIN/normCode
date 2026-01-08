@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "description": "Generate JSON using LLM with vertical prompt template and horizontal literal data",
+    "description": "Generate JSON using LLM with vertical prompt template and horizontal literal data. Extracts 'result' field from response, dropping 'thinking'.",
     "inputs": {
       "vertical": {
         "prompt_template": "Path to prompt file (perception-wrapped, stripped at runtime)"
@@ -11,7 +11,11 @@
     },
     "outputs": {
       "type": "Literal",
-      "description": "Parsed JSON result from LLM wrapped as literal"
+      "description": "The 'result' field from LLM JSON response, wrapped as literal"
+    },
+    "prompt_format": {
+      "required": "Prompts MUST return JSON with 'thinking' and 'result' fields",
+      "example": {"thinking": "reasoning here", "result": "<actual output>"}
     }
   },
   "env_spec": {
@@ -31,6 +35,10 @@
           {
             "affordance_name": "parse",
             "call_code": "result = tool.parse"
+          },
+          {
+            "affordance_name": "get",
+            "call_code": "result = tool.get"
           },
           {
             "affordance_name": "wrap",
@@ -121,12 +129,18 @@
       },
       {
         "step_index": 7,
+        "affordance": "formatter_tool.get",
+        "params": {},
+        "result_key": "get_fn"
+      },
+      {
+        "step_index": 8,
         "affordance": "formatter_tool.wrap",
         "params": {},
         "result_key": "wrap_fn"
       },
       {
-        "step_index": 8,
+        "step_index": 9,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
@@ -146,14 +160,20 @@
               "params": {"__positional__": "llm_response"}
             },
             {
-              "output_key": "parsed_result",
+              "output_key": "parsed_json",
               "function": {"__type__": "MetaValue", "key": "parse_fn"},
               "params": {"__positional__": "cleaned_response"}
             },
             {
+              "output_key": "result_value",
+              "function": {"__type__": "MetaValue", "key": "get_fn"},
+              "params": {"dictionary": "parsed_json"},
+              "literal_params": {"key": "result"}
+            },
+            {
               "output_key": "final_result",
               "function": {"__type__": "MetaValue", "key": "wrap_fn"},
-              "params": {"__positional__": "parsed_result"},
+              "params": {"__positional__": "result_value"},
               "literal_params": {"type": "literal"}
             }
           ],

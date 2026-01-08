@@ -157,31 +157,35 @@ Return a JSON object:
 ```json
 {
   "thinking": "How you're combining the answers and applying paraphrasing rules",
-  "refined_instruction": "The complete, refined instruction as a single coherent text. This should be a multi-line string that reads naturally and can be directly used for derivation.",
-  "structure": {
-    "goal": "The final output being produced",
-    "inputs": ["List of input data/concepts"],
-    "outputs": ["List of output data/concepts"],
-    "iterations": [
-      {
-        "collection": "What is iterated over",
-        "per_item": "What is produced per item"
-      }
-    ],
-    "conditions": [
-      {
-        "condition": "The condition being checked",
-        "if_true": "What happens if true",
-        "if_false": "What happens if false (optional)"
-      }
-    ],
-    "steps": [
-      "Ordered list of main operations"
-    ]
-  },
-  "patterns_used": ["linear", "multi-input", "iteration", "conditional", "grouping"]
+  "result": {
+    "refined_instruction": "The complete, refined instruction as a single coherent text. This should be a multi-line string that reads naturally and can be directly used for derivation.",
+    "structure": {
+      "goal": "The final output being produced",
+      "inputs": ["List of input data/concepts"],
+      "outputs": ["List of output data/concepts"],
+      "iterations": [
+        {
+          "collection": "What is iterated over",
+          "per_item": "What is produced per item"
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "The condition being checked",
+          "if_true": "What happens if true",
+          "if_false": "What happens if false (optional)"
+        }
+      ],
+      "steps": [
+        "Ordered list of main operations"
+      ]
+    },
+    "patterns_used": ["linear", "multi-input", "iteration", "conditional", "grouping"]
+  }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -208,33 +212,35 @@ Return a JSON object:
 ```json
 {
   "thinking": "The instruction describes a chat session loop. Applying Rule 1 (explicit loops): 'for each user message'. Applying Rule 4 (trigger): 'blocking wait for input'. Applying Rule 3 (conditions): 'if user wants to end session'. Applying Rule 5 (decompose): breaking 'understand' into parse+intent steps.",
-  "refined_instruction": "Chat Session Handler:\n\nINPUT:\n- User message (text string from user)\n- Chat history (list of previous message-response pairs)\n\nOUTPUT:\n- Response message (text string to send to user)\n- Updated chat history\n\nPROCESS:\nFor each user message (blocking wait until received):\n  1. Parse the user message to extract the intent\n  2. Check if the user wants to end the session (e.g., says 'goodbye', 'quit', 'exit')\n  3. If session should end:\n     - Generate a farewell response\n     - Stop the loop (do not append to ongoing messages)\n  4. If session should continue:\n     - Generate an appropriate response based on the intent and chat history\n     - Append the message-response pair to chat history\n     - Continue to next iteration\n\nERROR HANDLING:\n- If message cannot be understood, respond with a clarification request\n- The clarification request counts as a valid response (session continues)\n\nTERMINATION:\n- Loop ends when user indicates they want to end the session\n- Session state is preserved in chat history",
-  "structure": {
-    "goal": "Send appropriate response to user and maintain chat session",
-    "inputs": ["user message", "chat history"],
-    "outputs": ["response message", "updated chat history"],
-    "iterations": [
-      {
-        "collection": "ongoing messages (self-seeding)",
-        "per_item": "one response per user message"
-      }
-    ],
-    "conditions": [
-      {
-        "condition": "user wants to end session",
-        "if_true": "generate farewell, stop loop",
-        "if_false": "generate response, continue loop"
-      }
-    ],
-    "steps": [
-      "parse user message",
-      "check if user wants to end",
-      "generate response based on intent",
-      "append to chat history (conditional)",
-      "send response"
-    ]
-  },
-  "patterns_used": ["iteration", "conditional", "linear"]
+  "result": {
+    "refined_instruction": "Chat Session Handler:\n\nINPUT:\n- User message (text string from user)\n- Chat history (list of previous message-response pairs)\n\nOUTPUT:\n- Response message (text string to send to user)\n- Updated chat history\n\nPROCESS:\nFor each user message (blocking wait until received):\n  1. Parse the user message to extract the intent\n  2. Check if the user wants to end the session (e.g., says 'goodbye', 'quit', 'exit')\n  3. If session should end:\n     - Generate a farewell response\n     - Stop the loop (do not append to ongoing messages)\n  4. If session should continue:\n     - Generate an appropriate response based on the intent and chat history\n     - Append the message-response pair to chat history\n     - Continue to next iteration\n\nERROR HANDLING:\n- If message cannot be understood, respond with a clarification request\n- The clarification request counts as a valid response (session continues)\n\nTERMINATION:\n- Loop ends when user indicates they want to end the session\n- Session state is preserved in chat history",
+    "structure": {
+      "goal": "Send appropriate response to user and maintain chat session",
+      "inputs": ["user message", "chat history"],
+      "outputs": ["response message", "updated chat history"],
+      "iterations": [
+        {
+          "collection": "ongoing messages (self-seeding)",
+          "per_item": "one response per user message"
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "user wants to end session",
+          "if_true": "generate farewell, stop loop",
+          "if_false": "generate response, continue loop"
+        }
+      ],
+      "steps": [
+        "parse user message",
+        "check if user wants to end",
+        "generate response based on intent",
+        "append to chat history (conditional)",
+        "send response"
+      ]
+    },
+    "patterns_used": ["iteration", "conditional", "linear"]
+  }
 }
 ```
 

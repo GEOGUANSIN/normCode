@@ -116,31 +116,35 @@ The loop appends to its own iteration base and terminates when append stops.
 ```json
 {
   "thinking": "Your pattern analysis",
-  "patterns": [
-    {
-      "type": "iteration" | "conditional" | "selection" | "grouping" | "linear" | "multi_input",
-      "trigger_phrase": "The phrase indicating this pattern",
-      "elements": {
-        "collection": "for iteration: what is iterated",
-        "current_item": "for iteration: the per-item variable",
-        "condition": "for conditional: what is checked",
-        "true_branch": "for conditional: what happens if true",
-        "false_branch": "for conditional: what happens if not true",
-        "options": "for selection: the choices",
-        "items": "for grouping: what is bundled"
+  "result": {
+    "patterns": [
+      {
+        "type": "iteration | conditional | selection | grouping | linear | multi_input",
+        "trigger_phrase": "The phrase indicating this pattern",
+        "elements": {
+          "collection": "for iteration: what is iterated",
+          "current_item": "for iteration: the per-item variable",
+          "condition": "for conditional: what is checked",
+          "true_branch": "for conditional: what happens if true",
+          "false_branch": "for conditional: what happens if not true",
+          "options": "for selection: the choices",
+          "items": "for grouping: what is bundled"
+        }
       }
+    ],
+    "summary": {
+      "has_iteration": true | false,
+      "has_conditional": true | false,
+      "has_selection": true | false,
+      "has_grouping": true | false,
+      "is_self_seeding": true | false,
+      "pattern_count": 0
     }
-  ],
-  "summary": {
-    "has_iteration": true | false,
-    "has_conditional": true | false,
-    "has_selection": true | false,
-    "has_grouping": true | false,
-    "is_self_seeding": true | false,
-    "pattern_count": 0
   }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -151,54 +155,56 @@ The loop appends to its own iteration base and terminates when append stops.
 ```json
 {
   "thinking": "'For each file' = iteration. 'If valid JSON' = conditional with two branches. 'Bundle results and errors' = grouping.",
-  "patterns": [
-    {
-      "type": "iteration",
-      "trigger_phrase": "For each file",
-      "elements": {
-        "collection": "files",
-        "current_item": "file",
-        "condition": null,
-        "true_branch": null,
-        "false_branch": null,
-        "options": null,
-        "items": null
+  "result": {
+    "patterns": [
+      {
+        "type": "iteration",
+        "trigger_phrase": "For each file",
+        "elements": {
+          "collection": "files",
+          "current_item": "file",
+          "condition": null,
+          "true_branch": null,
+          "false_branch": null,
+          "options": null,
+          "items": null
+        }
+      },
+      {
+        "type": "conditional",
+        "trigger_phrase": "If valid JSON",
+        "elements": {
+          "collection": null,
+          "current_item": null,
+          "condition": "file is valid JSON",
+          "true_branch": "parse and add to results",
+          "false_branch": "log error",
+          "options": null,
+          "items": null
+        }
+      },
+      {
+        "type": "grouping",
+        "trigger_phrase": "Bundle results and errors",
+        "elements": {
+          "collection": null,
+          "current_item": null,
+          "condition": null,
+          "true_branch": null,
+          "false_branch": null,
+          "options": null,
+          "items": ["results", "errors"]
+        }
       }
-    },
-    {
-      "type": "conditional",
-      "trigger_phrase": "If valid JSON",
-      "elements": {
-        "collection": null,
-        "current_item": null,
-        "condition": "file is valid JSON",
-        "true_branch": "parse and add to results",
-        "false_branch": "log error",
-        "options": null,
-        "items": null
-      }
-    },
-    {
-      "type": "grouping",
-      "trigger_phrase": "Bundle results and errors",
-      "elements": {
-        "collection": null,
-        "current_item": null,
-        "condition": null,
-        "true_branch": null,
-        "false_branch": null,
-        "options": null,
-        "items": ["results", "errors"]
-      }
+    ],
+    "summary": {
+      "has_iteration": true,
+      "has_conditional": true,
+      "has_selection": false,
+      "has_grouping": true,
+      "is_self_seeding": false,
+      "pattern_count": 3
     }
-  ],
-  "summary": {
-    "has_iteration": true,
-    "has_conditional": true,
-    "has_selection": false,
-    "has_grouping": true,
-    "is_self_seeding": false,
-    "pattern_count": 3
   }
 }
 ```

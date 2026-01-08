@@ -58,7 +58,7 @@ The extraction data contains:
 ```json
 {
   "thinking": "Your context gathering process",
-  "context": {
+  "result": {
     "operation": "the operation name",
     "inputs": {
       "concepts": ["input concept names"],
@@ -66,7 +66,7 @@ The extraction data contains:
     },
     "output": {
       "concept": "output concept name",
-      "type": "object" | "collection" | "condition"
+      "type": "object | collection | condition"
     },
     "position": {
       "upstream_operations": ["operations before this"],
@@ -84,11 +84,13 @@ The extraction data contains:
       "produces_boolean": true | false,
       "is_aggregation": true | false,
       "is_iteration": true | false,
-      "execution_type": "llm" | "script"
+      "execution_type": "llm | script"
     }
   }
 }
 ```
+
+**Important**: Put the context in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -107,7 +109,7 @@ The extraction data contains:
 ```json
 {
   "thinking": "Looking at dependencies: 'extract sentiment' needs 'review' (1 input) and produces 'sentiment score' (object). It's inside the 'iterate over reviews' loop. Not conditional itself. Downstream: 'check if positive' uses its output. Uses LLM for semantic extraction.",
-  "context": {
+  "result": {
     "operation": "extract sentiment score",
     "inputs": {
       "concepts": ["review"],

@@ -108,9 +108,9 @@ If multiple concepts seem like potential goals, prefer:
 ```json
 {
   "thinking": "Your analysis of the extraction data to find the goal",
-  "goal": {
+  "result": {
     "concept_name": "the goal concept name",
-    "concept_type": "object" | "collection" | "condition",
+    "concept_type": "object | collection | condition",
     "description": "what this goal represents",
     "confidence": 0.0-1.0,
     "alternatives": ["other possible goal concepts, if any"],
@@ -118,6 +118,8 @@ If multiple concepts seem like potential goals, prefer:
   }
 }
 ```
+
+**Important**: Put the goal in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -141,7 +143,7 @@ If multiple concepts seem like potential goals, prefer:
 ```json
 {
   "thinking": "Looking at the concepts: 'reviews' is input (ground), 'review' is loop variable, 'sentiment' and 'all sentiments' are intermediates. Only 'summary report' is marked as output. Checking dependencies: nothing consumes 'summary report' - it's the sink. Instruction was 'generate summary from reviews' - matches 'summary report'. Confidence high.",
-  "goal": {
+  "result": {
     "concept_name": "summary report",
     "concept_type": "object",
     "description": "A synthesized report summarizing all sentiment findings from the reviews",

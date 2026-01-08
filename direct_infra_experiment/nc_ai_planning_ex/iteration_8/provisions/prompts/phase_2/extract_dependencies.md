@@ -58,28 +58,32 @@ This recursion builds the dependency graph:
 ```json
 {
   "thinking": "Your dependency analysis",
-  "dependencies": [
-    {
-      "from": "source concept or operation",
-      "to": "target concept or operation",
-      "type": "produces" | "needs" | "sequence" | "aggregates" | "conditions",
-      "description": "Why this dependency exists"
+  "result": {
+    "dependencies": [
+      {
+        "from": "source concept or operation",
+        "to": "target concept or operation",
+        "type": "produces | needs | sequence | aggregates | conditions",
+        "description": "Why this dependency exists"
+      }
+    ],
+    "data_flow": [
+      {
+        "operation": "operation name",
+        "inputs": ["input concept names"],
+        "output": "output concept name"
+      }
+    ],
+    "summary": {
+      "root_output": "final output concept",
+      "ground_inputs": ["concepts with no producer"],
+      "execution_order": ["operation1", "operation2", "..."]
     }
-  ],
-  "data_flow": [
-    {
-      "operation": "operation name",
-      "inputs": ["input concept names"],
-      "output": "output concept name"
-    }
-  ],
-  "summary": {
-    "root_output": "final output concept",
-    "ground_inputs": ["concepts with no producer"],
-    "execution_order": ["operation1", "operation2", "..."]
   }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -94,29 +98,31 @@ This recursion builds the dependency graph:
 ```json
 {
   "thinking": "Report needs positive reviews. Positive reviews built by conditional append. Append needs review and condition. Condition needs sentiment. Sentiment needs review. Review comes from iteration over reviews.",
-  "dependencies": [
-    {"from": "generate report", "to": "summary report", "type": "produces", "description": "Report operation produces output"},
-    {"from": "positive reviews", "to": "generate report", "type": "needs", "description": "Report needs collected reviews"},
-    {"from": "add to list", "to": "positive reviews", "type": "aggregates", "description": "Collection built by appends"},
-    {"from": "is positive", "to": "add to list", "type": "conditions", "description": "Append only if positive"},
-    {"from": "check if positive", "to": "is positive", "type": "produces", "description": "Check produces condition"},
-    {"from": "sentiment score", "to": "check if positive", "type": "needs", "description": "Check needs score"},
-    {"from": "extract sentiment", "to": "sentiment score", "type": "produces", "description": "Extraction produces score"},
-    {"from": "customer review", "to": "extract sentiment", "type": "needs", "description": "Extract from current review"},
-    {"from": "iterate", "to": "customer review", "type": "produces", "description": "Iteration provides current item"},
-    {"from": "customer reviews", "to": "iterate", "type": "needs", "description": "Iterate over collection"}
-  ],
-  "data_flow": [
-    {"operation": "iterate", "inputs": ["customer reviews"], "output": "customer review"},
-    {"operation": "extract sentiment", "inputs": ["customer review"], "output": "sentiment score"},
-    {"operation": "check if positive", "inputs": ["sentiment score"], "output": "is positive"},
-    {"operation": "add to list", "inputs": ["customer review", "is positive"], "output": "positive reviews"},
-    {"operation": "generate report", "inputs": ["positive reviews"], "output": "summary report"}
-  ],
-  "summary": {
-    "root_output": "summary report",
-    "ground_inputs": ["customer reviews"],
-    "execution_order": ["iterate", "extract sentiment", "check if positive", "add to list", "generate report"]
+  "result": {
+    "dependencies": [
+      {"from": "generate report", "to": "summary report", "type": "produces", "description": "Report operation produces output"},
+      {"from": "positive reviews", "to": "generate report", "type": "needs", "description": "Report needs collected reviews"},
+      {"from": "add to list", "to": "positive reviews", "type": "aggregates", "description": "Collection built by appends"},
+      {"from": "is positive", "to": "add to list", "type": "conditions", "description": "Append only if positive"},
+      {"from": "check if positive", "to": "is positive", "type": "produces", "description": "Check produces condition"},
+      {"from": "sentiment score", "to": "check if positive", "type": "needs", "description": "Check needs score"},
+      {"from": "extract sentiment", "to": "sentiment score", "type": "produces", "description": "Extraction produces score"},
+      {"from": "customer review", "to": "extract sentiment", "type": "needs", "description": "Extract from current review"},
+      {"from": "iterate", "to": "customer review", "type": "produces", "description": "Iteration provides current item"},
+      {"from": "customer reviews", "to": "iterate", "type": "needs", "description": "Iterate over collection"}
+    ],
+    "data_flow": [
+      {"operation": "iterate", "inputs": ["customer reviews"], "output": "customer review"},
+      {"operation": "extract sentiment", "inputs": ["customer review"], "output": "sentiment score"},
+      {"operation": "check if positive", "inputs": ["sentiment score"], "output": "is positive"},
+      {"operation": "add to list", "inputs": ["customer review", "is positive"], "output": "positive reviews"},
+      {"operation": "generate report", "inputs": ["positive reviews"], "output": "summary report"}
+    ],
+    "summary": {
+      "root_output": "summary report",
+      "ground_inputs": ["customer reviews"],
+      "execution_order": ["iterate", "extract sentiment", "check if positive", "add to list", "generate report"]
+    }
   }
 }
 ```
