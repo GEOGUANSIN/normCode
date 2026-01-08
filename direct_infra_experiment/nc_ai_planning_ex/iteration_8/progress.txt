@@ -1,1 +1,1 @@
-{'status': 'success', 'location': 'C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_8\\1_refined_instruction.txt'}
+{'status': 'success', 'location': 'C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_8\\2_extraction.json'}

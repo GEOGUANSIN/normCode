@@ -85,6 +85,12 @@ class ExecutionStatus(str, Enum):
     FAILED = "failed"
 
 
+class RunMode(str, Enum):
+    """Execution run mode - controls how many inferences execute per cycle."""
+    SLOW = "slow"      # One inference at a time (default) - easier to follow
+    FAST = "fast"      # All ready inferences per cycle - faster execution
+
+
 class NodeStatus(str, Enum):
     """Individual node execution status."""
     PENDING = "pending"
@@ -127,6 +133,7 @@ class ExecutionState(BaseModel):
     cycle_count: int = 0
     node_statuses: Dict[str, NodeStatus] = {}
     breakpoints: List[str] = []
+    run_mode: str = "slow"  # "slow" or "fast"
 
 
 class LogEntry(BaseModel):

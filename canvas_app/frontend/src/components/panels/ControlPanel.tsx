@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug, Database } from 'lucide-react';
+import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug, Database, Rabbit, Turtle } from 'lucide-react';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi } from '../../services/api';
 import { STEP_FULL_NAMES } from '../../types/execution';
@@ -26,8 +26,11 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const setVerboseLogging = useExecutionStore((s) => s.setVerboseLogging);
   const stepProgress = useExecutionStore((s) => s.stepProgress);
   const runId = useExecutionStore((s) => s.runId);
+  const runMode = useExecutionStore((s) => s.runMode);
+  const setRunMode = useExecutionStore((s) => s.setRunMode);
   
   const [isTogglingVerbose, setIsTogglingVerbose] = useState(false);
+  const [isTogglingRunMode, setIsTogglingRunMode] = useState(false);
   
   // Get current step progress for the running inference
   const currentStepProgress = currentInference ? stepProgress[currentInference] : null;
@@ -105,6 +108,19 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
       console.error('Failed to toggle verbose logging:', e);
     } finally {
       setIsTogglingVerbose(false);
+    }
+  };
+
+  const handleToggleRunMode = async () => {
+    setIsTogglingRunMode(true);
+    try {
+      const newMode = runMode === 'slow' ? 'fast' : 'slow';
+      await executionApi.setRunMode(newMode);
+      setRunMode(newMode);
+    } catch (e) {
+      console.error('Failed to toggle run mode:', e);
+    } finally {
+      setIsTogglingRunMode(false);
     }
   };
 
@@ -267,6 +283,27 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
           <Circle size={12} className="text-red-500 fill-red-500" />
           <span>{breakpointsCount} BP</span>
         </div>
+
+        {/* Run mode toggle (Slow/Fast) */}
+        <button
+          onClick={handleToggleRunMode}
+          disabled={isTogglingRunMode || isRunning}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+            runMode === 'fast'
+              ? 'bg-amber-100 text-amber-700 border border-amber-200'
+              : 'bg-teal-100 text-teal-700 border border-teal-200'
+          } disabled:opacity-50`}
+          title={runMode === 'slow' 
+            ? 'Slow mode: One inference at a time (easier to follow)' 
+            : 'Fast mode: All ready inferences per cycle (faster execution)'}
+        >
+          {runMode === 'slow' ? (
+            <Turtle size={12} className="text-teal-500" />
+          ) : (
+            <Rabbit size={12} className="text-amber-500" />
+          )}
+          <span>{runMode === 'slow' ? 'Slow' : 'Fast'}</span>
+        </button>
 
         {/* Verbose logging toggle */}
         <button

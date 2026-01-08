@@ -370,7 +370,23 @@ def build_concept_repo(nci_data: list) -> list:
 
 
 def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
-    """Build working_interpretation based on sequence type"""
+    """Build working_interpretation based on sequence type
+    
+    WARNING: When a value concept receives bundled data (e.g., from a grouping operation),
+    you may need to manually add 'value_selectors' with 'packed: true' to prevent the MVP
+    step from unpacking the list/dict into multiple separate inputs.
+    
+    Example:
+        "value_selectors": {
+            "{bundled value}": { "packed": true }
+        }
+    
+    This is hard to detect automatically because it depends on runtime data flow.
+    Look for:
+    - Values produced by grouping operations (inference_sequence: "grouping")
+    - Values that pass through assigning from grouping outputs
+    - Any structured data (dicts/lists) that should stay as a single input
+    """
     func_concept = inference.get("function_concept", {})
     cti = inference.get("concept_to_infer", {})
     value_concepts = inference.get("value_concepts", [])
@@ -596,6 +612,115 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
     return wi
 
 
+def infer_sequence_type_from_nc_main(nc_main: str, concept_data: dict) -> str | None:
+    """Infer sequence type from nc_main pattern - extracted for reuse"""
+    # Judgement: ::<{...}><...>
+    if "::<{" in nc_main and "}>" in nc_main:
+        return "judgement"
+    # Grouping: &[{}] or &[#]
+    if "&[{}]" in nc_main or "&[#]" in nc_main:
+        return "grouping"
+    # Looping: *. %>
+    if "*." in nc_main and "%>" in nc_main:
+        return "looping"
+    # Assigning: $. %> or $= %> etc (with or without <= prefix)
+    if re.match(r"(<=\s*)?\$[.=%+-]", nc_main):
+        return "assigning"
+    # Timing: @:' or @:! or @.
+    if "@:'" in nc_main or "@:!" in nc_main or "@." in nc_main:
+        return "timing"
+    # Try to infer from operator_type
+    if concept_data.get("operator_type"):
+        op_type = concept_data["operator_type"]
+        if "timing" in op_type:
+            return "timing"
+        if op_type in ["specification", "identity", "abstraction", "continuation", "derelation"]:
+            return "assigning"
+    # Imperative: ::(...) without judgement markers
+    if "::" in nc_main and "::<{" not in nc_main:
+        return "imperative"
+    if concept_data.get("concept_type") == "imperative":
+        return "imperative"
+    return None
+
+
+def build_nested_operator_inference(oc: dict) -> dict | None:
+    """Build an inference entry from a nested operator in other_concepts.
+    
+    This handles cases like:
+        1.16.3.4.1.3: <= $. %>({classification})
+    which are assigning operators nested inside loop bodies but placed in other_concepts.
+    """
+    nc_main = oc.get("nc_main", "")
+    flow_index = oc.get("flow_index", "")
+    
+    # Infer sequence type
+    sequence_type = infer_sequence_type_from_nc_main(nc_main, oc)
+    if not sequence_type:
+        return None
+    
+    # Strip <= marker for function_concept
+    func_concept_name = re.sub(r"^<=\s*", "", nc_main)
+    
+    # Derive concept_to_infer based on sequence type
+    concept_to_infer = None
+    if sequence_type == "assigning":
+        # For $. %>({x}), extract the source concept
+        source_match = re.search(r"%>\(\{([^}]+)\}\)", nc_main)
+        source_match_list = re.search(r"%>\(\[([^\]]+)\]\)", nc_main)
+        if source_match:
+            concept_to_infer = f"{{{source_match.group(1)}}}"
+        elif source_match_list:
+            concept_to_infer = f"[{source_match_list.group(1)}]"
+        else:
+            concept_to_infer = f"{{assigning_{flow_index.replace('.', '_')}}}"
+    elif sequence_type == "timing":
+        concept_to_infer = func_concept_name
+    else:
+        concept_to_infer = func_concept_name
+    
+    # Build working_interpretation for assigning
+    wi = {
+        "workspace": {},
+        "flow_info": {"flow_index": flow_index}
+    }
+    
+    if sequence_type == "assigning":
+        operator_type = oc.get("operator_type", "specification")
+        marker = extract_operator_marker(operator_type)
+        
+        # Extract assign_source from %>(...)
+        assign_source = None
+        source_match = re.search(r"%>\(\{([^}]+)\}\)", nc_main)
+        if source_match:
+            assign_source = f"{{{source_match.group(1)}}}"
+        
+        wi["syntax"] = {
+            "marker": marker,
+            "assign_source": assign_source,
+        }
+    
+    # Map sequence to inference_sequence
+    sequence_mapping = {
+        "imperative": "imperative_in_composition",
+        "judgement": "judgement_in_composition",
+        "assigning": "assigning",
+        "grouping": "grouping",
+        "timing": "timing",
+        "looping": "looping",
+    }
+    
+    return {
+        "flow_info": {"flow_index": flow_index},
+        "inference_sequence": sequence_mapping.get(sequence_type, sequence_type),
+        "concept_to_infer": concept_to_infer,
+        "function_concept": func_concept_name,
+        "value_concepts": [],  # Nested operators typically don't have explicit value bindings
+        "context_concepts": [],
+        "working_interpretation": wi,
+    }
+
+
 def build_inference_repo(nci_data: list) -> list:
     """Build inference repository from NCI data"""
     inference_repo = []
@@ -736,6 +861,14 @@ def build_inference_repo(nci_data: list) -> list:
         }
         
         inference_repo.append(inference_entry)
+        
+        # PATCH: Process nested operators in other_concepts as separate inferences
+        # These are function concepts (like $. %>({x})) nested inside loops/timing gates
+        for oc in other_concepts:
+            if oc.get("inference_marker") == "<=":  # Operator marker
+                nested_inf = build_nested_operator_inference(oc)
+                if nested_inf:
+                    inference_repo.append(nested_inf)
     
     # Sort by flow_index
     def flow_index_sort_key(item):
@@ -811,6 +944,22 @@ def main():
     print(f"\nInference sequences:")
     for seq, count in sorted(seq_counts.items()):
         print(f"  - {seq}: {count}")
+    
+    # Warning about packed values
+    grouping_infs = [inf for inf in inference_repo if inf["inference_sequence"] == "grouping"]
+    if grouping_infs:
+        print("\n" + "="*60)
+        print("[!] WARNING: Bundled values detected (grouping operations)")
+        print("="*60)
+        print("The following grouping operations produce bundled data:")
+        for g in grouping_infs:
+            flow_idx = g["flow_info"]["flow_index"]
+            cti = g["concept_to_infer"]
+            print(f"  - {flow_idx}: {cti}")
+        print("\nIf these values are used as inputs to other inferences,")
+        print("you may need to add 'value_selectors' with 'packed: true'")
+        print("to prevent the MVP from unpacking them into multiple inputs.")
+        print("="*60)
 
 
 if __name__ == "__main__":

@@ -490,6 +490,9 @@
       "value_order": {
         "{extraction file path}": 1,
         "{extraction to be written}": 2
+      },
+      "value_selector":{
+        "packed": true
       }
     }
   },
@@ -1011,11 +1014,32 @@
     "flow_info": {
       "flow_index": "1.16.3.4.1"
     },
-    "inference_sequence": "timing",
+    "inference_sequence": "assigning",
     "concept_to_infer": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "function_concept": "$. %>({classification})",
+    "value_concepts": [
+      "{classification}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.1"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{classification}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.1.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": "$. %>({classification})",
     "function_concept": "@:!(<phase 3 already complete>)",
     "value_concepts": [
-      "{classification}",
       "<phase 3 already complete>"
     ],
     "context_concepts": [
@@ -1024,7 +1048,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1"
+        "flow_index": "1.16.3.4.1.1"
       },
       "syntax": {
         "marker": "if!",
@@ -1035,7 +1059,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.16.3.4.1.4"
+      "flow_index": "1.16.3.4.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classification}",
@@ -1048,7 +1072,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1.4"
+        "flow_index": "1.16.3.4.1.2"
       },
       "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -1060,7 +1084,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.16.3.4.1.4.3"
+      "flow_index": "1.16.3.4.1.2.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{operation context}",
@@ -1073,7 +1097,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1.4.3"
+        "flow_index": "1.16.3.4.1.2.3"
       },
       "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",

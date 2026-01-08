@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Set, List
 from dataclasses import dataclass, field
 
-from schemas.execution_schemas import ExecutionStatus, NodeStatus
+from schemas.execution_schemas import ExecutionStatus, NodeStatus, RunMode
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,9 @@ class ExecutionController:
     current_inference: Optional[str] = None
     node_statuses: Dict[str, NodeStatus] = field(default_factory=dict)
     logs: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # Run mode: SLOW (one inference at a time) or FAST (all ready per cycle)
+    run_mode: RunMode = RunMode.SLOW
     
     # Execution tracking
     completed_count: int = 0
@@ -297,6 +300,7 @@ class ExecutionController:
             "cycle_count": self.cycle_count,
             "node_statuses": {k: v.value for k, v in self.node_statuses.items()},
             "breakpoints": list(self.breakpoints),
+            "run_mode": self.run_mode.value,
         }
     
     def _sync_status_to_registry(self):
@@ -692,6 +696,21 @@ class ExecutionController:
         self._add_log("info", flow_index, f"Breakpoint cleared")
     
     # =========================================================================
+    # Run Mode
+    # =========================================================================
+    
+    def set_run_mode(self, mode: RunMode):
+        """Set the execution run mode.
+        
+        Args:
+            mode: RunMode.SLOW (one inference at a time) or RunMode.FAST (all ready per cycle)
+        """
+        old_mode = self.run_mode
+        self.run_mode = mode
+        self._add_log("info", "", f"Run mode changed: {old_mode.value} → {mode.value}")
+        asyncio.create_task(self._emit("execution:run_mode_changed", {"mode": mode.value}))
+    
+    # =========================================================================
     # Execution Loop
     # =========================================================================
     
@@ -887,10 +906,16 @@ class ExecutionController:
                 self._add_log("error", flow_index, f"Failed: {str(e)}")
                 logger.exception(f"Inference {flow_index} failed")
             
+            # STEPPING mode: pause after one inference
             if self.status == ExecutionStatus.STEPPING:
                 self.status = ExecutionStatus.PAUSED
                 self._pause_event.clear()
                 await self._emit("execution:paused", {"inference": flow_index})
+                break
+            
+            # SLOW run mode: execute one inference per cycle, then move to next cycle
+            # This allows the UI to update between inferences while still running continuously
+            if self.run_mode == RunMode.SLOW:
                 break
         
         self._retries = next_retries

@@ -3,7 +3,7 @@
  */
 
 import { create } from 'zustand';
-import type { ExecutionStatus, NodeStatus, StepProgress } from '../types/execution';
+import type { ExecutionStatus, NodeStatus, StepProgress, RunMode } from '../types/execution';
 
 interface LogEntry {
   flowIndex: string;
@@ -55,6 +55,9 @@ interface ExecutionState {
   
   // Verbose logging mode
   verboseLogging: boolean;
+  
+  // Run mode: 'slow' (one at a time) or 'fast' (all ready per cycle)
+  runMode: RunMode;
 
   // User input requests (human-in-the-loop)
   userInputRequests: UserInputRequest[];
@@ -76,6 +79,7 @@ interface ExecutionState {
   updateStepProgress: (flowIndex: string, update: Partial<StepProgress>) => void;
   clearStepProgress: (flowIndex?: string) => void;
   setVerboseLogging: (enabled: boolean) => void;
+  setRunMode: (mode: RunMode) => void;
   // User input actions
   addUserInputRequest: (request: UserInputRequest) => void;
   removeUserInputRequest: (requestId: string) => void;
@@ -98,6 +102,7 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   runId: null,
   stepProgress: {},
   verboseLogging: false,
+  runMode: 'slow',
   userInputRequests: [],
 
   setStatus: (status) => set({ status }),
@@ -195,6 +200,8 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     }),
 
   setVerboseLogging: (enabled) => set({ verboseLogging: enabled }),
+  
+  setRunMode: (mode) => set({ runMode: mode }),
 
   // User input actions
   addUserInputRequest: (request) =>
@@ -222,5 +229,6 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
       runId: null,
       stepProgress: {},
       userInputRequests: [],
+      // Note: runMode is intentionally NOT reset - preserve user preference
     }),
 }));

@@ -656,13 +656,12 @@
                 <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)
                     /: ITERATION: For each operation, produce a classification
                     /: %<() = output type, %:() = element name, %@() = axis index
-                    <= @:!(<phase 3 already complete>)
-                        /: TIMING GATE: Only execute if phase NOT complete
-                    <* <phase 3 already complete>
-
 
                     <= $. %>({classification})
                         /: LOOP BODY: Return the classification for this operation
+                        <= @:!(<phase 3 already complete>)
+                            /: TIMING GATE: Only execute if phase NOT complete
+                        <* <phase 3 already complete>
 
                     <- {classification}
                         | %{ref_axes}: [_none_axis]

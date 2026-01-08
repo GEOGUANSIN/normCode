@@ -3,7 +3,7 @@
   "name": "Derivation",
   "description": null,
   "created_at": "2025-12-29T17:40:04.790341",
-  "updated_at": "2026-01-07T15:12:02.979482",
+  "updated_at": "2026-01-07T17:57:35.678349",
   "repositories": {
     "concepts": "repos\\concept_repo.json",
     "inferences": "repos\\inference_repo.json",
@@ -11,15 +11,14 @@
   },
   "execution": {
     "llm_model": "qwen-plus",
-    "max_cycles": 50,
+    "max_cycles": 200,
     "db_path": "orchestration.db",
     "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_8\\repos",
     "paradigm_dir": "provisions\\paradigms",
     "agent_config": null
   },
   "breakpoints": [
-    "1.12.3.4",
-    "1.12"
+    "1.15"
   ],
   "ui_preferences": {}
 }

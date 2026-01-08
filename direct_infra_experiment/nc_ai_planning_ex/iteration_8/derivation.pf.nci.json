@@ -5851,23 +5851,23 @@
       "flow_index": "1.16.3.4.1.1",
       "type": "main",
       "depth": 5,
-      "nc_main": "<= @:!(<phase 3 already complete>)",
+      "nc_main": "<= $. %>({classification})",
       "inference_marker": "<=",
       "concept_type": "operator",
-      "operator_type": "timing_conditional",
+      "operator_type": "specification",
       "concept_name": null,
       "attached_comments": [
         {
           "flow_index": "1.16.3.4.1.1",
           "type": "comment",
           "depth": 6,
-          "nc_comment": "/: TIMING GATE: Only execute if phase NOT complete"
+          "nc_comment": "/: LOOP BODY: Return the classification for this operation"
         }
       ]
     },
     "value_concepts": [
       {
-        "flow_index": "1.16.3.4.1.4",
+        "flow_index": "1.16.3.4.1.2",
         "type": "main",
         "depth": 5,
         "nc_main": "<- {classification}",
@@ -5877,19 +5877,19 @@
         "concept_name": "classification",
         "attached_comments": [
           {
-            "flow_index": "1.16.3.4.1.4",
+            "flow_index": "1.16.3.4.1.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.16.3.4.1.4",
+            "flow_index": "1.16.3.4.1.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.16.3.4.1.4",
+            "flow_index": "1.16.3.4.1.2",
             "type": "comment",
             "depth": 6,
             "nc_comment": "| %{ref_element}: dict(pattern: str, context: str)"
@@ -5897,41 +5897,63 @@
         ]
       }
     ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.16.3.4.1.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= $. %>({classification})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.16.3.4.1.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: LOOP BODY: Return the classification for this operation"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.16.3.4.1.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:!(<phase 3 already complete>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.16.3.4.1.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if phase NOT complete"
+        }
+      ]
+    },
+    "value_concepts": [],
     "other_concepts": [
       {
-        "flow_index": "1.16.3.4.1.2",
+        "flow_index": "1.16.3.4.1.1.2",
         "type": "main",
-        "depth": 5,
+        "depth": 6,
         "nc_main": "<* <phase 3 already complete>",
         "inference_marker": "<*",
         "concept_type": "proposition",
         "operator_type": null,
         "concept_name": "phase 3 already complete",
         "attached_comments": []
-      },
-      {
-        "flow_index": "1.16.3.4.1.3",
-        "type": "main",
-        "depth": 5,
-        "nc_main": "<= $. %>({classification})",
-        "inference_marker": "<=",
-        "concept_type": "operator",
-        "operator_type": "specification",
-        "concept_name": null,
-        "attached_comments": [
-          {
-            "flow_index": "1.16.3.4.1.3",
-            "type": "comment",
-            "depth": 6,
-            "nc_comment": "/: LOOP BODY: Return the classification for this operation"
-          }
-        ]
       }
     ]
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.16.3.4.1.4",
+      "flow_index": "1.16.3.4.1.2",
       "type": "main",
       "depth": 5,
       "nc_main": "<- {classification}",
@@ -5941,19 +5963,19 @@
       "concept_name": "classification",
       "attached_comments": [
         {
-          "flow_index": "1.16.3.4.1.4",
+          "flow_index": "1.16.3.4.1.2",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.16.3.4.1.4",
+          "flow_index": "1.16.3.4.1.2",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.16.3.4.1.4",
+          "flow_index": "1.16.3.4.1.2",
           "type": "comment",
           "depth": 6,
           "nc_comment": "| %{ref_element}: dict(pattern: str, context: str)"
@@ -5961,7 +5983,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.16.3.4.1.4.1",
+      "flow_index": "1.16.3.4.1.2.1",
       "type": "main",
       "depth": 6,
       "nc_main": "<= ::(determine pattern type for operation)",
@@ -5971,109 +5993,109 @@
       "concept_name": "determine pattern type for operation",
       "attached_comments": [
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{v_input_norm}: prompt_location"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/classify_operation.md"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{h_input_norm}: Literal"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/: LLM CLASSIFICATION: What pattern does this operation match?"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/: %{cue_files}: ["
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   \"documentation/current/4_compilation/examples/ncds/derivation_v2.md#the-five-core-patterns\","
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   \"documentation/current/4_compilation/examples/ncds/README.md#pattern-reference\","
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   \"documentation/current/4_compilation/derivation.md#derivation-takeaways-lessons-from-examples\""
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/: ]"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/: CONTEXT NEEDED: The 5 core patterns"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   1. Linear chain: \"Transform A into B\" → single input, single output"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   2. Multiple inputs: \"Combine A and B\" → sibling inputs"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   3. Iteration: \"For each X, do Y\" → loop with <* marker"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   4. Conditional: \"If X then Y\" → timing gate with <* condition"
         },
         {
-          "flow_index": "1.16.3.4.1.4.1",
+          "flow_index": "1.16.3.4.1.2.1",
           "type": "comment",
           "depth": 7,
           "nc_comment": "/:   5. Grouping: \"Bundle A, B, C\" → collect into structured output"
@@ -6082,7 +6104,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.16.3.4.1.4.2",
+        "flow_index": "1.16.3.4.1.2.2",
         "type": "main",
         "depth": 6,
         "nc_main": "<- {current operation}<:{1}>",
@@ -6092,13 +6114,13 @@
         "concept_name": "current operation",
         "attached_comments": [
           {
-            "flow_index": "1.16.3.4.1.4.2",
+            "flow_index": "1.16.3.4.1.2.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.16.3.4.1.4.2",
+            "flow_index": "1.16.3.4.1.2.2",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: str"
@@ -6106,7 +6128,7 @@
         ]
       },
       {
-        "flow_index": "1.16.3.4.1.4.3",
+        "flow_index": "1.16.3.4.1.2.3",
         "type": "main",
         "depth": 6,
         "nc_main": "<- {operation context}<:{2}>",
@@ -6116,19 +6138,19 @@
         "concept_name": "operation context",
         "attached_comments": [
           {
-            "flow_index": "1.16.3.4.1.4.3",
+            "flow_index": "1.16.3.4.1.2.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.16.3.4.1.4.3",
+            "flow_index": "1.16.3.4.1.2.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_shape}: (1,)"
           },
           {
-            "flow_index": "1.16.3.4.1.4.3",
+            "flow_index": "1.16.3.4.1.2.3",
             "type": "comment",
             "depth": 7,
             "nc_comment": "| %{ref_element}: dict"
@@ -6140,7 +6162,7 @@
   },
   {
     "concept_to_infer": {
-      "flow_index": "1.16.3.4.1.4.3",
+      "flow_index": "1.16.3.4.1.2.3",
       "type": "main",
       "depth": 6,
       "nc_main": "<- {operation context}<:{2}>",
@@ -6150,19 +6172,19 @@
       "concept_name": "operation context",
       "attached_comments": [
         {
-          "flow_index": "1.16.3.4.1.4.3",
+          "flow_index": "1.16.3.4.1.2.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_axes}: [_none_axis]"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3",
+          "flow_index": "1.16.3.4.1.2.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_shape}: (1,)"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3",
+          "flow_index": "1.16.3.4.1.2.3",
           "type": "comment",
           "depth": 7,
           "nc_comment": "| %{ref_element}: dict"
@@ -6170,7 +6192,7 @@
       ]
     },
     "function_concept": {
-      "flow_index": "1.16.3.4.1.4.3.1",
+      "flow_index": "1.16.3.4.1.2.3.1",
       "type": "main",
       "depth": 7,
       "nc_main": "<= ::(gather context from extraction data)",
@@ -6180,43 +6202,43 @@
       "concept_name": "gather context from extraction data",
       "attached_comments": [
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{v_input_norm}: prompt_location"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{v_input_provision}: provisions/prompts/phase_3/gather_operation_context.md"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{h_input_norm}: Literal"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "| %{body_faculty}: llm"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "/: PREPARATION: Pull relevant context for this operation"
         },
         {
-          "flow_index": "1.16.3.4.1.4.3.1",
+          "flow_index": "1.16.3.4.1.2.3.1",
           "type": "comment",
           "depth": 8,
           "nc_comment": "/: Context = which concepts it touches, what dependencies involve it"
@@ -6225,7 +6247,7 @@
     },
     "value_concepts": [
       {
-        "flow_index": "1.16.3.4.1.4.3.2",
+        "flow_index": "1.16.3.4.1.2.3.2",
         "type": "main",
         "depth": 7,
         "nc_main": "<- {current operation}<:{1}>",
@@ -6235,13 +6257,13 @@
         "concept_name": "current operation",
         "attached_comments": [
           {
-            "flow_index": "1.16.3.4.1.4.3.2",
+            "flow_index": "1.16.3.4.1.2.3.2",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.16.3.4.1.4.3.2",
+            "flow_index": "1.16.3.4.1.2.3.2",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_element}: str"
@@ -6249,7 +6271,7 @@
         ]
       },
       {
-        "flow_index": "1.16.3.4.1.4.3.3",
+        "flow_index": "1.16.3.4.1.2.3.3",
         "type": "main",
         "depth": 7,
         "nc_main": "<- {extraction data}<:{2}>",
@@ -6259,13 +6281,13 @@
         "concept_name": "extraction data",
         "attached_comments": [
           {
-            "flow_index": "1.16.3.4.1.4.3.3",
+            "flow_index": "1.16.3.4.1.2.3.3",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_axes}: [_none_axis]"
           },
           {
-            "flow_index": "1.16.3.4.1.4.3.3",
+            "flow_index": "1.16.3.4.1.2.3.3",
             "type": "comment",
             "depth": 8,
             "nc_comment": "| %{ref_element}: dict"
