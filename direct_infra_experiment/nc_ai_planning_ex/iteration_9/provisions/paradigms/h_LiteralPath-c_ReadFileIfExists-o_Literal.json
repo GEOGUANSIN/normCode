@@ -1,0 +1,140 @@
+{
+  "metadata": {
+    "description": "Read file content if the file exists, otherwise create the file with empty content and return empty string",
+    "inputs": {
+      "vertical": {},
+      "horizontal": {
+        "file_path": "Path to the file to read (literal path, paradigm reads internally)"
+      }
+    },
+    "outputs": {
+      "type": "Literal",
+      "description": "The file content if exists, empty string if newly created"
+    }
+  },
+  "env_spec": {
+    "tools": [
+      {
+        "tool_name": "file_system",
+        "affordances": [
+          {
+            "affordance_name": "exists",
+            "call_code": "result = tool.exists"
+          },
+          {
+            "affordance_name": "read",
+            "call_code": "result = tool.read"
+          },
+          {
+            "affordance_name": "save",
+            "call_code": "result = tool.save"
+          }
+        ]
+      },
+      {
+        "tool_name": "formatter_tool",
+        "affordances": [
+          {
+            "affordance_name": "get",
+            "call_code": "result = tool.get"
+          },
+          {
+            "affordance_name": "wrap",
+            "call_code": "result = tool.wrap"
+          }
+        ]
+      },
+      {
+        "tool_name": "composition_tool",
+        "affordances": [
+          {
+            "affordance_name": "compose",
+            "call_code": "result = tool.compose(plan=params['plan'], return_key=params.get('return_key'))"
+          }
+        ]
+      }
+    ]
+  },
+  "sequence_spec": {
+    "steps": [
+      {
+        "step_index": 1,
+        "affordance": "formatter_tool.get",
+        "params": {},
+        "result_key": "get_fn"
+      },
+      {
+        "step_index": 2,
+        "affordance": "file_system.exists",
+        "params": {},
+        "result_key": "exists_fn"
+      },
+      {
+        "step_index": 3,
+        "affordance": "file_system.read",
+        "params": {},
+        "result_key": "read_fn"
+      },
+      {
+        "step_index": 4,
+        "affordance": "file_system.save",
+        "params": {},
+        "result_key": "save_fn"
+      },
+      {
+        "step_index": 5,
+        "affordance": "formatter_tool.wrap",
+        "params": {},
+        "result_key": "wrap_fn"
+      },
+      {
+        "step_index": 6,
+        "affordance": "composition_tool.compose",
+        "params": {
+          "plan": [
+            {
+              "output_key": "file_path",
+              "function": {"__type__": "MetaValue", "key": "get_fn"},
+              "params": {"dictionary": "__initial_input__"},
+              "literal_params": {"key": "input_1"}
+            },
+            {
+              "output_key": "file_exists",
+              "function": {"__type__": "MetaValue", "key": "exists_fn"},
+              "params": {"__positional__": "file_path"}
+            },
+            {
+              "output_key": "create_result",
+              "function": {"__type__": "MetaValue", "key": "save_fn"},
+              "params": {"location": "file_path"},
+              "literal_params": {"content": ""},
+              "condition": {
+                "key": "file_exists",
+                "operator": "is_false"
+              }
+            },
+            {
+              "output_key": "read_result",
+              "function": {"__type__": "MetaValue", "key": "read_fn"},
+              "params": {"__positional__": "file_path"}
+            },
+            {
+              "output_key": "file_content",
+              "function": {"__type__": "MetaValue", "key": "get_fn"},
+              "params": {"dictionary": "read_result"},
+              "literal_params": {"key": "content", "default": ""}
+            },
+            {
+              "output_key": "final_result",
+              "function": {"__type__": "MetaValue", "key": "wrap_fn"},
+              "params": {"__positional__": "file_content"},
+              "literal_params": {"type": "literal"}
+            }
+          ],
+          "return_key": "final_result"
+        },
+        "result_key": "instruction_fn"
+      }
+    ]
+  }
+}

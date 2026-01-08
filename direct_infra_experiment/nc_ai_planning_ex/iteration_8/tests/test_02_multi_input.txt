@@ -1,0 +1,11 @@
+Generate a report by combining sales data and customer feedback.
+
+Steps:
+- Load sales data from the sales file
+- Load customer feedback from the feedback file
+- Merge the sales data with customer feedback
+- Generate a comprehensive report from the merged data
+
+Input: sales data file, customer feedback file
+Output: comprehensive report
+

@@ -1,0 +1,10 @@
+Process a batch of images to extract text from each one.
+
+For each image in the input folder:
+- Load the image
+- Apply OCR to extract text
+- Save the extracted text to a corresponding output file
+
+Input: folder containing image files
+Output: folder with extracted text files (one per image)
+
