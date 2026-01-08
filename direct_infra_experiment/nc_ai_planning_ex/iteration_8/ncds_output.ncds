@@ -1,9 +1,9 @@
-/: Number Addition
-/: Accepts two numbers and returns their sum
+/: Simple Addition Calculation
+/: Adds two input numbers and returns the result
 
 <- {result}
     <= return the result
     <- {sum}
         <= add numbers together
         <- {two numbers}
-            /: Ground: two input numbers to be added
+            /: Ground: accept two input numbers
