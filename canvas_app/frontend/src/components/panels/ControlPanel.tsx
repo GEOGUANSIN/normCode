@@ -3,7 +3,8 @@
  */
 
 import { useState } from 'react';
-import { Play, Pause, Square, SkipForward, RotateCcw, Circle, RefreshCw, Bug, Database, Rabbit, Turtle } from 'lucide-react';
+import { Play, Pause, Square, SkipForward, RotateCcw, RefreshCw, Bug, Database, Rabbit, Turtle } from 'lucide-react';
+import { BreakpointNavigator } from './BreakpointNavigator';
 import { useExecutionStore } from '../../stores/executionStore';
 import { executionApi } from '../../services/api';
 import { STEP_FULL_NAMES } from '../../types/execution';
@@ -19,7 +20,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const totalCount = useExecutionStore((s) => s.totalCount);
   const cycleCount = useExecutionStore((s) => s.cycleCount);
   const currentInference = useExecutionStore((s) => s.currentInference);
-  const breakpointsCount = useExecutionStore((s) => s.breakpoints.size);
   const setStatus = useExecutionStore((s) => s.setStatus);
   const reset = useExecutionStore((s) => s.reset);
   const verboseLogging = useExecutionStore((s) => s.verboseLogging);
@@ -278,11 +278,8 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
           </div>
         )}
 
-        {/* Breakpoints count */}
-        <div className="flex items-center gap-1 text-sm text-slate-600">
-          <Circle size={12} className="text-red-500 fill-red-500" />
-          <span>{breakpointsCount} BP</span>
-        </div>
+        {/* Breakpoints navigator */}
+        <BreakpointNavigator />
 
         {/* Run mode toggle (Slow/Fast) */}
         <button
