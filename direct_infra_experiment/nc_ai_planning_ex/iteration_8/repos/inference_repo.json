@@ -491,8 +491,10 @@
         "{extraction file path}": 1,
         "{extraction to be written}": 2
       },
-      "value_selector":{
-        "packed": true
+      "value_selectors": {
+        "{extraction to be written}": {
+          "packed": true
+        }
       }
     }
   },

@@ -376,10 +376,22 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
     you may need to manually add 'value_selectors' with 'packed: true' to prevent the MVP
     step from unpacking the list/dict into multiple separate inputs.
     
-    Example:
-        "value_selectors": {
-            "{bundled value}": { "packed": true }
+    IMPORTANT: The field name and structure must match what _mvp.py expects:
+    
+    CORRECT structure:
+        "value_selectors": {                    # <-- PLURAL: "value_selectors"
+            "{bundled value}": { "packed": true }  # <-- concept name as KEY
         }
+    
+    WRONG structure (will silently fail):
+        "value_selector": { "packed": true }    # <-- singular name, no concept key
+    
+    Why? The MVP code does:
+        value_selectors = states.value_selectors or {}
+        selector = value_selectors.get(concept_name) or {}  # <-- looks up BY concept name
+        is_packed = selector.get("packed", False)
+    
+    So without the concept name as a key, the lookup returns {} and packed=False.
     
     This is hard to detect automatically because it depends on runtime data flow.
     Look for:
