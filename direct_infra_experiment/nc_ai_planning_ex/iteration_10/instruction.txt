@@ -1,57 +1,36 @@
 Formalize a NormCode Draft Straightforward (.ncds) file into a formal NormCode Draft (.ncd).
 
-The formalization algorithm processes each inference line-by-line while maintaining overall context. For each inference in the input .ncds file:
+STEP 1: PARSE
+Use the parser to convert the .ncds into a JSON list of lines.
+Each line has: flow_index, content, depth, inference_marker, concept_type.
+The parser identifies comments vs concept lines.
 
-1. PARSE the .ncds file structure:
-   - Extract each line with its marker (<-, <=, <*, /:, :<:)
-   - Determine indentation level (4-space increments)
-   - Build a parent-child tree structure
-   - Identify the root concept (level 0)
+STEP 2: FOR EACH CONCEPT LINE
+For each line that is a concept (not a comment):
 
-2. For each inference, ADD FLOW INDEX:
-   - Root gets index "1"
-   - Children get parent index + "." + sibling number
-   - All concept lines get indices (value, functional, and context)
-   - Format: | ?{flow_index}: 1.2.3
+Judge what type of concept it is:
+  - {object} → a thing, entity, data structure
+  - [relation] → a connection, mapping, relationship
+  - <proposition> → a truth value, condition, boolean
+  - ::() imperative → transforms/produces something
+  - ::<> judgement → evaluates/decides something
+  - $ assigning → variable binding operation
+  - & grouping → parallel operations
+  - @ timing → async/wait operations
+  - * looping → iteration operation
 
-3. For each functional concept (<=), DETERMINE SEQUENCE TYPE:
-   - Check for syntactic operators first:
-     * $= $. $+ $- $% → assigning
-     * &[{}] &[#] → grouping
-     * @:' @:! @. → timing
-     * *. → looping
-   - If no syntactic operator, check semantic patterns:
-     * Action verbs (calculate, extract, process) → imperative
-     * Evaluation phrases (is valid, check if, verify) → judgement
-   - Format: | ?{sequence}: imperative
+If it is an {object}, apply formalization according to the syntax of {objects}
+If it is a [relation], apply formalization according to the syntax of [relation]
+If it is a <proposition>, apply formalization according to the syntax of <proposition>
+If it is a ::() imperative, apply formalization according to the syntax of ::() imperative and add | ?{sequence}: imperative
+If it is a ::<> judgement, apply formalization according to the syntax of ::<> judgement and add | ?{sequence}: judgement
+If it is an $ assigning, apply formalization according to the syntax of $ assigning and add | ?{sequence}: assigning
+If it is a & grouping, apply formalization according to the syntax of & grouping and add | ?{sequence}: grouping
+If it is a @ timing, apply formalization according to the syntax of @ timing and add | ?{sequence}: timing
+If it is a * looping, apply formalization according to the syntax of * looping and add | ?{sequence}: looping
 
-4. For each concept, ADD SEMANTIC TYPE:
-   - Value concepts (<-):
-     * Singular nouns → {name} (Object)
-     * Plural nouns or "all X" → [name] (Relation)
-     * Boolean phrases (is valid, passed) → <name> (Proposition)
-   - Functional concepts (<=):
-     * Commands/actions → ::(description)
-     * Evaluations → ::(description)<ALL True>
-   - Context concepts (<*) follow value concept rules
+STEP 3: SERIALIZE
+Convert the formalized lines back to .ncd text format, using the parser in the body.
 
-5. For multi-input operations, ADD VALUE BINDINGS:
-   - Scan functional concept text for input references
-   - Assign <:{1}>, <:{2}>, etc. to value concepts in order
-   - Match concept names to operation text where possible
-   - Format: <- {input A}<:{1}>
-
-6. MARK ROOT concept:
-   - Change root <- to :<:
-   - Format: :<:{root concept}
-
-7. PRESERVE comments and descriptions:
-   - Keep /: lines intact
-   - Maintain readability
-
-Input: .ncds file (hierarchical structure without formal annotations)
-Output: .ncd file (with flow indices, sequence types, semantic types, value bindings)
-
-Processing approach: Inference-by-inference with global context maintained.
-
-
+Input: .ncds file
+Output: .ncd file with flow indices, semantic types, sequence types, value bindings with the help of parser. 
