@@ -1083,11 +1083,12 @@ class ExecutionController:
             except Exception as e:
                 logger.warning(f"Could not clear reference for {fi}: {e}")
         
-        # Reset blackboard
+        # Reset blackboard (status AND execution count)
         try:
             for fi in nodes_to_reset:
                 if self.orchestrator.blackboard:
                     self.orchestrator.blackboard.set_item_status(fi, 'pending')
+                    self.orchestrator.blackboard.reset_execution_count(fi)
         except Exception as e:
             logger.warning(f"Could not reset blackboard for some nodes: {e}")
         

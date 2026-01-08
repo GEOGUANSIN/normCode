@@ -27,7 +27,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}4c7(provisions/scripts/pass_through.py)"
+      "%{script_location}966(provisions/scripts/pass_through.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -251,7 +251,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}29d(provisions/scripts/check_phase_complete.py)"
+      "%{script_location}817(provisions/scripts/check_phase_complete.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -500,7 +500,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}4da(provisions/prompts/phase_1/judge_instruction_vagueness.md)"
+      "%{prompt_location}ac3(provisions/prompts/phase_1/judge_instruction_vagueness.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -553,7 +553,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}3a4(provisions/scripts/pass_through.py)"
+      "%{script_location}f63(provisions/scripts/pass_through.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -623,7 +623,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}38f(provisions/prompts/phase_1/synthesize_refined_instruction.md)"
+      "%{prompt_location}eb2(provisions/prompts/phase_1/synthesize_refined_instruction.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -676,7 +676,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}32b(provisions/prompts/phase_1/apply_refinement_questions.md)"
+      "%{prompt_location}23b(provisions/prompts/phase_1/apply_refinement_questions.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -818,7 +818,7 @@
     "flow_indices": [
       "1.14.2",
       "1.14.3.3.2",
-      "1.16.3.4.2.2.2",
+      "1.16.3.4.2.2",
       "1.18.3.4.3.2",
       "1.7"
     ],
@@ -896,7 +896,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}044(provisions/scripts/check_phase_complete.py)"
+      "%{script_location}3f7(provisions/scripts/check_phase_complete.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1113,7 +1113,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}68d(provisions/prompts/phase_2/extract_concepts.md)"
+      "%{prompt_location}06e(provisions/prompts/phase_2/extract_concepts.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1128,7 +1128,8 @@
     "flow_indices": [
       "1.14.3.4.4",
       "1.14.3.4.5.4",
-      "1.16.3.4.2"
+      "1.16.3.4",
+      "1.16.3.5.2"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1151,7 +1152,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}12d(provisions/prompts/phase_2/extract_operations.md)"
+      "%{prompt_location}ecb(provisions/prompts/phase_2/extract_operations.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1187,7 +1188,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}8f8(provisions/prompts/phase_2/extract_dependencies.md)"
+      "%{prompt_location}22c(provisions/prompts/phase_2/extract_dependencies.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1223,7 +1224,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}792(provisions/prompts/phase_2/extract_control_patterns.md)"
+      "%{prompt_location}895(provisions/prompts/phase_2/extract_control_patterns.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1365,7 +1366,7 @@
     "flow_indices": [
       "1.16.3.2",
       "1.16.3.3.1.2",
-      "1.16.3.4.1.1.2"
+      "1.16.3.5.1.1.2"
     ],
     "description": null,
     "is_ground_concept": false,
@@ -1388,7 +1389,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}7bc(provisions/scripts/check_phase_complete.py)"
+      "%{script_location}ba4(provisions/scripts/check_phase_complete.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -1486,171 +1487,31 @@
     "natural_name": "<= @:'(<phase 3 already complete>)"
   },
   {
-    "id": "c-freshly-classified-operations",
-    "concept_name": "[freshly classified operations]",
-    "type": "[]",
-    "flow_indices": [
-      "1.16.3.4"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "operation"
-    ],
-    "reference_element_type": "dict(pattern: str, context: str)",
-    "natural_name": "freshly classified operations"
-  },
-  {
-    "id": "fc-extracted-operations-classification-operation-1",
-    "concept_name": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "id": "fc-get-operations-from-extraction-data",
+    "concept_name": "::(get operations from extraction data)",
     "type": "({})",
     "flow_indices": [
       "1.16.3.4.1"
     ],
-    "description": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
-    "is_ground_concept": true,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)"
-  },
-  {
-    "id": "fc-classification",
-    "concept_name": "$. %>({classification})",
-    "type": "({})",
-    "flow_indices": [
-      "1.16.3.4.1.1"
-    ],
-    "description": "<= $. %>({classification})",
-    "is_ground_concept": true,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= $. %>({classification})"
-  },
-  {
-    "id": "fc-phase-3-already-complete",
-    "concept_name": "@:!(<phase 3 already complete>)",
-    "type": "({})",
-    "flow_indices": [
-      "1.16.3.4.1.1.1"
-    ],
-    "description": "<= @:!(<phase 3 already complete>)",
-    "is_ground_concept": true,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "operator",
-    "natural_name": "<= @:!(<phase 3 already complete>)"
-  },
-  {
-    "id": "c-classification",
-    "concept_name": "{classification}",
-    "type": "{}",
-    "flow_indices": [
-      "1.16.3.4.1.2"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict(pattern: str, context: str)",
-    "natural_name": "classification"
-  },
-  {
-    "id": "fc-determine-pattern-type-for-operation",
-    "concept_name": "::(determine pattern type for operation)",
-    "type": "({})",
-    "flow_indices": [
-      "1.16.3.4.1.2.1"
-    ],
-    "description": "determine pattern type for operation",
+    "description": "get operations from extraction data",
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}2e6(provisions/prompts/phase_3/classify_operation.md)"
+      "%{script_location}452(provisions/scripts/extract_field.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
     ],
     "reference_element_type": "paradigm",
-    "natural_name": "determine pattern type for operation"
-  },
-  {
-    "id": "c-current-operation",
-    "concept_name": "{current operation}",
-    "type": "{}",
-    "flow_indices": [
-      "1.16.3.4.1.2.2",
-      "1.16.3.4.1.2.3.2",
-      "1.16.3.4.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "str",
-    "natural_name": "current operation"
-  },
-  {
-    "id": "c-operation-context",
-    "concept_name": "{operation context}",
-    "type": "{}",
-    "flow_indices": [
-      "1.16.3.4.1.2.3"
-    ],
-    "description": null,
-    "is_ground_concept": false,
-    "is_final_concept": false,
-    "reference_data": null,
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "dict",
-    "natural_name": "operation context"
-  },
-  {
-    "id": "fc-gather-context-from-extraction-data",
-    "concept_name": "::(gather context from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.16.3.4.1.2.3.1"
-    ],
-    "description": "gather context from extraction data",
-    "is_ground_concept": true,
-    "is_final_concept": false,
-    "reference_data": [
-      "%{prompt_location}eff(provisions/prompts/phase_3/gather_operation_context.md)"
-    ],
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "gather context from extraction data"
+    "natural_name": "get operations from extraction data"
   },
   {
     "id": "c-extraction-data",
     "concept_name": "{extraction data}",
     "type": "{}",
     "flow_indices": [
-      "1.16.3.4.1.2.3.3",
-      "1.16.3.4.2.2",
+      "1.16.3.4.2",
+      "1.16.3.5.1.2.3.3",
       "1.18.3.4.3",
       "1.18.3.4.4.2",
       "1.18.3.4.6.2"
@@ -1666,30 +1527,11 @@
     "natural_name": "extraction data"
   },
   {
-    "id": "fc-get-operations-from-extraction-data",
-    "concept_name": "::(get operations from extraction data)",
-    "type": "({})",
-    "flow_indices": [
-      "1.16.3.4.2.1"
-    ],
-    "description": "get operations from extraction data",
-    "is_ground_concept": true,
-    "is_final_concept": false,
-    "reference_data": [
-      "%{script_location}0f4(provisions/scripts/extract_field.py)"
-    ],
-    "reference_axis_names": [
-      "_none_axis"
-    ],
-    "reference_element_type": "paradigm",
-    "natural_name": "get operations from extraction data"
-  },
-  {
     "id": "fc-read-extraction-file-from-path",
     "concept_name": "::(read extraction file from path)",
     "type": "({})",
     "flow_indices": [
-      "1.16.3.4.2.2.1",
+      "1.16.3.4.2.1",
       "1.18.3.4.3.1"
     ],
     "description": "read extraction file from path",
@@ -1709,7 +1551,7 @@
     "concept_name": "{field_name: \"operations\"}",
     "type": "{}",
     "flow_indices": [
-      "1.16.3.4.2.3"
+      "1.16.3.4.3"
     ],
     "description": null,
     "is_ground_concept": true,
@@ -1722,6 +1564,165 @@
     ],
     "reference_element_type": "str",
     "natural_name": "field_name: \"operations\""
+  },
+  {
+    "id": "c-freshly-classified-operations",
+    "concept_name": "[freshly classified operations]",
+    "type": "[]",
+    "flow_indices": [
+      "1.16.3.5"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "operation"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "freshly classified operations"
+  },
+  {
+    "id": "fc-extracted-operations-classification-operation-1",
+    "concept_name": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.5.1"
+    ],
+    "description": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)"
+  },
+  {
+    "id": "fc-classification",
+    "concept_name": "$. %>({classification})",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.5.1.1"
+    ],
+    "description": "<= $. %>({classification})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({classification})"
+  },
+  {
+    "id": "fc-phase-3-already-complete",
+    "concept_name": "@:!(<phase 3 already complete>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.5.1.1.1"
+    ],
+    "description": "<= @:!(<phase 3 already complete>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:!(<phase 3 already complete>)"
+  },
+  {
+    "id": "c-classification",
+    "concept_name": "{classification}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.5.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict(pattern: str, context: str)",
+    "natural_name": "classification"
+  },
+  {
+    "id": "fc-determine-pattern-type-for-operation",
+    "concept_name": "::(determine pattern type for operation)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.5.1.2.1"
+    ],
+    "description": "determine pattern type for operation",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}ad3(provisions/prompts/phase_3/classify_operation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "determine pattern type for operation"
+  },
+  {
+    "id": "c-current-operation",
+    "concept_name": "{current operation}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.5.1.2.2",
+      "1.16.3.5.1.2.3.2",
+      "1.16.3.5.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "current operation"
+  },
+  {
+    "id": "c-operation-context",
+    "concept_name": "{operation context}",
+    "type": "{}",
+    "flow_indices": [
+      "1.16.3.5.1.2.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "operation context"
+  },
+  {
+    "id": "fc-gather-context-from-extraction-data",
+    "concept_name": "::(gather context from extraction data)",
+    "type": "({})",
+    "flow_indices": [
+      "1.16.3.5.1.2.3.1"
+    ],
+    "description": "gather context from extraction data",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}0f4(provisions/prompts/phase_3/gather_operation_context.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "gather context from extraction data"
   },
   {
     "id": "c-phase-3-complete",
@@ -1880,7 +1881,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}938(provisions/scripts/check_phase_complete.py)"
+      "%{script_location}9a6(provisions/scripts/check_phase_complete.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2022,7 +2023,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}815(provisions/prompts/phase_4/construct_dependency_tree.md)"
+      "%{prompt_location}eac(provisions/prompts/phase_4/construct_dependency_tree.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2112,7 +2113,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}65e(provisions/prompts/phase_4/identify_goal.md)"
+      "%{prompt_location}1da(provisions/prompts/phase_4/identify_goal.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2148,7 +2149,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}e87(provisions/scripts/pass_through.py)"
+      "%{script_location}b31(provisions/scripts/pass_through.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2184,7 +2185,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}5c0(provisions/scripts/extract_field.py)"
+      "%{script_location}07a(provisions/scripts/extract_field.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2330,7 +2331,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{script_location}b6c(provisions/scripts/check_phase_complete.py)"
+      "%{script_location}6d3(provisions/scripts/check_phase_complete.py)"
     ],
     "reference_axis_names": [
       "_none_axis"
@@ -2472,7 +2473,7 @@
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": [
-      "%{prompt_location}bca(provisions/prompts/phase_5/serialize_tree_to_ncds.md)"
+      "%{prompt_location}84d(provisions/prompts/phase_5/serialize_tree_to_ncds.md)"
     ],
     "reference_axis_names": [
       "_none_axis"
