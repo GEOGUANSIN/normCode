@@ -20,8 +20,6 @@ import {
   Code,
   ArrowRight,
   ArrowDown,
-  GripVertical,
-  Edit3,
   Check,
   X,
   Box,
@@ -848,10 +846,6 @@ function CompositionStepsSection({
 // =============================================================================
 
 function FlowDiagramView({ parsed }: { parsed: ParsedParadigm }) {
-  const compositionStep = useMemo(() => {
-    return parsed.steps.find(s => s.has_composition_plan);
-  }, [parsed.steps]);
-
   return (
     <div className="p-4 overflow-auto">
       <div className="inline-block min-w-full">
@@ -907,7 +901,7 @@ function FlowDiagramView({ parsed }: { parsed: ParsedParadigm }) {
 export function ParadigmEditor({
   paradigm,
   parsed,
-  onUpdate,
+  onUpdate: _onUpdate,
   onParsedUpdate,
 }: ParadigmEditorProps) {
   const [viewMode, setViewMode] = useState<ParadigmViewMode>('visual');

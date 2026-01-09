@@ -101,12 +101,23 @@ output
     <- {input 2}
 ```
 
+<<<<<<< HEAD
+### Pattern 3: Iteration
+=======
 ### Pattern 3: Iteration (with Return Operation)
+>>>>>>> origin/dev
 
 **Tree**:
 ```
 all results
 └── for each item (iteration)
+<<<<<<< HEAD
+    ├── result (per-item)
+    └── items [context]
+```
+
+**NCDS**:
+=======
     └── return item (return operation)
         └── result (per-item)
     └── items [input - GROUND]
@@ -154,6 +165,7 @@ The loop input and context marker are **siblings of the LOOP OPERATOR**, at the 
 ```
 
 **WRONG** (do NOT do this):
+>>>>>>> origin/dev
 ```ncds
 <- [all results]
     <= for each item in collection
@@ -161,6 +173,19 @@ The loop input and context marker are **siblings of the LOOP OPERATOR**, at the 
         <- {processed item}
             <= process this item
             <- {current item}
+<<<<<<< HEAD
+    <- [items]
+    <* {current item}
+```
+
+**Key elements**:
+- `<- [all results]` — The aggregated collection
+- `<= for each item` — The iteration operation (nested return)
+- `<- [items]` — The collection being iterated
+- `<* {current item}` — The loop variable (context marker)
+
+### Pattern 4: Conditional
+=======
         <- [items]                     /: WRONG - 8 spaces, nested under loop!
         <* {current item}              /: WRONG - 8 spaces, nested under loop!
 ```
@@ -222,22 +247,33 @@ This is wrong because:
 **Rule**: If a loop input needs to be produced, define it (with producer) as a **sibling of the loop output**, not inside the loop's scope. Inside the loop, just reference it.
 
 ### Pattern 4: Conditional (Single Timing Gate)
+>>>>>>> origin/dev
 
 **Tree**:
 ```
 result
 └── gated operation
+<<<<<<< HEAD
+    ├── input
+    └── condition [context]
+=======
     └── timing gate
     └── condition [context]
     └── input
+>>>>>>> origin/dev
 ```
 
 **NCDS**:
 ```ncds
 <- {result}
     <= do something
+<<<<<<< HEAD
+        <= if condition holds
+        <* <condition>
+=======
         <= when condition holds          /: TIMING GATE (child of operation)
         <* <condition>                    /: Context: what the gate checks
+>>>>>>> origin/dev
     <- {input}
     <- <condition>
         <= check if something
@@ -245,8 +281,13 @@ result
 ```
 
 **Key elements**:
+<<<<<<< HEAD
+- The operation has a nested `<= if condition`
+- `<* <condition>` marks what gates execution
+=======
 - The operation has a nested timing gate: `<= when condition holds`
 - `<* <condition>` marks what gates execution (under the timing gate)
+>>>>>>> origin/dev
 - The condition itself is produced by a judgement operation
 
 ### Pattern 5: Grouping
@@ -269,27 +310,44 @@ bundle
     <- {item 3}
 ```
 
+<<<<<<< HEAD
+### Pattern 6: Selection
+=======
 ### Pattern 6: Selection (Multiple Timing-Gated Options)
 
 **CRITICAL**: Selection with "if X then do A, if Y then do B" patterns requires:
 1. **First**: Judgement (produces the type/category to check)
 2. **Second**: Condition checks (one boolean per option)
 3. **Third**: Gated options (each with timing gate referencing its condition)
+>>>>>>> origin/dev
 
 **Tree**:
 ```
 result
+<<<<<<< HEAD
+└── select operation
+    ├── option 1
+    └── option 2
+=======
 └── select first valid
     ├── type (from judgement)
     ├── is A (condition)
     ├── is B (condition)
     ├── option A (gated)
     └── option B (gated)
+>>>>>>> origin/dev
 ```
 
 **NCDS**:
 ```ncds
 <- {result}
+<<<<<<< HEAD
+    <= select first available option
+    <- {option 1}
+    <- {option 2}
+```
+
+=======
     <= select first valid option
     
     /: STEP 1: Judge the type (executed FIRST)
@@ -326,6 +384,7 @@ result
 - **Timing gates are children**: `<= when condition holds` is a child of the operation, not a sibling
 - **Context marks the condition**: `<* <is type A>` under the timing gate
 
+>>>>>>> origin/dev
 ---
 
 ## Ground Concepts
@@ -366,6 +425,14 @@ Comments explain the plan:
 
 1. **Start from root**: Write the goal concept with `<-`
 2. **Write producer**: If the concept has a producer operation, write it with `<=`
+<<<<<<< HEAD
+3. **Handle patterns**: Apply pattern-specific formatting (especially for iterations)
+4. **Write children**: Recurse into each child with increased indent
+5. **Mark context**: Use `<*` for loop bases and conditions
+6. **Mark grounds**: Add `/: Ground:` comments for input concepts
+7. **Add header**: Include a plan description at the top
+
+=======
 3. **Handle patterns**: Apply pattern-specific formatting
 4. **Write children**: Recurse into each child with increased indent
 5. **Handle iteration context specially**: See below
@@ -423,6 +490,7 @@ When the tree has a node with `pattern: "iteration"`:
 2. Inside the loop scope, only REFERENCE the collection (no producer)
 3. This ensures correct flow index ordering: collection produces BEFORE loop executes
 
+>>>>>>> origin/dev
 ---
 
 ## Output Format
@@ -515,6 +583,8 @@ When the tree has a node with `pattern: "iteration"`:
 
 ---
 
+<<<<<<< HEAD
+=======
 ## The One-Inference-Only Principle
 
 **CRITICAL RULE**: Each value concept must have **exactly one** producing operation.
@@ -551,6 +621,7 @@ Within any scope, write concepts in execution order:
 
 ---
 
+>>>>>>> origin/dev
 ## Common Mistakes
 
 | Mistake | Why It's Wrong | Correct Approach |
@@ -560,11 +631,14 @@ Within any scope, write concepts in execution order:
 | Operation before concept | Concepts own operations | `<-` first, then `<=` as child |
 | Forgetting ground comments | Makes plan harder to understand | Mark all inputs |
 | Wrong type markers | Types matter semantically | `{}` object, `[]` collection, `<>` condition |
+<<<<<<< HEAD
+=======
 | **Multiple operations per value** | One-inference-only violated | Each `<-` has exactly one `<=` as child |
 | **Nested operations** | `<=` under `<=` without value | Operations must produce values |
 | **Wrong order in selection** | Conditions after options | Write: judgement → conditions → options |
 | **Missing return operation** | Looper doesn't know what to collect | Always include `<= return...` in loops |
 | **Timing gate as sibling** | Gate must be child of operation | `<= when...` is child of `<= operation` |
+>>>>>>> origin/dev
 
 ---
 

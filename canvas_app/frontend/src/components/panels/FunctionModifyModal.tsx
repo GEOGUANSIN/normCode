@@ -3,7 +3,7 @@
  * Allows users to modify working interpretation and retry function nodes.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Save, Play, AlertCircle, CheckCircle, FileText, Workflow } from 'lucide-react';
 import { executionApi, FunctionModifyRequest } from '../../services/api';
 

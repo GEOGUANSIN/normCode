@@ -13,6 +13,24 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Production build settings
+  base: './',  // Use relative paths for assets (important for packaged app)
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Generate source maps for debugging (can be disabled for smaller builds)
+    sourcemap: false,
+    // Optimize chunk sizes
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom'],
+          'flow-vendor': ['reactflow'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

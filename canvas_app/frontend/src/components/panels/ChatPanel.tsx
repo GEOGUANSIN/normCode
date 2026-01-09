@@ -18,11 +18,9 @@ import {
   MessageSquare,
   Loader2,
   Trash2,
-  Zap,
-  Sparkles,
   Terminal,
-  Link2,
   Eye,
+  ChevronRight,
   ChevronDown,
   Play,
   Pause,
@@ -109,6 +107,26 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Code block component for displaying code in chat (exported for future use)
+export function CodeBlockDisplay({ code, language: _language, title }: { code: string; language: string; title?: string }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  return (
+    <div className="code-block">
+      <div className="flex items-center justify-between">
+        {title && <span className="text-xs font-medium">{title}</span>}
+        <button onClick={() => setIsCollapsed(!isCollapsed)}>
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+      </div>
+      {!isCollapsed && (
+        <pre className="text-sm overflow-x-auto p-2 bg-slate-50 rounded">
+          <code>{code}</code>
+        </pre>
+      )}
     </div>
   );
 }

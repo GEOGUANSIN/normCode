@@ -30,6 +30,12 @@ These patterns control execution flow, not actual computation:
 | Pattern | Description | When to Use |
 |---------|-------------|-------------|
 | **iteration** | Process each item in collection | "for each", "process all" |
+<<<<<<< HEAD
+| **conditional** | Execute if condition is true | "if X then", gated execution |
+| **selection** | Pick first valid from options | "choose first", "prefer X else Y" |
+| **grouping** | Bundle items together | "collect", "bundle", "combine" |
+
+=======
 | **conditional** | Execute if condition is true | "if X then" (single branch) |
 | **selection** | Pick first valid from multiple options | "if A then X, if B then Y, if C then Z" (multiple branches) |
 | **grouping** | Bundle items together | "collect", "bundle", "combine" |
@@ -46,6 +52,7 @@ These patterns control execution flow, not actual computation:
 - You're choosing between multiple exclusive options
 - Each option has its own condition to check
 
+>>>>>>> origin/dev
 ---
 
 ## Classification Decision Tree
@@ -261,6 +268,8 @@ These patterns control execution flow, not actual computation:
 }
 ```
 
+<<<<<<< HEAD
+=======
 ### Example 6: Selection Pattern
 
 **Operation**: "apply appropriate formalization based on concept type"  
@@ -285,6 +294,7 @@ These patterns control execution flow, not actual computation:
 - Conditional: ONE operation gated by ONE condition
 - Selection: MULTIPLE operations, each gated by its OWN condition, pick first valid
 
+>>>>>>> origin/dev
 ---
 
 ## Now Classify

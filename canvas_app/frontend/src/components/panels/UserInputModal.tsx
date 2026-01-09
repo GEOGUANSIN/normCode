@@ -24,8 +24,6 @@ import {
   FolderOpen,
   File,
   Folder,
-  ChevronRight,
-  ChevronDown,
   Plus,
   Trash2,
   ArrowUp,
@@ -59,7 +57,7 @@ function FileBrowser({
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+  const [_expandedDirs, _setExpandedDirs] = useState<Set<string>>(new Set());
   const [manualPath, setManualPath] = useState('');
 
   const loadDirectory = useCallback(async (dir: string) => {

@@ -32,6 +32,9 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 | **File I/O** | Read file, write to file | Script |
 | **Computation** | Calculate sum, divide | Script |
 | **Iteration** | For each X, process all | Control flow |
+<<<<<<< HEAD
+| **Aggregation** | Collect, bundle, combine | Control flow |
+=======
 | **Selection** | Select first valid, choose based on type | Control flow |
 | **Aggregation** | Collect, bundle, combine | Control flow |
 | **Return** | Return result for this item (in loops) | Control flow |
@@ -45,6 +48,7 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 **Selection Operations**: When choosing between multiple options:
 - "select first valid option" → the selection operator
 - "apply appropriate formalization" → implies selection based on some criterion
+>>>>>>> origin/dev
 
 ---
 
