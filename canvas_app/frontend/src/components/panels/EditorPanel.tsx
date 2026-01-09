@@ -15,7 +15,10 @@ import {
   FileText,
   FolderOpen,
 <<<<<<< HEAD
+<<<<<<< HEAD
   FolderClosed,
+=======
+>>>>>>> origin/dev
 =======
 >>>>>>> origin/dev
   Save,

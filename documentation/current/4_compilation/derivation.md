@@ -504,6 +504,46 @@ Output the .ncds file:
         <- input
 ```
 
+### Mistake 5: Wrong Concept Order (Later-Executed Before Earlier-Executed)
+
+**Problem**: Writing concepts in wrong order causes incorrect flow index assignment.
+
+**Example (Wrong)**:
+```ncds
+<- {result}
+    <= select first valid
+    
+    /: Options listed before conditions - WRONG!
+    <- {option A}
+        <= do A
+            <= when condition holds
+            <* <is type A>
+    
+    <- <is type A>       ← Condition comes AFTER it's used!
+        <= check type
+        <- {type}
+```
+
+**Why wrong**: The condition `<is type A>` gets a higher flow index than `{option A}`, but the condition must be evaluated BEFORE the timing gate can use it.
+
+**Correct**:
+```ncds
+<- {result}
+    <= select first valid
+    
+    /: Conditions first, then options
+    <- <is type A>       ← Condition evaluated FIRST
+        <= check type
+        <- {type}
+    
+    <- {option A}        ← Option executed AFTER condition
+        <= do A
+            <= when condition holds
+            <* <is type A>
+```
+
+**Rule**: Within any scope, write concepts in execution order. Dependencies must be resolved before they're used.
+
 ---
 
 ## Derivation Comments
@@ -642,6 +682,7 @@ Traditional programming uses explicit control flow (`if`, `for`, `while`). NormC
 
 ---
 
+<<<<<<< HEAD
 ### 2. Loops Are Self-Extending Collections
 
 NormCode loops don't have traditional "iterate N times" semantics. Instead:
@@ -652,6 +693,40 @@ NormCode loops don't have traditional "iterate N times" semantics. Instead:
 4. **When append stops, loop stops**
 
 **Example (Chat Session)**:
+=======
+### 2. Loops Have Explicit Return Operations
+
+NormCode loops have a specific structure:
+
+1. **A collection to aggregate into** (e.g., `[all results]`)
+2. **A loop operator** (e.g., `<= for each item`)
+3. **A return operation** (e.g., `<= return result for this item`)
+4. **The per-iteration result** (e.g., `{result}`)
+5. **The collection to iterate over** (e.g., `[items]`)
+6. **The loop context variable** (e.g., `<* {current item}`)
+
+**Loop Structure**:
+```ncds
+<- [all results]
+    <= for each item in collection
+        <= return result for this item        ← RETURN OPERATION
+        /: Specifies what gets aggregated into [all results]
+        
+        <- {result}                           ← What gets returned
+            <= process the item
+            <- {current item}
+    
+    <- [items]                                ← Collection to iterate
+    <* {current item}                         ← Loop context variable
+```
+
+**The return operation** is crucial:
+- It wraps the per-iteration computation
+- It tells the looper what to collect and aggregate
+- Without it, the looper doesn't know what to join
+
+**Self-Seeding Loops** (Chat Session example):
+>>>>>>> origin/dev
 ```ncds
 <- on-going messages
     <= append current message
@@ -660,9 +735,15 @@ NormCode loops don't have traditional "iterate N times" semantics. Instead:
     <- current message
 ```
 
+<<<<<<< HEAD
 **This is a "self-seeding loop"**: Starts empty, but `start_without_value: true` lets iteration begin, creating the first item.
 
 **Takeaway**: Loops terminate via **conditional append**, not via a counter or explicit `break`.
+=======
+Starts empty, but `start_without_value: true` lets iteration begin.
+
+**Takeaway**: Loops need an explicit return operation that wraps the per-iteration result.
+>>>>>>> origin/dev
 
 ---
 
@@ -731,6 +812,7 @@ Every `.ncds` derivation uses just three markers:
 
 ---
 
+<<<<<<< HEAD
 ### 6. Bottom-Up Execution, Top-Down Writing
 
 **Writing order** (natural language → `.ncds`):
@@ -754,6 +836,87 @@ Every `.ncds` derivation uses just three markers:
 ```
 
 **Takeaway**: Write top-down (goal-first), but read bottom-up (dependency order).
+=======
+### 6. Execution Order Principle: First-Executed, First-Written
+
+**The Core Rule**: Within any scope, concepts that execute first should be written first.
+
+This applies at every level of the hierarchy:
+- **Under the root**: Ground concepts first, then Phase 1, Phase 2, Phase 3...
+- **Within a loop**: Judgements first, then conditions, then gated operations
+- **Within a selection**: First check conditions, then list options
+
+**Single Root Structure**:
+
+Every `.ncds` file has ONE root concept with everything nested under it:
+
+```ncds
+:<:{goal}
+    <= return the final result
+    
+    /: GROUND CONCEPTS (inputs - exist before anything runs)
+    <- {input file}
+    
+    /: PHASE 1 (executed first)
+    <- {phase 1 output}
+        <= do phase 1 work
+        <- {input file}
+    
+    /: PHASE 2 (executed second, depends on phase 1)
+    <- {phase 2 output}
+        <= do phase 2 work
+        <- {phase 1 output}
+    
+    /: PHASE 3 (executed last, depends on phase 2)
+    <- {phase 3 output}
+        <= do phase 3 work
+        <- {phase 2 output}
+```
+
+**Within a Conditional Selection**:
+
+```ncds
+<- {result}
+    <= select first valid option
+    
+    /: STEP 1: Judge type (executed first)
+    <- {type}
+        <= judge the type
+        <- {input}
+    
+    /: STEP 2: Check conditions (executed second)
+    <- <is type A>
+        <= check if type equals A
+        <- {type}
+    
+    <- <is type B>
+        <= check if type equals B
+        <- {type}
+    
+    /: STEP 3: Apply matching operation (executed third, timing-gated)
+    <- {option A result}
+        <= do operation A
+            <= when condition holds
+            <* <is type A>
+        <- {input}
+    
+    <- {option B result}
+        <= do operation B
+            <= when condition holds
+            <* <is type B>
+        <- {input}
+```
+
+**Why This Matters**:
+
+The orchestrator assigns flow indices based on position in the file. Concepts written earlier get lower flow indices and execute first. This ensures:
+
+1. Dependencies are resolved before they're needed
+2. Conditions are evaluated before timing gates check them
+3. The execution order matches the reading order
+
+**Takeaway**: Write concepts in the order they should execute. First things first.
+>>>>>>> origin/dev
 
 ---
 
@@ -853,6 +1016,20 @@ The same small set of patterns appears across all examples:
 | Carry state between iterations | Axis reference (`%^` / `*-1`) |
 | Execute after something completes | Timing dependency (`@.`) |
 
+<<<<<<< HEAD
+=======
+### Quick Reference: Ordering Principles
+
+| Scope | Order |
+|-------|-------|
+| **Under root** | Ground concepts → Phase 1 → Phase 2 → Phase 3 → ... |
+| **Within a phase** | Dependencies before dependents |
+| **Within a selection** | Judgement → Conditions → Timing-gated options |
+| **Within a loop** | Loop body → Loop input → Loop context (`<*`) |
+
+**The Rule**: First-executed, first-written. Write concepts in execution order.
+
+>>>>>>> origin/dev
 ---
 
 ## Summary
@@ -862,7 +1039,8 @@ The same small set of patterns appears across all examples:
 | Concept | Insight |
 |---------|---------|
 | **Natural language → Structure** | Derivation extracts explicit hierarchy from ambiguous text |
-| **Bottom-up reading** | Deepest concepts execute first, results flow upward |
+| **First-executed, first-written** | Write concepts in execution order within each scope |
+| **Single root structure** | Everything under one root; phases listed in order |
 | **Three markers** | `<-` (data), `<=` (operations), `<*` (context) |
 | **Four-space indentation** | Hierarchy through indentation |
 | **LLM-friendly** | Both humans and LLMs can write `.ncds` |

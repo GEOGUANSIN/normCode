@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
   "id": "2aa31c65",
   "name": "Derivation",
+=======
+  "id": "2aa31c66",
+  "name": "Derivation4formalism",
+>>>>>>> origin/dev
   "description": null,
   "created_at": "2025-12-29T17:40:04.790341",
   "updated_at": "2026-01-08T15:42:55.670816",
@@ -13,8 +18,13 @@
     "llm_model": "qwen-plus",
     "max_cycles": 200,
     "db_path": "orchestration.db",
+<<<<<<< HEAD
     "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_8\\repos",
     "paradigm_dir": "provisions\\paradigms",
+=======
+    "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_9",
+    "paradigm_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_9\\provisions\\paradigms",
+>>>>>>> origin/dev
     "agent_config": null
   },
   "breakpoints": [

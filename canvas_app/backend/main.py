@@ -96,56 +96,6 @@ app.include_router(
     chat_router.router,
     tags=["chat"]
 )
-app.include_router(
-    db_inspector_router.router,
-    prefix="/api/db-inspector",
-    tags=["db-inspector"]
-)
-
-
-# =============================================================================
-# Static File Serving (Production Mode)
-# =============================================================================
-# In production mode, serve pre-built frontend static files.
-# This is used when the app is packaged with PyInstaller.
-
-def _get_frontend_dist_path() -> Path | None:
-    """Get the frontend dist path if it exists."""
-    # Check if running as frozen executable (PyInstaller)
-    if getattr(sys, 'frozen', False):
-        # PyInstaller bundle: look for frontend/dist in the bundle
-        bundle_dir = Path(sys._MEIPASS)
-        dist_path = bundle_dir / "frontend" / "dist"
-    else:
-        # Development: look for frontend/dist relative to backend
-        dist_path = Path(__file__).parent.parent / "frontend" / "dist"
-    
-    if dist_path.exists() and (dist_path / "index.html").exists():
-        return dist_path
-    return None
-
-# Get frontend dist path
-_frontend_dist = _get_frontend_dist_path()
-
-if _frontend_dist:
-    logger.info(f"Production mode: serving static files from {_frontend_dist}")
-    
-    # Mount static assets (JS, CSS, images)
-    assets_dir = _frontend_dist / "assets"
-    if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="static_assets")
-    
-    # Serve other static files in dist root
-    @app.get("/favicon.svg")
-    async def favicon():
-        return FileResponse(_frontend_dist / "favicon.svg")
-    
-    @app.get("/logo.png")
-    async def logo():
-        logo_path = _frontend_dist / "logo.png"
-        if logo_path.exists():
-            return FileResponse(logo_path)
-        return {"error": "not found"}
 
 
 @app.get("/", tags=["root"])
