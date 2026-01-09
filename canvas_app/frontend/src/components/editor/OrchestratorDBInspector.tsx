@@ -11,7 +11,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Database,
-  RefreshCw,
   ChevronDown,
   ChevronRight,
   Table,
@@ -37,9 +36,8 @@ import {
   type ExecutionRecord,
   type BlackboardSummary,
   type CheckpointStateResponse,
-  type RunInfo,
-  type CheckpointInfo,
 } from '../../services/api';
+import type { RunInfo, CheckpointInfo } from '../../types/execution';
 
 interface OrchestratorDBInspectorProps {
   /** Initial database path to load */

@@ -11,7 +11,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -87,7 +86,13 @@ results/*.json
 # Node modules and build files
 node_modules/
 dist/
-build/
+
+# PyInstaller build output (keep build config files)
+build/dist/
+build/build/
+build/output/
+build/__pycache__/
+*.spec.bak
 
 # IDE settings
 .idea/

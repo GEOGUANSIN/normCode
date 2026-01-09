@@ -26,7 +26,6 @@ import {
 import { useLLMStore } from '../../stores/llmStore';
 import type {
   LLMProviderConfig,
-  LLMProvider,
   CreateProviderRequest,
   LLMProviderPreset,
 } from '../../types/llm';
@@ -215,7 +214,6 @@ export function LLMSettingsPanel({ isOpen, onClose }: LLMSettingsPanelProps) {
 
 // Preset Card Component - Compact pill style
 function PresetCard({
-  presetKey,
   preset,
   onAdd,
 }: {

@@ -682,6 +682,18 @@ Traditional programming uses explicit control flow (`if`, `for`, `while`). NormC
 
 ---
 
+<<<<<<< HEAD
+### 2. Loops Are Self-Extending Collections
+
+NormCode loops don't have traditional "iterate N times" semantics. Instead:
+
+1. **A collection exists** (e.g., `on-going messages`)
+2. **Something iterates over it** (e.g., `for every message`)
+3. **Each iteration may append to the same collection** (conditional)
+4. **When append stops, loop stops**
+
+**Example (Chat Session)**:
+=======
 ### 2. Loops Have Explicit Return Operations
 
 NormCode loops have a specific structure:
@@ -714,6 +726,7 @@ NormCode loops have a specific structure:
 - Without it, the looper doesn't know what to join
 
 **Self-Seeding Loops** (Chat Session example):
+>>>>>>> origin/dev
 ```ncds
 <- on-going messages
     <= append current message
@@ -722,9 +735,15 @@ NormCode loops have a specific structure:
     <- current message
 ```
 
+<<<<<<< HEAD
+**This is a "self-seeding loop"**: Starts empty, but `start_without_value: true` lets iteration begin, creating the first item.
+
+**Takeaway**: Loops terminate via **conditional append**, not via a counter or explicit `break`.
+=======
 Starts empty, but `start_without_value: true` lets iteration begin.
 
 **Takeaway**: Loops need an explicit return operation that wraps the per-iteration result.
+>>>>>>> origin/dev
 
 ---
 
@@ -793,6 +812,31 @@ Every `.ncds` derivation uses just three markers:
 
 ---
 
+<<<<<<< HEAD
+### 6. Bottom-Up Execution, Top-Down Writing
+
+**Writing order** (natural language → `.ncds`):
+1. What's the final output? → Root `<-`
+2. What operation produces it? → First `<=`
+3. What does that operation need? → Children `<-`
+4. Recurse until reaching base inputs
+
+**Execution order** (runtime):
+1. Start at leaves (deepest concepts)
+2. Execute operations bottom-up
+3. Results flow toward root
+
+**Example**:
+```ncds
+<- summary                    ← 4. Produced last
+    <= summarize              ← 3. Runs third
+    <- key points             ← 2. Produced second
+        <= extract key points ← 1. Runs first
+        <- document           ← 0. Input (exists)
+```
+
+**Takeaway**: Write top-down (goal-first), but read bottom-up (dependency order).
+=======
 ### 6. Execution Order Principle: First-Executed, First-Written
 
 **The Core Rule**: Within any scope, concepts that execute first should be written first.
@@ -872,6 +916,7 @@ The orchestrator assigns flow indices based on position in the file. Concepts wr
 3. The execution order matches the reading order
 
 **Takeaway**: Write concepts in the order they should execute. First things first.
+>>>>>>> origin/dev
 
 ---
 
@@ -971,6 +1016,8 @@ The same small set of patterns appears across all examples:
 | Carry state between iterations | Axis reference (`%^` / `*-1`) |
 | Execute after something completes | Timing dependency (`@.`) |
 
+<<<<<<< HEAD
+=======
 ### Quick Reference: Ordering Principles
 
 | Scope | Order |
@@ -982,6 +1029,7 @@ The same small set of patterns appears across all examples:
 
 **The Rule**: First-executed, first-written. Write concepts in execution order.
 
+>>>>>>> origin/dev
 ---
 
 ## Summary

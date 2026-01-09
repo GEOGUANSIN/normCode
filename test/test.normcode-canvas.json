@@ -1,0 +1,21 @@
+{
+  "id": "a4e0beb2",
+  "name": "test",
+  "description": null,
+  "created_at": "2025-12-22T20:22:54.602667",
+  "updated_at": "2025-12-25T17:25:48.733374",
+  "repositories": {
+    "concepts": "F:\\repository\\self\\normCode\\test\\gold_chinese.concept.json",
+    "inferences": "F:\\repository\\self\\normCode\\test\\gold_chinese.inference.json",
+    "inputs": null
+  },
+  "execution": {
+    "llm_model": "nw",
+    "max_cycles": 50,
+    "db_path": "orchestration.db",
+    "base_dir": "F:\\repository\\self\\normCode\\test",
+    "paradigm_dir": "F:\\repository\\self\\normCode\\test\\provision\\paradigm"
+  },
+  "breakpoints": [],
+  "ui_preferences": {}
+}

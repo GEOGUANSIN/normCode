@@ -15,8 +15,6 @@ import {
   Search,
   FileJson,
   Circle,
-  Square,
-  Diamond,
   ArrowRight,
   RefreshCw,
   X,

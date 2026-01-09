@@ -29,7 +29,6 @@ export function ProjectPanel() {
     currentProject,
     recentProjects,
     allProjects,
-    directoryProjects,
     isProjectPanelOpen,
     isLoading,
     error,

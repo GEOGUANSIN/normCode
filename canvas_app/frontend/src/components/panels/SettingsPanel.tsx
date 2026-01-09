@@ -36,17 +36,17 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     setLoaded,
   } = useConfigStore();
 
-  const { currentProject, setCurrentProject, projectPath, openTabs, activeTabId } = useProjectStore();
+  const { currentProject, setCurrentProject, projectPath, projectConfigFile, openTabs, activeTabId } = useProjectStore();
   
   // Check if current project is read-only (e.g., compiler project)
   const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
   
   // LLM settings state
   const [showLLMSettings, setShowLLMSettings] = useState(false);
-  const { providers, fetchProviders, defaultProviderId } = useLLMStore();
+  const { providers, fetchProviders } = useLLMStore();
 
   // Fetch config options from API
-  const { data: configData, isLoading, refetch } = useQuery({
+  const { data: configData, isLoading } = useQuery({
     queryKey: ['execution-config'],
     queryFn: executionApi.getConfig,
     staleTime: 60000, // Cache for 1 minute
@@ -106,7 +106,7 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
         },
       });
       // Update project in store
-      setCurrentProject(response.config, projectPath);
+      setCurrentProject(response.config, projectPath, projectConfigFile);
     } catch (err) {
       console.error('Failed to save settings to project:', err);
     }
