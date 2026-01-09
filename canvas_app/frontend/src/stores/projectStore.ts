@@ -374,7 +374,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const executionStore = useExecutionStore.getState();
       executionStore.reset();
       
-      const result = await projectApi.loadRepositories();
+      await projectApi.loadRepositories();
       
       // Fetch graph data after loading repositories
       const graphData = await graphApi.get();

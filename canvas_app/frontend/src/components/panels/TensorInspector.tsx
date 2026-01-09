@@ -282,7 +282,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
         )}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+            onClick={(e) => { handleCopy(e); }}
             className="p-1.5 hover:bg-slate-200 rounded transition-colors"
             title="Copy to clipboard"
           >
@@ -639,7 +639,7 @@ interface NDViewProps {
 }
 
 function NDView({
-  data,
+  data: _data,
   displayData,
   shape,
   axes,

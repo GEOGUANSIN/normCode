@@ -35,6 +35,8 @@ This recursion builds the dependency graph:
 | **sequence** | One after another | "generate report" ← after ← "iteration completes" |
 | **aggregates** | Collection built from items | "positive reviews" ← collects ← "review" (per iteration) |
 | **conditions** | Boolean controls execution | "add to list" ← gated by ← "is positive" |
+<<<<<<< HEAD
+=======
 | **selects_from** | Selection chooses between options | "result" ← selects_from ← ["option A", "option B"] |
 | **discriminates** | Value determines selection choice | "select" ← discriminated_by ← "concept type" |
 
@@ -56,6 +58,7 @@ When you have a **selection pattern** ("if A do X, if B do Y, if C do Z"), the d
 4. Fourth: Selection operator picks the result
 
 This order must be reflected in the dependencies!
+>>>>>>> origin/dev
 
 ---
 
@@ -155,12 +158,15 @@ This order must be reflected in the dependencies!
 1. **Wrong direction**: Dependencies flow from inputs TO outputs, not reverse
 2. **Missing conditions**: Conditional operations depend on their condition
 3. **Missing aggregation**: Collections depend on their item source
+<<<<<<< HEAD
+=======
 4. **Missing selection structure**: For "if A do X, if B do Y", need:
    - Discriminator that determines choice
    - Condition checks for each option
    - Gated operations for each option
    - Selection operator to pick result
 5. **Wrong order in selection**: Conditions must be evaluated BEFORE the gated operations that use them
+>>>>>>> origin/dev
 
 ---
 

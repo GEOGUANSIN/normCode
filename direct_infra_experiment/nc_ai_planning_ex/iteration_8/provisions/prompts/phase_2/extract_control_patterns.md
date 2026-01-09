@@ -51,10 +51,17 @@ Process each item in a collection.
 
 ---
 
+<<<<<<< HEAD
+### 4. Conditional
+**Intent**: "If condition, then do A, else do B"
+
+Execute based on a boolean condition.
+=======
 ### 4. Conditional (Single Gated Operation)
 **Intent**: "If condition, then do A" (optionally with else)
 
 Execute **one** operation based on a boolean condition.
+>>>>>>> origin/dev
 
 **Phrases**:
 | Phrase | Meaning |
@@ -62,6 +69,27 @@ Execute **one** operation based on a boolean condition.
 | "if X then Y" | Do Y when X is true |
 | "when X" | Do when X is true |
 | "unless X" | Do when X is NOT true |
+<<<<<<< HEAD
+| "otherwise" / "else" | Alternative branch |
+
+**Key elements**:
+- **Condition**: What is checked
+- **True branch**: What happens if true
+- **False branch**: What happens if not true (optional)
+
+---
+
+### 5. Selection
+**Intent**: "Choose first valid from options"
+
+Pick one result from multiple possibilities.
+
+**Phrases**: "choose first", "select", "use X if available else Y", "prefer X otherwise Y"
+
+**Key elements**:
+- **Options**: The choices available
+- **Priority**: Which to try first
+=======
 
 **Key elements**:
 - **Condition**: What is checked (produces boolean)
@@ -105,6 +133,7 @@ If it is a [relation], apply relation formalization
 If it is a <proposition>, apply proposition formalization
 ```
 → This is **SELECTION** (3 options, each with condition), NOT conditional
+>>>>>>> origin/dev
 
 ---
 
@@ -149,9 +178,15 @@ The loop appends to its own iteration base and terminates when append stops.
           "collection": "for iteration: what is iterated",
           "current_item": "for iteration: the per-item variable",
           "condition": "for conditional: what is checked",
+<<<<<<< HEAD
+          "true_branch": "for conditional: what happens if true",
+          "false_branch": "for conditional: what happens if not true",
+          "options": "for selection: the choices",
+=======
           "gated_operation": "for conditional: what is executed when true",
           "discriminator": "for selection: what value determines the choice",
           "options": "for selection: list of {condition, operation} pairs",
+>>>>>>> origin/dev
           "items": "for grouping: what is bundled"
         }
       }
@@ -237,12 +272,18 @@ The loop appends to its own iteration base and terminates when append stops.
 
 ## Common Mistakes
 
+<<<<<<< HEAD
+1. **Missing both branches**: "if X then Y, otherwise Z" has TWO conditional patterns
+2. **Confusing selection with conditional**: Selection chooses between options; conditional gates execution
+3. **Missing loop variable**: "for each X" implies both "Xs" (collection) and "X" (current item)
+=======
 1. **Confusing selection with conditional**: 
    - "if valid, save" = conditional (one operation, one condition)
    - "if A do X, if B do Y, if C do Z" = selection (multiple options, each with condition)
 2. **Missing loop variable**: "for each X" implies both "Xs" (collection) and "X" (current item)
 3. **Missing selection discriminator**: "based on type, apply..." needs to identify WHAT determines the choice
 4. **Treating multi-way branch as multiple conditionals**: "if type A..., if type B..., if type C..." is ONE selection pattern, not three conditionals
+>>>>>>> origin/dev
 
 ---
 

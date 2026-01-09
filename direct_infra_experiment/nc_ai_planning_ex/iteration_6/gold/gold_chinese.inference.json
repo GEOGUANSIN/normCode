@@ -1,0 +1,427 @@
+[
+  {
+    "flow_info": {
+      "flow_index": "1"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": ":<:({投资决策})",
+    "function_concept": "$. %>({投资决策})",
+    "value_concepts": [
+      "[价格数据]",
+      "[新闻数据]",
+      "{理论框架}",
+      "{投资者风险偏好}",
+      "{验证信号}",
+      "<信号超出理论预期>",
+      "<信号偏离理论预期>",
+      "<信号中性>",
+      "{投资决策}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{投资决策}",
+        "assign_destination": ":<:({投资决策})"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[价格数据]",
+    "function_concept": ":%(composition):{paradigm}(从市场来源获取价格数据)",
+    "value_concepts": [
+      "{模拟数据：价格数据}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{模拟数据：价格数据}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[新闻数据]",
+    "function_concept": ":%(composition):{paradigm}(从文本来源获取新闻数据)",
+    "value_concepts": [
+      "{模拟数据：新闻数据}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{模拟数据：新闻数据}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{理论框架}",
+    "function_concept": ":%(composition):{paradigm}(从领域专家获取理论框架)",
+    "value_concepts": [
+      "{模拟数据：理论框架}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{模拟数据：理论框架}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.5"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{投资者风险偏好}",
+    "function_concept": ":%(composition):{paradigm}(收集投资者约束：{1}<$({风险承受能力})%>、{2}<$({最大持仓})%>、{3}<$({止损规则})%>、{4}<$({投资期限})%>)",
+    "value_concepts": [
+      "{模拟数据：投资者风险偏好}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "{模拟数据：投资者风险偏好}": 0
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{验证信号}",
+    "function_concept": "&[#] %>[{量化信号}, {叙事信号}] %+(信号)",
+    "value_concepts": [
+      "{量化信号}",
+      "{叙事信号}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axes": [
+          ["量化信号"],
+          ["叙事信号"]
+        ],
+        "create_axis": "信号"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{量化信号}",
+    "function_concept": ":%(composition):(根据{1}<$([价格数据])%>计算价格指标)",
+    "value_concepts": [
+      "[价格数据]"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Script-h_Data-c_Execute-o_Normal",
+      "value_order": {
+        "[价格数据]": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.6.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{叙事信号}",
+    "function_concept": ":%(composition):(从{1}<$([新闻数据])%>提取情绪和主题)",
+    "value_concepts": [
+      "[新闻数据]"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "[新闻数据]": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.7"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<信号超出理论预期>",
+    "function_concept": ":%(composition):({1}<$({验证信号})%>超出{2}<$({理论框架})%>的预测) <对每个{验证信号}为真>",
+    "value_concepts": [
+      "{验证信号}",
+      "{理论框架}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{验证信号}": 1,
+        "{理论框架}": 2
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "信号": "for-each"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.8"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<信号偏离理论预期>",
+    "function_concept": ":%(composition):({1}<$({验证信号})%>低于{2}<$({理论框架})%>的预测) <对每个{验证信号}为真>",
+    "value_concepts": [
+      "{验证信号}",
+      "{理论框架}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{验证信号}": 1,
+        "{理论框架}": 2
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "信号": "for-each"
+        },
+        "condition": true
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.9"
+    },
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<信号中性>",
+    "function_concept": ":%(composition):({1}<$(<信号状态>)%>) <对每个{信号}当所有{状态类型}为假>",
+    "value_concepts": [
+      "<信号状态>"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Data-c_PassThrough-o_Normal",
+      "value_order": {
+        "<信号状态>": 1
+      },
+      "value_selectors": {},
+      "assertion_condition": {
+        "quantifiers": {
+          "信号": "for-each",
+          "状态类型": "all"
+        },
+        "condition": false
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.9.2"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "<信号状态>",
+    "function_concept": "&[#] %>[<信号超出理论预期>, <信号偏离理论预期>] %^<$!={信号}>",
+    "value_concepts": [
+      "<信号超出理论预期>",
+      "<信号偏离理论预期>"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "across",
+        "by_axes": [[], []],
+        "create_axis": "状态类型"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{投资决策}",
+    "function_concept": ":%(composition):(根据{1}<$([所有建议])%>在{2}<$({投资者风险偏好})%>约束下综合最终决策)",
+    "value_concepts": [
+      "[所有建议]",
+      "{投资者风险偏好}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "[所有建议]": 1,
+        "{投资者风险偏好}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3"
+    },
+    "inference_sequence": "grouping",
+    "concept_to_infer": "[所有建议]",
+    "function_concept": "&[{}] %>[{看涨建议}, {看跌建议}, {中性建议}] %+(建议)",
+    "value_concepts": [
+      "{看涨建议}",
+      "{看跌建议}",
+      "{中性建议}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "in",
+        "by_axes": [
+          ["信号"],
+          ["信号"],
+          ["信号"]
+        ]
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{看涨建议}",
+    "function_concept": ":%(composition):(根据{1}<$({验证信号})%>和{2}<$({投资者风险偏好})%>生成带仓位管理的买入建议)",
+    "value_concepts": [
+      "{验证信号}",
+      "{投资者风险偏好}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{验证信号}": 1,
+        "{投资者风险偏好}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.2.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(根据{1}<$({验证信号})%>和{2}<$({投资者风险偏好})%>生成带仓位管理的买入建议)",
+    "function_concept": "@:' (<信号超出理论预期>)",
+    "value_concepts": [
+      "<信号超出理论预期>"
+    ],
+    "context_concepts": ["<信号超出理论预期>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<信号超出理论预期>"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.3"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{看跌建议}",
+    "function_concept": ":%(composition):(根据{1}<$({验证信号})%>和{2}<$({投资者风险偏好})%>生成带仓位管理的卖出建议)",
+    "value_concepts": [
+      "{验证信号}",
+      "{投资者风险偏好}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{验证信号}": 1,
+        "{投资者风险偏好}": 2
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.3.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(根据{1}<$({验证信号})%>和{2}<$({投资者风险偏好})%>生成带仓位管理的卖出建议)",
+    "function_concept": "@:' (<信号偏离理论预期>)",
+    "value_concepts": [
+      "<信号偏离理论预期>"
+    ],
+    "context_concepts": ["<信号偏离理论预期>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<信号偏离理论预期>"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.4"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{中性建议}",
+    "function_concept": ":%(composition):(根据{1}<$({验证信号})%>生成持有建议)",
+    "value_concepts": [
+      "{验证信号}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "v_Prompt-h_Data-c_ThinkJSON-o_Normal",
+      "value_order": {
+        "{验证信号}": 1
+      },
+      "value_selectors": {}
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.10.3.4.1"
+    },
+    "inference_sequence": "timing",
+    "concept_to_infer": ":%(composition):(根据{1}<$({验证信号})%>生成持有建议)",
+    "function_concept": "@:' (<信号中性>)",
+    "value_concepts": [
+      "<信号中性>"
+    ],
+    "context_concepts": ["<信号中性>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if",
+        "condition": "<信号中性>"
+      }
+    }
+  }
+]
+
