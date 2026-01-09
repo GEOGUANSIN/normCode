@@ -1,110 +1,140 @@
-/: NormCode Serialization Process
-/: Converts .ncds file to formal .ncd text format
+/: NormCode File Generation
+/: Converts NCDS draft format to formal NCD format by processing each line
 
 <- {.ncd file}
-    <= serialize collection into .ncd text file
-    <- [collected formalized lines]
-        <= collect all formally syntaxed lines in order
-
-        /: PHASE 1: Prepare the collection to iterate over (executes FIRST)
-        <- [filtered list of non-comment concept lines]
+    <= return final .ncd file
+    <- {write updated .ncd content to output file}
+        <= write the updated content to the output file
+        
+        /: PHASE 1: Prepare the current .ncd content (executes FIRST)
+        <- {current .ncd content}
+            <= read current .ncd output file
+            <- {.ncd output file path}
+                /: Ground: path where the formal .ncd file will be written
+        
+        /: PHASE 2: Process each concept line (executes SECOND)
+        <- [updated .ncd content]
+            <= append formalized line to .ncd content
+                <= for each concept line in collection
+                    <= return formalized line for this iteration
+                    <- {formalized line}
+                        <= select first valid option
+                        
+                        /: STEP 1: Judge the concept type (executed FIRST)
+                        <- {concept type}
+                            <= judge what type of concept this line represents
+                            <- {concept line}
+                        
+                        /: STEP 2: Check line type conditions (executed SECOND)
+                        <- <line is {object}>
+                            <= check if concept type equals object
+                            <- {concept type}
+                        
+                        <- <line is [relation]>
+                            <= check if concept type equals relation
+                            <- {concept type}
+                        
+                        <- <line is <proposition>>
+                            <= check if concept type equals proposition
+                            <- {concept type}
+                        
+                        <- <line is ::() imperative>
+                            <= check if concept type equals imperative
+                            <- {concept type}
+                        
+                        <- <line is ::<> judgement>
+                            <= check if concept type equals judgement
+                            <- {concept type}
+                        
+                        <- <line is $ assigning>
+                            <= check if concept type equals assigning
+                            <- {concept type}
+                        
+                        <- <line is & grouping>
+                            <= check if concept type equals grouping
+                            <- {concept type}
+                        
+                        <- <line is @ timing>
+                            <= check if concept type equals timing
+                            <- {concept type}
+                        
+                        <- <line is * looping>
+                            <= check if concept type equals looping
+                            <- {concept type}
+                        
+                        /: STEP 3: Apply appropriate syntax formatting (executed THIRD)
+                        <- {apply object syntax formatting}
+                            <= format as object syntax
+                                <= when condition holds
+                                <* <line is {object}>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply relation syntax formatting}
+                            <= format as relation syntax
+                                <= when condition holds
+                                <* <line is [relation]>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply proposition syntax formatting}
+                            <= format as proposition syntax
+                                <= when condition holds
+                                <* <line is <proposition>>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply imperative syntax formatting}
+                            <= format as imperative syntax
+                                <= when condition holds
+                                <* <line is ::() imperative>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply judgement syntax formatting}
+                            <= format as judgement syntax
+                                <= when condition holds
+                                <* <line is ::<> judgement>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply assigning syntax formatting}
+                            <= format as assigning syntax
+                                <= when condition holds
+                                <* <line is $ assigning>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply grouping syntax formatting}
+                            <= format as grouping syntax
+                                <= when condition holds
+                                <* <line is & grouping>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply timing syntax formatting}
+                            <= format as timing syntax
+                                <= when condition holds
+                                <* <line is @ timing>
+                            <- {concept line}
+                            <- {concept type}
+                        
+                        <- {apply looping syntax formatting}
+                            <= format as looping syntax
+                                <= when condition holds
+                                <* <line is * looping>
+                            <- {concept line}
+                            <- {concept type}
+                <- [concept lines]
+                <* {concept line}
+        
+        /: PHASE 3: Provide the source data (executes FIRST)
+        <- [concept lines]
             <= filter out comment lines
-                <= when no parse error
-                <* <is parse error>
-            <- [parsed JSON representation]
-                <= parse .ncds file into JSON list of lines with metadata
+            <- {JSON list of lines}
+                <= parse .ncds file into JSON list of lines
                 <- {.ncds file}
-                    /: Ground: source .ncds file to convert to formal format
-            <- <is parse error>
-                <= check if line cannot be parsed
-                <- [parsing result]
-
-        /: PHASE 2: Process each formalized line (executes SECOND)
-        <- [formalized lines]
-            <= for each concept line in collection
-                <= return formalized line for collection
-                <- {formalized line to be collected}
-                    <= select first valid formatting option
-
-                    /: STEP 1: Classify the concept type (executed FIRST)
-                    <- {classified concept type}
-                        <= classify concept type
-                        <- {concept line}
-
-                    /: STEP 2: Check all possible type conditions (executed SECOND)
-                    <- <is object type>
-                        <= check if concept type is {object}
-                        <- {classified concept type}
-                    <- <is relation type>
-                        <= check if concept type is [relation]
-                        <- {classified concept type}
-                    <- <is proposition type>
-                        <= check if concept type is <proposition>
-                        <- {classified concept type}
-                    <- <is imperative type>
-                        <= check if concept type is imperative
-                        <- {classified concept type}
-                    <- <is judgement type>
-                        <= check if concept type is judgement
-                        <- {classified concept type}
-                    <- <is assigning type>
-                        <= check if concept type is assigning
-                        <- {classified concept type}
-                    <- <is grouping type>
-                        <= check if concept type is grouping
-                        <- {classified concept type}
-                    <- <is timing type>
-                        <= check if concept type is timing
-                        <- {classified concept type}
-                    <- <is looping type>
-                        <= check if concept type is looping
-                        <- {classified concept type}
-
-                    /: STEP 3: Apply matching formatting (executed THIRD, timing-gated)
-                    <- {formatted object line}
-                        <= apply object syntax formatting
-                            <= when condition holds
-                            <* <is object type>
-                        <- {concept line}
-                    <- {formatted relation line}
-                        <= apply relation syntax formatting
-                            <= when condition holds
-                            <* <is relation type>
-                        <- {concept line}
-                    <- {formatted proposition line}
-                        <= apply proposition syntax formatting
-                            <= when condition holds
-                            <* <is proposition type>
-                        <- {concept line}
-                    <- {formatted imperative line}
-                        <= apply imperative syntax formatting
-                            <= when condition holds
-                            <* <is imperative type>
-                        <- {concept line}
-                    <- {formatted judgement line}
-                        <= apply judgement syntax formatting
-                            <= when condition holds
-                            <* <is judgement type>
-                        <- {concept line}
-                    <- {formatted assigning line}
-                        <= apply assigning syntax formatting
-                            <= when condition holds
-                            <* <is assigning type>
-                        <- {concept line}
-                    <- {formatted grouping line}
-                        <= apply grouping syntax formatting
-                            <= when condition holds
-                            <* <is grouping type>
-                        <- {concept line}
-                    <- {formatted timing line}
-                        <= apply timing syntax formatting
-                            <= when condition holds
-                            <* <is timing type>
-                        <- {concept line}
-                    <- {formatted looping line}
-                        <= apply looping syntax formatting
-                            <= when condition holds
-                            <* <is looping type>
-                        <- {concept line}
-            <- [filtered list of non-comment concept lines]  /: REFERENCE only - defined above
-            <* {concept line}
+                    /: Ground: input NCDS draft file to be converted
+        
+        <- {.ncd output file path}
+            /: Ground: path where the formal .ncd file will be written
