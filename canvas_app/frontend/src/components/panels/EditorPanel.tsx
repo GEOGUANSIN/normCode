@@ -14,13 +14,6 @@ import { useState, useEffect, useCallback, useRef, KeyboardEvent } from 'react';
 import {
   FileText,
   FolderOpen,
-<<<<<<< HEAD
-<<<<<<< HEAD
-  FolderClosed,
-=======
->>>>>>> origin/dev
-=======
->>>>>>> origin/dev
   Save,
   RefreshCw,
   AlertCircle,
@@ -49,7 +42,7 @@ import type {
 import { editorApi } from '../../services/editorApi';
 
 // Config
-import { isNormCodeFormat as checkNormCodeFormat, isDatabaseFormat as checkDatabaseFormat } from '../../config/fileTypes';
+import { isNormCodeFormat as checkNormCodeFormat } from '../../config/fileTypes';
 
 // Components
 import { FileBrowser, NormCodeLineEditor, ExportPanel, ParadigmEditor, RepoPreview, ProjectPreview, AgentConfigPreview, OrchestratorDBInspector } from '../editor';
@@ -162,9 +155,6 @@ export function EditorPanel() {
 
   // Check if current file is NormCode format
   const isNormCodeFormat = checkNormCodeFormat(fileFormat);
-  
-  // Check if current file is a database format
-  const isDatabaseFormat = checkDatabaseFormat(fileFormat);
 
   // ==========================================================================
   // Message handling
@@ -621,10 +611,10 @@ export function EditorPanel() {
         },
         sequence_spec: {
           steps: updatedParsed.steps.map(s => {
-            const step: Record<string, unknown> = {
+            const step = {
               step_index: s.step_index,
               affordance: s.affordance,
-              params: { ...s.params },
+              params: { ...s.params } as Record<string, unknown>,
               result_key: s.result_key,
             };
             
@@ -658,8 +648,8 @@ export function EditorPanel() {
                 return planStep;
               });
               
-              (step.params as Record<string, unknown>).plan = plan;
-              (step.params as Record<string, unknown>).return_key = s.params.return_key || 'result';
+              step.params.plan = plan;
+              step.params.return_key = s.params.return_key || 'result';
             }
             
             return step;

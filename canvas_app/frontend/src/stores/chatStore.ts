@@ -247,7 +247,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setInputDisabled: (disabled) => set({ isInputDisabled: disabled }),
   
   submitInput: async (value) => {
-    const { pendingInputRequest, isSending, bufferedMessage } = get();
+    const { pendingInputRequest, isSending, bufferedMessage: _bufferedMessage } = get();
     if (isSending) return;
     
     set({ isSending: true, isInputDisabled: true });

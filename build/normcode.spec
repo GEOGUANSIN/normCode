@@ -163,9 +163,6 @@ datas = [
     # Backend source code (needed for dynamic imports)
     (str(CANVAS_APP / "backend"), "backend"),
     
-    # Compiler configurations
-    (str(CANVAS_APP / "compiler"), "compiler"),
-    
     # Infra module
     (str(PROJECT_ROOT / "infra"), "infra"),
     

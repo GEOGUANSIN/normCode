@@ -8,16 +8,14 @@
 import { useState, useEffect } from 'react';
 import { 
   Workflow, RefreshCw, ChevronRight, ChevronDown,
-  Play, Pause, Square, Eye, EyeOff, Link2, Unlink,
+  Play, Pause, Square, EyeOff, Link2,
   Loader2, Check, X, Clock, AlertCircle, Zap,
   Monitor, MessageSquare, Layout, Bug, Layers
 } from 'lucide-react';
 import { 
   useWorkerStore, 
-  WorkerState, 
   WorkerStatus, 
   WorkerCategory,
-  WorkerVisibility,
   PanelType,
   RegisteredWorker,
 } from '../../stores/workerStore';
@@ -127,7 +125,7 @@ interface PlanCardProps {
 }
 
 function PlanCard({ worker, isSelected, onSelect, onBindPanel }: PlanCardProps) {
-  const { state, bindings } = worker;
+  const { state, bindings: _bindings } = worker;
   const [expanded, setExpanded] = useState(false);
   const { panelBindings } = useWorkerStore();
   
