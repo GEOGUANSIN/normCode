@@ -1,11 +1,11 @@
 """
-Chat Router - REST API endpoints for the compiler chat interface.
+Chat Router - REST API endpoints for the chat controller interface.
 
 Provides endpoints for:
-- Sending messages to the compiler
+- Listing and selecting chat controllers
+- Sending messages to the controller
 - Getting chat history
-- Getting compiler state
-- Starting/stopping the compiler
+- Managing controller execution state
 - Responding to input requests
 """
 
@@ -15,19 +15,17 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.compiler_service import get_compiler_service
+from services.chat_controller_service import get_chat_controller_service
 from schemas.chat_schemas import (
     ChatMessage,
     SendMessageRequest,
     SendMessageResponse,
     GetMessagesResponse,
-    CompilerStateResponse,
-    CompilerProjectInfo,
-    CompilerStatus,
-    StartCompilerRequest,
-    StartCompilerResponse,
     ChatInputRequest,
     ChatInputResponse,
+    CompilerStatus,
+    ControllerStatus,
+    ControllerInfo as ControllerInfoSchema,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,33 +34,145 @@ router = APIRouter(prefix="/api/chat")
 
 
 # ============================================================================
-# Compiler State
+# New Models for Controller Selection
 # ============================================================================
 
-@router.get("/state", response_model=CompilerStateResponse)
-async def get_compiler_state():
+class ControllersListResponse(BaseModel):
+    """Response containing available controllers."""
+    controllers: List[ControllerInfoSchema]
+    current_controller_id: Optional[str] = None
+
+
+class SelectControllerRequest(BaseModel):
+    """Request to select a chat controller."""
+    controller_id: str
+
+
+class ControllerStateResponse(BaseModel):
+    """Response containing current controller state."""
+    controller_id: Optional[str] = None
+    controller_name: Optional[str] = None
+    controller_path: Optional[str] = None
+    status: str = "disconnected"
+    current_flow_index: Optional[str] = None
+    error_message: Optional[str] = None
+    pending_input: Optional[ChatInputRequest] = None
+    is_execution_active: bool = False
+
+
+class StartControllerRequest(BaseModel):
+    """Request to start the controller."""
+    auto_run: bool = True
+
+
+class StartControllerResponse(BaseModel):
+    """Response after starting the controller."""
+    success: bool
+    controller_id: Optional[str] = None
+    controller_name: Optional[str] = None
+    controller_path: Optional[str] = None
+    status: str = "disconnected"
+    error: Optional[str] = None
+
+
+# ============================================================================
+# Controller Management
+# ============================================================================
+
+@router.get("/controllers", response_model=ControllersListResponse)
+async def list_controllers(refresh: bool = False):
     """
-    Get the current state of the compiler meta project.
+    List all available chat controller projects.
     
+    Args:
+        refresh: Force rescan of available controllers
+        
     Returns:
-        Compiler project info and any pending input request
+        List of available controllers and current selection
     """
-    service = get_compiler_service()
-    state = service.get_state()
+    service = get_chat_controller_service()
+    controllers = service.get_available_controllers(refresh=refresh)
     
-    # Convert to response model
-    compiler_info = CompilerProjectInfo(
-        project_id=state.get("project_id"),
-        project_name="NormCode Compiler",
-        status=CompilerStatus(state.get("status", "disconnected")),
-        is_loaded=state.get("is_loaded", False),
-        is_read_only=True,
-        current_step=state.get("current_step"),
-        error_message=state.get("error_message"),
+    return ControllersListResponse(
+        controllers=[ControllerInfoSchema(**c) for c in controllers],
+        current_controller_id=service._controller_id,
+    )
+
+
+@router.post("/controllers/select", response_model=ControllerStateResponse)
+async def select_controller(request: SelectControllerRequest):
+    """
+    Select a chat controller project.
+    
+    This connects to the specified controller and prepares it for execution.
+    
+    Args:
+        request: Controller selection request
+        
+    Returns:
+        New controller state
+    """
+    service = get_chat_controller_service()
+    
+    try:
+        state = await service.select_controller(request.controller_id)
+        return _state_to_response(state)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to select controller: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/controllers/register")
+async def register_controller(
+    project_id: str,
+    name: str,
+    path: str,
+    config_file: Optional[str] = None,
+    description: Optional[str] = None,
+):
+    """
+    Register a new chat controller project.
+    
+    This allows dynamically adding chat-capable projects as controllers.
+    """
+    service = get_chat_controller_service()
+    
+    info = service.register_controller(
+        project_id=project_id,
+        name=name,
+        path=path,
+        config_file=config_file,
+        description=description,
     )
     
-    # Convert pending input if present
+    return {"success": True, "controller": info.to_dict()}
+
+
+# ============================================================================
+# Controller State & Lifecycle
+# ============================================================================
+
+@router.get("/state", response_model=ControllerStateResponse)
+async def get_controller_state():
+    """
+    Get the current state of the chat controller.
+    
+    Returns:
+        Controller info and any pending input request
+    """
+    service = get_chat_controller_service()
+    state = service.get_state()
+    return _state_to_response(state)
+
+
+def _state_to_response(state: dict) -> ControllerStateResponse:
+    """Convert service state dict to response model."""
+    controller_info = state.get("controller_info") or {}
     pending = state.get("pending_input")
+    
     pending_request = None
     if pending:
         pending_request = ChatInputRequest(
@@ -73,73 +183,90 @@ async def get_compiler_state():
             placeholder=pending.get("placeholder"),
         )
     
-    return CompilerStateResponse(
-        compiler=compiler_info,
+    return ControllerStateResponse(
+        controller_id=state.get("controller_id"),
+        controller_name=controller_info.get("name"),
+        controller_path=controller_info.get("path"),
+        status=state.get("status", "disconnected"),
+        current_flow_index=state.get("current_flow_index"),
+        error_message=state.get("error_message"),
         pending_input=pending_request,
+        is_execution_active=state.get("is_execution_active", False),
     )
 
 
-@router.post("/start", response_model=StartCompilerResponse)
-async def start_compiler(request: StartCompilerRequest = StartCompilerRequest()):
+@router.post("/start", response_model=StartControllerResponse)
+async def start_controller(request: StartControllerRequest = StartControllerRequest()):
     """
-    Start/connect the compiler meta project.
+    Start/connect the chat controller.
     
-    This initializes the compiler and makes it ready to receive
-    user input through the chat. The compiler project is read-only.
+    If no controller is selected, uses the default (compiler).
     
-    Args:
-        request: Start configuration (auto_run, etc.)
-        
     Returns:
-        Compiler start result with status
+        Controller start result with status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     
     try:
         state = await service.start()
+        controller_info = state.get("controller_info") or {}
         
-        return StartCompilerResponse(
+        return StartControllerResponse(
             success=True,
-            project_id=state.get("project_id"),
-            project_path=state.get("project_path"),
-            project_config_file=state.get("project_config_file"),
-            status=CompilerStatus(state.get("status", "connected")),
+            controller_id=state.get("controller_id"),
+            controller_name=controller_info.get("name"),
+            controller_path=controller_info.get("path"),
+            status=state.get("status", "connected"),
         )
         
     except Exception as e:
-        logger.error(f"Failed to start compiler: {e}")
-        return StartCompilerResponse(
+        logger.error(f"Failed to start controller: {e}")
+        return StartControllerResponse(
             success=False,
-            status=CompilerStatus.ERROR,
+            status="error",
             error=str(e),
         )
 
 
+@router.post("/pause")
+async def pause_controller():
+    """Pause the controller execution."""
+    service = get_chat_controller_service()
+    await service.pause()
+    return {"success": True, "status": "paused"}
+
+
+@router.post("/resume")
+async def resume_controller():
+    """Resume paused controller execution."""
+    service = get_chat_controller_service()
+    await service.resume()
+    return {"success": True, "status": "running"}
+
+
 @router.post("/stop")
-async def stop_compiler():
+async def stop_controller():
     """
-    Stop the compiler execution (but keep it connected).
+    Stop the controller execution (but keep it connected).
     
     Returns:
         Success status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     await service.stop()
-    
     return {"success": True, "status": "connected"}
 
 
 @router.post("/disconnect")
-async def disconnect_compiler():
+async def disconnect_controller():
     """
-    Disconnect the compiler completely.
+    Disconnect the controller completely.
     
     Returns:
         Success status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     await service.disconnect()
-    
     return {"success": True, "status": "disconnected"}
 
 
@@ -159,7 +286,7 @@ async def get_messages(limit: int = 100, offset: int = 0):
     Returns:
         List of chat messages
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     all_messages = service.get_messages()
     
     # Apply pagination
@@ -194,12 +321,12 @@ async def get_messages(limit: int = 100, offset: int = 0):
 @router.post("/messages", response_model=SendMessageResponse)
 async def send_message(request: SendMessageRequest):
     """
-    Send a message to the compiler.
+    Send a message to the controller.
     
     This is the main endpoint for user chat input. The message is:
     1. Added to history
     2. If there's a pending input request, it fulfills that request
-    3. Otherwise, it triggers the compiler to process the message
+    3. Otherwise, it's buffered for the controller to read
     
     Args:
         request: The message to send
@@ -207,7 +334,7 @@ async def send_message(request: SendMessageRequest):
     Returns:
         Success status and message ID
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     
     try:
         message = await service.send_message(
@@ -236,9 +363,8 @@ async def clear_messages():
     Returns:
         Success status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     service.clear_messages()
-    
     return {"success": True}
 
 
@@ -251,7 +377,7 @@ async def submit_input_response(request_id: str, response: ChatInputResponse):
     """
     Submit a response to a pending input request.
     
-    When the compiler requests input from the user, this endpoint
+    When the controller requests input from the user, this endpoint
     is used to submit the response.
     
     Args:
@@ -261,7 +387,7 @@ async def submit_input_response(request_id: str, response: ChatInputResponse):
     Returns:
         Success status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     
     success = service.submit_input_response(request_id, response.value)
     
@@ -285,7 +411,7 @@ async def cancel_input_request(request_id: str):
     Returns:
         Success status
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     
     success = service.cancel_input_request(request_id)
     
@@ -304,13 +430,36 @@ async def cancel_input_request(request_id: str):
 
 def setup_chat_websocket(emit_callback):
     """
-    Set up the compiler service with WebSocket emit callback.
+    Set up the chat controller service with WebSocket emit callback.
     
     This should be called when the WebSocket connection is established.
     
     Args:
         emit_callback: Function to emit WebSocket events
     """
-    service = get_compiler_service()
+    service = get_chat_controller_service()
     service.set_emit_callback(emit_callback)
 
+
+# ============================================================================
+# Backward Compatibility Aliases
+# ============================================================================
+
+# These endpoints use the old "compiler" naming for backward compatibility
+
+@router.get("/compiler/state")
+async def get_compiler_state_compat():
+    """Backward compatible endpoint."""
+    return await get_controller_state()
+
+
+@router.post("/compiler/start")
+async def start_compiler_compat():
+    """Backward compatible endpoint."""
+    return await start_controller()
+
+
+@router.post("/compiler/stop")
+async def stop_compiler_compat():
+    """Backward compatible endpoint."""
+    return await stop_controller()

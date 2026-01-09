@@ -69,6 +69,10 @@ class Orchestrator:
         # Track execution IDs for status updates
         self._current_execution_ids: Dict[str, int] = {}  # flow_index -> execution_id
         
+        # Callback for iteration history - called before concept references are reset
+        # Signature: callback(run_id, flow_index, concept_name, iteration_index, cycle, reference)
+        self._on_before_reset_callback: Optional[Any] = None
+        
         self._create_waitlist()
         self._initialize_blackboard()
 
@@ -193,46 +197,68 @@ class Orchestrator:
         An item is ready if its dependencies are met. Certain flags can bypass checks.
         """
         flow_index = item.inference_entry.flow_info['flow_index']
+        concept_name = item.inference_entry.concept_to_infer.concept_name
         is_first_execution = self.blackboard.get_execution_count(flow_index) == 0
-        logging.debug(f"--- Checking readiness for item {flow_index} (Cycle: {self.tracker.cycle_count}, Execution Count: {self.blackboard.get_execution_count(flow_index)}) ---")
+        
+        # Use INFO level for better visibility during debugging
+        logging.info(f"--- Checking readiness for item {flow_index} [{concept_name}] (Cycle: {self.tracker.cycle_count}, ExecCount: {self.blackboard.get_execution_count(flow_index)}) ---")
 
         # Check for completion of all supporting items, unless bypassed.
         # This ensures procedural dependencies are met before continuing.
         start_with_support_reference_only = getattr(item.inference_entry, 'start_with_support_reference_only', False)
         start_without_support_reference_only_once = getattr(item.inference_entry, 'start_without_support_reference_only_once', False)
         if not start_with_support_reference_only and not (start_without_support_reference_only_once and is_first_execution):
+            supporting_items = self.waitlist.get_supporting_items(item)
+            if supporting_items:
+                logging.info(f"  - Supporting items ({len(supporting_items)}): {[si.inference_entry.flow_info['flow_index'] for si in supporting_items]}")
             if not self._are_supporting_items_complete(item):
-                logging.debug(f"  - RESULT: NOT READY. Supporting items are not complete.")
+                incomplete_supports = [
+                    f"{si.inference_entry.flow_info['flow_index']}={self.blackboard.get_item_status(si.inference_entry.flow_info['flow_index'])}"
+                    for si in supporting_items
+                    if self.blackboard.get_item_status(si.inference_entry.flow_info['flow_index']) != 'completed'
+                ]
+                logging.info(f"  - RESULT: NOT READY. Supporting items incomplete: {incomplete_supports}")
                 return False
+            logging.info(f"  - Supporting items check: PASSED")
         else:
             if start_with_support_reference_only:
-                logging.debug(f"  - Bypassed supporting items check.")
+                logging.info(f"  - Bypassed supporting items check (start_with_support_reference_only).")
             else:
-                logging.debug(f"  - Bypassed supporting items check (first execution only).")
+                logging.info(f"  - Bypassed supporting items check (first execution only).")
 
 
         # Check function concept readiness, unless bypassed
         if not item.inference_entry.start_without_function:
             if not (item.inference_entry.start_without_function_only_once and is_first_execution):
+                fc = item.inference_entry.function_concept
+                fc_name = fc.concept_name if fc else "N/A"
+                fc_status = self.blackboard.get_concept_status(fc_name) if fc else "N/A"
+                logging.info(f"  - Function concept '{fc_name}': {fc_status}")
                 if not self._is_function_concept_ready(item):
-                    fc_name = item.inference_entry.function_concept.concept_name if item.inference_entry.function_concept else "N/A"
-                    status = self.blackboard.get_concept_status(fc_name) if fc_name != "N/A" else "N/A"
-                    logging.debug(f"  - RESULT: NOT READY. Function concept '{fc_name}' is not complete (Status: {status}).")
+                    logging.info(f"  - RESULT: NOT READY. Function concept '{fc_name}' is not complete (Status: {fc_status}).")
                     return False
+                logging.info(f"  - Function concept check: PASSED")
             else:
-                logging.debug(f"  - Bypassed function concept check (first execution only).")
+                logging.info(f"  - Bypassed function concept check (first execution only).")
         else:
-            logging.debug(f"  - Bypassed function concept check (always).")
+            logging.info(f"  - Bypassed function concept check (always).")
 
 
         # Check value concept readiness, unless bypassed
         if item.inference_entry.start_without_value:
-            logging.debug(f"  - RESULT: IS READY (start_without_value is True).")
+            logging.info(f"  - RESULT: IS READY (start_without_value is True).")
             return True
 
         if item.inference_entry.start_without_value_only_once and is_first_execution:
-            logging.debug(f"  - RESULT: IS READY (start_without_value_only_once on first execution).")
+            logging.info(f"  - RESULT: IS READY (start_without_value_only_once on first execution).")
             return True
+
+        # Log ALL value concept statuses for visibility
+        all_vc_statuses = [
+            f"'{vc.concept_name}'={self.blackboard.get_concept_status(vc.concept_name)}"
+            for vc in item.inference_entry.value_concepts
+        ]
+        logging.info(f"  - Value concepts ({len(item.inference_entry.value_concepts)}): {all_vc_statuses}")
 
         if not self._are_value_concepts_ready(item):
             pending_vcs = [
@@ -240,10 +266,11 @@ class Orchestrator:
                 for vc in item.inference_entry.value_concepts
                 if self.blackboard.get_concept_status(vc.concept_name) != 'complete'
             ]
-            logging.debug(f"  - RESULT: NOT READY. Value concepts are not ready. Pending: {', '.join(pending_vcs)}")
+            logging.info(f"  - RESULT: NOT READY. Value concepts not ready: {pending_vcs}")
             return False
-            
-        logging.debug(f"  - RESULT: IS READY. All checks passed.")
+        
+        logging.info(f"  - Value concepts check: PASSED")
+        logging.info(f"  - RESULT: IS READY. All checks passed for {flow_index}.")
         return True
 
     def _handle_inference_failure(self, item: WaitlistItem, error: Exception):
@@ -397,20 +424,30 @@ class Orchestrator:
     def _handle_regular_inference(self, states: BaseStates, item: WaitlistItem) -> str:
         """Handles the logic for all non-timing inferences."""
         flow_index = item.inference_entry.flow_info['flow_index']
-        logging.info(f"  -> Inference executed successfully for item {flow_index}")
+        concept_name = item.inference_entry.concept_to_infer.concept_name
+        logging.info(f"  -> Inference executed successfully for item {flow_index} [{concept_name}]")
         self.blackboard.set_item_result(flow_index, "Success")
         
         if item.inference_entry.inference_sequence.startswith('judgement'):
             condition_met = getattr(states, 'condition_met', None)
             if condition_met is True:
-                logging.info(f"Judgement condition for item {flow_index} met. Marking as 'success'.")
+                logging.info(f"[{flow_index}] Judgement condition met. Marking as 'success'.")
                 self.blackboard.set_item_completion_detail(flow_index, 'success')
             elif condition_met is False:
-                logging.info(f"Judgement condition for item {flow_index} not met. Marking as 'condition_not_met'.")
+                logging.info(f"[{flow_index}] Judgement condition not met. Marking as 'condition_not_met'.")
                 self.blackboard.set_item_completion_detail(flow_index, 'condition_not_met')
             
             # Store truth mask for filter injection if available (from TIA step)
             self._store_truth_mask_if_available(states, item)
+        
+        # Log all OR records found in states for debugging
+        or_records_inference = [r for r in getattr(states, 'inference', []) if r.step_name == 'OR']
+        or_records_context = [r for r in getattr(states, 'context', []) if r.step_name == 'OR']
+        logging.info(f"[{flow_index}] OR records found - inference: {len(or_records_inference)}, context: {len(or_records_context)}")
+        for r in or_records_inference:
+            logging.info(f"[{flow_index}]   - inference OR: concept={r.concept.name if r.concept else 'None'}, has_ref={r.reference is not None}")
+        for r in or_records_context:
+            logging.info(f"[{flow_index}]   - context OR: concept={r.concept.name if r.concept else 'None'}, has_ref={r.reference is not None}")
         
         all_conditions_met = self._update_references_and_check_completion(states, item)
         
@@ -477,9 +514,10 @@ class Orchestrator:
         return not (is_quantifying and not is_complete)
 
     def _check_quantifying_completion(self, states: BaseStates, item: WaitlistItem) -> tuple[bool, bool]:
-        """Checks if an item is a quantifying inference and whether it has completed."""
-        is_quantifying = item.inference_entry.inference_sequence == 'quantifying'
-        if not is_quantifying:
+        """Checks if an item is a quantifying or looping inference and whether it has completed."""
+        sequence_type = item.inference_entry.inference_sequence
+        is_iterating = sequence_type in ('quantifying', 'looping')
+        if not is_iterating:
             return False, True
         is_complete = getattr(getattr(states, 'syntax', None), 'completion_status', False)
         return True, is_complete
@@ -491,30 +529,70 @@ class Orchestrator:
             return
             
         flow_index = item.inference_entry.flow_info['flow_index']
-        logging.info(f"Quantifying loop for item {flow_index} not complete. Resetting supporters.")
+        sequence_type = item.inference_entry.inference_sequence
+        logging.info(f"Iterating {sequence_type} for item {flow_index} not complete. Resetting supporters.")
         
         for support_item in supporting_items:
             support_flow_index = support_item.inference_entry.flow_info['flow_index']
             self.blackboard.set_item_status(support_flow_index, 'pending')
             self.blackboard.reset_execution_count(support_flow_index)
 
-            # If the supporting item is a quantifying loop, clear its state from the workspace.
-            if support_item.inference_entry.inference_sequence == 'quantifying':
+            # If the supporting item is an iterating sequence, clear its state from the workspace.
+            if support_item.inference_entry.inference_sequence in ('quantifying', 'looping'):
                 self._clear_quantifier_workspace_state(support_item)
 
             inferred_concept_entry = support_item.inference_entry.concept_to_infer
             if not inferred_concept_entry.is_ground_concept:
-                # Check if concept is invariant - if so, skip resetting its reference
+                # Check if concept is invariant - if so, keep both reference AND status intact
                 if inferred_concept_entry.is_invariant:
-                    logging.info(f"  - Skipping reset of invariant concept '{inferred_concept_entry.concept_name}' - keeping reference intact.")
-                    # Still set status to pending but don't clear the reference
-                    self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
+                    # Invariant concepts keep their 'complete' status since they have valid data
+                    # Only reset the item status, not the concept status
+                    logging.info(f"  - Invariant concept '{inferred_concept_entry.concept_name}' keeps 'complete' status and reference intact.")
                 else:
+                    # ITERATION HISTORY: Save snapshot before clearing reference
+                    if (self._on_before_reset_callback and 
+                        inferred_concept_entry.concept and 
+                        inferred_concept_entry.concept.reference is not None):
+                        try:
+                            # Get current iteration count from blackboard
+                            iteration_index = self._get_current_iteration_index(inferred_concept_entry.concept_name)
+                            self._on_before_reset_callback(
+                                self.run_id,
+                                support_flow_index,
+                                inferred_concept_entry.concept_name,
+                                iteration_index,
+                                self.tracker.cycle_count,
+                                inferred_concept_entry.concept.reference
+                            )
+                        except Exception as e:
+                            logging.warning(f"Failed to save iteration snapshot for {inferred_concept_entry.concept_name}: {e}")
+                    
+                    # Increment reset count for iteration tracking
+                    self.blackboard.increment_concept_reset_count(inferred_concept_entry.concept_name)
+                    
                     # Normal reset behavior for non-invariant concepts
                     self.blackboard.set_concept_status(inferred_concept_entry.concept_name, 'pending')
                     if inferred_concept_entry.concept:
                         inferred_concept_entry.concept.reference = None
                     logging.info(f"  - Reset item {support_flow_index} and concept '{inferred_concept_entry.concept_name}' to pending.")
+    
+    def _get_current_iteration_index(self, concept_name: str) -> int:
+        """Get the current iteration index for a concept based on execution history."""
+        # Count how many times this concept has been reset (i.e., completed iterations)
+        # This is tracked via the execution count in the blackboard
+        try:
+            return self.blackboard.get_concept_reset_count(concept_name)
+        except Exception:
+            return 0
+    
+    def set_before_reset_callback(self, callback):
+        """
+        Set a callback to be called before concept references are reset during loop iterations.
+        
+        The callback receives: (run_id, flow_index, concept_name, iteration_index, cycle, reference)
+        This allows external systems to save iteration snapshots for historical viewing.
+        """
+        self._on_before_reset_callback = callback
 
     def _clear_quantifier_workspace_state(self, item: WaitlistItem):
         """Clears the state of a quantifier from the workspace."""
@@ -529,25 +607,28 @@ class Orchestrator:
 
     def _update_concept_from_record(self, record: Any, category: str, item: WaitlistItem, is_quantifying: bool, is_complete: bool):
         """Processes a single 'OR' record from the inference state, updating the concept reference."""
+        flow_index = item.inference_entry.flow_info['flow_index']
         concept_name = self._get_concept_name_from_record(record, category, item)
         if not concept_name:
+            logging.warning(f"[{flow_index}] Could not extract concept name from OR record (category={category})")
             return
 
         concept_entry = self.concept_repo.get_concept(concept_name)
         if not (concept_entry and concept_entry.concept):
-            logging.warning(f"Could not find concept '{concept_name}' in repo to update reference.")
+            logging.warning(f"[{flow_index}] Could not find concept '{concept_name}' in repo to update reference.")
             return
 
         concept_entry.concept.reference = record.reference.copy()
-        logging.info(f"Updated reference for concept '{concept_name}' from inference state.")
+        logging.info(f"[{flow_index}] Updated reference for concept '{concept_name}' from inference state.")
 
         # For quantifying loops, only set the concept to 'complete' when the loop itself is finished.
         # This rule only applies to the main inferred concept, not context concepts.
         if category == 'context' or not is_quantifying or (is_quantifying and is_complete):
+            old_status = self.blackboard.get_concept_status(concept_name)
             self.blackboard.set_concept_status(concept_name, 'complete')
-            logging.info(f"Concept '{concept_name}' set to 'complete' on blackboard after reference update.")
+            logging.info(f"[{flow_index}] Concept '{concept_name}' status: '{old_status}' -> 'complete'")
         else:
-            logging.info(f"Concept '{concept_name}' reference updated, but status remains 'pending' as quantifying loop is not complete.")
+            logging.info(f"[{flow_index}] Concept '{concept_name}' reference updated, but status remains 'pending' (quantifying loop not complete).")
 
     def _get_concept_name_from_record(self, record: Any, category: str, item: WaitlistItem) -> Optional[str]:
         """Extracts the concept name from a state record."""

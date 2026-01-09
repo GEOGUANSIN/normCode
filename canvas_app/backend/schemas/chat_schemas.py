@@ -21,6 +21,7 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
     COMPILER = "compiler"
+    CONTROLLER = "controller"
 
 
 class ChatMessage(BaseModel):
@@ -93,6 +94,37 @@ class CompilerStatus(str, Enum):
     CONNECTED = "connected"
     RUNNING = "running"
     ERROR = "error"
+
+
+class ControllerStatus(str, Enum):
+    """Status values for chat controllers."""
+    DISCONNECTED = "disconnected"
+    CONNECTING = "connecting"
+    CONNECTED = "connected"
+    RUNNING = "running"
+    PAUSED = "paused"
+    ERROR = "error"
+
+
+class ControllerInfo(BaseModel):
+    """Information about an available chat controller project."""
+    project_id: str
+    name: str
+    path: str
+    config_file: Optional[str] = None
+    description: Optional[str] = None
+    is_builtin: bool = False
+
+
+class ControllerState(BaseModel):
+    """Current state of the chat controller."""
+    controller_id: Optional[str] = None
+    controller_info: Optional[ControllerInfo] = None
+    status: ControllerStatus = ControllerStatus.DISCONNECTED
+    current_flow_index: Optional[str] = None
+    error_message: Optional[str] = None
+    pending_input: Optional[ChatInputRequest] = None
+    is_execution_active: bool = False
 
 
 class CompilerProjectInfo(BaseModel):

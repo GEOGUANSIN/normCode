@@ -1,0 +1,17 @@
+/: Document Profile Generation
+/: Creates a comprehensive profile of a document by analyzing its content
+
+<- {document profile}
+    <= combine analyses into document profile
+    <- {main topics}
+        <= extract main topics using topic modeling
+        <- {document text}
+            /: Ground: raw text content of the document to be analyzed
+    <- {sentiment}
+        <= analyze sentiment of the text
+        <- {document text}
+            /: Ground
+    <- {named entities}
+        <= identify named entities
+        <- {document text}
+            /: Ground

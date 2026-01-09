@@ -1,0 +1,15 @@
+Validate and process a user registration form.
+
+Steps:
+- Receive user registration data
+- Validate the email format
+- If email is valid:
+    - Hash the password
+    - Create a new user account
+    - Send a welcome email
+- If email is invalid:
+    - Return an error message with validation details
+
+Input: user registration data (email, password, name)
+Output: success confirmation with user ID, or error message
+

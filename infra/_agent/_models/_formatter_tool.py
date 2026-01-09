@@ -110,22 +110,36 @@ class FormatterTool:
 
     def parse(self, raw_response: str) -> Dict[str, Any]:
         """
-        Parses a JSON string into a Python dictionary.
-        Handles errors gracefully if the input is not valid JSON.
+        Parses a JSON or Python dict string into a Python dictionary.
+        Handles errors gracefully if the input is not valid.
         """
+        import ast
+        
         if not isinstance(raw_response, str) or not raw_response.strip():
-            return {"error": "Invalid input: received empty or non-string response for JSON parsing."}
+            return {"error": "Invalid input: received empty or non-string response for parsing."}
         
         # Attempt to fix common LLM errors like escaping single quotes
         cleaned_response = raw_response.replace(r"\'", "'")
         
+        # Try JSON first (standard format)
         try:
             return json.loads(cleaned_response)
         except json.JSONDecodeError:
-            return {
-                "raw_response": raw_response, # Log the original for debugging
-                "error": "Failed to parse JSON response"
-            }
+            pass
+        
+        # Try Python literal eval (handles single-quoted dicts from LLMs)
+        try:
+            result = ast.literal_eval(cleaned_response)
+            if isinstance(result, dict):
+                return result
+        except (ValueError, SyntaxError):
+            pass
+        
+        # Both failed
+        return {
+            "raw_response": raw_response,
+            "error": "Failed to parse response as JSON or Python dict"
+        }
 
     def get(self, dictionary: Dict, key: str, default: Any = None) -> Any:
         """Gets a value from a dictionary by key."""
@@ -135,16 +149,22 @@ class FormatterTool:
         """
         Wraps the data in the normcode format %xxx() or %{type}xxx().
         Delegates to the Body's Perception faculty if available (via encode_sign).
+        
+        Special case: type="literal" means NO type specifier - just %id(content).
+        "literal" is not a norm, it indicates raw data without a perceptual norm.
         """
+        # "literal" means no type specifier
+        effective_type = None if type == "literal" else type
+        
         if hasattr(self, 'perception_router'):
-            wrapped_data = self.perception_router.encode_sign(data, type)
+            wrapped_data = self.perception_router.encode_sign(data, effective_type)
             print(f">>> MIA step: Encoded sign -> {wrapped_data}")
             return wrapped_data
 
         # Fallback
         unique_code = uuid.uuid4().hex[:3]
-        if type:
-            wrapped_data = f"%{{{type}}}{unique_code}({data})"
+        if effective_type:
+            wrapped_data = f"%{{{effective_type}}}{unique_code}({data})"
         else:
             wrapped_data = f"%{unique_code}({data})"
         print(f">>> MIA step: Wrapped data -> {wrapped_data}")
@@ -192,3 +212,41 @@ class FormatterTool:
         
         # If no markdown block is found, assume the whole thing is the code
         return raw_code.strip()
+
+    @property
+    def parse_boolean(self) -> Callable[[str], bool]:
+        """
+        Returns a function that parses a raw LLM response to extract a boolean value.
+        
+        The function looks for common boolean indicators in the text:
+        - "true", "yes", "1", "correct", "affirmative" -> True
+        - "false", "no", "0", "incorrect", "negative" -> False
+        
+        Used by: h_Memo-v_Prompt-c_LLMGenerate-o_Truth paradigm
+        """
+        def _parse_boolean_fn(raw_response: str) -> bool:
+            if not isinstance(raw_response, str):
+                # If already a boolean, return it directly
+                if isinstance(raw_response, bool):
+                    return raw_response
+                return False
+            
+            # Normalize the response
+            text = raw_response.strip().lower()
+            
+            # Check for explicit true indicators
+            true_indicators = ['true', 'yes', '1', 'correct', 'affirmative', 'continue', 'proceed']
+            for indicator in true_indicators:
+                if indicator in text:
+                    return True
+            
+            # Check for explicit false indicators
+            false_indicators = ['false', 'no', '0', 'incorrect', 'negative', 'stop', 'end', 'terminate', 'quit', 'exit']
+            for indicator in false_indicators:
+                if indicator in text:
+                    return False
+            
+            # Default to False if no clear indicator found
+            return False
+        
+        return _parse_boolean_fn

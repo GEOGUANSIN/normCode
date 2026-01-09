@@ -1,9 +1,12 @@
 """Execution control endpoints."""
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 
-from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
+from services.execution_service import (
+    execution_controller, execution_controller_registry, get_execution_controller,
+    get_worker_registry, PanelType, RunMode,
+)
 from services.project_service import project_service
 from schemas.execution_schemas import (
     ExecutionState, BreakpointRequest, LogsResponse, LogEntry,
@@ -235,6 +238,97 @@ async def get_all_references():
     return execution_controller.get_all_reference_data()
 
 
+@router.get("/concept-statuses")
+async def get_concept_statuses():
+    """Get concept statuses directly from the blackboard.
+    
+    Returns a dict mapping concept_name -> status ('complete' | 'empty' | etc.)
+    This queries the infra layer directly, making it the source of truth
+    for whether a concept has data.
+    
+    This is useful for the frontend to determine if a concept has data
+    without needing to maintain parallel state in the canvas app.
+    """
+    return execution_controller.get_concept_statuses()
+
+
+@router.get("/reference/{concept_name}/history")
+async def get_reference_history(
+    concept_name: str, 
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a concept.
+    
+    During loop iterations, concept values are cleared and recomputed.
+    This endpoint returns historical snapshots from previous iterations,
+    allowing the UI to display past values.
+    
+    Returns:
+        - concept_name: The queried concept name
+        - run_id: The current run ID
+        - history: List of historical entries (newest first), each containing:
+            - iteration_index: The iteration number
+            - cycle_number: The orchestrator cycle when saved
+            - data: The tensor data
+            - axes: Axis names
+            - shape: Tensor shape
+            - timestamp: When the snapshot was saved
+        - total_iterations: Total number of historical entries
+    """
+    if not execution_controller.orchestrator:
+        return {
+            "concept_name": concept_name,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution"
+        }
+    
+    history = execution_controller.get_iteration_history(concept_name, limit)
+    
+    return {
+        "concept_name": concept_name,
+        "run_id": execution_controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
+
+
+@router.get("/flow/{flow_index}/history")
+async def get_flow_history(
+    flow_index: str, 
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a specific flow_index.
+    
+    Similar to /reference/{concept_name}/history but queries by flow_index
+    instead of concept name. Useful for the DetailPanel which has flow_index.
+    
+    Returns:
+        - flow_index: The queried flow_index
+        - run_id: The current run ID
+        - history: List of historical entries (newest first)
+        - total_iterations: Total number of historical entries
+    """
+    if not execution_controller.orchestrator:
+        return {
+            "flow_index": flow_index,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution"
+        }
+    
+    history = execution_controller.get_flow_iteration_history(flow_index, limit)
+    
+    return {
+        "flow_index": flow_index,
+        "run_id": execution_controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
+
+
 class VerboseLoggingRequest(BaseModel):
     """Request to toggle verbose logging."""
     enabled: bool
@@ -255,6 +349,41 @@ async def set_verbose_logging(request: VerboseLoggingRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class RunModeRequest(BaseModel):
+    """Request to set the run mode."""
+    mode: str  # "slow" or "fast"
+
+
+@router.post("/run-mode", response_model=CommandResponse)
+async def set_run_mode(request: RunModeRequest):
+    """Set the execution run mode.
+    
+    Run modes:
+    - "slow" (default): Execute one inference at a time. Easier to follow execution flow.
+    - "fast": Execute all ready inferences per cycle. Faster but harder to track.
+    """
+    try:
+        mode = RunMode(request.mode)
+        execution_controller.set_run_mode(mode)
+        return CommandResponse(
+            success=True,
+            message=f"Run mode set to '{mode.value}'"
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid run mode: {request.mode}. Must be 'slow' or 'fast'"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/run-mode")
+async def get_run_mode():
+    """Get the current run mode."""
+    return {"mode": execution_controller.run_mode.value}
 
 
 @router.get("/step-progress")
@@ -523,3 +652,497 @@ async def cancel_user_input(request_id: str):
         request_id=request_id,
         message="Request cancelled"
     )
+
+
+# ============================================================================
+# Chat Input (for chat-driven paradigms like c_ChatRead-o_Literal)
+# ============================================================================
+
+class ChatInputSubmitRequest(BaseModel):
+    """Request body for submitting chat input."""
+    value: str
+
+
+@router.post("/chat-input/{request_id}")
+async def submit_chat_input(request_id: str, request: ChatInputSubmitRequest):
+    """Submit a response for a pending chat input request.
+    
+    This is used when a NormCode plan is blocking on a chat read operation
+    (e.g., using the c_ChatRead-o_Literal paradigm).
+    
+    Args:
+        request_id: The ID of the pending chat request
+        request.value: The user's message
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        raise HTTPException(status_code=400, detail="Chat tool not initialized")
+    
+    success = execution_controller.chat_tool.submit_response(request_id, request.value)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending chat request found with ID: {request_id}"
+        )
+    
+    return {"success": True, "request_id": request_id}
+
+
+@router.post("/chat-input/{request_id}/cancel")
+async def cancel_chat_input(request_id: str):
+    """Cancel a pending chat input request.
+    
+    Args:
+        request_id: The ID of the request to cancel
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        raise HTTPException(status_code=400, detail="Chat tool not initialized")
+    
+    success = execution_controller.chat_tool.cancel_request(request_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending chat request found with ID: {request_id}"
+        )
+    
+    return {"success": True, "request_id": request_id, "message": "Request cancelled"}
+
+
+@router.get("/chat-input/pending")
+async def get_pending_chat_input():
+    """Get the current pending chat input request, if any.
+    
+    Returns:
+        The pending request details or null
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {"pending": None}
+    
+    pending = execution_controller.chat_tool.get_pending_request()
+    return {"pending": pending}
+
+
+class ChatBufferRequest(BaseModel):
+    """Request body for buffering a chat message."""
+    message: str
+
+
+@router.post("/chat-buffer")
+async def buffer_chat_message(request: ChatBufferRequest):
+    """Buffer a chat message for the running plan to consume.
+    
+    Only ONE message can be buffered at a time. If a message is already
+    buffered (waiting to be consumed by the plan), this will fail.
+    
+    If there's already a pending input request, the message is delivered immediately.
+    
+    Args:
+        request.message: The user's message
+        
+    Returns:
+        success: True if message was buffered or delivered
+        buffer_full: True if buffer already has a message waiting
+        delivered: True if message was delivered to a waiting request immediately
+        buffered_message: The message currently in the buffer (if any)
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {"success": False, "reason": "Chat tool not initialized"}
+    
+    result = execution_controller.chat_tool.buffer_message(request.message)
+    return result
+
+
+@router.get("/chat-buffer/status")
+async def get_chat_buffer_status():
+    """Get the status of the chat message buffer.
+    
+    Returns:
+        execution_active: Whether execution is currently running
+        has_pending_request: Whether the plan is waiting for input
+        has_buffered_message: Whether there's a message waiting in the buffer
+        buffered_message: The message content (if any)
+    """
+    if not hasattr(execution_controller, 'chat_tool') or execution_controller.chat_tool is None:
+        return {
+            "execution_active": False,
+            "has_pending_request": False,
+            "has_buffered_message": False,
+            "buffered_message": None
+        }
+    
+    chat_tool = execution_controller.chat_tool
+    return {
+        "execution_active": chat_tool.is_execution_active(),
+        "has_pending_request": chat_tool.has_pending_request(),
+        "has_buffered_message": chat_tool.has_buffered_message(),
+        "buffered_message": chat_tool.get_buffered_message()
+    }
+
+
+# =============================================================================
+# Worker Registry API (Normalized worker/panel management)
+# =============================================================================
+
+@router.get("/workers")
+async def list_workers():
+    """List all registered workers.
+    
+    Returns workers with their state and panel bindings.
+    """
+    registry = get_worker_registry()
+    state = registry.get_registry_state()
+    return state
+
+
+@router.get("/workers/{worker_id}")
+async def get_worker(worker_id: str):
+    """Get details for a specific worker.
+    
+    Args:
+        worker_id: The worker ID
+        
+    Returns:
+        Worker state and bindings
+    """
+    registry = get_worker_registry()
+    worker = registry.get_worker(worker_id)
+    
+    if not worker:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    return {
+        "state": worker.state.to_dict(),
+        "bindings": list(worker.bindings),
+    }
+
+
+@router.get("/workers/{worker_id}/state")
+async def get_worker_state(worker_id: str):
+    """Get execution state for a specific worker.
+    
+    This returns the full execution state from the worker's controller.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    return controller.get_state()
+
+
+@router.get("/workers/{worker_id}/graph")
+async def get_worker_graph(worker_id: str):
+    """Get graph data for a specific worker.
+    
+    Returns the pre-built graph from when the worker loaded its repositories.
+    This is fast since the graph is already computed.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    # Use pre-built graph if available (built when repos were loaded)
+    if controller.graph_data:
+        logger.info(f"Returning pre-built graph for worker {worker_id}: {len(controller.graph_data.nodes)} nodes")
+        return {
+            "nodes": [n.model_dump() for n in controller.graph_data.nodes],
+            "edges": [e.model_dump() for e in controller.graph_data.edges],
+            "worker_id": worker_id,
+        }
+    
+    # Fallback: Build graph from JSON files if pre-built not available
+    if not controller._load_config:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Worker {worker_id} has no graph data and no load config"
+        )
+    
+    try:
+        from services.graph_service import build_graph_from_repositories
+        import json
+        
+        concepts_path = controller._load_config.get("concepts_path")
+        inferences_path = controller._load_config.get("inferences_path")
+        
+        if not concepts_path or not inferences_path:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Worker {worker_id} missing repository paths in load config"
+            )
+        
+        with open(concepts_path, 'r', encoding='utf-8') as f:
+            concepts_data = json.load(f)
+        with open(inferences_path, 'r', encoding='utf-8') as f:
+            inferences_data = json.load(f)
+        
+        logger.info(f"Building graph on-demand for worker {worker_id}")
+        graph = build_graph_from_repositories(concepts_data, inferences_data)
+        
+        # Cache it for next time
+        controller.graph_data = graph
+        
+        return {
+            "nodes": [n.model_dump() for n in graph.nodes],
+            "edges": [e.model_dump() for e in graph.edges],
+            "worker_id": worker_id,
+        }
+    except FileNotFoundError as e:
+        logger.error(f"Repository file not found for worker {worker_id}: {e}")
+        raise HTTPException(status_code=404, detail=f"Repository file not found: {str(e)}")
+    except Exception as e:
+        logger.exception(f"Failed to build graph for worker {worker_id}")
+        raise HTTPException(status_code=500, detail=f"Failed to build graph: {str(e)}")
+
+
+@router.get("/workers/{worker_id}/reference/{concept_name}")
+async def get_worker_reference_data(worker_id: str, concept_name: str):
+    """Get reference data for a concept from a specific worker.
+    
+    This allows fetching concept values from any worker, not just the active project.
+    Useful when viewing an assistant's graph in a separate tab.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": [],
+            "error": "No concept repository loaded"
+        }
+    
+    ref_data = controller.get_reference_data(concept_name)
+    if ref_data is None:
+        return {
+            "concept_name": concept_name,
+            "has_reference": False,
+            "data": None,
+            "axes": [],
+            "shape": []
+        }
+    
+    logger.debug(f"Got reference data for {concept_name} from worker {worker_id}")
+    return ref_data
+
+
+@router.get("/workers/{worker_id}/reference/{concept_name}/history")
+async def get_worker_reference_history(
+    worker_id: str, 
+    concept_name: str,
+    limit: int = Query(default=50, ge=1, le=200)
+):
+    """Get historical iteration values for a concept from a specific worker.
+    
+    This allows fetching iteration history from workers like the chat controller,
+    not just the main execution controller.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.orchestrator:
+        return {
+            "concept_name": concept_name,
+            "run_id": None,
+            "history": [],
+            "total_iterations": 0,
+            "message": "No active execution for worker"
+        }
+    
+    history = controller.get_iteration_history(concept_name, limit)
+    
+    logger.debug(f"Got {len(history)} history entries for {concept_name} from worker {worker_id}")
+    return {
+        "concept_name": concept_name,
+        "run_id": controller.orchestrator.run_id,
+        "history": history,
+        "total_iterations": len(history)
+    }
+
+
+@router.get("/workers/{worker_id}/references")
+async def get_worker_all_references(worker_id: str):
+    """Get all reference data from a specific worker.
+    
+    Returns a dict mapping concept_name -> reference_data for all concepts
+    that have values in this worker's concept repository.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if not controller.concept_repo:
+        return {"references": {}, "count": 0}
+    
+    return controller.get_all_reference_data()
+
+
+class PanelBindRequest(BaseModel):
+    """Request to bind a panel to a worker."""
+    panel_id: str
+    panel_type: str = "main"  # main, chat, secondary, floating, debug
+    worker_id: str
+
+
+@router.post("/panels/bind")
+async def bind_panel(request: PanelBindRequest):
+    """Bind a panel to view a specific worker.
+    
+    This allows any panel to view any worker's execution.
+    A panel can only be bound to one worker at a time.
+    
+    Args:
+        request.panel_id: Unique ID for the panel
+        request.panel_type: Type of panel (main, chat, secondary, etc.)
+        request.worker_id: The worker to bind to
+    """
+    registry = get_worker_registry()
+    
+    # Parse panel type
+    try:
+        panel_type = PanelType(request.panel_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid panel type: {request.panel_type}. Valid types: {[t.value for t in PanelType]}"
+        )
+    
+    try:
+        binding = registry.bind_panel(
+            panel_id=request.panel_id,
+            panel_type=panel_type,
+            worker_id=request.worker_id,
+        )
+        return {
+            "success": True,
+            "panel_id": binding.panel_id,
+            "panel_type": binding.panel_type.value,
+            "worker_id": binding.worker_id,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/panels/{panel_id}/unbind")
+async def unbind_panel(panel_id: str):
+    """Unbind a panel from its current worker.
+    
+    Args:
+        panel_id: The panel to unbind
+    """
+    registry = get_worker_registry()
+    was_bound = registry.unbind_panel(panel_id)
+    
+    return {
+        "success": True,
+        "was_bound": was_bound,
+        "panel_id": panel_id,
+    }
+
+
+class PanelSwitchRequest(BaseModel):
+    """Request to switch a panel to a different worker."""
+    worker_id: str
+
+
+@router.post("/panels/{panel_id}/switch")
+async def switch_panel_worker(panel_id: str, request: PanelSwitchRequest):
+    """Switch a panel to view a different worker.
+    
+    This unbinds from the current worker and binds to the new one.
+    
+    Args:
+        panel_id: The panel to switch
+        request.worker_id: The new worker to view
+    """
+    registry = get_worker_registry()
+    
+    # Get current binding to preserve panel type
+    current = registry.get_panel_binding(panel_id)
+    panel_type = current.panel_type if current else PanelType.MAIN
+    
+    try:
+        binding = registry.bind_panel(
+            panel_id=panel_id,
+            panel_type=panel_type,
+            worker_id=request.worker_id,
+        )
+        return {
+            "success": True,
+            "panel_id": binding.panel_id,
+            "old_worker_id": current.worker_id if current else None,
+            "new_worker_id": binding.worker_id,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/panels/{panel_id}")
+async def get_panel_binding(panel_id: str):
+    """Get the binding for a specific panel.
+    
+    Returns which worker the panel is viewing, if any.
+    """
+    registry = get_worker_registry()
+    binding = registry.get_panel_binding(panel_id)
+    
+    if not binding:
+        return {
+            "panel_id": panel_id,
+            "bound": False,
+            "worker_id": None,
+        }
+    
+    return {
+        "panel_id": binding.panel_id,
+        "bound": True,
+        "panel_type": binding.panel_type.value,
+        "worker_id": binding.worker_id,
+    }
+
+
+@router.get("/panels/{panel_id}/state")
+async def get_panel_worker_state(panel_id: str):
+    """Get execution state for the worker bound to a panel.
+    
+    This is a convenience method to get the execution state
+    that a specific panel should display.
+    """
+    registry = get_worker_registry()
+    controller = registry.get_controller_for_panel(panel_id)
+    
+    if not controller:
+        return {
+            "panel_id": panel_id,
+            "bound": False,
+            "state": None,
+        }
+    
+    return {
+        "panel_id": panel_id,
+        "bound": True,
+        "state": controller.get_state(),
+    }

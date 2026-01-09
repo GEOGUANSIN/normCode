@@ -7,7 +7,7 @@
  * - Memoized selectors prevent unnecessary re-renders
  */
 
-import { create } from 'zustand';
+import { createWithEqualityFn } from 'zustand/traditional';
 import { shallow } from 'zustand/shallow';
 import { useCallback } from 'react';
 import type { GraphData, GraphNode, GraphEdge } from '../types/graph';
@@ -71,7 +71,7 @@ interface GraphState {
   hasMultipleOccurrences: (nodeId: string) => boolean; // Check if concept has multiple visible occurrences
 }
 
-export const useGraphStore = create<GraphState>((set, get) => ({
+export const useGraphStore = createWithEqualityFn<GraphState>((set, get) => ({
   graphData: null,
   isLoading: false,
   error: null,

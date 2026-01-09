@@ -1,0 +1,26 @@
+/: Validation with conditional correction
+/: STATUS: Reference pattern
+
+<- final output
+    <= select the first valid result
+    <- corrected output
+        <= apply corrections to fix issues
+            <= if validation did NOT pass
+            <* validation passed?
+        <- draft output
+        <- validation errors
+    <- draft output
+        <= generate initial draft
+        <- input data
+    <- validation passed?
+        <= check if output meets requirements
+        <- draft output
+        <- requirements
+
+<- validation errors
+    <= extract the specific errors found
+        <= if validation did NOT pass
+        <* validation passed?
+    <- draft output
+    <- requirements
+

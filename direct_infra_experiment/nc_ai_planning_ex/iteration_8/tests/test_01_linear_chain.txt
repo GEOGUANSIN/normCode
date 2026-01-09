@@ -1,0 +1,11 @@
+Calculate the average of a list of numbers after removing any negative values.
+
+Steps:
+- Take a list of numbers as input
+- Filter out all negative numbers
+- Calculate the average of the remaining numbers
+- Return the average
+
+Input: list of numbers (may include negative values)
+Output: average of positive numbers
+

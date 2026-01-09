@@ -14,7 +14,27 @@ def tool_value_actuation(states: States) -> States:
     # Retrieve the flag, default to True to maintain backward compatibility
     create_axis = getattr(states, "create_axis_on_list_output", True)
 
-    if func_ref and values_ref:
+    # Handle case where there are no input values (e.g., blocking read operations)
+    # The composed function still needs to be called with an empty dict
+    if func_ref and not values_ref:
+        axis_name = func_ref.axes[0]
+        func_callable = func_ref.get(**{axis_name: 0})
+        if func_callable and isinstance(func_callable, Callable):
+            logging.debug("TVA: No values_ref - calling function with empty dict (blocking read case)")
+            # Call the composed function with an empty input dict
+            result = func_callable({})
+            
+            # Create a reference for the result
+            from infra._core import Reference
+            final_ref = Reference(
+                axes=["_none_axis"],
+                shape=(1,),
+                skip_value="@#SKIP#@"
+            )
+            final_ref._replace_data([result])
+            states.set_reference("inference", "TVA", final_ref)
+            logging.debug(f"TVA: Blocking call completed with result: {type(result)}")
+    elif func_ref and values_ref:
         # The function is stored as a callable in the reference tensor
         axis_name = func_ref.axes[0]
         func_callable = func_ref.get(**{axis_name: 0})

@@ -9,6 +9,13 @@ from pathlib import Path
 import os
 import json
 
+from config.file_types import (
+    get_format_from_path,
+    get_supported_extensions,
+    is_normcode_format,
+    is_database_format,
+)
+
 router = APIRouter()
 
 
@@ -38,12 +45,14 @@ class FileSaveRequest(BaseModel):
 class FileListRequest(BaseModel):
     """Request to list files in a directory"""
     directory: str
-    extensions: Optional[List[str]] = [
-        ".ncd", ".ncn", ".ncdn", ".nc.json", ".nci.json", ".json",
-        ".py", ".md", ".txt", ".yaml", ".yml", ".toml",
-        ".concept.json", ".inference.json"
-    ]
+    extensions: Optional[List[str]] = None  # If None, uses all supported extensions
     recursive: bool = False  # Whether to list recursively
+    
+    def get_extensions(self) -> List[str]:
+        """Get extensions list, defaulting to all supported types."""
+        if self.extensions is not None:
+            return self.extensions
+        return get_supported_extensions()
 
 
 class FileListResponse(BaseModel):
@@ -53,37 +62,8 @@ class FileListResponse(BaseModel):
 
 
 def get_file_format(filename: str) -> str:
-    """Determine file format from extension"""
-    # NormCode specific formats (check longer extensions first)
-    if filename.endswith('.concept.json'):
-        return 'concept'
-    elif filename.endswith('.inference.json'):
-        return 'inference'
-    elif filename.endswith('.nci.json'):
-        return 'nci'
-    elif filename.endswith('.nc.json'):
-        return 'nc-json'
-    elif filename.endswith('.ncdn'):
-        return 'ncdn'
-    elif filename.endswith('.ncn'):
-        return 'ncn'
-    elif filename.endswith('.ncd'):
-        return 'ncd'
-    elif filename.endswith('.json'):
-        return 'json'
-    # Common code formats
-    elif filename.endswith('.py'):
-        return 'python'
-    elif filename.endswith('.md'):
-        return 'markdown'
-    elif filename.endswith('.txt'):
-        return 'text'
-    elif filename.endswith('.yaml') or filename.endswith('.yml'):
-        return 'yaml'
-    elif filename.endswith('.toml'):
-        return 'toml'
-    else:
-        return 'text'
+    """Determine file format from extension using centralized config."""
+    return get_format_from_path(filename)
 
 
 @router.get("/file")
@@ -98,11 +78,23 @@ async def read_file(path: str) -> FileContent:
         if not file_path.is_file():
             raise HTTPException(status_code=400, detail=f"Not a file: {path}")
         
+        file_format = get_file_format(file_path.name)
+        
+        # Handle database files specially - they are binary and should use DB Inspector
+        if is_database_format(file_format):
+            # Get file size for display
+            file_size = file_path.stat().st_size
+            size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / (1024 * 1024):.1f} MB"
+            content = f"[SQLite Database - {size_str}]\n\nThis is a binary database file.\nUse the Database Inspector to view its contents.\n\nPath: {file_path.absolute()}"
+            return FileContent(
+                path=str(file_path.absolute()),
+                content=content,
+                format=file_format
+            )
+        
         # Read file content
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
-        file_format = get_file_format(file_path.name)
         
         return FileContent(
             path=str(file_path.absolute()),
@@ -178,11 +170,11 @@ async def list_files(request: FileListRequest) -> FileListResponse:
                     is_dir=True
                 ))
             elif item.is_file():
-                # Check if extension matches (if extensions provided)
-                if request.extensions:
-                    matches = any(item.name.endswith(ext) for ext in request.extensions)
-                    if not matches:
-                        continue
+                # Check if extension matches
+                extensions = request.get_extensions()
+                matches = any(item.name.endswith(ext) for ext in extensions)
+                if not matches:
+                    continue
                 
                 stat = item.stat()
                 files.append(FileInfo(
@@ -229,7 +221,8 @@ async def list_files_recursive(request: FileListRequest) -> FileListResponse:
             
             for filename in filenames:
                 # Check if extension matches
-                matches = any(filename.endswith(ext) for ext in request.extensions)
+                extensions = request.get_extensions()
+                matches = any(filename.endswith(ext) for ext in extensions)
                 if matches:
                     file_path = Path(root) / filename
                     stat = file_path.stat()
@@ -308,7 +301,8 @@ async def list_files_tree(request: FileListRequest) -> FileTreeResponse:
                     continue
                     
                 # Check if extension matches
-                matches = any(filename.endswith(ext) for ext in request.extensions)
+                extensions = request.get_extensions()
+                matches = any(filename.endswith(ext) for ext in extensions)
                 if matches:
                     file_path = Path(root) / filename
                     try:
@@ -594,3 +588,336 @@ async def get_parser_status() -> dict:
             "available": False,
             "message": f"Error loading parser: {str(e)}"
         }
+
+
+# ============================================================================
+# Line-level editing endpoints - For structured inline editing
+# ============================================================================
+
+class UpdateLineRequest(BaseModel):
+    """Request to update a single line in parsed content"""
+    lines: List[dict]  # The full lines array
+    line_index: int    # Index of line to update
+    field: str         # Field to update: 'nc_main', 'nc_comment', 'ncn_content', 'flow_index'
+    value: str         # New value
+
+
+class AddLineRequest(BaseModel):
+    """Request to add a new line after specified index"""
+    lines: List[dict]  # The full lines array
+    after_index: int   # Index after which to insert (-1 for beginning)
+    line_type: str = "main"  # 'main' or 'comment'
+
+
+class DeleteLineRequest(BaseModel):
+    """Request to delete a line at specified index"""
+    lines: List[dict]  # The full lines array
+    line_index: int    # Index of line to delete
+
+
+class BatchUpdateRequest(BaseModel):
+    """Request to update multiple lines at once"""
+    lines: List[dict]  # The modified lines array to validate/serialize
+
+
+class SerializeRequest(BaseModel):
+    """Request to serialize lines to specific format"""
+    lines: List[dict]  # The lines array to serialize
+    format: str        # Target format: 'ncd', 'ncn', 'ncdn', 'json', 'nci'
+
+
+@router.post("/lines/update")
+async def update_line(request: UpdateLineRequest) -> dict:
+    """Update a field in a specific line"""
+    try:
+        if request.line_index < 0 or request.line_index >= len(request.lines):
+            raise HTTPException(status_code=400, detail="Invalid line index")
+        
+        lines = request.lines.copy()
+        line = lines[request.line_index].copy()
+        
+        # Update the specified field
+        if request.field == 'flow_index':
+            line['flow_index'] = request.value
+        elif request.field == 'nc_main':
+            line['nc_main'] = request.value
+        elif request.field == 'nc_comment':
+            line['nc_comment'] = request.value
+        elif request.field == 'ncn_content':
+            line['ncn_content'] = request.value
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown field: {request.field}")
+        
+        lines[request.line_index] = line
+        
+        return {
+            "success": True,
+            "lines": lines
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating line: {str(e)}")
+
+
+@router.post("/lines/add")
+async def add_line(request: AddLineRequest) -> dict:
+    """Add a new line after the specified index"""
+    try:
+        lines = request.lines.copy()
+        insert_index = request.after_index + 1
+        
+        if insert_index < 0:
+            insert_index = 0
+        elif insert_index > len(lines):
+            insert_index = len(lines)
+        
+        # Determine flow index and depth from context
+        ref_line = None
+        if request.after_index >= 0 and request.after_index < len(lines):
+            ref_line = lines[request.after_index]
+        elif len(lines) > 0:
+            ref_line = lines[-1]
+        
+        ref_depth = ref_line.get('depth', 0) if ref_line else 0
+        ref_flow = ref_line.get('flow_index', '1') if ref_line else '0'
+        
+        # Calculate new flow index (increment last part)
+        if ref_flow:
+            parts = ref_flow.split('.')
+            try:
+                parts[-1] = str(int(parts[-1]) + 1)
+            except ValueError:
+                parts[-1] = '1'
+            new_flow = '.'.join(parts)
+        else:
+            new_flow = '1'
+        
+        # Create new line
+        new_line = {
+            'flow_index': new_flow,
+            'type': request.line_type,
+            'depth': ref_depth
+        }
+        
+        if request.line_type == 'main':
+            new_line['nc_main'] = ''
+            new_line['ncn_content'] = ''
+        else:
+            new_line['nc_comment'] = ''
+        
+        lines.insert(insert_index, new_line)
+        
+        return {
+            "success": True,
+            "lines": lines,
+            "inserted_index": insert_index
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding line: {str(e)}")
+
+
+@router.post("/lines/delete")
+async def delete_line(request: DeleteLineRequest) -> dict:
+    """Delete a line at the specified index"""
+    try:
+        if request.line_index < 0 or request.line_index >= len(request.lines):
+            raise HTTPException(status_code=400, detail="Invalid line index")
+        
+        lines = request.lines.copy()
+        deleted = lines.pop(request.line_index)
+        
+        return {
+            "success": True,
+            "lines": lines,
+            "deleted_line": deleted
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting line: {str(e)}")
+
+
+@router.post("/lines/serialize")
+async def serialize_lines(request: SerializeRequest) -> dict:
+    """Serialize lines array to specified format"""
+    try:
+        from services.parser_service import get_parser_service
+        
+        parser = get_parser_service()
+        
+        if not parser.is_available:
+            raise HTTPException(status_code=503, detail="Parser not available")
+        
+        parsed_data = {"lines": request.lines}
+        
+        if request.format == 'ncd':
+            result = parser.serialize_to_ncd_ncn(parsed_data)
+            return {"success": True, "content": result.get('ncd', '')}
+        elif request.format == 'ncn':
+            result = parser.serialize_to_ncd_ncn(parsed_data)
+            return {"success": True, "content": result.get('ncn', '')}
+        elif request.format == 'ncdn':
+            content = parser.serialize_to_ncdn(parsed_data)
+            return {"success": True, "content": content}
+        elif request.format == 'json':
+            return {"success": True, "content": json.dumps(parsed_data, indent=2, ensure_ascii=False)}
+        elif request.format == 'nci':
+            nci = parser.to_nci(parsed_data)
+            return {"success": True, "content": json.dumps(nci, indent=2, ensure_ascii=False)}
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown format: {request.format}")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serializing: {str(e)}")
+
+
+# ============================================================================
+# Paradigm Editing Endpoints - For visual paradigm file editing
+# ============================================================================
+
+class ParadigmParseRequest(BaseModel):
+    """Request to parse paradigm JSON content"""
+    content: str
+
+
+class ParadigmParseResponse(BaseModel):
+    """Response with parsed paradigm structure"""
+    success: bool
+    lines: List[dict]
+    metadata: dict
+    errors: List[str]
+    warnings: List[str]
+
+
+class ParadigmSerializeRequest(BaseModel):
+    """Request to serialize paradigm data back to JSON"""
+    lines: List[dict]
+    metadata: dict
+
+
+class ParadigmSerializeResponse(BaseModel):
+    """Response with serialized paradigm JSON"""
+    success: bool
+    content: str
+    errors: List[str]
+
+
+@router.post("/paradigm/parse")
+async def parse_paradigm(request: ParadigmParseRequest) -> ParadigmParseResponse:
+    """Parse paradigm JSON content into structured format for visual editing"""
+    try:
+        from services.parsers import get_parser
+        
+        parser = get_parser('paradigm')
+        
+        if not parser:
+            return ParadigmParseResponse(
+                success=False,
+                lines=[],
+                metadata={},
+                errors=["Paradigm parser not available"],
+                warnings=[]
+            )
+        
+        result = parser.parse(request.content, 'paradigm')
+        
+        return ParadigmParseResponse(
+            success=result.success,
+            lines=result.lines,
+            metadata=result.metadata,
+            errors=result.errors,
+            warnings=result.warnings
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error parsing paradigm: {str(e)}")
+
+
+@router.post("/paradigm/serialize")
+async def serialize_paradigm(request: ParadigmSerializeRequest) -> ParadigmSerializeResponse:
+    """Serialize paradigm data back to JSON format"""
+    try:
+        from services.parsers import get_parser
+        
+        parser = get_parser('paradigm')
+        
+        if not parser:
+            return ParadigmSerializeResponse(
+                success=False,
+                content="",
+                errors=["Paradigm parser not available"]
+            )
+        
+        parsed_data = {
+            "lines": request.lines,
+            "metadata": request.metadata
+        }
+        
+        result = parser.serialize(parsed_data, 'paradigm')
+        
+        return ParadigmSerializeResponse(
+            success=result.success,
+            content=result.content,
+            errors=result.errors
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serializing paradigm: {str(e)}")
+
+
+@router.post("/paradigm/validate")
+async def validate_paradigm(request: ParadigmParseRequest) -> dict:
+    """Validate paradigm JSON content"""
+    try:
+        from services.parsers import get_parser
+        
+        parser = get_parser('paradigm')
+        
+        if not parser:
+            return {
+                "valid": False,
+                "errors": ["Paradigm parser not available"],
+                "warnings": [],
+                "format": "paradigm"
+            }
+        
+        result = parser.validate(request.content, 'paradigm')
+        return result
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error validating paradigm: {str(e)}")
+
+
+def is_paradigm_file(filename: str, content: str = "") -> bool:
+    """
+    Check if a file is a paradigm file.
+    
+    Detection rules:
+    1. Filename follows paradigm naming pattern: h_*-c_*-o_*.json or v_*-c_*-o_*.json
+    2. Or if content is provided, check for paradigm structure
+    """
+    import re
+    
+    # Check filename pattern
+    basename = Path(filename).name
+    paradigm_pattern = r'^[hv]_.*-c_.*-o_.*\.json$'
+    if re.match(paradigm_pattern, basename):
+        return True
+    
+    # Check content structure if provided
+    if content:
+        try:
+            data = json.loads(content)
+            required_keys = {'metadata', 'env_spec', 'sequence_spec'}
+            if required_keys.issubset(data.keys()):
+                return True
+        except json.JSONDecodeError:
+            pass
+    
+    return False

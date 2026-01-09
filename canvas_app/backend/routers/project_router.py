@@ -300,11 +300,13 @@ async def load_project_repositories():
         project_id = config.id
         
         # Load graph for visualization (must be done first!)
+        # Pass project_id for tracking which project's graph is loaded
         graph_service.load_from_files(
             paths['concepts'],
-            paths['inferences']
+            paths['inferences'],
+            project_id=project_id
         )
-        logger.info(f"Graph loaded with {len(graph_service.current_graph.nodes)} nodes")
+        logger.info(f"Graph loaded with {len(graph_service.current_graph.nodes)} nodes for project {project_id}")
         
         # Get or create the ExecutionController for this project
         controller = get_execution_controller(project_id)
@@ -447,9 +449,24 @@ async def open_project_as_tab(request: OpenProjectInTabRequest):
             is_read_only=request.is_read_only,
         )
         
-        # Ensure ExecutionControllers exist for ALL open projects
-        # This handles the case where a project was retroactively added to tabs
+        # Ensure ExecutionControllers exist for open projects that need them
+        # Skip creating user controllers for projects that already have a chat worker with graph data
+        # (e.g., chat controller projects opened via "View Controller Project")
+        from services.execution.worker_registry import get_worker_registry
+        registry = get_worker_registry()
+        
         for open_project in project_service.get_open_projects():
+            chat_worker_id = f"chat-{open_project.id}"
+            chat_worker = registry.get_worker(chat_worker_id)
+            
+            # Skip if this is a read-only project that already has a chat worker with graph_data
+            if open_project.is_read_only and chat_worker and chat_worker.controller:
+                has_graph = getattr(chat_worker.controller, 'graph_data', None) is not None
+                if has_graph:
+                    logger.debug(f"Skipping user controller for {open_project.id} - chat worker has graph")
+                    continue
+            
+            # Create user controller for this project
             get_execution_controller(open_project.id)
         
         # If making active, update the registry

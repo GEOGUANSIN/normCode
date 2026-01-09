@@ -13,6 +13,23 @@
 
 **Core Task**: Extract and structure all information needed by the Orchestrator's execution engine.
 
+### Key Sub-Tasks
+
+| Sub-Task | Purpose | Details |
+|----------|---------|---------|
+| **Extraction** | Parse `.ncd` structure | Extract concepts, inferences, annotations |
+| **Provision (Supply)** | Validate and resolve resources | See [Provision in Activation](provision_in_activation.md) |
+| **Structuring** | Build JSON repositories | Create `working_interpretation` for each sequence |
+
+### The Demand/Supply Model
+
+Post-Formalization **declares demands** (resource paths as annotations). Activation **supplies resources**:
+
+| Phase | Role | What Happens |
+|-------|------|--------------|
+| **Post-Formalization** | **Demand** | Annotates paths: "I need a prompt at X" |
+| **Activation (Provision)** | **Supply** | Validates and resolves: "X exists and is valid" |
+
 ---
 
 ## The Activation Problem
@@ -24,6 +41,7 @@ The `.ncd` format is optimized for human readability and editability, but:
 - Each sequence type expects specific `working_interpretation` fields
 - References need initialization data
 - Execution order needs to be determinable
+- **Resource demands must be validated and resolved**
 
 **Activation bridges the gap** between human-readable `.ncd` and machine-executable JSON.
 
@@ -53,59 +71,126 @@ Activation generates two separate JSON files:
 
 ### Purpose
 
-**`concept_repo.json`** stores static definitions of all data entities in the plan.
+**`concept_repo.json`** stores static definitions of all concepts in the plan—both **value concepts** (data entities) and **function concepts** (operations).
 
 ### Structure
 
 ```json
 [
   {
+    "id": "c-document",
     "concept_name": "{document}",
     "type": "{}",
+    "flow_indices": ["1.2", "1.3.2"],
     "description": "Input document to process",
     "is_ground_concept": true,
     "is_final_concept": false,
     "reference_data": ["%{file_location}7f2(data/input.txt)"],
-    "reference_axis_names": ["_none_axis"]
+    "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "str",
+    "natural_name": "document"
   },
   {
+    "id": "c-summary",
     "concept_name": "{summary}",
     "type": "{}",
+    "flow_indices": ["1"],
+    "description": "Final summarized output",
     "is_ground_concept": false,
     "is_final_concept": true,
     "reference_data": null,
-    "reference_axis_names": ["_none_axis"]
+    "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "str",
+    "natural_name": "summary"
+  },
+  {
+    "id": "fc-summarize-the-text",
+    "concept_name": "<= ::(summarize the text)",
+    "type": "({})",
+    "flow_indices": ["1.1"],
+    "description": "Summarize the text",
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": ["_none_axis"],
+    "reference_element_type": "paradigm",
+    "natural_name": "summarize the text"
   }
 ]
 ```
+
+### Two Types of Concepts
+
+| Type | Marker | Purpose | Examples |
+|------|--------|---------|----------|
+| **Value Concepts** | `{}`, `[]`, `<>` | Data entities | `{document}`, `[files]`, `<is valid>` |
+| **Function Concepts** | `({})`, `<{}>` | Operations | `<= ::(summarize)`, `<= $. %>({x})` |
+
+**Important**: Function concepts MUST be included in concept_repo.json. The orchestrator looks up each `function_concept` from inference_repo in the concept_repo.
 
 ### Fields
 
 | Field | Type | Purpose | Example |
 |-------|------|---------|---------|
-| `concept_name` | string | Full concept name with markers | `"{document}"`, `"[files]"`, `"<is valid>"` |
-| `type` | string | Semantic type | `"{}"`, `"[]"`, `"<>"` |
+| `id` | string | Unique identifier for the concept | `"c-document"`, `"fc-summarize"` |
+| `concept_name` | string | Full concept name with markers | `"{document}"`, `"<= ::(summarize)"` |
+| `type` | string | Semantic type | `"{}"`, `"[]"`, `"<>"`, `"({})"`, `"<{}>"` |
+| `flow_indices` | array | All flow indices where concept appears | `["1.2", "1.3.2"]` |
 | `description` | string | Optional description | `"Input document to process"` |
 | `is_ground_concept` | boolean | Pre-initialized? | `true` for inputs |
 | `is_final_concept` | boolean | Final output? | `true` for root |
 | `reference_data` | array or null | Initial perceptual signs | `["%{file_location}(...)"]` |
 | `reference_axis_names` | array | Axis names | `["_none_axis"]`, `["signal", "date"]` |
+| `reference_element_type` | string | Element data type | `"str"`, `"paradigm"`, `"operator"` |
+| `natural_name` | string | Human-readable name | `"document"`, `"summarize the text"` |
+
+### ID Prefixes
+
+| Prefix | Concept Type | Example |
+|--------|--------------|---------|
+| `c-` | Value concept | `c-document`, `c-summary` |
+| `fc-` | Function concept | `fc-summarize-the-text` |
 
 ### Extraction from `.ncd`
 
-**Algorithm**:
+**Algorithm for Value Concepts**:
 
-1. **Scan all value concepts** (`<-` lines)
-2. **Extract concept name** from line
-3. **Determine type** from markers (`{}`, `[]`, `<>`)
-4. **Check if ground**:
+1. **Scan all value concepts** (`<-` lines) and context concepts (`<*` lines)
+2. **Generate id** from concept name (e.g., `"{price data}"` → `"c-price-data"`)
+3. **Extract concept name** from line
+4. **Determine type** from markers (`{}`, `[]`, `<>`)
+5. **Collect flow_indices**: Track all flow indices where this concept appears
+6. **Check if ground**:
    - Has `:>:` marker?
    - No parent inference?
    - Has `$%` abstraction?
    - Has `|%{file_location}` annotation?
-5. **Check if final**: Has `:<:` marker?
-6. **Extract reference_data** from `|%{file_location}` or `$%` value
-7. **Extract axes** from `|%{ref_axes}` annotation
+7. **Check if final**: Has `:<:` marker?
+8. **Extract reference_data** from `|%{file_location}` or `$%` value
+9. **Extract axes** from `|%{ref_axes}` annotation
+10. **Generate natural_name** from concept name (strip markers)
+
+**Algorithm for Function Concepts**:
+
+1. **Scan all functional concepts** (`<=` lines)
+2. **Generate id** from natural name (e.g., `"summarize the text"` → `"fc-summarize-the-text"`)
+3. **Store full `nc_main`** as `concept_name` (e.g., `"<= ::(summarize the text)"`)
+4. **Determine type**:
+   - Judgement (contains `<{...}>`) → `"<{}>"`
+   - All others (imperative, operators) → `"({})"`
+5. **Collect flow_indices**: Track all flow indices where this function appears
+6. **Set reference_element_type**:
+   - Imperative/judgement → `"paradigm"`
+   - Operators (`$`, `&`, `@`, `*`) → `"operator"`
+7. **Extract natural_name** from the action description
+
+**Why Function Concepts Are Required**:
+
+The orchestrator's execution engine looks up each `function_concept` string from `inference_repo.json` in the `concept_repo.json`. If a function concept is missing, execution fails with:
+
+```
+'Function concept '<= ::(action name)' not found in ConceptRepo.'
+```
 
 **Example**:
 
@@ -120,12 +205,16 @@ Activation generates two separate JSON files:
 **Concept Repo Entry**:
 ```json
 {
+  "id": "c-price-data",
   "concept_name": "{price data}",
   "type": "{}",
+  "flow_indices": ["1.2", "1.6.2.2"],
+  "description": "Price data retrieved from market sources",
   "is_ground_concept": true,
   "is_final_concept": false,
   "reference_data": ["%{file_location}price(provision/data/prices.json)"],
-  "reference_axis_names": ["date"]
+  "reference_axis_names": ["date"],
+  "natural_name": "price data"
 }
 ```
 
@@ -372,6 +461,30 @@ Activation generates two separate JSON files:
 5. **group_base**: From `%:({axis})` modifier (strip braces)
 6. **InLoopConcept**: From context concepts with `<$*-N>` markers
 7. **ConceptToInfer**: From `%<({result})` modifier
+
+---
+
+## Provision: The Supply Side
+
+During activation, resource demands from Post-Formalization are validated and resolved.
+
+**For detailed documentation, see [Provision in Activation](provision_in_activation.md).**
+
+### Summary
+
+| Resource Type | Demand (Post-Formalization) | Supply (Activation) |
+|---------------|----------------------------|---------------------|
+| **Paradigms** | `\|%{norm_input}: paradigm-id` | Load JSON, validate structure |
+| **Prompts** | `\|%{v_input_provision}: path` | Validate file exists |
+| **Data files** | `\|%{file_location}: path` | Validate, create perceptual signs |
+| **Scripts** | Referenced by paradigm | Validate script exists |
+
+### Key Outputs
+
+After provision, the `working_interpretation` contains:
+- Validated paradigm IDs
+- Resolved prompt paths
+- Ground concept `reference_data` with perceptual signs
 
 ---
 
@@ -672,6 +785,11 @@ def deactivate(concept_repo, inference_repo):
 3. **Lazy validation**: Only validate on demand
 
 ---
+
+## Related Topics
+
+- **[Provision in Activation](provision_in_activation.md)** - How resource demands are validated and resolved (the supply side)
+- **[Post-Formalization](post_formalization.md)** - How resource demands are declared (the demand side)
 
 ## Next Steps
 

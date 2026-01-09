@@ -355,6 +355,9 @@ def _get_tool_methods(tool_name: str) -> List[str]:
         "composition_tool": ["compose"],
         "formatter_tool": ["get", "wrap", "collect_script_inputs"],
         "perception_router": ["strip_sign", "route"],
+        # Canvas-specific tools for compiler meta-project
+        "chat": ["read_message", "write_message", "close_session"],
+        "canvas": ["execute_command"],
     }
     return tool_methods.get(tool_name, [])
 
@@ -659,6 +662,30 @@ async def get_agent_capabilities(agent_id: str):
         enabled=True,
         methods=_get_tool_methods("perception_router"),
         description="Perceptual sign routing"
+    ))
+    
+    # Canvas-specific tools (enabled when chat_tool/canvas_tool are injected)
+    chat_enabled = False
+    canvas_enabled = False
+    try:
+        from services.execution_service import execution_controller
+        chat_enabled = hasattr(execution_controller, 'chat_tool') and execution_controller.chat_tool is not None
+        canvas_enabled = hasattr(execution_controller, 'canvas_tool') and execution_controller.canvas_tool is not None
+    except Exception:
+        pass
+    
+    tools.append(ToolInfo(
+        name="chat",
+        enabled=chat_enabled,
+        methods=_get_tool_methods("chat"),
+        description="Chat interface for user interaction (blocking read/write)"
+    ))
+    
+    tools.append(ToolInfo(
+        name="canvas",
+        enabled=canvas_enabled,
+        methods=_get_tool_methods("canvas"),
+        description="Canvas commands for graph manipulation"
     ))
     
     # Get paradigms from effective paradigm directory

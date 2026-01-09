@@ -11,7 +11,8 @@ import { useExecutionStore, type UserInputRequest } from '../stores/executionSto
 import { useAgentStore } from '../stores/agentStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useChatStore } from '../stores/chatStore';
-import type { WebSocketEvent, StepProgress } from '../types/execution';
+import { useCanvasCommandStore } from '../stores/canvasCommandStore';
+import type { WebSocketEvent, StepProgress, RunMode } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
 
@@ -29,6 +30,8 @@ export function useWebSocket() {
   const setStepProgress = useExecutionStore((s) => s.setStepProgress);
   const updateStepProgress = useExecutionStore((s) => s.updateStepProgress);
   const clearStepProgress = useExecutionStore((s) => s.clearStepProgress);
+  const fetchConceptStatuses = useExecutionStore((s) => s.fetchConceptStatuses);
+  const setRunMode = useExecutionStore((s) => s.setRunMode);
 
   // Agent store actions
   const addToolCall = useAgentStore((s) => s.addToolCall);
@@ -46,12 +49,54 @@ export function useWebSocket() {
   
   // Chat store actions
   const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
-  const setCompilerStatus = useChatStore((s) => s.setCompilerStatus);
+  const setControllerStatus = useChatStore((s) => s.setControllerStatus);
+  const updateControllerInfo = useChatStore((s) => s.updateControllerInfo);
   const setInputRequest = useChatStore((s) => s.setInputRequest);
+  const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
+  const clearBuffer = useChatStore((s) => s.clearBuffer);
+  
+  // Canvas command store actions
+  const addCanvasCommand = useCanvasCommandStore((s) => s.addCommand);
 
   const handleEvent = useCallback(
     (event: WebSocketEvent) => {
       const { type, data } = event;
+      
+      // Check if this event is from the chat controller (not the main execution)
+      // Controller events should update chatStore, not executionStore
+      const eventSource = data.source as string | undefined;
+      const isControllerEvent = eventSource === 'controller';
+      
+      // Handle controller execution events separately
+      if (isControllerEvent && type.startsWith('execution:')) {
+        // Route controller execution events to chat store
+        switch (type) {
+          case 'execution:started':
+            setControllerStatus('running');
+            break;
+          case 'execution:paused':
+            setControllerStatus('paused', data.inference as string | undefined);
+            break;
+          case 'execution:resumed':
+            setControllerStatus('running');
+            break;
+          case 'execution:completed':
+          case 'execution:stopped':
+            setControllerStatus('connected');
+            break;
+          case 'execution:error':
+            setControllerStatus('error');
+            break;
+          case 'execution:progress':
+            // Update current flow index for controller
+            if (data.current_inference) {
+              setControllerStatus('running', data.current_inference as string);
+            }
+            break;
+        }
+        // Don't process further - this event is for the controller, not main execution
+        return;
+      }
       
       // Check if this event is for the active project
       // Events without project_id are assumed to be for the active project (backward compat)
@@ -73,12 +118,26 @@ export function useWebSocket() {
             setRunId(data.run_id as string);
           }
           if (data.total_inferences !== undefined) {
-            setProgress(0, data.total_inferences as number);
+            const completed = (data.completed_count as number) || 0;
+            setProgress(completed, data.total_inferences as number);
           }
+          // Set initial node statuses (e.g., input concepts marked as complete)
+          if (data.node_statuses) {
+            setNodeStatuses(data.node_statuses as Record<string, NodeStatus>);
+          }
+          // Fetch concept statuses from blackboard (source of truth for data availability)
+          fetchConceptStatuses();
           break;
 
         case 'execution:started':
           setStatus('running');
+          // Update chat store - execution is now active
+          updateBufferStatus({
+            execution_active: true,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:paused':
@@ -86,10 +145,19 @@ export function useWebSocket() {
           if (data.inference) {
             setCurrentInference(data.inference as string);
           }
+          // Refresh concept statuses from blackboard when paused
+          fetchConceptStatuses();
           break;
 
         case 'execution:resumed':
           setStatus('running');
+          // Execution is active again after resume
+          updateBufferStatus({
+            execution_active: true,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:completed':
@@ -98,6 +166,14 @@ export function useWebSocket() {
           if (data.completed_count !== undefined && data.total_count !== undefined) {
             setProgress(data.completed_count as number, data.total_count as number);
           }
+          // Clear chat buffer state - execution finished
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:error':
@@ -107,16 +183,40 @@ export function useWebSocket() {
             level: 'error',
             message: data.error as string,
           });
+          // Clear chat buffer state - execution failed
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:stopped':
           setStatus('idle');
           setCurrentInference(null);
+          // Clear chat buffer state - execution stopped
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           break;
 
         case 'execution:reset':
           setStatus('idle');
           setCurrentInference(null);
+          // Clear chat buffer state - execution reset
+          clearBuffer();
+          updateBufferStatus({
+            execution_active: false,
+            has_pending_request: false,
+            has_buffered_message: false,
+            buffered_message: null,
+          });
           // Update run_id if a new orchestrator was created
           if (data.run_id) {
             setRunId(data.run_id as string);
@@ -142,6 +242,12 @@ export function useWebSocket() {
           setStatus('stepping');
           break;
 
+        case 'execution:run_mode_changed':
+          if (data.mode) {
+            setRunMode(data.mode as RunMode);
+          }
+          break;
+
         case 'execution:progress':
           if (data.completed_count !== undefined && data.total_count !== undefined) {
             setProgress(data.completed_count as number, data.total_count as number);
@@ -161,6 +267,8 @@ export function useWebSocket() {
         case 'inference:completed':
           if (data.flow_index) {
             setNodeStatus(data.flow_index as string, 'completed');
+            // Refresh concept statuses from blackboard - the completed concept may now have data
+            fetchConceptStatuses();
           }
           break;
 
@@ -418,9 +526,17 @@ export function useWebSocket() {
           break;
 
         case 'chat:compiler_status':
-          if (data.status) {
-            setCompilerStatus(data.status as 'disconnected' | 'connecting' | 'connected' | 'running');
-          }
+        case 'chat:controller_status':
+          // Update all controller info from the event
+          updateControllerInfo({
+            status: data.status as 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error' | undefined,
+            controller_id: data.controller_id as string | undefined,
+            controller_name: data.controller_name as string | undefined,
+            controller_path: data.controller_path as string | undefined,
+            current_flow_index: data.current_flow_index as string | undefined,
+            error: data.error as string | undefined,
+            placeholder_mode: data.placeholder_mode as boolean | undefined,
+          });
           break;
 
         case 'chat:input_request':
@@ -431,6 +547,7 @@ export function useWebSocket() {
               inputType: (data.input_type as 'text' | 'code' | 'confirm' | 'select') || 'text',
               options: data.options as string[] | undefined,
               placeholder: data.placeholder as string | undefined,
+              source: (data.source as 'controller' | 'execution') || 'controller',
             });
           }
           break;
@@ -439,11 +556,21 @@ export function useWebSocket() {
           setInputRequest(null);
           break;
 
+        // Canvas command events (from compiler-driven canvas control)
+        case 'canvas:command':
+          if (data.type) {
+            addCanvasCommand(
+              data.type as string,
+              (data.params as Record<string, unknown>) || {}
+            );
+          }
+          break;
+
         default:
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setCompilerStatus, setInputRequest]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, fetchConceptStatuses, setRunMode, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setControllerStatus, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
   );
 
   const [isConnected, setIsConnected] = useState(false);

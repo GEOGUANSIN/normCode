@@ -1,0 +1,12 @@
+Collect system health metrics and bundle them into a status report.
+
+Steps:
+- Check CPU usage
+- Check memory usage
+- Check disk space
+- Check network connectivity
+- Bundle all metrics into a system health report
+
+Input: none (reads from system)
+Output: system health report with all metrics
+

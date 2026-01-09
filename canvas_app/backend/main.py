@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import logging
 
 # Add project root to path for infra imports
@@ -13,7 +15,7 @@ sys.path.insert(0, str(project_root))
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
-from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router
+from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router
 from core.config import settings
 
 # Configure logging
@@ -22,6 +24,11 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Suppress DEBUG logs from infra module (set to INFO to reduce noise)
+# These are only useful during development/debugging of the infra layer itself
+for infra_logger_name in ['infra', 'infra._core', 'infra._agent', 'infra._orchest', 'infra._loggers']:
+    logging.getLogger(infra_logger_name).setLevel(logging.INFO)
 
 # Create FastAPI app
 app = FastAPI(
@@ -89,11 +96,66 @@ app.include_router(
     chat_router.router,
     tags=["chat"]
 )
+app.include_router(
+    db_inspector_router.router,
+    prefix="/api/db-inspector",
+    tags=["db-inspector"]
+)
+
+
+# =============================================================================
+# Static File Serving (Production Mode)
+# =============================================================================
+# In production mode, serve pre-built frontend static files.
+# This is used when the app is packaged with PyInstaller.
+
+def _get_frontend_dist_path() -> Path | None:
+    """Get the frontend dist path if it exists."""
+    # Check if running as frozen executable (PyInstaller)
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundle: look for frontend/dist in the bundle
+        bundle_dir = Path(sys._MEIPASS)
+        dist_path = bundle_dir / "frontend" / "dist"
+    else:
+        # Development: look for frontend/dist relative to backend
+        dist_path = Path(__file__).parent.parent / "frontend" / "dist"
+    
+    if dist_path.exists() and (dist_path / "index.html").exists():
+        return dist_path
+    return None
+
+# Get frontend dist path
+_frontend_dist = _get_frontend_dist_path()
+
+if _frontend_dist:
+    logger.info(f"Production mode: serving static files from {_frontend_dist}")
+    
+    # Mount static assets (JS, CSS, images)
+    assets_dir = _frontend_dist / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="static_assets")
+    
+    # Serve other static files in dist root
+    @app.get("/favicon.svg")
+    async def favicon():
+        return FileResponse(_frontend_dist / "favicon.svg")
+    
+    @app.get("/logo.png")
+    async def logo():
+        logo_path = _frontend_dist / "logo.png"
+        if logo_path.exists():
+            return FileResponse(logo_path)
+        return {"error": "not found"}
 
 
 @app.get("/", tags=["root"])
 async def root():
-    """Root endpoint with API info."""
+    """Root endpoint - serve frontend or API info."""
+    # In production mode with frontend dist, serve index.html
+    if _frontend_dist:
+        return FileResponse(_frontend_dist / "index.html")
+    
+    # In development mode, return API info
     return {
         "name": "NormCode Canvas API",
         "version": "0.1.0",

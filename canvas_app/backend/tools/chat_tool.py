@@ -50,18 +50,32 @@ class CanvasChatTool:
     input operations to be compatible with synchronous orchestrator code.
     """
     
-    def __init__(self, emit_callback: Optional[Callable[[str, Dict], None]] = None):
+    def __init__(
+        self, 
+        emit_callback: Optional[Callable[[str, Dict], None]] = None,
+        source: str = "compiler"
+    ):
         """
         Initialize the Canvas chat tool.
         
         Args:
             emit_callback: Callback to emit WebSocket events.
                           Signature: (event_type: str, data: dict) -> None
+            source: Identifier for which service owns this tool.
+                   "compiler" = CompilerService (/api/chat/input/)
+                   "execution" = ExecutionController (/api/execution/chat-input/)
         """
         self._emit_callback = emit_callback
+        self._source = source
         self._pending_requests: Dict[str, ChatInputRequest] = {}
         self._events: Dict[str, threading.Event] = {}
         self._lock = threading.Lock()
+        # Single message buffer for message received before a blocking read
+        # Only ONE message can be buffered at a time - cleaner UX
+        self._buffered_message: Optional[str] = None
+        self._buffer_lock = threading.Lock()
+        # Flag to indicate execution is active (messages should be buffered)
+        self._execution_active = False
     
     def set_emit_callback(self, callback: Callable[[str, Dict], None]):
         """Set the callback for emitting WebSocket events."""
@@ -80,6 +94,117 @@ class CanvasChatTool:
         return str(uuid.uuid4())[:8]
     
     # =========================================================================
+    # Execution State and Message Queue
+    # =========================================================================
+    
+    def set_execution_active(self, active: bool):
+        """
+        Set whether execution is active.
+        
+        When active, messages sent to the chat are buffered for the plan to consume.
+        When inactive, messages go to the normal chat flow.
+        
+        Args:
+            active: True when execution starts, False when it stops
+        """
+        with self._buffer_lock:
+            self._execution_active = active
+            if not active:
+                # Clear buffer when execution stops
+                self._buffered_message = None
+            logger.debug(f"Execution active: {active}")
+    
+    def is_execution_active(self) -> bool:
+        """Check if execution is currently active."""
+        with self._buffer_lock:
+            return self._execution_active
+    
+    def buffer_message(self, message: str) -> Dict[str, Any]:
+        """
+        Buffer a message for the running plan to consume.
+        
+        Only ONE message can be buffered at a time. If a message is already
+        buffered, this will fail and return buffer_full=True.
+        
+        Called by the API when a user sends a message while execution is active.
+        The message will be delivered when the plan next calls read_message().
+        
+        Args:
+            message: The user's message content
+            
+        Returns:
+            Dict with:
+                success: True if message was buffered
+                buffer_full: True if buffer already has a message
+                delivered: True if message was delivered to waiting request
+                buffered_message: The currently buffered message (if any)
+        """
+        with self._buffer_lock:
+            if not self._execution_active:
+                return {"success": False, "reason": "execution_not_active"}
+            
+            # Check if buffer already has a message
+            if self._buffered_message is not None:
+                return {
+                    "success": False, 
+                    "buffer_full": True,
+                    "buffered_message": self._buffered_message,
+                }
+            
+            # Buffer the message
+            self._buffered_message = message
+            logger.debug(f"Buffered message: {message[:50]}...")
+        
+        # If there's a pending input request waiting, deliver immediately
+        with self._lock:
+            for req_id, request in self._pending_requests.items():
+                if not request.completed:
+                    # Fulfill this request with the buffered message
+                    request.response = message
+                    request.completed = True
+                    self._events[req_id].set()
+                    # Clear the buffer since we delivered it
+                    with self._buffer_lock:
+                        self._buffered_message = None
+                    logger.debug(f"Delivered buffered message to pending request {req_id}")
+                    return {"success": True, "delivered": True}
+        
+        return {"success": True, "delivered": False, "buffered_message": message}
+    
+    def consume_buffered_message(self) -> Optional[str]:
+        """
+        Get and clear the buffered message.
+        
+        Called when the plan's read operation consumes the message.
+        
+        Returns:
+            The message content, or None if buffer is empty
+        """
+        with self._buffer_lock:
+            message = self._buffered_message
+            self._buffered_message = None
+            if message:
+                logger.debug(f"Consumed buffered message: {message[:50]}...")
+            return message
+    
+    def get_buffered_message(self) -> Optional[str]:
+        """
+        Peek at the buffered message without consuming it.
+        
+        Used by API to show buffer status to frontend.
+        
+        Returns:
+            The message content, or None if buffer is empty
+        """
+        with self._buffer_lock:
+            return self._buffered_message
+    
+    def has_buffered_message(self) -> bool:
+        """Check if there is a buffered message waiting."""
+        with self._buffer_lock:
+            return self._buffered_message is not None
+    
+    # =========================================================================
     # Writing to Chat
     # =========================================================================
     
@@ -92,6 +217,10 @@ class CanvasChatTool:
             role: Message role ('compiler', 'system', 'assistant')
             metadata: Optional metadata (flowIndex, nodeLink, etc.)
         """
+        # Ensure message is a string
+        if not isinstance(message, str):
+            message = str(message)
+        
         msg_id = self._generate_id()
         self._emit("chat:message", {
             "id": msg_id,
@@ -253,9 +382,10 @@ class CanvasChatTool:
         Block and wait for user input from the chat.
         
         This method:
-        1. Creates a pending request and emits a WebSocket event
-        2. Blocks on a threading.Event until response is received
-        3. Returns the user's response
+        1. First checks if there's a queued message (user typed before we blocked)
+        2. If not, creates a pending request and emits a WebSocket event
+        3. Blocks on a threading.Event until response is received
+        4. Returns the user's response
         
         Args:
             prompt: The prompt to show the user
@@ -267,6 +397,12 @@ class CanvasChatTool:
         Returns:
             The user's response as a string
         """
+        # Check if there's already a buffered message we can consume
+        buffered = self.consume_buffered_message()
+        if buffered is not None:
+            logger.info(f"Consumed buffered message: {buffered[:50]}...")
+            return buffered
+        
         request_id = self._generate_id()
         event = threading.Event()
         
@@ -289,6 +425,7 @@ class CanvasChatTool:
             self._events[request_id] = event
         
         # Emit WebSocket event to notify frontend
+        # Include source so frontend knows which endpoint to use for response
         self._emit("chat:input_request", {
             "id": request_id,
             "prompt": prompt,
@@ -296,6 +433,7 @@ class CanvasChatTool:
             "options": option_list,
             "placeholder": placeholder,
             "initial_value": initial_value,
+            "source": self._source,  # "compiler" or "execution"
         })
         
         logger.info(f"Waiting for chat input: {request_id} ({input_type})")
@@ -430,3 +568,71 @@ class CanvasChatTool:
             return self.ask(question, options)
         
         return ask_fn
+    
+    # =========================================================================
+    # Paradigm Affordances - Functions for composition (MFP → TVA pattern)
+    # These return callables that the paradigm's composition_tool uses
+    # =========================================================================
+    
+    def read_message(self) -> Callable:
+        """
+        Affordance: Return a function that blocks and reads user message.
+        
+        Used by paradigm: c_ChatRead-o_Literal
+        
+        The returned function:
+        - Blocks until user sends a message
+        - Returns dict with {role: str, content: str}
+        """
+        def _read_message_fn(**kwargs) -> Dict[str, Any]:
+            # Block and wait for user message
+            content = self.read_input(kwargs.get("prompt", ""))
+            return {
+                "role": "user",
+                "content": content,
+            }
+        
+        return _read_message_fn
+    
+    @property
+    def write_message(self) -> Callable:
+        """
+        Affordance: Return a function that sends a message to the user.
+        
+        Used by paradigm: h_Response-c_ChatWrite-o_Status
+        
+        The returned function:
+        - Takes message text
+        - Sends to chat
+        - Returns status dict
+        """
+        def _write_message_fn(message: str = "", **kwargs) -> Dict[str, Any]:
+            import time
+            content = message or kwargs.get("message", kwargs.get("content", ""))
+            self.write(content, role="compiler")
+            return {
+                "sent": True,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        
+        return _write_message_fn
+    
+    def close_session(self) -> Callable:
+        """
+        Affordance: Return a function that closes the chat session.
+        
+        Used by paradigm: c_ChatSessionClose-o_Status
+        
+        The returned function:
+        - Closes the session gracefully
+        - Returns status dict
+        """
+        def _close_session_fn(**kwargs) -> Dict[str, Any]:
+            # Emit session close event
+            self._emit("chat:session_closed", {})
+            self.write("Session ended. Goodbye!", role="system")
+            return {
+                "status": "closed",
+            }
+        
+        return _close_session_fn

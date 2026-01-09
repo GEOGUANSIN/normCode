@@ -261,9 +261,12 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
   return (
     <div className="border border-slate-200 rounded-lg mb-2 overflow-hidden bg-white hover:border-slate-300 transition-colors">
       {/* Header - clickable to expand */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(!isExpanded); } }}
+        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group cursor-pointer"
       >
         <span className="text-slate-400 flex-shrink-0">
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -279,7 +282,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
         )}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={handleCopy}
+            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
             className="p-1.5 hover:bg-slate-200 rounded transition-colors"
             title="Copy to clipboard"
           >
@@ -293,7 +296,7 @@ function ExpandableItem({ index, axisName, item, onExpand }: ExpandableItemProps
             <Maximize2 size={12} className="text-slate-400" />
           </button>
         </div>
-      </button>
+      </div>
       
       {/* Expanded content */}
       {isExpanded && (
@@ -475,6 +478,16 @@ function OneDView({ data, axisName }: { data: unknown[]; axisName: string }) {
     setModalItem({ index, item });
   };
   
+  // Handle empty collection
+  if (data.length === 0) {
+    return (
+      <div className="text-sm text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+        <div className="mb-1">Empty collection</div>
+        <div className="text-xs text-slate-300">0 items along <span className="font-mono">[{axisName}]</span> axis</div>
+      </div>
+    );
+  }
+  
   // Always use expandable items layout for better inspection capability
   return (
     <>
@@ -515,7 +528,12 @@ function TwoDView({ data, axes }: { data: unknown[][]; axes: string[] }) {
   const maxCols = Math.max(...data.map((row) => (Array.isArray(row) ? row.length : 0)), 0);
   
   if (data.length === 0) {
-    return <div className="text-sm text-slate-400 text-center py-4">Empty tensor</div>;
+    return (
+      <div className="text-sm text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+        <div className="mb-1">Empty collection</div>
+        <div className="text-xs text-slate-300">0 rows along <span className="font-mono">[{rowAxis}]</span> axis</div>
+      </div>
+    );
   }
   
   const handleCellClick = (row: number, col: number, cell: unknown) => {
@@ -621,7 +639,7 @@ interface NDViewProps {
 }
 
 function NDView({
-  data,
+  data: _data,
   displayData,
   shape,
   axes,

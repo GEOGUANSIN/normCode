@@ -1,0 +1,45 @@
+{
+  "_comment": "Test 01: Linear Chain - Filter + Average",
+  "_test_description": "Tests basic linear data flow with filter then compute pattern",
+  
+  "{instruction file path}": {
+    "data": [["%(tests/test_01_linear_chain.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{refinement questions file path}": {
+    "data": [["%(provisions/data/refinement_questions.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{progress file path}": {
+    "data": [["%(progress.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{refined instruction file path}": {
+    "data": [["%(1_refined_instruction.txt)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{extraction file path}": {
+    "data": [["%(2_extraction.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{classifications file path}": {
+    "data": [["%(3_classifications.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{tree file path}": {
+    "data": [["%(4_dependency_tree.json)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{output file path}": {
+    "data": [["%(ncds_output.ncds)"]],
+    "axes": ["_none_axis"]
+  }
+}
+

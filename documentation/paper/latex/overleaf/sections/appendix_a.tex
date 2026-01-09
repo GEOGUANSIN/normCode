@@ -1,0 +1,204 @@
+\onecolumn
+\section{Appendix A: Base-X Addition Repository}
+
+This appendix provides the complete NormCode repository for the base-X addition case study described in Section 8.
+
+\subsection{Input Specification}
+
+The input to the addition plan is a simple JSON structure specifying number pairs with their tensor axes:
+
+\begin{verbatim}
+{
+  "{number pair}": {
+    "data": [["%(123)", "%(98)"]],
+    "axes": ["number pair", "number"]
+  }
+}
+\end{verbatim}
+
+The \texttt{\%()} syntax wraps raw values as perceptual signs, deferring their interpretation until the MVP step when an inference actually needs to operate on the data.
+
+\subsection{NormCode Plan}
+
+\subsubsection{Natural Language Translation (.ncn Format)}
+
+For verification by domain experts, the plan translates to a readable narrative. The notation uses (OUTPUT) to indicate what each step produces, (ACTION) to describe how production occurs, (INPUT) to identify data flowing in, (YIELDS) to specify extracted results, (TIMING) to indicate dependencies on prior steps, (CONDITION) to specify when actions execute, and bracketed numbers like [1.2.3] to provide flow indices serving as unique addresses for debugging.
+
+\begin{verbatim}
+[1] (OUTPUT) The new number pair
+    (ACTION) is obtained by iterating through every number pair in the collection.
+    (MECHANISM) Each iteration carries forward the current carry-over number.
+    
+    [1.1] (OUTPUT) The result of each iteration
+        (ACTION) is assigned from the remainder.
+        
+        [1.1.2] (OUTPUT) The digit sum
+            (ACTION) is computed by summing the unit place values of all numbers 
+                     together with the current carry-over number.
+            (INPUT 1) All unit place values of the numbers in the current pair.
+            (INPUT 2) The current carry-over number (initially 0).
+            (YIELDS) The sum.
+            
+            [1.1.2.4] (OUTPUT) All unit place values of numbers
+                (ACTION) is collected by grouping across the current number pair.
+                
+                [1.1.2.4.2] (OUTPUT) Each unit place value
+                    (ACTION) is obtained by iterating through each number 
+                             in the current pair.
+                    
+                    [1.1.2.4.2.1] (OUTPUT) The loop result
+                        (ACTION) is assigned from the single unit place value.
+                        
+                        [1.1.2.4.2.1.2] (OUTPUT) The single unit place value
+                            (ACTION) is extracted by getting the unit place 
+                                     digit of the number.
+                            (INPUT) The current number from the pair.
+                            (YIELDS) The extracted digit.
+
+        [1.1.3] (OUTPUT) The number pair collection
+            (ACTION) is updated by appending a new number pair.
+            (CONDITION) This append happens ONLY IF NOT all numbers are zero,
+                        AND IF the carry-over number is zero.
+            
+            [1.1.3.2] (OUTPUT) The number pair to append
+                (ACTION) is constructed by iterating through each number 
+                         in the current pair.
+                
+                [1.1.3.2.1] (OUTPUT) The loop result
+                    (ACTION) is assigned from the number with last digit removed.
+                    
+                    [1.1.3.2.1.2] (OUTPUT) The number with last digit removed
+                        (ACTION) is computed by: if the number is less than 10, 
+                                 output 0; otherwise, remove the unit place digit.
+                        (INPUT) The current number.
+                        (YIELDS) The shifted number.
+
+            [1.1.3.3] (OUTPUT) The proposition "all numbers are 0"
+                (ACTION) is evaluated by checking if each number in the pair 
+                         to append is 0.
+                (TIMING) This check occurs after the number pair to append is ready.
+                (CONDITION) True if ALL numbers satisfy: the number is 0.
+
+            [1.1.3.4] (OUTPUT) The proposition "carry-over number is 0"
+                (ACTION) is evaluated by checking if the carry-over number is 0.
+                (TIMING) This check occurs after the number pair to append is ready.
+                
+                [1.1.3.4.2] (OUTPUT) The updated carry-over number
+                    (ACTION) is computed from the previous carry-over and new quotient.
+                    
+                    [1.1.3.4.2.2] (OUTPUT) The new carry-over value
+                        (ACTION) is found by computing the quotient of the digit 
+                                 sum divided by 10.
+                        (TIMING) This occurs after the digit sum is available.
+                        (INPUT) The digit sum.
+                        (YIELDS) The quotient (new carry).
+
+        [1.1.4] (OUTPUT) The remainder
+            (ACTION) is computed by getting the remainder of the digit sum 
+                     divided by 10.
+            (TIMING) This occurs after the digit sum is available.
+            (INPUT) The digit sum.
+            (YIELDS) The remainder (the digit to output).
+
+    (INPUT) The initial number pair collection.
+\end{verbatim}
+
+\subsubsection{Formal Syntax (.ncd Format)}
+
+The formal NormCode syntax uses structured markers for precise machine interpretation:
+
+\begin{verbatim}
+{new number pair} | 1. quantifying
+    <= *every({number pair})%:[{number pair}]@(1)^[{carry-over number}<*1>] 
+       | 1.1. assigning
+        <= $.({remainder}) 
+        
+        <- {digit sum} | 1.1.2. imperative
+            <= ::(sum {1}<$([all {unit place value} of numbers])%_> 
+                  and {2}<$({carry-over number}*1)%_> 
+                  to get {3}?<$({sum})%_>)
+            <- {sum}?<:{3}>
+            <- {carry-over number}*1<:{2}> 
+            <- [all {unit place value} of numbers]<:{1}> | 1.1.2.4. grouping
+                <= &across({unit place value}:{number pair}*1)
+                <- {unit place value} | 1.1.2.4.2. quantifying
+                    <= *every({number pair}*1)%:[{number}]@(2) 
+                       | 1.1.2.4.2.1. assigning
+                        <= $.({single unit place value})
+                        <- {single unit place value} | 1.1.2.4.2.1.2. imperative
+                            <= ::(get {2}?<$({unit place value})%_> 
+                                  of {1}<$({number})%_>)
+                            <- {unit place digit}?<:{2}>
+                            <- {number pair}*1*2
+                    <- {number pair}*1
+
+        <- {number pair}<$={1}> | 1.1.3. assigning
+            <= $+({number pair to append}:{number pair})%:[{number pair}] 
+               | 1.1.3.1. timing
+                <= @if!(<all number is 0>) | 1.1.3.1.1. timing
+                    <= @if(<carry-over number is 0>)
+
+            <- {number pair to append}<$={1}> | 1.1.3.2. quantifying
+                <= *every({number pair}*1)%:[{number}]@(3) 
+                   | 1.1.3.2.1. assigning
+                    <= $.({number with last digit removed}) 
+                    <- {number with last digit removed} 
+                       | 1.1.3.2.1.2. imperative
+                        <= ::(output 0 if {1}<$({number})%_> is less than 10, 
+                              otherwise remove {2}?<$({unit place digit})%_> 
+                              from {1}<$({number})%_>) 
+                        <- {unit place digit}?<:{2}> 
+                        <- {number pair}*1*3<:{1}>
+                <- {number pair}*1
+
+            <- <all number is 0> | 1.1.3.3. judgement
+                <= :%(True):<{1}<$({number})%_> is 0> | 1.1.3.3.1. timing
+                    <= @after({number pair to append}<$={1}>)
+                <- {number pair to append}<$={1}><:{1}>
+
+            <- <carry-over number is 0> | 1.1.3.4. judgement
+                <= :%(True):<{1}<$({carry-over number})%_> is 0> 
+                   | 1.1.3.4.1. timing
+                    <= @after({number pair to append}<$={1}>)
+                <- {carry-over number}*1 | 1.1.3.4.2. grouping
+                    <= &across({carry-over number}*1:
+                               {carry-over number}*1<--<!_>>)
+                    <- {carry-over number}*1 | 1.1.3.4.2.2. imperative
+                        <= ::(find the {1}?<$({quotient})%_> 
+                              of {2}<$({digit sum})%_> divided by 10) 
+                           | 1.1.3.4.2.2.1. timing
+                            <= @after({digit sum})
+                        <- {quotient}?<:{1}>
+                        <- {digit sum}<:{2}>
+
+        <- {remainder} | 1.1.4. imperative
+            <= ::(get the {1}?<$({remainder})%_> 
+                  of {2}<$({digit sum})%_> divided by 10) 
+               | 1.1.4.1. timing
+                <= @after({digit sum})
+            <- {remainder}?<:{1}>
+            <- {digit sum}<:{2}>
+
+    <- {number pair}<$={1}>
+\end{verbatim}
+
+\subsection{Concept Repository}
+
+The concept repository defines over 50 concepts. Ground concepts with pre-populated references include \texttt{\{number pair\}} of type \texttt{\{\}} with reference data \texttt{[["\%(123)", "\%(98)"]]}, representing the input number pairs; \texttt{\{carry-over number\}*1} of type \texttt{\{\}} with reference data \texttt{["\%(0)"]}, representing the initial carry-over state; and \texttt{\{unit place digit\}?} of type \texttt{\{\}} with reference data describing ``1 digit counting from the right,'' representing a semantic specification for extraction.
+
+Functional concepts define the operations. The outer loop \texttt{*every(\{number pair\})\%:[\{number pair\}]@(1)\^{}[\{carry-over number\}<*1>]} is of type \texttt{*every} and iterates with carry state. The grouping operation \texttt{\&across(\{unit place value\}:\{number pair\}*1)} is of type \texttt{\&across} and collects digits across numbers. The imperative \texttt{::(sum \{1\}<...> and \{2\}<...> to get \{3\}?<...>)} is of type \texttt{::(\{\})} and performs digit summation. The judgement \texttt{:\%(True):<\{1\}<\$(\{number\})\%\_> is 0>} is of type \texttt{<\{\}>} and checks if a value is zero.
+
+\subsection{Inference Repository}
+
+The inference repository contains 23 inference entries with their working interpretations.
+
+The outer loop inference at flow index 1 has sequence type ``quantifying,'' infers concept \texttt{\{new number pair\}}, uses the function concept \texttt{*every(\{number pair\})...}, takes value concepts \texttt{[\{number pair\}]}, and context concepts \texttt{[\{number pair\}*1, \{carry-over number\}*1]}. Its working interpretation specifies the ``every'' marker with quantifier index 1, loop base concept, current loop base concept with the *1 marker, group base name, in-loop concept mapping, and concepts to infer.
+
+The digit summation inference at flow index 1.1.2 has sequence type ``imperative\_python,'' infers concept \texttt{\{digit sum\}}, and takes three value concepts. Its working interpretation specifies value ordering (positions 1, 2, 3 for the inputs), enables thinking mode, and indicates non-relation output.
+
+The conditional termination inference at flow index 1.1.3.1.1 has sequence type ``timing,'' infers concept \texttt{@if!(<all number is 0>)}, and uses the function concept \texttt{@if(<carry-over number is 0>)}. Its working interpretation specifies the ``if'' marker and the condition to check.
+
+\subsection{Repository Files}
+
+The complete repository files are available in the codebase at \texttt{infra/examples/add\_examples/repo/}. The \texttt{addition\_concepts.json} file contains 935 lines defining all concepts. The \texttt{addition\_inferences.json} file contains 656 lines defining all inferences with their working interpretations. The \texttt{addition\_inputs.json} file contains 12 lines specifying input data. The Python runner \texttt{ex\_add\_complete\_12\_base.py} provides validation and execution harness.
+

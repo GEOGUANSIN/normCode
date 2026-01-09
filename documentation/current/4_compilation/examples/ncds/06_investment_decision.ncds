@@ -1,0 +1,72 @@
+/: Investment Decision with Conditional Branching
+/: Multi-source analysis with judgement-based conditional execution
+/: STATUS: Working - verified against gold repos
+
+<- investment decision
+    <= select investment decision as final output
+    
+    <- price data
+        <= retrieve price data from market sources
+        <- simulated data: price data
+    
+    <- news data
+        <= retrieve news data from text sources
+        <- simulated data: news data
+    
+    <- theoretical framework
+        <= obtain theoretical framework from domain experts
+        <- simulated data: theoretical framework
+    
+    <- investor risk profile
+        <= collect investor constraints
+        <- simulated data: investor risk profile
+    
+    <- validated signal
+        <= collect quantitative signal and narrative signal together
+        <- quantitative signal
+            <= compute price-based indicators
+            <- price data
+        <- narrative signal
+            <= extract sentiment and themes
+            <- news data
+    
+    <- signals surpass theoretical expectations?
+        <= judge if validated signal exceeds predictions of theoretical framework
+        <- validated signal
+        <- theoretical framework
+    
+    <- signals deviate from theoretical expectations?
+        <= judge if validated signal falls below predictions of theoretical framework
+        <- validated signal
+        <- theoretical framework
+    
+    <- signals are neutral?
+        <= evaluate which signals are neither bullish nor bearish
+        <- signal status
+            <= collect bullish and bearish evaluations together
+            <- signals surpass theoretical expectations?
+            <- signals deviate from theoretical expectations?
+    
+    <- investment decision
+        <= synthesize final decision from all recommendations constrained by investor risk profile
+        <- all recommendations
+            <= bundle bullish, bearish, and neutral recommendations
+            <- bullish recommendation
+                <= generate buy recommendation with position sizing
+                    <= if signals surpass theoretical expectations
+                    <* signals surpass theoretical expectations?
+                <- validated signal
+                <- investor risk profile
+            <- bearish recommendation
+                <= generate sell recommendation with position sizing
+                    <= if signals deviate from theoretical expectations
+                    <* signals deviate from theoretical expectations?
+                <- validated signal
+                <- investor risk profile
+            <- neutral recommendation
+                <= generate hold recommendation
+                    <= if signals are neutral
+                    <* signals are neutral?
+                <- validated signal
+        <- investor risk profile
+

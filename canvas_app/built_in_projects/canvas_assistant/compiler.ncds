@@ -1,0 +1,52 @@
+/: Minimal Self-Hosted Compiler Plan
+/: This plan runs under the chat interface and handles user requests
+/: First version: Only handles "new project" request
+
+:<: session ends
+    <= return session ends 
+        <= if termination condition is met
+
+    <- on-going messages 
+        <= initiate the on-going messages
+
+    <- all canvas statuses
+        <= for every on-going message
+
+            <= return the canvas status
+
+            <- new message 
+                <= :>(chat): user gives a new message 
+
+            <= (add this to all on-going messages) 
+                <- if this is not the termination request
+
+            <- new canvas command 
+                <= :: understand the canvas command in the user chat
+                <- canvas command
+
+            <- command status 
+                <= :: conduct the canvas command
+                <- new canvas command
+
+            <- new response 
+                <= :: the chat gives a new response 
+                <- new message
+                <- command status
+
+            <- on-going responses 
+                <= add the new response to the on-going responses 
+                <- on-going responses
+            
+            <- a response is given to the user
+                <= :(chat): the chat gives a new response to the user
+                <- new response
+
+            <- termination condition is met
+                <= judge if the termination condition is met
+                <- response 
+                <- on-going messages
+
+            <- termination condition is not met
+        <- on-going messages
+
+    <- session ends iteral

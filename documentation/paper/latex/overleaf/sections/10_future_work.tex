@@ -1,0 +1,16 @@
+\section{Future Work}
+
+While NormCode provides a working implementation with visual debugging, checkpointing, and multi-agent support, several directions remain for future development.
+
+\textbf{Compiler robustness.} The natural language to \texttt{.ncd} derivation phase remains the most fragile component, relying on carefully designed prompts that are sensitive to instruction complexity. Future work should explore fine-tuned models specifically trained on NormCode generation using human-authored plans as training data, iterative refinement loops with automated validation that detect and correct common decomposition errors, and hybrid approaches where humans sketch high-level structure and LLMs fill in detailed specifications.
+
+\textbf{Multi-agent coordination.} The current implementation supports multiple Subjects with different tool bodies and allows mapping inferences to specific agents, but real multi-agent coordination remains unexplored. Future work could address negotiation protocols where agents with different capabilities agree on task allocation, delegation mechanisms where agents can assign sub-tasks to specialized agents, and conflict resolution when multiple agents produce contradictory results. NormCode's isolation guarantees provide a foundation for safe agent-to-agent communication since each agent's view is explicitly defined.
+
+\textbf{Domain-specific extensions.} High-stakes domains may require specialized semantic types such as \texttt{\{legal precedent\}}, \texttt{\{patient record\}}, or \texttt{\{financial instrument\}} that carry domain-specific validation rules and constraints. Domain-specific verification could enforce rules like ``all medical diagnoses must cite evidence'' or ``all financial recommendations must include risk disclosures.'' Compliance reporting could automatically generate audit trails formatted for regulatory requirements such as EU AI Act documentation.
+
+\textbf{Empirical evaluation.} Rigorous comparative studies would strengthen NormCode's claims. Benchmarking against baseline approaches including direct prompting, LangChain pipelines, and AutoGPT on established datasets like HumanEval or GAIA would quantify cost-accuracy tradeoffs. User studies with domain experts (lawyers, clinicians, analysts) would assess the practical value of the multi-format ecosystem and visual debugging. Longitudinal studies of production deployments would reveal real-world failure modes and optimization opportunities.
+
+\textbf{Performance optimization.} While syntactic operations are free, semantic operations incur token costs and latency. Future work could explore batching similar LLM calls within loops to reduce API overhead, caching and memoization of paradigm outputs for repeated patterns, and parallel execution of independent semantic operations when dependency analysis permits.
+
+\textbf{Integration with external systems.} Production deployments require integration with existing infrastructure. This includes connecting to enterprise LLM endpoints with authentication and rate limiting, integrating with logging and monitoring systems for observability, and supporting deployment patterns like containerization and serverless execution.
+

@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Save,
   Sparkles,
+  Workflow,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -32,14 +33,17 @@ import { ProjectPanel } from './components/panels/ProjectPanel';
 import { EditorPanel } from './components/panels/EditorPanel';
 import { CheckpointPanel } from './components/panels/CheckpointPanel';
 import { AgentPanel } from './components/panels/AgentPanel';
+import { WorkersPanel } from './components/panels/WorkersPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
 import { ProjectTabs } from './components/panels/ProjectTabs';
 import { ChatPanel } from './components/panels/ChatPanel';
+import { ToastContainer } from './components/common/ToastNotification';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
 import { useExecutionStore } from './stores/executionStore';
 import { useProjectStore } from './stores/projectStore';
 import { useChatStore } from './stores/chatStore';
+import { useNotificationStore } from './stores/notificationStore';
 
 // View modes for the main content area
 type ViewMode = 'canvas' | 'editor';
@@ -166,16 +170,23 @@ function App() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
   const [showAgentPanel, setShowAgentPanel] = useState(false);
+  const [showWorkersPanel, setShowWorkersPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   const [showRepoPathsModal, setShowRepoPathsModal] = useState(false);
   
   const graphData = useGraphStore((s) => s.graphData);
   const status = useExecutionStore((s) => s.status);
+  const logs = useExecutionStore((s) => s.logs);
   const wsConnected = useWebSocket();
+  const showError = useNotificationStore((s) => s.showError);
+  const showWarning = useNotificationStore((s) => s.showWarning);
+  
+  // Track shown error logs to avoid duplicates
+  const [lastErrorLogCount, setLastErrorLogCount] = useState(0);
   
   // Chat state
-  const { isOpen: isChatOpen, togglePanel: toggleChatPanel, compilerStatus } = useChatStore();
+  const { isOpen: isChatOpen, togglePanel: toggleChatPanel, controllerStatus } = useChatStore();
   
   // Project state
   const {
@@ -205,6 +216,39 @@ function App() {
     fetchRecentProjects();
     fetchOpenTabs();
   }, [fetchCurrentProject, fetchRecentProjects, fetchOpenTabs]);
+  
+  // Show toast notifications for new error/warning logs
+  useEffect(() => {
+    const errorLogs = logs.filter(log => log.level === 'error');
+    
+    // Only show toasts for new errors (not ones we've already seen)
+    if (errorLogs.length > lastErrorLogCount) {
+      const newErrors = errorLogs.slice(lastErrorLogCount);
+      
+      // Show toast for each new error (limit to avoid spam)
+      newErrors.slice(0, 3).forEach((log, idx) => {
+        // Slight delay between toasts for visual effect
+        setTimeout(() => {
+          showError(
+            log.flowIndex ? `Error in ${log.flowIndex}` : 'Error',
+            log.message,
+          );
+        }, idx * 100);
+      });
+      
+      // If more than 3 new errors, show summary
+      if (newErrors.length > 3) {
+        setTimeout(() => {
+          showWarning(
+            'Multiple Errors',
+            `${newErrors.length - 3} more errors occurred. Check the log panel for details.`,
+          );
+        }, 400);
+      }
+      
+      setLastErrorLogCount(errorLogs.length);
+    }
+  }, [logs, lastErrorLogCount, showError, showWarning]);
 
   // If no project is open, show project welcome screen
   if (!currentProject) {
@@ -305,36 +349,56 @@ function App() {
         
         {/* Right side: Actions */}
         <div className="flex items-center gap-1">
-          {/* Agent Panel Toggle - left-side panel opener */}
+          {/* Left panel toggles (Workers, Agent) */}
           {viewMode === 'canvas' && (
-            <button
-              onClick={() => setShowAgentPanel(!showAgentPanel)}
-              className={`p-2 rounded-lg transition-colors ${
-                showAgentPanel
-                  ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-              }`}
-              title="Agent Configuration Panel"
-            >
-              <Bot size={18} />
-            </button>
-          )}
-          
-          {/* Panel toggles - only show in canvas mode */}
-          {graphData && viewMode === 'canvas' && (
             <>
-              <div className="w-px h-6 bg-slate-200 mx-1" />
+              {/* Plans in Work Panel Toggle */}
               <button
-                onClick={() => setShowDetailPanel(!showDetailPanel)}
+                onClick={() => setShowWorkersPanel(!showWorkersPanel)}
                 className={`p-2 rounded-lg transition-colors ${
-                  showDetailPanel 
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
+                  showWorkersPanel
+                    ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
-                title={showDetailPanel ? 'Hide detail panel' : 'Show detail panel'}
+                title="Plans in Work - View all active NormCode plans"
               >
-                {showDetailPanel ? <PanelRightClose size={18} /> : <PanelRight size={18} />}
+                <Workflow size={18} />
               </button>
+              
+              {/* Agent Panel Toggle */}
+              <button
+                onClick={() => setShowAgentPanel(!showAgentPanel)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showAgentPanel
+                    ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Agent Configuration Panel"
+              >
+                <Bot size={18} />
+              </button>
+            </>
+          )}
+          
+          {/* Panel toggles - show in canvas mode */}
+          {viewMode === 'canvas' && (
+            <>
+              <div className="w-px h-6 bg-slate-200 mx-1" />
+              {/* Detail panel toggle - only when graph loaded */}
+              {graphData && (
+                <button
+                  onClick={() => setShowDetailPanel(!showDetailPanel)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    showDetailPanel 
+                      ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                  }`}
+                  title={showDetailPanel ? 'Hide detail panel' : 'Show detail panel'}
+                >
+                  {showDetailPanel ? <PanelRightClose size={18} /> : <PanelRight size={18} />}
+                </button>
+              )}
+              {/* Log panel toggle - always available to see loading errors */}
               <button
                 onClick={() => setShowLogPanel(!showLogPanel)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -395,7 +459,7 @@ function App() {
           >
             <Sparkles size={18} />
             <span className="text-sm font-medium">Chat</span>
-            {compilerStatus === 'running' && (
+            {controllerStatus === 'running' && (
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             )}
           </button>
@@ -444,39 +508,45 @@ function App() {
             {viewMode === 'editor' ? (
               // Editor View
               <EditorPanel />
-            ) : !isLoaded ? (
-          // Show message when repositories not loaded yet (Canvas mode)
-          <div className="flex-1 flex items-center justify-center bg-white">
-            <div className="text-center p-8">
-              <Folder className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-slate-700 mb-2">Project Ready</h2>
-              <p className="text-slate-500 mb-4 max-w-md">
-                {repositoriesExist 
-                  ? 'Click "Load" in the header to start working with your NormCode plan.'
-                  : 'Repository files not found. Make sure concepts.json and inferences.json exist in the project directory.'
-                }
-              </p>
-              {repositoriesExist && (
-                <button
-                  onClick={loadProjectRepositories}
-                  disabled={projectLoading}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 mx-auto transition-colors"
-                >
-                  {projectLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <FolderOpen className="w-4 h-4" />
-                  )}
-                  Load Repositories
-                </button>
-              )}
+            ) : (!isLoaded && !graphData) ? (
+          // Show message when repositories not loaded yet AND no worker graph is loaded (Canvas mode)
+          // Include LogPanel at the bottom for loading errors visibility
+          <>
+            <div className="flex-1 flex items-center justify-center bg-white">
+              <div className="text-center p-8">
+                <Folder className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-slate-700 mb-2">Project Ready</h2>
+                <p className="text-slate-500 mb-4 max-w-md">
+                  {repositoriesExist 
+                    ? 'Click "Load" in the header to start working with your NormCode plan.'
+                    : 'Repository files not found. Make sure concepts.json and inferences.json exist in the project directory.'
+                  }
+                </p>
+                {repositoriesExist && (
+                  <button
+                    onClick={loadProjectRepositories}
+                    disabled={projectLoading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 mx-auto transition-colors"
+                  >
+                    {projectLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FolderOpen className="w-4 h-4" />
+                    )}
+                    Load Repositories
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+            {/* Log Panel - available even before loading for error visibility */}
+            {showLogPanel && <LogPanel />}
+          </>
         ) : (
           // Canvas View
           <>
             <div className="flex-1 flex overflow-hidden">
-              {/* Agent Panel (left side) */}
+              {/* Left side panels */}
+              {showWorkersPanel && <WorkersPanel />}
               {showAgentPanel && <AgentPanel />}
               
               {/* Graph Canvas */}
@@ -539,6 +609,9 @@ function App() {
 
       {/* User Input Modal (human-in-the-loop) */}
       <UserInputModal />
+
+      {/* Toast Notifications - prominent alerts for errors/warnings */}
+      <ToastContainer />
 
       {/* Status Bar */}
       <footer className="bg-white border-t border-slate-200 px-4 py-1 flex items-center justify-between text-xs text-slate-500">

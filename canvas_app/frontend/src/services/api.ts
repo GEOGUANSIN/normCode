@@ -89,12 +89,20 @@ export const graphApi = {
     fetchJson(`${API_BASE}/graph/stats`),
   
   /**
-   * Reload the graph for the current project.
-   * Used when switching between project tabs to ensure the graph matches
-   * the current project's repository files.
+   * Reload the graph for the current project FROM DISK.
+   * DEPRECATED: Use swap() for tab switching instead.
+   * Only use reload() when files have actually changed on disk.
    */
   reload: (): Promise<GraphData> =>
     fetchJson(`${API_BASE}/graph/reload`, { method: 'POST' }),
+  
+  /**
+   * Swap to the cached graph for a specific project.
+   * This uses cached data from the ExecutionController instead of
+   * re-reading from disk, making tab switching much faster.
+   */
+  swap: (projectId: string): Promise<GraphData> =>
+    fetchJson(`${API_BASE}/graph/swap/${encodeURIComponent(projectId)}`, { method: 'POST' }),
 };
 
 // Execution endpoints
@@ -146,10 +154,31 @@ export const executionApi = {
   getAllReferences: (): Promise<Record<string, ReferenceData>> =>
     fetchJson(`${API_BASE}/execution/references`),
   
+  // Iteration history - get past values from loop iterations
+  getReferenceHistory: (conceptName: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/reference/${encodeURIComponent(conceptName)}/history?limit=${limit}`),
+  
+  getFlowHistory: (flowIndex: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/flow/${encodeURIComponent(flowIndex)}/history?limit=${limit}`),
+  
+  // Worker-specific iteration history (for chat controller, etc.)
+  getWorkerReferenceHistory: (workerId: string, conceptName: string, limit: number = 50): Promise<IterationHistoryResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/reference/${encodeURIComponent(conceptName)}/history?limit=${limit}`),
+  
   setVerboseLogging: (enabled: boolean): Promise<CommandResponse> =>
     fetchJson(`${API_BASE}/execution/verbose-logging`, {
       method: 'POST',
       body: JSON.stringify({ enabled }),
+    }),
+  
+  // Run mode control (slow = one inference at a time, fast = all ready per cycle)
+  getRunMode: (): Promise<{ mode: 'slow' | 'fast' }> =>
+    fetchJson(`${API_BASE}/execution/run-mode`),
+  
+  setRunMode: (mode: 'slow' | 'fast'): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/run-mode`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
     }),
   
   getStepProgress: (flowIndex?: string): Promise<StepProgressResponse> =>
@@ -211,6 +240,28 @@ export interface ReferenceData {
   data: unknown;
   axes: string[];
   shape: number[];
+}
+
+// Iteration history types - for viewing past loop iteration values
+export interface IterationHistoryEntry {
+  iteration_index: number;
+  cycle_number: number;
+  flow_index?: string;
+  concept_name?: string;
+  data: unknown;
+  axes: string[];
+  shape: number[];
+  timestamp: number;
+  has_data: boolean;
+}
+
+export interface IterationHistoryResponse {
+  concept_name?: string;
+  flow_index?: string;
+  run_id: string | null;
+  history: IterationHistoryEntry[];
+  total_iterations: number;
+  message?: string;
 }
 
 // Phase 4: Modification response types
@@ -532,17 +583,51 @@ export const checkpointApi = {
 };
 
 // ============================================================================
-// Chat API - Compiler-driven chat interface
+// Chat API - Controller-driven chat interface
 // ============================================================================
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system' | 'compiler';
+  role: 'user' | 'assistant' | 'system' | 'compiler' | 'controller';
   content: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
 
+// Controller info (available chat controllers)
+export interface ControllerInfo {
+  project_id: string;
+  name: string;
+  path: string;
+  config_file?: string;
+  description?: string;
+  is_builtin: boolean;
+}
+
+export interface ControllersListResponse {
+  controllers: ControllerInfo[];
+  current_controller_id: string | null;
+}
+
+// Controller state
+export interface ControllerState {
+  controller_id: string | null;
+  controller_name: string | null;
+  controller_path: string | null;
+  status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error';
+  current_flow_index: string | null;
+  error_message: string | null;
+  pending_input: {
+    id: string;
+    prompt: string;
+    input_type: 'text' | 'code' | 'confirm' | 'select';
+    options?: string[];
+    placeholder?: string;
+  } | null;
+  is_execution_active: boolean;
+}
+
+// Backward compatibility alias
 export interface CompilerState {
   compiler: {
     project_id: string | null;
@@ -574,6 +659,16 @@ export interface GetMessagesResponse {
   total_count: number;
 }
 
+export interface StartControllerResponse {
+  success: boolean;
+  controller_id?: string;
+  controller_name?: string;
+  controller_path?: string;
+  status: 'disconnected' | 'connecting' | 'connected' | 'running' | 'paused' | 'error';
+  error?: string;
+}
+
+// Backward compatibility alias
 export interface StartCompilerResponse {
   success: boolean;
   project_id?: string;
@@ -583,34 +678,102 @@ export interface StartCompilerResponse {
   error?: string;
 }
 
+export interface ChatBufferResponse {
+  success: boolean;
+  buffer_full?: boolean;
+  delivered?: boolean;
+  buffered_message?: string;
+  reason?: string;
+}
+
+export interface ChatBufferStatus {
+  execution_active: boolean;
+  has_pending_request: boolean;
+  has_buffered_message: boolean;
+  buffered_message: string | null;
+}
+
 export const chatApi = {
+  // =========================================================================
+  // Controller Management (NEW)
+  // =========================================================================
+  
   /**
-   * Get the current state of the compiler meta project.
+   * List all available chat controller projects.
    */
-  getState: (): Promise<CompilerState> =>
+  listControllers: (refresh = false): Promise<ControllersListResponse> =>
+    fetchJson(`${API_BASE}/chat/controllers?refresh=${refresh}`),
+  
+  /**
+   * Select a chat controller project.
+   */
+  selectController: (controllerId: string): Promise<ControllerState> =>
+    fetchJson(`${API_BASE}/chat/controllers/select`, {
+      method: 'POST',
+      body: JSON.stringify({ controller_id: controllerId }),
+    }),
+  
+  /**
+   * Get the current controller state.
+   */
+  getControllerState: (): Promise<ControllerState> =>
     fetchJson(`${API_BASE}/chat/state`),
   
   /**
-   * Start/connect the compiler meta project.
-   * This initializes the compiler and makes it ready to receive user input.
+   * Start the chat controller.
    */
-  startCompiler: (autoRun = true): Promise<StartCompilerResponse> =>
+  startController: (autoRun = true): Promise<StartControllerResponse> =>
     fetchJson(`${API_BASE}/chat/start`, {
       method: 'POST',
       body: JSON.stringify({ auto_run: autoRun }),
     }),
   
   /**
-   * Stop the compiler execution (but keep it connected).
+   * Pause the controller execution.
    */
-  stopCompiler: (): Promise<{ success: boolean; status: string }> =>
+  pauseController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/pause`, { method: 'POST' }),
+  
+  /**
+   * Resume paused controller execution.
+   */
+  resumeController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/resume`, { method: 'POST' }),
+  
+  /**
+   * Stop the controller execution (but keep it connected).
+   */
+  stopController: (): Promise<{ success: boolean; status: string }> =>
     fetchJson(`${API_BASE}/chat/stop`, { method: 'POST' }),
   
   /**
-   * Disconnect the compiler completely.
+   * Disconnect the controller completely.
    */
+  disconnectController: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/disconnect`, { method: 'POST' }),
+  
+  // =========================================================================
+  // Backward Compatibility Aliases
+  // =========================================================================
+  
+  getState: (): Promise<ControllerState> =>
+    fetchJson(`${API_BASE}/chat/state`),
+  
+  startCompiler: (autoRun = true): Promise<StartCompilerResponse> =>
+    fetchJson(`${API_BASE}/chat/start`, {
+      method: 'POST',
+      body: JSON.stringify({ auto_run: autoRun }),
+    }),
+  
+  stopCompiler: (): Promise<{ success: boolean; status: string }> =>
+    fetchJson(`${API_BASE}/chat/stop`, { method: 'POST' }),
+  
   disconnectCompiler: (): Promise<{ success: boolean; status: string }> =>
     fetchJson(`${API_BASE}/chat/disconnect`, { method: 'POST' }),
+  
+  // =========================================================================
+  // Messages
+  // =========================================================================
   
   /**
    * Get chat message history.
@@ -619,7 +782,7 @@ export const chatApi = {
     fetchJson(`${API_BASE}/chat/messages?limit=${limit}&offset=${offset}`),
   
   /**
-   * Send a message to the compiler.
+   * Send a message to the controller.
    * This is the main endpoint for user chat input.
    */
   sendMessage: (content: string, metadata?: Record<string, unknown>): Promise<SendMessageResponse> =>
@@ -634,8 +797,12 @@ export const chatApi = {
   clearMessages: (): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/messages`, { method: 'DELETE' }),
   
+  // =========================================================================
+  // Input Handling
+  // =========================================================================
+  
   /**
-   * Submit a response to a pending input request.
+   * Submit a response to a pending input request (controller service).
    */
   submitInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {
@@ -644,12 +811,223 @@ export const chatApi = {
     }),
   
   /**
+   * Submit a response to a pending input request (execution service).
+   * Used when source="execution" in the input request.
+   */
+  submitExecutionInput: (requestId: string, value: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/execution/chat-input/${encodeURIComponent(requestId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ value }),
+    }),
+  
+  /**
+   * Buffer a message for the running execution plan.
+   * Only ONE message can be buffered at a time.
+   * Used when execution is active but no input request is pending yet.
+   */
+  bufferMessage: (message: string): Promise<ChatBufferResponse> =>
+    fetchJson(`${API_BASE}/execution/chat-buffer`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  
+  /**
+   * Get the status of the execution chat buffer.
+   */
+  getBufferStatus: (): Promise<ChatBufferStatus> =>
+    fetchJson(`${API_BASE}/execution/chat-buffer/status`),
+  
+  /**
    * Cancel a pending input request.
    */
   cancelInput: (requestId: string): Promise<{ success: boolean }> =>
     fetchJson(`${API_BASE}/chat/input/${encodeURIComponent(requestId)}`, {
       method: 'DELETE',
     }),
+};
+
+// ============================================================================
+// Database Inspector API - Read-only database exploration
+// ============================================================================
+
+export interface ExecutionRecord {
+  id: number;
+  run_id?: string;
+  cycle: number;
+  flow_index: string;
+  inference_type?: string;
+  status: string;
+  concept_inferred?: string;
+  timestamp?: string;
+  log_content?: string;
+}
+
+export interface ExecutionHistoryResponse {
+  executions: ExecutionRecord[];
+  total_count: number;
+  run_id: string;
+}
+
+export interface TableSchema {
+  name: string;
+  columns: { name: string; type: string }[];
+  row_count: number;
+}
+
+export interface DatabaseOverview {
+  path: string;
+  size_bytes: number;
+  tables: TableSchema[];
+  run_count: number;
+  total_executions: number;
+  total_checkpoints: number;
+}
+
+export interface RunStatistics {
+  run_id: string;
+  total_executions: number;
+  completed: number;
+  failed: number;
+  in_progress: number;
+  cycles_completed: number;
+  unique_concepts_inferred: number;
+  execution_by_type: Record<string, number>;
+}
+
+export interface CheckpointStateResponse {
+  cycle: number;
+  inference_count: number;
+  timestamp?: string;
+  blackboard?: Record<string, unknown>;
+  workspace?: Record<string, unknown>;
+  tracker?: Record<string, unknown>;
+  completed_concepts?: Record<string, unknown>;
+  signatures?: Record<string, unknown>;
+}
+
+export interface BlackboardSummary {
+  concept_statuses: Record<string, string>;
+  item_statuses: Record<string, string>;
+  item_results: Record<string, string>;
+  item_completion_details: Record<string, string>;
+  execution_counts: Record<string, number>;
+  concept_count: number;
+  item_count: number;
+  completed_concepts: number;
+  completed_items: number;
+}
+
+export interface QueryResult {
+  rows: Record<string, unknown>[];
+  total_count: number;
+  table: string;
+}
+
+export const dbInspectorApi = {
+  /**
+   * Get an overview of the database structure and contents.
+   */
+  getOverview: (dbPath: string): Promise<DatabaseOverview> =>
+    fetchJson(`${API_BASE}/db-inspector/overview?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get execution history for a run.
+   */
+  getExecutionHistory: (
+    runId: string,
+    dbPath: string,
+    options?: { includeLogs?: boolean; limit?: number; offset?: number }
+  ): Promise<ExecutionHistoryResponse> => {
+    const params = new URLSearchParams({
+      db_path: dbPath,
+      include_logs: String(options?.includeLogs ?? false),
+      limit: String(options?.limit ?? 500),
+      offset: String(options?.offset ?? 0),
+    });
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/executions?${params}`);
+  },
+
+  /**
+   * Get logs for a specific execution.
+   */
+  getExecutionLogs: (
+    runId: string,
+    executionId: number,
+    dbPath: string
+  ): Promise<{ execution_id: number; log_content: string }> =>
+    fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/executions/${executionId}/logs?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get statistics for a run.
+   */
+  getRunStatistics: (runId: string, dbPath: string): Promise<RunStatistics> =>
+    fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/statistics?db_path=${encodeURIComponent(dbPath)}`),
+
+  /**
+   * Get checkpoint state data.
+   */
+  getCheckpointState: (
+    runId: string,
+    cycle: number,
+    dbPath: string,
+    inferenceCount?: number
+  ): Promise<CheckpointStateResponse> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (inferenceCount !== undefined) {
+      params.set('inference_count', String(inferenceCount));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/checkpoints/${cycle}?${params}`);
+  },
+
+  /**
+   * Get blackboard summary from a checkpoint.
+   */
+  getBlackboardSummary: (
+    runId: string,
+    dbPath: string,
+    cycle?: number
+  ): Promise<BlackboardSummary> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (cycle !== undefined) {
+      params.set('cycle', String(cycle));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/blackboard?${params}`);
+  },
+
+  /**
+   * Get completed concepts from a checkpoint.
+   */
+  getCompletedConcepts: (
+    runId: string,
+    dbPath: string,
+    cycle?: number
+  ): Promise<{ concepts: Record<string, unknown>; count: number }> => {
+    const params = new URLSearchParams({ db_path: dbPath });
+    if (cycle !== undefined) {
+      params.set('cycle', String(cycle));
+    }
+    return fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/concepts?${params}`);
+  },
+
+  /**
+   * Run a custom query against a table.
+   */
+  query: (
+    dbPath: string,
+    table: string,
+    options?: { limit?: number; offset?: number; where?: string }
+  ): Promise<QueryResult> => {
+    const params = new URLSearchParams({
+      db_path: dbPath,
+      table,
+      limit: String(options?.limit ?? 100),
+      offset: String(options?.offset ?? 0),
+    });
+    if (options?.where) {
+      params.set('where', options.where);
+    }
+    return fetchJson(`${API_BASE}/db-inspector/query?${params}`);
+  },
 };
 
 export { ApiError };

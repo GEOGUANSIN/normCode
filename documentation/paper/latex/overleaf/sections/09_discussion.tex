@@ -1,0 +1,40 @@
+\section{Discussion}
+
+\subsection{When to Use NormCode}
+
+NormCode is designed for scenarios where explicit auditability and data isolation justify the overhead of structured planning. The framework provides strong value in several contexts.
+
+For \textbf{high-stakes decisions} in legal reasoning, medical diagnosis, and financial analysis, traceability is often required by regulation or professional standards. NormCode's audit trail satisfies requirements like those in the EU AI Act for documenting how AI systems reach conclusions.
+
+For \textbf{complex multi-step reasoning} involving five or more LLM calls, debugging implicit data flow becomes prohibitive. When a failure occurs at step 7, knowing exactly what step 7 received---not just its position in the workflow---is essential for diagnosis.
+
+For \textbf{long-running workflows} that span hours or days, checkpointing and resumption prevent loss of progress. The ability to fork from checkpoints enables experimentation without risking the main execution path.
+
+For \textbf{human-AI collaboration} where domain experts need to understand and approve AI plans before execution, the multi-format ecosystem allows technical teams to work in \texttt{.ncd} while domain experts review \texttt{.ncn} narratives.
+
+The framework provides poor fit for simple Q\&A applications with one or two LLM calls where direct prompting suffices, for rapid prototyping where formalization overhead exceeds exploration value, and for real-time applications where orchestration latency is unacceptable.
+
+The sweet spot is workflows where reliability and transparency outweigh the cost of explicit structure---precisely the scenarios where context pollution in traditional approaches causes failures that are difficult to diagnose.
+
+\subsection{Limitations and Tradeoffs}
+
+\textbf{Syntax density.} The \texttt{.ncd} format's markers (\texttt{<=}, \texttt{<-}, \texttt{<\$(\{...\})\%>}, \texttt{<:\{1\}>}) create visual clutter that can be challenging to parse. While the \texttt{.ncds} format mitigates this for authoring and the \texttt{.ncn} format provides readable output, debugging compiled plans requires familiarity with dense notation. The Canvas App's visual representation helps by showing structure graphically rather than textually, but IDE plugins with syntax highlighting and folding would further improve usability.
+
+\textbf{Verbosity.} Simple operations expand to multiple lines. A three-step workflow that could be a 10-line Python script becomes a 30-line NormCode plan with explicit concept markers, flow indices, and sequence annotations. This verbosity is the price of explicit data flow. However, for complex workflows, the marginal cost decreases---a 20-step workflow is not 10 times more verbose than a 2-step workflow, and the debugging benefits compound with complexity.
+
+\textbf{Brittleness of manual editing.} The \texttt{.ncd} format is indentation-sensitive and tightly coupled to flow indices. Manual edits risk breaking dependencies in ways that are difficult to diagnose. The compiler should be the primary way to modify plans, but this creates a barrier for quick fixes. The \texttt{.ncdn} editor format and the Canvas App's editing capabilities partially address this by validating changes in real-time.
+
+\textbf{Tooling dependency.} NormCode requires the orchestrator, compiler, reference system, and ideally the Canvas App for effective use. This ``batteries included'' approach limits portability compared to plain Python or LangChain code that can run anywhere with the base libraries installed. However, the integrated toolchain is necessary for the guarantees NormCode provides---isolation, checkpointing, and auditability cannot be retrofitted onto simpler frameworks.
+
+\textbf{Compiler maturity.} The natural language to \texttt{.ncd} derivation phase relies on carefully designed prompts and is sensitive to instruction complexity. Robust error recovery, automated prompt generation, and handling of edge cases remain open challenges. The formalization, post-formalization, and activation phases are more stable since they operate on structured input.
+
+\subsection{Broader Implications}
+
+NormCode demonstrates that \textbf{structured intermediate representations can bridge human intuition and machine rigor in AI workflows}. The multi-format ecosystem (author in \texttt{.ncds}, execute via \texttt{.ncd}, verify in \texttt{.ncn}) suggests a general pattern for transparent AI systems: provide multiple views of the same underlying logic, each optimized for a different stakeholder.
+
+The semantic/syntactic separation has implications beyond NormCode. As LLM-based systems move into production, operators will need precise cost attribution (``which steps burned tokens?'') and reliability mapping (``which failures were probabilistic vs. deterministic?''). NormCode's architectural separation makes these questions answerable by construction rather than requiring post-hoc log analysis.
+
+The Canvas App demonstrates that visual debugging tools for AI workflows are feasible and valuable. Real-time graph visualization, breakpoint debugging, and tensor inspection are capabilities that other frameworks could adopt. The separation between execution logic (orchestrator) and visualization (Canvas App) shows how these concerns can be decoupled.
+
+The checkpoint and fork capabilities point toward a broader vision of AI workflow development as an iterative, experimental process. Rather than writing a plan and hoping it works, developers can run partially, inspect state, fork to try alternatives, and merge successful branches---a workflow more similar to software development with version control than traditional scripting.
+

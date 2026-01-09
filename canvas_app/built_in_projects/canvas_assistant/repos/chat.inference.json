@@ -1,0 +1,250 @@
+[
+  {
+    "flow_info": {"flow_index": "1"},
+    "inference_sequence": "assigning",
+    "concept_to_infer": "{session result}",
+    "function_concept": "$. %>([all canvas statuses])",
+    "value_concepts": ["[on-going messages]", "[all canvas statuses]"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "[all canvas statuses]",
+        "assign_destination": "{session result}"
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.2"},
+    "inference_sequence": "assigning",
+    "concept_to_infer": "[on-going messages]",
+    "function_concept": "$% %>([])",
+    "value_concepts": [],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "%",
+        "face_value": [{"role": "system", "content": "__session_start__"}],
+        "axis_names": ["message"]
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1.2"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3"},
+    "inference_sequence": "looping",
+    "concept_to_infer": "[all canvas statuses]",
+    "function_concept": "*. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)",
+    "value_concepts": ["[on-going messages]"],
+    "context_concepts": ["{message}*1"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "every",
+        "loop_index": 1,
+        "LoopBaseConcept": "[on-going messages]",
+        "CurrentLoopBaseConcept": "{message}*1",
+        "group_base": "message",
+        "InLoopConcept": {},
+        "ConceptToInfer": ["{canvas status}"]
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1"},
+    "inference_sequence": "assigning",
+    "concept_to_infer": "*. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)",
+    "function_concept": "$. %>({canvas status})",
+    "value_concepts": ["{canvas status}", "[on-going messages]", "<session should end>"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{canvas status}",
+        "assign_destination": "*. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)"
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2"},
+    "inference_sequence": "grouping",
+    "concept_to_infer": "{canvas status}",
+    "function_concept": "&[{}] %>[ {current message}, {command status}, {response sent}]",
+    "value_concepts": ["{current message}", "{command status}", "{response sent}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "in",
+        "by_axis_concepts": [],
+        "protect_axes": []
+      },
+      "annotation_list": ["{current message}", "{command status}", "{response sent}"],
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2.3"},
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{command status}",
+    "function_concept": "::(execute the canvas command based on parsed intent)",
+    "value_concepts": ["{parsed command}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Command-c_CanvasExecute-o_Status",
+      "value_order": {
+        "{parsed command}": 1
+      },
+      "h_input_norm": "Literal(Command)",
+      "body_faculty": "canvas",
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2.3"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2.3.2"},
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{parsed command}",
+    "function_concept": "::(understand the user message as a canvas command)",
+    "value_concepts": ["{current message}", "{canvas command schema}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Memo-v_Prompt-c_LLMGenerate-o_Command",
+      "value_order": {
+        "{current message}": 1,
+        "{canvas command schema}": 2
+      },
+      "v_input_norm": "{prompt_location}",
+      "v_input_provision": "provisions/prompts/classify_command.md",
+      "h_input_norm": "in-memory",
+      "body_faculty": "llm",
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2.3.2"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2.3.2.2"},
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{current message}",
+    "function_concept": ":>:({current message})",
+    "value_concepts": [],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "c_ChatRead-o_Literal",
+      "value_order": {},
+      "body_faculty": "chat",
+      "is_external_input": true,
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2.3.2.2"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2.4"},
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{response sent}",
+    "function_concept": "::(send the response message to the user)",
+    "value_concepts": ["{response}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Response-c_ChatWrite-o_Status",
+      "value_order": {
+        "{response}": 1
+      },
+      "h_input_norm": "in-memory",
+      "body_faculty": "chat",
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2.4"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.2.4.2"},
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{response}",
+    "function_concept": "::(generate a helpful response for the user)",
+    "value_concepts": ["{current message}", "{command status}"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Message_Status-v_Prompt-c_LLMGenerate-o_Memo",
+      "value_order": {
+        "{current message}": 1,
+        "{command status}": 2
+      },
+      "v_input_norm": "{prompt_location}",
+      "v_input_provision": "provisions/prompts/generate_response.md",
+      "h_input_norm": "in-memory",
+      "body_faculty": "llm",
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.2.4.2"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.3"},
+    "inference_sequence": "judgement_in_composition",
+    "concept_to_infer": "<session should end>",
+    "function_concept": "::(the user wants to end the session)<ALL {current message} True>",
+    "value_concepts": ["{current message}", "{command status}", "[on-going messages]"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "paradigm": "h_Memo-v_Prompt-c_LLMGenerate-o_Truth",
+      "value_order": {
+        "{current message}": 1,
+        "{command status}": 2,
+        "[on-going messages]": 3
+      },
+      "v_input_norm": "{prompt_location}",
+      "v_input_provision": "provisions/prompts/judge_terminate.md",
+      "h_input_norm": "in-memory",
+      "body_faculty": "llm",
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all",
+          "concept": "{current message}"
+        },
+        "condition": true
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.3"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.4"},
+    "inference_sequence": "assigning",
+    "concept_to_infer": "[on-going messages]",
+    "function_concept": "$+ %>([on-going messages]) %<({current message}) %:({message})",
+    "value_concepts": ["{current message}", "[on-going messages]"],
+    "context_concepts": [],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "+",
+        "assign_source": "{current message}",
+        "assign_destination": "[on-going messages]",
+        "by_axes": ["message"]
+      },
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.4"}
+    }
+  },
+  {
+    "flow_info": {"flow_index": "1.3.1.4.1"},
+    "inference_sequence": "timing",
+    "concept_to_infer": "$+ %>([on-going messages]) %<({current message}) %:({message})",
+    "function_concept": "@:!(<session should end>)",
+    "value_concepts": ["<session should end>"],
+    "context_concepts": ["<session should end>"],
+    "working_interpretation": {
+      "syntax": {
+        "marker": "if!",
+        "condition": "<session should end>"
+      },
+      "blackboard": null,
+      "workspace": {},
+      "flow_info": {"flow_index": "1.3.1.4.1"}
+    }
+  }
+]

@@ -1,0 +1,9 @@
+/: Simple document summarization pipeline
+/: STATUS: Reference pattern
+
+<- document summary
+    <= summarize this text
+    <- clean text
+        <= extract main content, removing headers
+        <- raw document
+

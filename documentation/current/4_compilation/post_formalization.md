@@ -86,13 +86,15 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 - `h_`: Horizontal input (runtime value)
 - `v_`: Vertical input (setup metadata)
 - `c_`: Composition steps
-- `o_`: Output format
+- `o_`: Output format (e.g., `o_Literal`, `o_FileLocation`, `o_Memo`)
 
 **Purpose**:
 - Define execution logic without hardcoding
 - Reusable across plans
 - Configurable via JSON
 - Enable vertical (setup) vs horizontal (runtime) separation
+
+> **Legacy Note**: Older paradigm names and documentation may use `o_Normal` for literal/direct value outputs. This has been replaced by `o_Literal` for clarity.
 
 ### Perception Norms
 
@@ -116,10 +118,16 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 | Annotation | Purpose | Example |
 |------------|---------|---------|
 | `\|%{norm_input}` | Paradigm ID to load | `h_PromptTemplate-c_Generate-o_Text` |
-| `\|%{v_input_norm}` | Vertical input perception norm | `{prompt_location}` |
-| `\|%{h_input_norm}` | Horizontal input perception norm | `{file_location}`, `in-memory` |
+| `\|%{v_input_norm}` | Vertical input perception norm (resolved during MFP) | `{prompt_location}` |
+| `\|%{h_input_norm}` | Horizontal input perception norm (resolved during MVP) | `{file_location}`, `in-memory` |
 | `\|%{body_faculty}` | Body faculty to invoke | `llm`, `file_system`, `python_interpreter` |
 | `\|%{o_shape}` | Output structure hint | `dict in memory`, `boolean per signal` |
+
+> **Note on Input Norms**: Both vertical and horizontal norms are resolved by the **PerceptionRouter** during execution. The difference is *when*:
+> - **Vertical (`v_input_norm`)**: Resolved during MFP (Model Function Perception) at setup time
+> - **Horizontal (`h_input_norm`)**: Resolved during MVP (Memory Value Perception) at runtime
+> 
+> The norm `in-memory` means no perception is needed—the value is already loaded.
 
 ### Example: Re-composition
 
@@ -134,7 +142,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```ncd
 :<:{document summary} | ?{flow_index}: 1
     <= ::(summarize this text) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{h_input_norm}: in-memory
         |%{body_faculty}: llm
@@ -143,9 +151,9 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```
 
 **What was added**:
-- **Paradigm**: `h_PromptTemplate-c_GenerateThinkJson-o_Normal` (specifies how to execute)
-- **Vertical norm**: `{prompt_location}` (prompt comes from file)
-- **Horizontal norm**: `in-memory` (input is already in memory)
+- **Paradigm**: `h_PromptTemplate-c_GenerateThinkJson-o_Literal` (specifies how to execute)
+- **Vertical norm**: `{prompt_location}` (prompt loaded from file during MFP setup phase)
+- **Horizontal norm**: `in-memory` (input already loaded, no perception needed at runtime)
 - **Body faculty**: `llm` (uses language model)
 - **Output shape**: `dict in memory` (returns structured dict)
 
@@ -170,46 +178,58 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 |-------------------|----------------|-----------|
 | "generate X" | `h_PromptTemplate-c_Generate-...` | Text generation |
 | "analyze X" | `h_Data-c_ThinkJSON-...` | Structured analysis |
-| "validate X" | `v_Prompt-h_Data-c_ThinkJSON-o_Normal` | Judgement |
+| "validate X" | `v_Prompt-h_Data-c_ThinkJSON-o_Literal` | Judgement |
 | "execute script" | `h_ScriptLocation-c_Execute-o_Result` | Python execution |
 | "load file" | `h_FileLocation-c_LoadParse-o_Struct` | File I/O |
 
 ---
 
-## Sub-Phase 3.2: Provision
+## Sub-Phase 3.2: Provision (Demand Declaration)
 
 ### Purpose
 
-**Provision** fills in **concrete resources** within the normative context established by re-composition.
+**Provision in Post-Formalization** declares the **demand** for concrete resources within the normative context established by re-composition.
 
-**Key Question**: *"Where exactly are the files, prompts, and scripts located?"*
+**Key Question**: *"What resources will be needed and where should they be located?"*
+
+**Important Distinction**: This sub-phase **declares demands**—it does not validate or resolve them. Actual resource validation and resolution happens during [Provision in Activation](provision_in_activation.md).
+
+| Phase | Role | What Happens |
+|-------|------|--------------|
+| **Post-Formalization 3.2** | **Demand** | Annotate paths: "I need a prompt at X" |
+| **Activation (Provision)** | **Supply** | Validate and resolve: "X exists and contains valid content" |
 
 **Relationship to Re-composition**:
 - **Re-composition says**: "Use `{prompt_location}` norm with `llm` faculty"
-- **Provision says**: "The prompt is at `provision/prompts/sentiment_extraction.md`"
+- **Provision (Demand) says**: "The prompt should be at `provision/prompts/sentiment_extraction.md`"
+- **Activation (Supply) verifies**: "The file exists and is valid"
 
-### Annotations Added by Provision
+### Annotations Added by Provision (Demand)
+
+These annotations **declare resource demands**. They specify *where* resources should be found, but do not validate their existence. Validation occurs during [Provision in Activation](provision_in_activation.md).
 
 **On value concepts** (`<-`) for ground concepts:
 
 | Annotation | Purpose | Example |
 |------------|---------|---------|
-| `\|%{file_location}` | Path to data file | `provision/data/price_data.json` |
+| `\|%{file_location}` | Path to data file (demand) | `provision/data/price_data.json` |
 | `\|%{ref_element}: perceptual_sign` | Mark as perceptual sign | Indicates lazy loading |
 
 **On functional concepts** (`<=`) for paradigm inputs:
 
 | Annotation | Purpose | Example |
 |------------|---------|---------|
-| `\|%{v_input_provision}` | Path to prompt/script | `provision/prompts/sentiment.md` |
+| `\|%{v_input_provision}` | Path to prompt/script (demand) | `provision/prompts/sentiment.md` |
 
-### Example: Provision
+> **Note**: At this stage, these are just string paths. The files may or may not exist. Activation's provision step will validate and resolve these demands. See [Provision in Activation](provision_in_activation.md) for the supply side.
+
+### Example: Provision (Demand)
 
 **Before Provision**:
 ```ncd
 :<:{sentiment analysis} | ?{flow_index}: 1
     <= ::(analyze sentiment) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{h_input_norm}: {file_location}
     <- {customer reviews} | ?{flow_index}: 1.2
@@ -219,7 +239,7 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
 ```ncd
 :<:{sentiment analysis} | ?{flow_index}: 1
     <= ::(analyze sentiment) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{v_input_provision}: provision/prompts/sentiment_extraction.md
         |%{h_input_norm}: {file_location}
@@ -228,23 +248,27 @@ h_PromptTemplateInputOther_SaveDir-c_GenerateThinkJson-Extract-Save-o_FileLocati
         |%{ref_element}: perceptual_sign
 ```
 
-**What was added**:
-- **Prompt path**: `provision/prompts/sentiment_extraction.md`
-- **Data path**: `provision/data/reviews.json`
+**What was added** (as demands):
+- **Prompt path demand**: `provision/prompts/sentiment_extraction.md` — declares where the prompt should be
+- **Data path demand**: `provision/data/reviews.json` — declares where data should be located
 - **Perceptual sign marker**: Indicates `{customer reviews}` is initially a pointer, not loaded data
 
-### Provision Process
+> **Important**: These paths are demands, not validated resources. The [Provision in Activation](provision_in_activation.md) step will verify these files exist and are properly formatted.
+
+### Provision (Demand) Process
 
 **Algorithm**:
 
 1. **Identify ground concepts** (marked with `:>:` or no parent inference)
 2. **Determine perception norm** from re-composition
-3. **Resolve resource paths**:
-   - Check `provision/` directory
-   - Look for matching files
-   - Use configuration or user input
-4. **Inject path annotations**
+3. **Declare resource paths** (these are demands, not validated):
+   - Specify expected `provision/` directory structure
+   - Assign logical paths based on concept names and phases
+   - Use configuration or user input for custom paths
+4. **Inject path annotations** as demands
 5. **Mark as perceptual signs** if lazy loading
+
+> **Note**: This step does NOT validate that files exist. It declares WHERE files SHOULD be. Actual validation happens during [Provision in Activation](provision_in_activation.md).
 
 **Ground Concept Identification**:
 
@@ -428,7 +452,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
     |%{ref_shape}: (1,)
     |%{ref_element}: dict(decision: str, confidence: float, reasoning: str)
     <= ::(synthesize recommendation from {1} and {2}) | ?{flow_index}: 1.1 | ?{sequence}: imperative
-        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+        |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
         |%{v_input_norm}: {prompt_location}
         |%{v_input_provision}: provision/prompts/investment_synthesis.md
         |%{h_input_norm}: in-memory
@@ -439,7 +463,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
         |%{ref_shape}: (1,)
         |%{ref_element}: dict(risk_level: str, factors: list)
         <= ::(analyze risk based on {1}) | ?{flow_index}: 1.2.1 | ?{sequence}: imperative
-            |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Normal
+            |%{norm_input}: h_PromptTemplate-c_GenerateThinkJson-o_Literal
             |%{v_input_norm}: {prompt_location}
             |%{v_input_provision}: provision/prompts/risk_analysis.md
             |%{h_input_norm}: {file_location}
@@ -453,7 +477,7 @@ Sometimes axis analysis reveals the need to restructure the plan:
         |%{ref_shape}: (1,)
         |%{ref_element}: float
         <= ::(analyze sentiment) | ?{flow_index}: 1.3.1 | ?{sequence}: imperative
-            |%{norm_input}: h_Data-c_ThinkJSON-o_Normal
+            |%{norm_input}: h_Data-c_ThinkJSON-o_Literal
             |%{h_input_norm}: {file_location}
             |%{body_faculty}: llm
         <- {news articles} | ?{flow_index}: 1.3.1.1
@@ -570,6 +594,7 @@ python compiler.py post-formalize formalized.ncd
 After post-formalization, your enriched `.ncd` file moves to:
 
 - **[Activation](activation.md)** - Transform to JSON repositories for orchestrator execution
+- **[Provision in Activation](provision_in_activation.md)** - Where declared demands are validated and resolved
 
 ---
 
@@ -579,23 +604,30 @@ After post-formalization, your enriched `.ncd` file moves to:
 
 | Concept | Insight |
 |---------|---------|
-| **Three sub-phases** | Re-composition, Provision, Syntax Re-confirmation |
+| **Three sub-phases** | Re-composition, Provision (Demand), Syntax Re-confirmation |
 | **Annotations** | Comment lines (`\|%{...}:`) that configure execution |
 | **Normative context** | Body faculties, paradigms, perception norms |
-| **Concrete resources** | File paths, prompt locations |
+| **Resource demands** | File paths declared but not yet validated |
 | **Tensor coherence** | Axes, shapes, element types |
 | **Restructuring** | Sometimes needed to fix axis mismatches |
+
+### The Demand/Supply Model
+
+| Phase | Role | What Happens |
+|-------|------|--------------|
+| **Post-Formalization 3.2** | **Demand** | Declare resource paths in annotations |
+| **Activation (Provision)** | **Supply** | Validate paths, resolve mappings, include resources |
 
 ### The Post-Formalization Promise
 
 **Post-Formalization bridges intent and execution**:
 
-1. Abstract operations → Concrete paradigms
-2. Conceptual data → File paths and resources
+1. Abstract operations → Concrete paradigm demands
+2. Conceptual data → File path demands (not yet validated)
 3. Implicit structure → Explicit axes and types
-4. Ready for JSON repository generation
+4. Ready for Activation (where demands become validated resources)
 
-**Result**: A fully configured plan ready to become executable repositories.
+**Result**: A fully annotated plan with declared resource demands, ready for Activation to supply and validate.
 
 ---
 

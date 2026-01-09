@@ -1,0 +1,83 @@
+\section{The Compiler Ecosystem}
+
+The NormCode compiler transforms human-authored plans into executable artifacts through a multi-stage pipeline. Each stage progressively adds rigor while preserving opportunities for human review, following a progressive formalization philosophy where each phase answers a specific question while preserving the semantic intent of previous phases.
+
+\subsection{The Four-Phase Pipeline}
+
+The current implementation follows a four-phase pipeline that transforms natural language intent into executable JSON repositories. The compiler handles most transformations automatically, with optional manual review between phases.
+
+% [ILLUSTRATION OPPORTUNITY: Flowchart showing the four-phase pipeline from Natural Language through .ncds, .ncd (formal), .ncd (enriched), to .concept.json + .inference.json]
+
+\textbf{Phase 1: Derivation} takes natural language input and produces \texttt{.ncds} (draft straightforward) output. This phase answers the question ``WHAT are we trying to do?'' by identifying concepts (data entities), identifying operations (actions to perform), extracting dependencies (which concepts feed into which operations), and creating hierarchical tree structure. The derivation phase may use LLM assistance for decomposing complex natural language instructions into structured concepts.
+
+\textbf{Phase 2: Formalization} takes \texttt{.ncds} input and produces \texttt{.ncd} (formal) with an \texttt{.ncn} companion. This phase answers ``IN WHAT ORDER and WHICH SEQUENCE?'' by assigning unique flow indices (e.g., \texttt{1.2.3}) to every step, determining sequence types for each inference (semantic types like imperative and judgement, or syntactic types like assigning, grouping, timing, and looping), resolving concept identity and value bindings using markers like \texttt{<:\{1\}>}, and adding metadata comments for sequence markers and flow indices.
+
+\textbf{Phase 3: Post-Formalization} takes the formal \texttt{.ncd} and produces an enriched \texttt{.ncd} with full annotations. This phase answers ``HOW and WITH WHAT RESOURCES?'' through three sub-phases. The \textit{Re-composition} sub-phase maps abstract intent to the normative context of execution by adding paradigm IDs, perception norms for vertical and horizontal inputs, body faculty specifications, and output structure hints. The \textit{Provision} sub-phase fills in concrete resources by specifying file locations for ground data and paths to prompts or scripts. The \textit{Syntax Re-confirmation} sub-phase confirms reference structure by declaring axis names, tensor shapes, element types, and filter documentation for tensor coherence.
+
+\textbf{Phase 4: Activation} takes the enriched \texttt{.ncd} and produces the executable \texttt{.concept.json} and \texttt{.inference.json} repositories. This phase answers ``WHAT DOES THE ORCHESTRATOR NEED?'' by extracting concept definitions with types, axes, and ground values; extracting inference definitions with function concepts, value concepts, and context concepts; and generating \texttt{working\_interpretation} dictionaries containing exactly what each sequence's IWI step expects.
+
+Each phase includes an opportunity for manual review, enabling human intervention before the next stage proceeds. This supports progressive formalization where the plan tightens incrementally rather than requiring complete specification upfront.
+
+\subsection{Derivation: Natural Language to Structure}
+
+The derivation phase transforms unstructured natural language into hierarchical inference structure. For complex instructions, this may use a recursive decomposition algorithm where the entire instruction is wrapped as a top-level concept with a source text annotation, un-decomposed concepts are iteratively identified and questions formulated about their source text, question types are classified and mapped to appropriate NormCode operators, and decomposition continues until no source annotations remain.
+
+This process can be guided by a taxonomy of question types that map to specific NormCode structures. Methodology declarations produce functional concepts with action semantics. Conditional dependencies produce timing operators. Iterative requirements produce looping operators. Collection requirements produce grouping operators.
+
+\subsection{Formalization: Adding Structural Rigor}
+
+Once structure is established, formalization adds precision required for execution. Serialization reframes each step as an output-effect relationship, making explicit that a concept is produced by applying a function to inputs. Redirection links abstract references to concrete implementations through annotations specifying prompts, scripts, and file locations. Flow index generation assigns unique hierarchical addresses to every line, enabling precise identification and cross-referencing.
+
+The result is an \texttt{.ncd} file where every inference has explicit inputs, explicit outputs, and a unique identity. The companion \texttt{.ncn} file translates this structure back into natural language for verification by domain experts who may not understand the formal syntax.
+
+\subsection{Post-Formalization: Enriching for Execution}
+
+Post-formalization prepares the plan for execution by adding configuration and grounding that the orchestrator requires. This phase operates within a normative context defined by the agent's Body (available tools), Paradigms (action norms stored in configuration files), and PerceptionRouter (perception norms for transmuting perceptual signs).
+
+Annotations added during post-formalization include paradigm specifications (\texttt{\%\{norm\_input\}}) identifying which paradigm file to load, perception norm specifications for vertical and horizontal inputs, body faculty specifications identifying which tool to invoke, and reference structure declarations specifying axes, shapes, and element types.
+
+\subsection{Activation: Generating Executable Repositories}
+
+The final compilation stage transforms the enriched \texttt{.ncd} into two JSON repositories that the Orchestrator can load and execute.
+
+The \textbf{Concept Repository} (\texttt{concept\_repo.json}) stores static definitions of all data entities. Each entry contains the concept name with semantic type markers, the type indicator, flags for ground concepts (pre-initialized with data) and final concepts (root outputs), initial reference data as perceptual signs where applicable, and reference axis names defining tensor structure.
+
+The \textbf{Inference Repository} (\texttt{inference\_repo.json}) stores operational definitions. Each entry contains flow information with the unique index, the inference sequence type determining which pipeline executes, the concept to infer identifying the output, the function concept defining the operation, value concepts listing inputs, context concepts listing loop state, and crucially the \texttt{working\_interpretation} dictionary.
+
+The \texttt{working\_interpretation} is the critical output of activation, containing exactly what each sequence's IWI step expects. For imperative sequences, this includes paradigm identification, value ordering, and optional value selectors for decomposing grouped concepts. For judgement sequences, it adds assertion conditions with quantifiers and truth values. For assigning sequences, it specifies the marker type, source, destination, and any axis information. For grouping sequences, it specifies the grouping mode, axes to collapse, and any protected axes. For timing sequences, it specifies the condition type and referenced concept. For looping sequences, it specifies the loop base, current element, group base, in-loop concepts, and concepts to infer.
+
+\subsection{Translation: Generating Human-Readable Views}
+
+For human verification, the system generates Natural Language NormCode (\texttt{.ncn}) files that strip formal markers and present plans as readable prose. A formal inference such as:
+
+\begin{verbatim}
+<- {Phase 1: Confirmation of Instruction}
+    <= &[#] %>[{step 1.1}, {step 1.2}] %+(step)
+    <- {step 1.1: Instruction Distillation}
+    <- {step 1.2: Context Registration}
+\end{verbatim}
+
+translates to natural language as:
+
+\begin{verbatim}
+(OUTPUT) Phase 1: Confirmation of Instruction
+    (ACTION) is obtained by collecting the following 
+             steps together.
+    (VALUE) The first step is Instruction Distillation.
+    (VALUE) The second step is Context Registration.
+\end{verbatim}
+
+This enables domain experts to verify plan logic before execution without understanding formal syntax. The hybrid \texttt{.ncdn} format presents both views side-by-side for developers who need to see the mapping between formal and natural representations.
+
+\subsection{Round-Trip Capability}
+
+The compilation pipeline supports bidirectional transformation, enabling JSON repositories to be decompiled back to \texttt{.ncd} format. This round-trip capability supports debugging by inspecting compiled output in readable format, version control by storing plans as text rather than JSON, and modification by editing compiled plans and re-activating them.
+
+\subsection{Compilation Guarantees and Limitations}
+
+Compilation ensures syntactic validity (every \texttt{.ncd} is parseable), flow consistency (indices are unique and hierarchical), sequence completeness (every inference has a valid sequence type), reference structure (all concepts have declared axes and types), resource grounding (all perceptual signs are linked), and working interpretation completeness (every inference has full configuration).
+
+However, compilation does not ensure semantic correctness (the plan might not achieve intended goals), runtime success (LLM calls might fail or resources might be missing), logical soundness (dependency cycles are detected by the orchestrator, not the compiler), or optimal performance (some plans might be inefficient).
+
+The distinction is important: compilation validates structure, not intent.
+

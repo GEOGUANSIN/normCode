@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { 
   Bot, Plus, Settings, Trash2, Activity, Check, X, Loader2,
   ChevronRight, ChevronDown, Save, RotateCcw,
-  Wrench, FileCode, Code, MessageSquare, Cpu, Workflow, Repeat, Zap
+  Wrench, FileCode, Code, MessageSquare, Cpu, Workflow, Repeat, Zap,
+  MessageCircle, LayoutGrid
 } from 'lucide-react';
 import { useAgentStore, AgentConfig, ToolCallEvent } from '../../stores/agentStore';
 import { useLLMStore } from '../../stores/llmStore';
@@ -163,6 +164,8 @@ function CapabilitiesPanel({ agentId }: CapabilitiesPanelProps) {
       case 'prompt_tool': return <FileCode size={12} className="text-teal-500" />;
       case 'formatter_tool': return <Zap size={12} className="text-amber-500" />;
       case 'perception_router': return <Workflow size={12} className="text-cyan-500" />;
+      case 'chat': return <MessageCircle size={12} className="text-emerald-500" />;
+      case 'canvas': return <LayoutGrid size={12} className="text-rose-500" />;
       default: return <Wrench size={12} className="text-slate-500" />;
     }
   };
@@ -790,6 +793,7 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
 
 interface ToolCallDetailModalProps {
   call: ToolCallEvent;
+  callId: string;  // Keep ID to fetch latest from store
   onClose: () => void;
 }
 
@@ -835,7 +839,18 @@ function ValueDisplay({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-function ToolCallDetailModal({ call, onClose }: ToolCallDetailModalProps) {
+function ToolCallDetailModal({ call, callId, onClose }: ToolCallDetailModalProps) {
+  // Get the latest call data from the store to ensure we're showing current state
+  const toolCalls = useAgentStore(s => s.toolCalls);
+  const latestCall = toolCalls.find(c => c.id === callId) || call;
+  
+  // If call was deleted from store, close modal
+  useEffect(() => {
+    if (!toolCalls.find(c => c.id === callId)) {
+      onClose();
+    }
+  }, [toolCalls, callId, onClose]);
+  
   return createPortal(
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"
@@ -845,29 +860,29 @@ function ToolCallDetailModal({ call, onClose }: ToolCallDetailModalProps) {
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            {call.status === 'started' && (
+            {latestCall.status === 'started' && (
               <Loader2 size={18} className="animate-spin text-blue-500" />
             )}
-            {call.status === 'completed' && (
+            {latestCall.status === 'completed' && (
               <Check size={18} className="text-green-500" />
             )}
-            {call.status === 'failed' && (
+            {latestCall.status === 'failed' && (
               <X size={18} className="text-red-500" />
             )}
             <div>
               <h3 className="font-semibold font-mono text-lg">
-                {call.tool_name}.{call.method}
+                {latestCall.tool_name}.{latestCall.method}
               </h3>
               <div className="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
-                <span>{call.timestamp}</span>
-                {call.flow_index && (
+                <span>{latestCall.timestamp}</span>
+                {latestCall.flow_index && (
                   <span className="font-mono text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
-                    {call.flow_index}
+                    {latestCall.flow_index}
                   </span>
                 )}
-                <span>• {call.agent_id}</span>
-                {call.duration_ms !== undefined && (
-                  <span>• {call.duration_ms.toFixed(0)}ms</span>
+                <span>• {latestCall.agent_id}</span>
+                {latestCall.duration_ms !== undefined && (
+                  <span>• {latestCall.duration_ms.toFixed(0)}ms</span>
                 )}
               </div>
             </div>
@@ -879,11 +894,24 @@ function ToolCallDetailModal({ call, onClose }: ToolCallDetailModalProps) {
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Show message if still in progress */}
+          {latestCall.status === 'started' && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <div className="font-semibold text-blue-700 text-sm mb-1 flex items-center gap-2">
+                <Loader2 size={16} className="animate-spin" />
+                Tool call is still in progress...
+              </div>
+              <div className="text-blue-600 text-sm">
+                This call is currently executing. The outputs will appear here when it completes.
+              </div>
+            </div>
+          )}
+          
           {/* Error */}
-          {call.error && (
+          {latestCall.error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded">
               <div className="font-semibold text-red-700 text-sm mb-1">Error</div>
-              <pre className="text-red-600 text-sm font-mono whitespace-pre-wrap">{call.error}</pre>
+              <pre className="text-red-600 text-sm font-mono whitespace-pre-wrap">{latestCall.error}</pre>
             </div>
           )}
           
@@ -891,33 +919,33 @@ function ToolCallDetailModal({ call, onClose }: ToolCallDetailModalProps) {
           <div>
             <div className="font-semibold text-sm text-slate-700 mb-2 flex items-center gap-2">
               <span>Inputs</span>
-              {call.inputs && (
+              {latestCall.inputs && (
                 <span className="text-xs text-slate-400 font-normal">
-                  ({Object.keys(call.inputs).length} {Object.keys(call.inputs).length === 1 ? 'key' : 'keys'})
+                  ({Object.keys(latestCall.inputs).length} {Object.keys(latestCall.inputs).length === 1 ? 'key' : 'keys'})
                 </span>
               )}
             </div>
             <div className="space-y-2">
-              {call.inputs && Object.entries(call.inputs).map(([key, value]) => (
+              {latestCall.inputs && Object.entries(latestCall.inputs).map(([key, value]) => (
                 <ValueDisplay key={key} label={key} value={value} />
               ))}
-              {(!call.inputs || Object.keys(call.inputs).length === 0) && (
+              {(!latestCall.inputs || Object.keys(latestCall.inputs).length === 0) && (
                 <div className="text-slate-400 text-sm italic">No inputs</div>
               )}
             </div>
           </div>
           
           {/* Outputs */}
-          {call.outputs !== undefined && call.outputs !== null && (
+          {latestCall.outputs !== undefined && latestCall.outputs !== null && (
             <div>
               <div className="font-semibold text-sm text-slate-700 mb-2">Outputs</div>
               <div className="space-y-2">
-                {typeof call.outputs === 'object' && !Array.isArray(call.outputs) ? (
-                  Object.entries(call.outputs as Record<string, unknown>).map(([key, value]) => (
+                {typeof latestCall.outputs === 'object' && !Array.isArray(latestCall.outputs) ? (
+                  Object.entries(latestCall.outputs as Record<string, unknown>).map(([key, value]) => (
                     <ValueDisplay key={key} label={key} value={value} />
                   ))
                 ) : (
-                  <ValueDisplay label="result" value={call.outputs} />
+                  <ValueDisplay label="result" value={latestCall.outputs} />
                 )}
               </div>
             </div>
@@ -948,7 +976,7 @@ interface ToolCallFeedProps {
 }
 
 function ToolCallFeed({ calls }: ToolCallFeedProps) {
-  const [selectedCall, setSelectedCall] = useState<ToolCallEvent | null>(null);
+  const [selectedCallId, setSelectedCallId] = useState<string | null>(null);
   
   if (calls.length === 0) {
     return (
@@ -964,12 +992,24 @@ function ToolCallFeed({ calls }: ToolCallFeedProps) {
   return (
     <>
       <div className="h-full overflow-y-auto text-xs">
-        {sortedCalls.map(call => (
-          <div 
-            key={call.id}
-            className="p-2 border-b hover:bg-slate-100 cursor-pointer transition-colors"
-            onClick={() => setSelectedCall(call)}
-          >
+        {sortedCalls.map(call => {
+          const isStarted = call.status === 'started';
+          return (
+            <div 
+              key={call.id}
+              className={`p-2 border-b transition-colors ${
+                isStarted 
+                  ? 'cursor-not-allowed opacity-75' 
+                  : 'hover:bg-slate-100 cursor-pointer'
+              }`}
+              onClick={() => {
+                // Prevent opening modal for calls that are still in progress
+                if (!isStarted) {
+                  setSelectedCallId(call.id);
+                }
+              }}
+              title={isStarted ? 'Tool call is still in progress' : 'Click to view details'}
+            >
             <div className="flex items-start gap-2">
               {/* Status Icon */}
               <div className="pt-0.5">
@@ -1007,16 +1047,21 @@ function ToolCallFeed({ calls }: ToolCallFeedProps) {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       
       {/* Detail Modal */}
-      {selectedCall && (
-        <ToolCallDetailModal
-          call={selectedCall}
-          onClose={() => setSelectedCall(null)}
-        />
-      )}
+      {selectedCallId && (() => {
+        const selectedCall = calls.find(c => c.id === selectedCallId);
+        return selectedCall ? (
+          <ToolCallDetailModal
+            call={selectedCall}
+            callId={selectedCallId}
+            onClose={() => setSelectedCallId(null)}
+          />
+        ) : null;
+      })()}
     </>
   );
 }

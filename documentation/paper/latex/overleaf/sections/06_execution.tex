@@ -1,0 +1,80 @@
+\section{The Execution Model}
+
+While the NormCode language defines \textit{what} a plan should do, the execution model defines \textit{how} and \textit{when} it happens. This section describes the Orchestrator (the central execution engine), Agent Sequences (execution pipelines for each inference type), Paradigms (declarative configuration of agent behavior), and the Canvas App (a visual debugging environment).
+
+\subsection{The Orchestrator}
+
+The Orchestrator is the runtime engine of NormCode, managing plan execution through dependency tracking, inference scheduling, and state maintenance. Its architecture centers on three core components.
+
+The \textbf{Waitlist} maintains a prioritized queue of all inferences in the plan, sorted by flow index. This defines the structural order of execution and provides a complete manifest of work to be performed.
+
+The \textbf{Blackboard} serves as a real-time state tracker where every concept and inference has a status: \texttt{pending} (not yet started), \texttt{in\_progress} (currently executing), \texttt{completed} (finished successfully), or \texttt{skipped} (bypassed due to timing conditions). The Blackboard is the single source of truth for execution state.
+
+The \textbf{Repositories} consist of the Concept Repository (storing References for each concept) and the Inference Repository (storing configuration for each inference including which sequence to run and which paradigm to use).
+
+The Orchestrator operates in cycles. In each cycle, it scans the Waitlist for pending inferences whose dependencies are met (all input concepts are completed), executes ready inferences by invoking the appropriate Agent Sequence, and updates the Blackboard and Concept Repository with results. This dependency-driven scheduling ensures that inferences run only when their inputs are ready and that failures in one branch do not corrupt unrelated branches.
+
+% [ILLUSTRATION OPPORTUNITY: Diagram showing the Orchestrator's execution cycle with Waitlist, Blackboard, and Repository interactions]
+
+\subsection{Persistence and Checkpointing}
+
+For long-running or resumable workflows, the Orchestrator provides a robust checkpointing system backed by SQLite. Each execution is assigned a unique Run ID, and the full state (Blackboard, References, Workspace) is saved at the end of each cycle as a snapshot.
+
+The system supports multiple resume modes for handling runs that restart after code changes. The \texttt{PATCH} mode (default) performs a smart merge, re-running inferences whose definitions have changed while keeping valid cached states. The \texttt{OVERWRITE} mode trusts the checkpoint entirely without reconciliation. The \texttt{FILL\_GAPS} mode only populates missing data from the current repository defaults.
+
+Fork functionality allows loading a past state while starting a new run history, useful for branching experiments, retrying with modified logic, or A/B testing different configurations.
+
+\subsection{Agents and the AgentFrame}
+
+In NormCode, an \textbf{Agent} is represented by the Subject Concept (\texttt{:S:}) and constitutes a concrete container of capability. When a functional concept executes, it does so within an Agent's context, accessing that agent's specific tools and configurations.
+
+The \textbf{AgentFrame} class realizes agents in the implementation, containing three essential components. The \textbf{Body} provides the agent's ``toolbox''---a registry of available tools such as LLM clients, file system access, and Python executors. The \textbf{Sequences} define the logic pipelines the agent can run, including imperative, judgement, grouping, assigning, timing, and looping. The \textbf{Mode} specifies the interpretation style, such as composition mode for paradigm-driven execution.
+
+This design enables multi-agent planning where different Subjects (e.g., \texttt{:coder\_agent:} and \texttt{:reviewer\_agent:}) can have different tool bodies and capabilities even within the same plan. Inferences can be assigned to specific agents via pattern rules matching flow indices, concept names, or sequence types, or through explicit assignment of specific inferences to agent identifiers.
+
+\subsection{Agent Sequences: The Execution Pipelines}
+
+Each inference type triggers a specific Agent Sequence---a standardized pipeline of steps that follows a cognitive cycle of Perception, Actuation, and (for judgements) Assertion.
+
+\textbf{Semantic Sequences} invoke LLM calls to create new information. The \textbf{Imperative Sequence} follows seven steps: IWI (Input Working Interpretation) parses syntax and determines the paradigm; IR (Input Reference) retrieves references for all input concepts; MFP (Model Function Perception) transforms the functional definition into an executable function using paradigms; MVP (Memory Value Perception) retrieves and transmutes perceptual signs into actual data; TVA (Tool Value Actuation) applies the prepared function to perceived values; OR (Output Reference) creates or updates the concept's reference with results; and OWI (Output Working Interpretation) updates execution state and logs completion.
+
+The \textbf{Judgement Sequence} extends the imperative sequence with an additional step: TIA (Tool Inference Assertion) checks if TVA results satisfy truth conditions by applying a quantifier (all, any, exists) and evaluating a condition, collapsing the result into a boolean reference.
+
+\textbf{Syntactic Sequences} perform deterministic data manipulation without LLM involvement. The \textbf{Assigning Sequence} (steps IWI-IR-AR-OR-OWI) handles variable assignment and selection through specification (selecting first valid), continuation (appending along an axis), or derelation (structural extraction). The \textbf{Grouping Sequence} (IWI-IR-GR-OR-OWI) collects and combines data using and-in (labeled bundling) or or-across (flat concatenation). The \textbf{Timing Sequence} (IWI-T-OWI) controls conditional execution by checking progress conditions, if-conditions, or negated if-conditions against the Blackboard. The \textbf{Looping Sequence} (IWI-IR-GR-LR-OR-OWI) manages iteration through retrieving next elements, storing iteration results in workspace, and combining all looped elements upon completion.
+
+These syntactic sequences are instant, free, and fully deterministic, handling all data plumbing so that semantic operations receive exactly what they need.
+
+\subsection{Paradigms: Configuring Agent Behavior}
+
+A \textbf{Paradigm} is a declarative JSON specification that configures how an agent executes a semantic inference, bridging the gap between abstract intent (``summarize this document'') and concrete execution (which prompt template, which LLM, which output format).
+
+Paradigms separate configuration into two phases following a vertical/horizontal split. \textbf{Vertical Steps} occur during the MFP phase at construction time, resolving tool affordances and producing callable functions. These steps load LLM clients, configure model settings, and prepare generation functions from the agent's body. \textbf{Horizontal Steps} occur during the TVA phase at runtime, passing actual data values through the pre-configured functions. These steps receive prompts from value concepts, execute LLM calls, extract results, and optionally save outputs.
+
+Paradigm files follow a self-documenting naming convention: \texttt{h\_} prefixes indicate horizontal inputs, \texttt{v\_} prefixes indicate vertical inputs, \texttt{c\_} prefixes indicate composition steps, and \texttt{o\_} prefixes indicate output formats. For example, \texttt{h\_PromptTemplate\_SavePath-c\_GenerateThinkJson-Extract-Save-o\_FileLocation.json} describes a paradigm that takes a prompt template and save path as horizontal inputs, composes LLM generation with JSON extraction and file saving, and outputs a file location pointer.
+
+Mathematically, paradigm execution can be formalized as: let $\mathcal{S}$ be the Agent's state, $V_{spec}$ be the vertical specification, $H_{plan}$ be the horizontal plan, and $\mathcal{V}$ be runtime values. The output is computed as:
+
+\begin{equation}
+\mathcal{O} = [F_C(F_V(\mathcal{S}, V_{spec}), H_{plan})](\mathcal{V})
+\end{equation}
+
+where $F_V$ is the vertical function (MFP phase) producing tool handles $\mathcal{T}$, $F_C$ is the composition function compiling $\mathcal{T}$ and $H_{plan}$ into function $\Phi$, and $\Phi(\mathcal{V})$ is the horizontal execution (TVA phase) producing output $\mathcal{O}$. This clean separation allows paradigms to be reused across different inferences and agents.
+
+\subsection{The Canvas App: Visual Debugging}
+
+The NormCode Graph Canvas App provides a visual, interactive environment for executing, debugging, and auditing NormCode plans. Built on React Flow for graph visualization and FastAPI for the backend, it transforms NormCode from ``run and hope'' to ``observe and control.''
+
+The Canvas App enables users to visualize the entire inference graph before execution, with semantic functions shown in purple and semantic values in blue, while syntactic operations appear in gray. Users can watch execution progress in real-time through WebSocket-streamed events, with node status indicators showing pending (gray), running (blue pulsing), completed (green), failed (red), or skipped (striped) states.
+
+The debugging capabilities include setting breakpoints on specific flow indices to pause execution at critical points, stepping through inferences one at a time, and inspecting tensor data at any node through a TensorInspector component that handles N-dimensional viewing with table, list, or JSON modes.
+
+The multi-agent configuration panel allows registering multiple agents with different LLM models (such as qwen-plus, gpt-4o, or claude-3), tool settings, and paradigm directories. Inferences can be mapped to specific agents through pattern rules or explicit assignments, with a default agent handling unmatched inferences.
+
+Tool call monitoring captures all LLM calls with prompts and responses, file system operations, Python script executions, and user input requests in real-time. The checkpoint panel enables resuming from or forking past execution states.
+
+% [ILLUSTRATION OPPORTUNITY: Screenshot or diagram of the Canvas App showing the graph visualization, agent panel, detail panel, and control panel]
+
+\subsection{Command-Line Interface}
+
+For headless execution, the CLI orchestrator provides essential commands: \texttt{run} starts a fresh execution with specified concept and inference repositories; \texttt{resume} continues from the latest checkpoint with an optional Run ID; \texttt{fork} branches from a past state with a new run ID; and \texttt{list-runs} shows all tracked executions in the database.
+

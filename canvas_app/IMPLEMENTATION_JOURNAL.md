@@ -2,7 +2,200 @@
 
 **Project Start**: December 18, 2024  
 **Current Phase**: Phase 6 - Self-Hosted Compiler  
-**Status**: ✅ Chat Backend Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Phase 5 ✅ Core)
+**Status**: ✅ Chat Controller Feature Complete (Phase 1 ✅ Phase 2 ✅ Phase 3 ✅ Phase 4 ✅ Phase 5 ✅ Core ✅)
+
+---
+
+## December 29, 2024 - Chat Controller Feature (Selectable Chat Projects)
+
+### What Was Implemented
+
+**Major Feature: Chat Controller Selection**
+
+Replaced the hardcoded "Compiler" chat with a flexible system where users can select any NormCode project to control the chat. This makes the system transparent: users see exactly which plan is running.
+
+#### Architecture Change
+
+```
+Before:
+  CompilerService (hardcoded to compiler project)
+      └── Placeholder responses
+
+After:
+  ChatControllerService
+      └── User selects controller → ExecutionController runs selected project
+            ├── ChatTool (read/write messages)
+            └── CanvasTool (execute canvas commands)
+```
+
+#### Backend Changes
+
+**New File: `services/chat_controller_service.py`**
+- [x] `ChatControllerService` - Main service for managing chat controllers
+- [x] `ControllerInfo` - Info about available controller projects
+- [x] `ControllerStatus` - Status constants (disconnected, connecting, running, etc.)
+- [x] `get_available_controllers()` - List built-in and registered controllers
+- [x] `register_controller()` - Dynamically register new controller projects
+- [x] `select_controller()` - Select and connect to a controller
+- [x] `start/pause/resume/stop/disconnect()` - Lifecycle management
+- [x] `send_message()` - Route messages to running controller
+- [x] Backward compatibility with `get_compiler_service()` alias
+
+**Updated: `routers/chat_router.py`**
+- [x] `GET /api/chat/controllers` - List available controllers
+- [x] `POST /api/chat/controllers/select` - Select a controller
+- [x] `POST /api/chat/controllers/register` - Register new controller
+- [x] `POST /api/chat/pause` - Pause controller
+- [x] `POST /api/chat/resume` - Resume controller
+- [x] Backward compatibility endpoints for old "compiler" naming
+
+**Updated: `routers/websocket_router.py`**
+- [x] Renamed service wiring to use `ChatControllerService`
+- [x] New event type `chat:controller_status` (includes controller_id, name)
+
+#### Frontend Changes
+
+**Updated: `services/api.ts`**
+- [x] New types: `ControllerInfo`, `ControllersListResponse`, `ControllerState`
+- [x] `listControllers()` - Fetch available controllers
+- [x] `selectController()` - Select a controller
+- [x] `startController/pauseController/resumeController/stopController()`
+- [x] `getControllerState()` - Get current controller state
+- [x] Backward compatibility aliases for old API
+
+**Updated: `stores/chatStore.ts`**
+- [x] New state: `availableControllers`, `controllerId`, `controllerName`, `controllerPath`
+- [x] New state: `controllerStatus` (disconnected/connecting/connected/running/paused/error)
+- [x] New state: `currentFlowIndex` - Shows which node is executing
+- [x] `loadControllers()` - Fetch available controllers on panel open
+- [x] `selectController()` - Switch to a different controller
+- [x] `setControllerStatus()` - Update from WebSocket events
+
+**Updated: `components/panels/ChatPanel.tsx`**
+- [x] `ControllerSelector` component - Dropdown to select controller
+- [x] Shows current controller name and status
+- [x] Shows execution flow index when running
+- [x] `ExecutionControls` component - Play/Pause/Stop buttons
+- [x] Messages show `@flowIndex` badges when metadata available
+- [x] Bot icon instead of Zap/Sparkles for controller avatar
+
+**Updated: `hooks/useWebSocket.ts`**
+- [x] Handle `chat:controller_status` event type
+- [x] Pass `current_flow_index` to store
+
+### UI Preview
+
+```
+┌─────────────────────────────────────────────────┐
+│  [Controller ▼] Running @1.3.1    [▶][⏸][⏹]   │
+│  NormCode Compiler                              │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  [Bot] Controller                @1.3.1.2.4    │
+│  Creating concept...                            │
+│                                                 │
+│                         [User]                  │
+│                         Create a user profile   │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  [Type a message...]              [Send]        │
+└─────────────────────────────────────────────────┘
+```
+
+### API Endpoints Summary
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chat/controllers` | List available controllers |
+| POST | `/api/chat/controllers/select` | Select a controller |
+| POST | `/api/chat/controllers/register` | Register new controller |
+| GET | `/api/chat/state` | Get current controller state |
+| POST | `/api/chat/start` | Start controller execution |
+| POST | `/api/chat/pause` | Pause execution |
+| POST | `/api/chat/resume` | Resume execution |
+| POST | `/api/chat/stop` | Stop execution |
+| POST | `/api/chat/disconnect` | Disconnect controller |
+
+### Files Created
+
+- `canvas_app/backend/services/chat_controller_service.py`
+
+### Files Modified
+
+- `canvas_app/backend/routers/chat_router.py`
+- `canvas_app/backend/routers/websocket_router.py`
+- `canvas_app/frontend/src/services/api.ts`
+- `canvas_app/frontend/src/stores/chatStore.ts`
+- `canvas_app/frontend/src/components/panels/ChatPanel.tsx`
+- `canvas_app/frontend/src/hooks/useWebSocket.ts`
+
+### Next Steps
+
+1. **Test the controller selector** - Ensure switching between controllers works
+2. **Add more built-in controllers** - Tutor, assistant, etc.
+3. **Controller marketplace** - Browse and install community controllers
+4. **Per-controller message history** - Separate histories per controller
+
+---
+
+## December 28, 2024 - Compiler Service Refactoring
+
+### What Was Done
+
+**Refactored `services/compiler_service.py`** to improve code quality and prepare for real compiler plan integration.
+
+#### Improvements Made
+
+1. **Enhanced Documentation**
+   - Added comprehensive module docstring explaining the architecture
+   - Added ASCII diagram showing CompilerService → ExecutionController relationship
+   - Clearly marked placeholder code with TODO comments
+   - Documented the integration path for the real compiler plan
+
+2. **Code Cleanup**
+   - Introduced `CompilerStatus` class with named constants (DISCONNECTED, CONNECTING, etc.)
+   - Replaced `_is_loaded` + `_status` with properties (`is_connected`, `is_running`)
+   - Consolidated redundant state management
+
+3. **Better Separation of Concerns**
+   - Split `_process_user_message()` into documented placeholder method
+   - Added `_placeholder_response()` clearly marked for removal
+   - Prepared structure for ExecutionController integration
+
+4. **Validation**
+   - Added check that `COMPILER_PROJECT_DIR` exists during start()
+   - Better error handling and status emission
+
+#### Architecture Notes
+
+The compiler service is designed as a **facade** that will eventually:
+
+```
+User Message → CompilerService.send_message()
+                    │
+                    ▼
+              ExecutionController (running compiler.normcode-canvas.json)
+                    │
+                    ├── ChatTool.read_message() ← receives user message
+                    ├── LLM (classify_command.md) ← understands intent
+                    ├── CanvasTool.execute_command() ← executes canvas ops
+                    └── ChatTool.write_message() ← sends response
+```
+
+The compiler NormCode plan (`canvas_app/compiler/`) defines this flow in `chat.inference.json`:
+- Loop: read message → classify → execute → respond → check termination
+- Uses paradigms: `c_ChatRead-o_Literal`, `h_Command-c_CanvasExecute-o_Status`, etc.
+
+#### Files Modified
+
+- `canvas_app/backend/services/compiler_service.py` - Full refactoring
+
+#### Next Steps (unchanged from Dec 25)
+
+1. **Compiler NormCode Plan Integration** - Connect CompilerService to ExecutionController
+2. **Canvas Event Handling** - Frontend handlers for `canvas:*` WebSocket events
+3. **Meta Project Transparency** - Show compiler graph as read-only background
+4. **LLM Integration** - Connect prompts to real LLM for intelligent responses
 
 ---
 

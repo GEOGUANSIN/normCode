@@ -24,7 +24,7 @@ function getStepStatus(
   stepName: string,
   currentStep: string | null,
   completedSteps: string[],
-  steps: string[]
+  _steps: string[]
 ): StepStatus {
   if (completedSteps.includes(stepName)) {
     return 'completed';

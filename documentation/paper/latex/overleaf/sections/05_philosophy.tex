@@ -1,0 +1,46 @@
+\section{Design Philosophy}
+
+NormCode's design is guided by three core principles that address a fundamental tension in AI systems: the need for human oversight in processes that are increasingly automated.
+
+\subsection{Dual-Readability: Bridging Human and Machine}
+
+AI planning systems face a dilemma. Humans think in natural language; machines require unambiguous instructions. Most systems resolve this by forcing humans to write in a machine format (tedious, error-prone) or by letting machines interpret natural language (opaque, unauditable).
+
+NormCode sidesteps this dilemma through its multi-format ecosystem. The \texttt{.ncds} format enables fast, intuitive authoring in natural language for human authors. The \texttt{.ncd} format provides unambiguous, machine-executable representation for the compiler and orchestrator. The \texttt{.ncn} format offers a readable narrative for verification before execution by human reviewers. The \texttt{.ncdn} hybrid format combines both views for developers working in the editor.
+
+The key insight is that these formats are not translations---they are the same plan at different levels of explicitness. An author writes \texttt{.ncds}, the compiler enriches it to \texttt{.ncd} (adding types, bindings, flow indices), and a reviewer reads \texttt{.ncn} to verify the logic. No information is lost; no ambiguity is introduced. This allows domain experts who may not understand formal syntax to audit AI workflows before they run.
+
+% [ILLUSTRATION OPPORTUNITY: Diagram showing the same plan in .ncds, .ncd, and .ncn formats side by side, highlighting how information is preserved while representation changes]
+
+\subsection{Progressive Formalization: From Sketch to Structure}
+
+Traditional formal methods demand rigor upfront: you must specify everything before you can execute anything. This is impractical for AI workflows, where the ``right'' structure often emerges through experimentation.
+
+NormCode supports \textbf{Progressive Formalization}---a lifecycle where plans start loose and tighten over time. During the \textit{Exploration Phase}, authors write rough \texttt{.ncds} sketches where concepts can be vague (``process the document somehow'') and structure captures dependencies without implementation details. During the \textit{Refinement Phase}, authors run the plan, observe failures, and tighten specific inferences by adding type constraints, fixing value orderings, and making concepts explicit. During the \textit{Production Phase}, the plan is rigorous with every step auditable and checkpointing reliable.
+
+This lifecycle is enabled by the semi-formal nature of NormCode: the formalism only demands what the compiler needs. Everything else can remain flexible until you choose to lock it down.
+
+\textbf{Intervenability} is a key feature throughout this lifecycle. Because every step has a unique flow index, a user or automated system can pause execution before a specific step, inspect the inputs a step will receive, modify a concept's reference before resuming, or fork a run to explore alternative branches. The Canvas App provides visual tools for all these interventions.
+
+\subsection{Semantic vs. Syntactic Separation: Cost and Reliability Tracing}
+
+Perhaps the most practically important design decision in NormCode is the clean separation between operations that invoke AI reasoning and operations that simply move data around.
+
+\textbf{Semantic operations} include imperatives and judgements, require LLM calls, consume tokens, and are non-deterministic. These operations create new information through reasoning, generation, or evaluation. \textbf{Syntactic operations} include grouping, assigning, timing, and looping, require no LLM calls, are free, and are fully deterministic. These operations reshape existing information through tensor algebra without examining content.
+
+In a typical NormCode plan, the majority of steps are syntactic. They collect inputs, select outputs, iterate over collections, and branch on conditions---all without any AI involvement. Only the ``thinking'' steps (imperatives and judgements) invoke an LLM.
+
+This separation provides three crucial capabilities. \textbf{Cost Visibility} means you know exactly which steps burn tokens, allowing optimization efforts to focus on expensive operations. \textbf{Reliability Mapping} means syntactic steps never fail unexpectedly, so if a plan fails, the cause is localized to a semantic step. \textbf{Auditability} means for any execution, you can generate a report: ``Steps 1.1, 1.3, 2.2 called the LLM; all other steps were deterministic data routing.''
+
+For high-stakes domains (legal, medical, financial), this transparency is often a regulatory requirement. NormCode makes it structural rather than aspirational.
+
+\subsection{When to Use NormCode}
+
+NormCode adds structure, and structure has costs. The framework is not appropriate for every use case.
+
+\textbf{Strong fit scenarios} include multi-step workflows with five or more LLM calls where isolation and debuggability pay off, auditable AI applications in legal, medical, or financial domains where you must prove what each step saw, long-running resumable workflows where built-in checkpointing adds value, and human-AI collaboration where domain experts need to inspect and modify plans.
+
+\textbf{Poor fit scenarios} include quick prototypes with one or two LLM calls where overhead exceeds benefit, simple Q\&A chatbots where direct prompting suffices, and real-time applications where orchestration latency is unacceptable.
+
+The sweet spot is complex, multi-step workflows where you need to know exactly what happened at each step---and where a failure in step 7 should not corrupt the reasoning in step 12. This is precisely the scenario where context pollution in traditional approaches causes the most damage, and where NormCode's enforced data isolation provides the most value.
+

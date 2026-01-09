@@ -1,0 +1,15 @@
+/: Investment recommendation with multiple analysis paths
+/: STATUS: Reference pattern
+
+<- investment recommendation
+    <= synthesize final recommendation
+    <- quantitative signal
+        <= analyze the numerical data for trends
+        <- price data
+    <- narrative signal
+        <= extract sentiment from news articles
+        <- news articles
+    <- theoretical framework
+        <= apply valuation model
+        <- company fundamentals
+

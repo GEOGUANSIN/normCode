@@ -33,8 +33,15 @@ def setup_logging(level=logging.INFO, log_file=None):
     
     return logger
 
-# Initialize logging
-setup_logging()
+
+def set_infra_log_level(level: int = logging.INFO):
+    """Set log level for all infra loggers. Use logging.DEBUG for verbose output."""
+    for name in ['infra', 'infra._core', 'infra._agent', 'infra._orchest', 'infra._loggers']:
+        logging.getLogger(name).setLevel(level)
+
+
+# Don't auto-configure logging on import - let the application control logging
+# setup_logging()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)  # Default to INFO, not DEBUG
 

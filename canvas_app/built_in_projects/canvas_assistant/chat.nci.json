@@ -1,0 +1,1287 @@
+[
+  {
+    "concept_to_infer": {
+      "flow_index": "1",
+      "type": "main",
+      "depth": 0,
+      "nc_main": ":<:({session result})",
+      "inference_marker": ":<:",
+      "concept_type": "informal",
+      "operator_type": null,
+      "concept_name": "({session",
+      "warnings": [
+        "Unrecognized concept format after :<:"
+      ],
+      "attached_comments": [
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "/: Final output - the session completion status"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_element}: dict(status: str)"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{norm_input}: c_ChatSessionClose-o_Status"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{body_faculty}: chat"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.1",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<= $. %>([all canvas statuses])",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "/: Select session result when termination condition is met"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.2",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [on-going messages]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "on-going messages",
+        "attached_comments": [
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "/: Loop base - the message collection to iterate over"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [message]"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(role: str, content: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [all canvas statuses]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "all canvas statuses",
+        "attached_comments": [
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "/: Collection of all iteration results"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [message]"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(message, command_status, response_sent)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.1",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<= $. %>([all canvas statuses])",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "/: Select session result when termination condition is met"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.1.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= @:'(<session should end>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.1.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<* <session should end>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "session should end",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.2",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [on-going messages]",
+      "inference_marker": "<-",
+      "concept_type": "relation",
+      "operator_type": null,
+      "concept_name": "on-going messages",
+      "attached_comments": [
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "/: Loop base - the message collection to iterate over"
+        },
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [message]"
+        },
+        {
+          "flow_index": "1.2",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(role: str, content: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.2.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= $% %>([])",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "abstraction",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Initialize to empty array - ground concept"
+        },
+        {
+          "flow_index": "1.2.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{provision}: literal empty array []"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [all canvas statuses]",
+      "inference_marker": "<-",
+      "concept_type": "relation",
+      "operator_type": null,
+      "concept_name": "all canvas statuses",
+      "attached_comments": [
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "/: Collection of all iteration results"
+        },
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [message]"
+        },
+        {
+          "flow_index": "1.3",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(message, command_status, response_sent)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= *. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "looping",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Loop over messages - uses start_without_value_only_once=True"
+        },
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{loop_config}: start_without_value_only_once"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- [on-going messages]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "on-going messages",
+        "attached_comments": []
+      }
+    ],
+    "other_concepts": [
+      {
+        "flow_index": "1.3.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<* {message}<$([on-going messages])",
+        "inference_marker": "<*",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "message",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= *. %>([on-going messages]) %<({canvas status}) %:({message}) %@(1)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "looping",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Loop over messages - uses start_without_value_only_once=True"
+        },
+        {
+          "flow_index": "1.3.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{loop_config}: start_without_value_only_once"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= $. %>({canvas status})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {canvas status}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "canvas status",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: Grouped result of command execution and response"
+          },
+          {
+            "flow_index": "1.3.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [status]"
+          },
+          {
+            "flow_index": "1.3.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: dict(message, command_status, response_sent)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3.1.3",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- [on-going messages]<$({appended messages})=>",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "on-going messages",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: The message collection after conditional append"
+          },
+          {
+            "flow_index": "1.3.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [message]"
+          },
+          {
+            "flow_index": "1.3.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: dict(role: str, content: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3.1.4",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- <session should end>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "session should end",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: Boolean: should the session terminate?"
+          },
+          {
+            "flow_index": "1.3.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {canvas status}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "canvas status",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "/: Grouped result of command execution and response"
+        },
+        {
+          "flow_index": "1.3.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [status]"
+        },
+        {
+          "flow_index": "1.3.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: dict(message, command_status, response_sent)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= &[{}] %>[ {current message}, {command status}, {response sent}]",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "grouping",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {current message}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current message",
+        "attached_comments": []
+      },
+      {
+        "flow_index": "1.3.1.2.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {command status}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "command status",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "/: Result of executing the canvas command"
+          },
+          {
+            "flow_index": "1.3.1.2.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: dict(success: bool, data: any)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3.1.2.4",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {response sent}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "response sent",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "/: Confirmation that response was sent to user"
+          },
+          {
+            "flow_index": "1.3.1.2.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: dict(sent: bool, timestamp: str)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2.3",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {command status}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "command status",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: Result of executing the canvas command"
+        },
+        {
+          "flow_index": "1.3.1.2.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.2.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: dict(success: bool, data: any)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.3.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(execute the canvas command based on parsed intent)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "execute the canvas command based on parsed intent",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: h_Command-c_CanvasExecute-o_Status"
+        },
+        {
+          "flow_index": "1.3.1.2.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal(Command)"
+        },
+        {
+          "flow_index": "1.3.1.2.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: canvas"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2.3.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {parsed command}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "parsed command",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.3.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "/: The command extracted from user message"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict(type: str, params: dict)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2.3.2",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<- {parsed command}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "parsed command",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: The command extracted from user message"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{ref_element}: dict(type: str, params: dict)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.3.2.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= ::(understand the user message as a canvas command)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "understand the user message as a canvas command",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{norm_input}: h_Memo-v_Prompt-c_LLMGenerate-o_Command"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{v_input_provision}: provision/prompts/classify_command.md"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{h_input_norm}: in-memory"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2.3.2.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<- {current message}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current message",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.3.2.2",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "/: The user's input message - BLOCKS until received"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.2",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.2",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{ref_element}: str(dict(role: str, content: str))"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3.1.2.3.2.3",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<- {canvas command schema}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "canvas command schema",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.3.2.3",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "/: Ground concept - the schema for valid commands"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.3",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.3",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{ref_element}: perceptual_sign"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.3",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{file_location}: provision/schemas/canvas_commands.json"
+          },
+          {
+            "flow_index": "1.3.1.2.3.2.3",
+            "type": "comment",
+            "depth": 7,
+            "nc_comment": "| %{h_input_norm}: {file_location}"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2.3.2.2",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<- {current message}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "current message",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3.2.2",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: The user's input message - BLOCKS until received"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.2",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.2",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{ref_element}: str(dict(role: str, content: str))"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.3.2.2.1",
+      "type": "main",
+      "depth": 7,
+      "nc_main": "<= :>:({current message})",
+      "inference_marker": "<=",
+      "concept_type": "informal",
+      "operator_type": null,
+      "concept_name": ":>:({current",
+      "warnings": [
+        "Unrecognized concept format after <="
+      ],
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.3.2.2.1",
+          "type": "comment",
+          "depth": 8,
+          "nc_comment": "/: External input - waits for user"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.2.1",
+          "type": "comment",
+          "depth": 8,
+          "nc_comment": "| %{norm_input}: c_ChatRead-o_Literal"
+        },
+        {
+          "flow_index": "1.3.1.2.3.2.2.1",
+          "type": "comment",
+          "depth": 8,
+          "nc_comment": "| %{body_faculty}: chat"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2.4",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {response sent}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "response sent",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: Confirmation that response was sent to user"
+        },
+        {
+          "flow_index": "1.3.1.2.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.2.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: dict(sent: bool, timestamp: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.4.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(send the response message to the user)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "send the response message to the user",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: h_Response-c_ChatWrite-o_Status"
+        },
+        {
+          "flow_index": "1.3.1.2.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: in-memory"
+        },
+        {
+          "flow_index": "1.3.1.2.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: chat"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2.4.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {response}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "response",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.4.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "/: The generated response text"
+          },
+          {
+            "flow_index": "1.3.1.2.4.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3.1.2.4.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.2.4.2",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<- {response}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "response",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.4.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: The generated response text"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.2.4.2.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= ::(generate a helpful response for the user)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "generate a helpful response for the user",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.2.4.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{norm_input}: h_Message_Status-v_Prompt-c_LLMGenerate-o_Memo"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{v_input_provision}: prompts/generate_response.md"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{h_input_norm}: in-memory"
+        },
+        {
+          "flow_index": "1.3.1.2.4.2.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.2.4.2.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<- {current message}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current message",
+        "attached_comments": []
+      },
+      {
+        "flow_index": "1.3.1.2.4.2.3",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<- {command status}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "command status",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.2.4.2.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ============================================================"
+          },
+          {
+            "flow_index": "1.3.1.2.4.2.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: CONDITIONAL APPEND - Controls loop continuation"
+          },
+          {
+            "flow_index": "1.3.1.2.4.2.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ============================================================"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.3",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- [on-going messages]<$({appended messages})=>",
+      "inference_marker": "<-",
+      "concept_type": "relation",
+      "operator_type": null,
+      "concept_name": "on-going messages",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "/: The message collection after conditional append"
+        },
+        {
+          "flow_index": "1.3.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [message]"
+        },
+        {
+          "flow_index": "1.3.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: dict(role: str, content: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.3.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= $+ %>([on-going messages]) %<({current message}) %:({message})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "continuation",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "value_concepts": [],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.3.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= $+ %>([on-going messages]) %<({current message}) %:({message})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "continuation",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.3.1.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= @:!(<session should end>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": []
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.3.1.3.1.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<* <session should end>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "session should end",
+        "attached_comments": [
+          {
+            "flow_index": "1.3.1.3.1.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ============================================================"
+          },
+          {
+            "flow_index": "1.3.1.3.1.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: TERMINATION CHECK"
+          },
+          {
+            "flow_index": "1.3.1.3.1.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ============================================================"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.3.1.4",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- <session should end>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "session should end",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "/: Boolean: should the session terminate?"
+        },
+        {
+          "flow_index": "1.3.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.3.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.3.1.4.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= ::(the user wants to end the session)<ALL {current message} True>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "the user wants to end the session",
+      "attached_comments": [
+        {
+          "flow_index": "1.3.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{norm_input}: h_Memo-v_Prompt-c_LLMGenerate-o_Truth"
+        },
+        {
+          "flow_index": "1.3.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{v_input_norm}: {prompt_location}"
+        },
+        {
+          "flow_index": "1.3.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{v_input_provision}: prompts/judge_terminate.md"
+        },
+        {
+          "flow_index": "1.3.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{h_input_norm}: in-memory"
+        },
+        {
+          "flow_index": "1.3.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.3.1.4.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {current message}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current message",
+        "attached_comments": []
+      },
+      {
+        "flow_index": "1.3.1.4.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- [on-going messages]<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "on-going messages",
+        "attached_comments": []
+      }
+    ],
+    "other_concepts": []
+  }
+]

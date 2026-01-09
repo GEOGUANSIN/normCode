@@ -32,12 +32,13 @@ class FileSystemTool:
         """Gets the full path to the default memorized.json file."""
         return self._get_base_dir() / 'memorized.json'
 
-    def save(self, content: str | None, location: str) -> dict:
+    def save(self, content: str | list | dict | None, location: str) -> dict:
         """
         Saves content to a specified file location.
 
         Args:
-            content (str): The content to be saved.
+            content: The content to be saved. Can be str, list, or dict.
+                     Lists and dicts are automatically converted to JSON.
             location (str): The file path where the content will be saved. Can be
                             absolute, or relative to the base_dir.
 
@@ -57,9 +58,15 @@ class FileSystemTool:
                 dir_path.mkdir(parents=True, exist_ok=True)
                 logger.info(f"Created directory: {dir_path}")
 
+            # Convert list/dict to JSON string
+            if isinstance(content, (list, dict)):
+                content_str = json.dumps(content, indent=2, ensure_ascii=False)
+            else:
+                content_str = content
+
             # Write the content to the file
             with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+                f.write(content_str)
             
             logger.info(f"Successfully saved content to {file_path}")
             return {"status": "success", "location": str(file_path)}
@@ -109,6 +116,22 @@ class FileSystemTool:
         except Exception as e:
             logger.error(f"An error occurred in save_from_dict: {e}")
             return {"status": "error", "message": str(e)}
+
+    def write(self, path: str, content: str) -> dict:
+        """
+        Writes content to a specified file path.
+        
+        This is an alias for save() with swapped parameter order for paradigm compatibility.
+
+        Args:
+            path (str): The file path to write to. Can be absolute, or relative
+                        to the base_dir.
+            content (str): The content to be saved.
+
+        Returns:
+            dict: A dictionary with the status of the operation.
+        """
+        return self.save(content=content, location=path)
 
     def read(self, location: str) -> dict:
         """

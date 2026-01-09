@@ -44,7 +44,7 @@ def setup_logging(level=logging.INFO, log_file=None):
 # Initialize logging
 setup_logging()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)  # Reduced from DEBUG to reduce canvas app verbosity
 
 def _log_inference_result(result_concept, value_concepts, function_concept):
     """Log the inference result and related information"""
