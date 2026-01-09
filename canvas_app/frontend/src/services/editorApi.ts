@@ -14,7 +14,6 @@ import type {
   SerializeResponse,
   ParsedLine,
 } from '../types/editor';
-import type { ParsedParadigm } from '../types/paradigm';
 
 // =============================================================================
 // API Functions

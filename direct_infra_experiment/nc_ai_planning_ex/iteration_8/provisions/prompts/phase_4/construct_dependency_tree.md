@@ -46,7 +46,11 @@ Each node has:
 
 ---
 
+<<<<<<< HEAD
+## The Five Core Patterns
+=======
 ## The Six Core Patterns
+>>>>>>> origin/dev
 
 When constructing the tree, each operation maps to one of these patterns:
 
@@ -69,6 +73,23 @@ output
     └── input 2
 ```
 
+<<<<<<< HEAD
+### Pattern 3: Iteration
+**Structure**: Collection → for-each → aggregated results
+
+```
+all results
+└── for each item
+    ├── result (per-item)
+    │   └── process item
+    │       └── current item (loop var)
+    └── items (collection) [context]
+```
+
+**Key**: The collection being iterated is marked as **context**.
+
+### Pattern 4: Conditional
+=======
 ### Pattern 3: Iteration (with Return Operation)
 **Structure**: Collection → for-each → aggregated results
 
@@ -93,11 +114,21 @@ all results
 - Context marker: the loop variable
 
 ### Pattern 4: Conditional (Timing Gate)
+>>>>>>> origin/dev
 **Structure**: Condition gates execution
 
 ```
 result
 └── operation (gated)
+<<<<<<< HEAD
+    ├── inputs
+    └── condition [context]
+```
+
+**Key**: The condition is marked as **context**.
+
+### Pattern 5: Grouping
+=======
     └── timing gate (if condition)
     └── condition [context]
     └── inputs
@@ -144,6 +175,7 @@ result
 - Order in tree: judgement → conditions → gated options
 
 ### Pattern 6: Grouping
+>>>>>>> origin/dev
 **Structure**: Multiple items bundled together
 
 ```
@@ -344,6 +376,8 @@ summary report
 
 ---
 
+<<<<<<< HEAD
+=======
 ## The One-Inference-Only Principle
 
 **CRITICAL RULE**: Each value concept (data) must have **exactly one** producing operation.
@@ -379,6 +413,7 @@ Within any scope, nodes must be ordered by execution order:
 
 ---
 
+>>>>>>> origin/dev
 ## Common Mistakes
 
 | Mistake | Why It's Wrong | Correct Approach |
@@ -388,9 +423,12 @@ Within any scope, nodes must be ordered by execution order:
 | Wrong context placement | Context marks control, not data | Only loop base and conditions are context |
 | Orphan operations | Every operation must produce something | Verify all operations connect to tree |
 | Depth miscalculation | Depth is longest path | Count from root to deepest ground |
+<<<<<<< HEAD
+=======
 | **Multiple producers** | One-inference-only violated | Each value has exactly one producing operation |
 | **Wrong order in selection** | Conditions evaluated after they're used | Order: judgement → conditions → options |
 | **Missing loop return** | Looper doesn't know what to aggregate | Always include return operation in loops |
+>>>>>>> origin/dev
 
 ---
 

@@ -341,7 +341,7 @@ function GraphCanvasInner() {
 
   // Handle minimap click to teleport view
   const handleMinimapClick = useCallback(
-    (event: React.MouseEvent, position: { x: number; y: number }) => {
+    (_event: React.MouseEvent, position: { x: number; y: number }) => {
       // setCenter moves the viewport to center on the clicked position
       const { zoom } = getViewport();
       setCenter(position.x, position.y, { zoom, duration: 300 });
