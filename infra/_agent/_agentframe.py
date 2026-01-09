@@ -83,7 +83,7 @@ def setup_logging(level=logging.INFO, log_file=None):
 # Initialize logging
 setup_logging()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)  # Reduced from DEBUG to reduce canvas app verbosity
 
 
 def strip_element_wrapper(element: str) -> str:

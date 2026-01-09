@@ -46,7 +46,7 @@ Each node has:
 
 ---
 
-## The Five Core Patterns
+## The Six Core Patterns
 
 When constructing the tree, each operation maps to one of these patterns:
 
@@ -69,33 +69,81 @@ output
     └── input 2
 ```
 
-### Pattern 3: Iteration
+### Pattern 3: Iteration (with Return Operation)
 **Structure**: Collection → for-each → aggregated results
+
+**CRITICAL**: Loops require an **explicit return operation** that wraps the per-iteration result.
 
 ```
 all results
-└── for each item
-    ├── result (per-item)
-    │   └── process item
-    │       └── current item (loop var)
-    └── items (collection) [context]
+└── for each item (loop operator)
+    └── return item for this iteration (return operation)  ← REQUIRED
+        └── result (per-item)
+            └── process item
+                └── current item (loop var)
+    └── items (collection) [input to loop]
+    └── current item [context marker]
 ```
 
-**Key**: The collection being iterated is marked as **context**.
+**Key elements**:
+- Loop operator: `for each item`
+- **Return operation**: `return item for this iteration` (wraps what gets collected)
+- Per-iteration result: produced by the inner operations
+- Collection input: the list to iterate over
+- Context marker: the loop variable
 
-### Pattern 4: Conditional
+### Pattern 4: Conditional (Timing Gate)
 **Structure**: Condition gates execution
 
 ```
 result
 └── operation (gated)
-    ├── inputs
+    └── timing gate (if condition)
     └── condition [context]
+    └── inputs
 ```
 
-**Key**: The condition is marked as **context**.
+**Key**: The timing gate is a child of the gated operation, and the condition is marked as **context**.
 
-### Pattern 5: Grouping
+### Pattern 5: Selection (Multiple Conditional Options)
+**Structure**: Multiple options, each gated by its own condition
+
+**CRITICAL ORDER**: Within a selection, concepts must be ordered:
+1. **First**: The judgement that produces the type/category
+2. **Second**: Condition checks (one per option)
+3. **Third**: Gated options (each with timing gate referencing its condition)
+
+```
+result
+└── select first valid
+    ├── type (judgement result)         ← FIRST
+    │   └── judge the type
+    │       └── input
+    ├── is option A (condition)         ← SECOND (conditions)
+    │   └── check if type equals A
+    │       └── type
+    ├── is option B (condition)
+    │   └── check if type equals B
+    │       └── type
+    ├── option A result (gated)         ← THIRD (options with timing gates)
+    │   └── do A
+    │       └── timing gate
+    │       └── is option A [context]
+    │       └── input
+    └── option B result (gated)
+        └── do B
+            └── timing gate
+            └── is option B [context]
+            └── input
+```
+
+**Key principles**:
+- Each option has its own condition (boolean check)
+- Each option's operation is timing-gated by its condition
+- Conditions must be evaluated BEFORE timing gates check them
+- Order in tree: judgement → conditions → gated options
+
+### Pattern 6: Grouping
 **Structure**: Multiple items bundled together
 
 ```
@@ -181,22 +229,26 @@ Mark these with `"is_ground": true`.
 ```json
 {
   "thinking": "Your tree construction process",
-  "tree": {
-    "root": "goal concept name",
-    "nodes": {
-      "concept name": {
-        "producer": "operation name or null if ground",
-        "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping | null",
-        "children": ["child concept names"],
-        "context": "context concept for loops/conditions, or null",
-        "is_ground": true | false
+  "result": {
+    "tree": {
+      "root": "goal concept name",
+      "nodes": {
+        "concept name": {
+          "producer": "operation name or null if ground",
+          "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping | null",
+          "children": ["child concept names"],
+          "context": "context concept for loops/conditions, or null",
+          "is_ground": true | false
+        }
       }
-    }
-  },
-  "ground_concepts": ["list of input concepts with no producer"],
-  "depth": 0
+    },
+    "ground_concepts": ["list of input concepts with no producer"],
+    "depth": 0
+  }
 }
 ```
+
+**Important**: Put the tree in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -222,56 +274,58 @@ Mark these with `"is_ground": true`.
 ```json
 {
   "thinking": "Starting from goal 'summary report'. Producer is 'generate summary' (multi_input). It needs 'all sentiments' and 'review count'. 'review count' is ground (input). 'all sentiments' is produced by 'for each review' (iteration). The iteration needs 'reviews' (context, ground) and produces 'sentiment' per-item. Each 'sentiment' is produced by 'extract sentiment' (linear) which needs 'current review' (loop variable).",
-  "tree": {
-    "root": "summary report",
-    "nodes": {
-      "summary report": {
-        "producer": "generate summary",
-        "pattern": "multi_input",
-        "children": ["all sentiments", "review count"],
-        "context": null,
-        "is_ground": false
-      },
-      "all sentiments": {
-        "producer": "for each review",
-        "pattern": "iteration",
-        "children": ["sentiment"],
-        "context": "reviews",
-        "is_ground": false
-      },
-      "sentiment": {
-        "producer": "extract sentiment",
-        "pattern": "linear",
-        "children": ["current review"],
-        "context": null,
-        "is_ground": false
-      },
-      "current review": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": false,
-        "note": "loop variable - bound by iteration context"
-      },
-      "reviews": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": true
-      },
-      "review count": {
-        "producer": null,
-        "pattern": null,
-        "children": [],
-        "context": null,
-        "is_ground": true
+  "result": {
+    "tree": {
+      "root": "summary report",
+      "nodes": {
+        "summary report": {
+          "producer": "generate summary",
+          "pattern": "multi_input",
+          "children": ["all sentiments", "review count"],
+          "context": null,
+          "is_ground": false
+        },
+        "all sentiments": {
+          "producer": "for each review",
+          "pattern": "iteration",
+          "children": ["sentiment"],
+          "context": "reviews",
+          "is_ground": false
+        },
+        "sentiment": {
+          "producer": "extract sentiment",
+          "pattern": "linear",
+          "children": ["current review"],
+          "context": null,
+          "is_ground": false
+        },
+        "current review": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": false,
+          "note": "loop variable - bound by iteration context"
+        },
+        "reviews": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": true
+        },
+        "review count": {
+          "producer": null,
+          "pattern": null,
+          "children": [],
+          "context": null,
+          "is_ground": true
+        }
       }
-    }
-  },
-  "ground_concepts": ["reviews", "review count"],
-  "depth": 4
+    },
+    "ground_concepts": ["reviews", "review count"],
+    "depth": 4
+  }
 }
 ```
 
@@ -290,6 +344,41 @@ summary report
 
 ---
 
+## The One-Inference-Only Principle
+
+**CRITICAL RULE**: Each value concept (data) must have **exactly one** producing operation.
+
+**Wrong** (multiple operations for one value):
+```
+formalized line
+└── formalize as object        ← operation 1
+    └── formalize as object    ← operation 2 - VIOLATION!
+```
+
+**Correct** (one operation per value):
+```
+formalized line
+└── select first valid
+    └── object formalized
+        └── formalize as object   ← single operation
+```
+
+---
+
+## Ordering Principle: First-Executed, First-Written
+
+Within any scope, nodes must be ordered by execution order:
+
+| Scope | Order |
+|-------|-------|
+| **Under root** | Ground concepts → Phase 1 → Phase 2 → ... |
+| **Within a selection** | Judgement → Conditions → Gated options |
+| **Within a loop** | Return operation → Loop body → Loop input → Context |
+
+**Why**: The orchestrator assigns flow indices based on position. Dependencies must be available before they're used.
+
+---
+
 ## Common Mistakes
 
 | Mistake | Why It's Wrong | Correct Approach |
@@ -299,6 +388,9 @@ summary report
 | Wrong context placement | Context marks control, not data | Only loop base and conditions are context |
 | Orphan operations | Every operation must produce something | Verify all operations connect to tree |
 | Depth miscalculation | Depth is longest path | Count from root to deepest ground |
+| **Multiple producers** | One-inference-only violated | Each value has exactly one producing operation |
+| **Wrong order in selection** | Conditions evaluated after they're used | Order: judgement → conditions → options |
+| **Missing loop return** | Looper doesn't know what to aggregate | Always include return operation in loops |
 
 ---
 

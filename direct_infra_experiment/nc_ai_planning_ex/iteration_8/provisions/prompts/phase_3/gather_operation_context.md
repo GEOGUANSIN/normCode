@@ -27,8 +27,11 @@ For a specific operation, gather all relevant context from the extraction data t
 ### 3. Control Flow Context
 - **Inside loop?**: Is this operation executed per-iteration?
 - **Loop base**: If inside loop, what collection is being iterated?
-- **Is conditional?**: Is execution gated by a condition?
+- **Is conditional?**: Is execution gated by a single condition?
 - **Condition**: If conditional, what condition gates it?
+- **Is selection?**: Does this choose between multiple options based on conditions?
+- **Selection options**: If selection, what are the possible options?
+- **Discriminator**: If selection, what determines which option is chosen?
 
 ### 4. Operation Characteristics
 - **Produces boolean?**: Does output look like a true/false check?
@@ -58,7 +61,7 @@ The extraction data contains:
 ```json
 {
   "thinking": "Your context gathering process",
-  "context": {
+  "result": {
     "operation": "the operation name",
     "inputs": {
       "concepts": ["input concept names"],
@@ -66,7 +69,7 @@ The extraction data contains:
     },
     "output": {
       "concept": "output concept name",
-      "type": "object" | "collection" | "condition"
+      "type": "object | collection | condition"
     },
     "position": {
       "upstream_operations": ["operations before this"],
@@ -78,17 +81,22 @@ The extraction data contains:
       "inside_loop": true | false,
       "loop_collection": "collection being iterated (if applicable)",
       "is_conditional": true | false,
-      "condition": "condition gating execution (if applicable)"
+      "condition": "condition gating execution (if applicable)",
+      "is_selection": true | false,
+      "selection_options": ["list of option operations (if applicable)"],
+      "discriminator": "concept that determines selection (if applicable)"
     },
     "characteristics": {
       "produces_boolean": true | false,
       "is_aggregation": true | false,
       "is_iteration": true | false,
-      "execution_type": "llm" | "script"
+      "execution_type": "llm | script"
     }
   }
 }
 ```
+
+**Important**: Put the context in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -107,7 +115,7 @@ The extraction data contains:
 ```json
 {
   "thinking": "Looking at dependencies: 'extract sentiment' needs 'review' (1 input) and produces 'sentiment score' (object). It's inside the 'iterate over reviews' loop. Not conditional itself. Downstream: 'check if positive' uses its output. Uses LLM for semantic extraction.",
-  "context": {
+  "result": {
     "operation": "extract sentiment score",
     "inputs": {
       "concepts": ["review"],

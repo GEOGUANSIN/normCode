@@ -1,0 +1,232 @@
+You are an expert in NormCode, a semi-formal language for planning inferences. Your task is to perform a complete decomposition step in a single operation.
+
+Your final output must be a single JSON object.
+
+First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer (the updated NormCode draft) in the "answer" key.
+
+**Background: NormCode Fundamentals**
+
+NormCode is a language for translating natural language into a structured plan of **inferences**.
+
+**1. Core Structure:**
+An inference starts with a concept to be defined, followed by:
+- `<=` **Functional Concept**: Defines the core operation (e.g., performing an action, specifying a value).
+- `<-` **Value Concept**: Provides the data or inputs for the operation.
+
+**2. Semantical Concept Types (The "Words"):**
+These define the core entities and logical constructs. They are divided into two main groups:
+* **Object-like (Static entities):**
+    * `{}` **Object**: A thing, variable, or piece of data (e.g., `{user name}`).
+    * `<>` **Statement**: An assertion of fact that can be evaluated (e.g., `<user is an admin>`).
+    * `[]` **Relation**: A group or collection of concepts.
+* **Action-like (Processes/evaluations):**
+    * `::()` **Imperative**: A command or action to be executed (e.g., `::(calculate total)`).
+    * `::< >` **Judgement**: The *act* of evaluating a statement's truth (e.g., `::<is the user an admin?>`).
+
+**3. Subject Markers (Concept Roles):**
+Concepts are often prefixed to define their role in an inference:
+- `:S:` **Subject**: The primary subject of a block.
+- `:>:` **Input**: Marks a concept as an input parameter.
+- `:<:` **Output**: Marks a concept as an output value.
+
+**4. Annotations (Process State):**
+- `...:` **Source Text**: The natural language to be analyzed. **A concept with a `...:` annotation is considered "un-decomposed."**
+- `?:` **Question**: The question being asked about the source text.
+- `/:` **Description**: A summary of the decomposition result.
+
+**Your Task: Complete Decomposition Step**
+
+You will be given a NormCode draft. Your task is to:
+
+1. **Identify the Next Concept**: Find the first concept (reading from top to bottom) that still has an un-parsed source text annotation (`...:`).
+2. **Formulate the Question**: Based on the concept's Inference Target and its `...:` text, formulate the specific question (`?:`) and classify its type.
+3. **Construct the Functional Concept**: Build the complete `<= ...` functional concept line that answers the question.
+4. **Create Child Concepts**: Generate the new child concepts (`<-`) that logically follow from the functional concept.
+5. **Distribute Source Text**: Assign `...:` or `/:` annotations to the functional concept and all child concepts.
+6. **Update the Draft**: Replace the original concept with the new, decomposed inference block.
+
+---
+
+**STEP 1: Question Type Classification**
+
+The question type you select directly determines the NormCode operator used. Below is a comprehensive list:
+
+**A. Questions for Object-Like Concepts** (`{}`, `<>`, `[]`):
+
+* **Classification/Specification**: Defines a concept by relating it to a more general one, or by breaking it down into constituent parts.
+    * Example: "What is `{user account}` specified as?" (e.g., "...: a user account is a record containing a username and password.")
+    * Operator: `$.({type})`
+
+* **Nominalization**: Transforms a process or action (a verb) into a concept that can be treated as a noun.
+    * Example: "What process is `{user authentication}` defined as?" (e.g., "...: user authentication is the process of verifying a user...")
+    * Operator: `$::`
+
+* **Continuation/Extension**: Extends an existing sequence, collection, or concept by adding something to it.
+    * Example: "What continuation is `{updated sequence}` formed from?" (e.g., "...: the updated sequence is the result of adding a new number to the old one...")
+    * Operator: `$+({new_item}:{old_collection})`
+
+* **Instantiation**: Defines a concept by enumerating its specific, concrete members or instances.
+    * Example: "What are the specific instances of `{number sequence}`?" (e.g., "...: the sequence is 1, 2, 3...")
+    * Operator: `$%`
+
+* **Identification**: Asserts that a concept is identical to another specific, marked instance.
+    * Example: "What are identities of `{number sequence}`?" (e.g., "...: the number sequence is the same as the one marked by {1}...")
+    * Operator: `$={marker}`
+
+* **Annotated Composition**: Groups multiple concepts together into a structured record where each concept is a named field.
+    * Example: "How are `{position}` and `{value}` composed into an annotated structure?" (e.g., "...: a sequence of numbers indexed by their position and value...")
+    * Operator: `&in[{field1}; {field2}]`
+
+* **Ordered Composition**: Combines or concatenates two or more ordered concepts (like lists or sequences) into a single new one.
+    * Example: "How is `{number sequence}` composed as an ordered sequence?" (e.g., "...: the sequence is a combination of sequence 1 and sequence 2...")
+    * Operator: `&across`
+
+* **Process Request**: Asks how to perform an action that is directly related to or performed by an object.
+    * Example: "How to find `{the user}` with some process?" (e.g., "...: find the user with their name...")
+    * Operators: `::(action)` (unbounded) or `:_:{method}({params})` (bounded)
+
+* **I/O Request**: Asks how a piece of data is obtained from an external source (input) or sent to an external destination (output).
+    * Example: "How to acquire `{username}` as input?" (e.g., "...: the username is input by the user...")
+    * Operators: `:>:{concept}?()` (input) or `:<:({concept})` (output)
+
+* **Judgement Request**: Asks about evaluating a boolean state, condition, or property of an object.
+    * Example: "How to judge the truth of the statement `<user is an admin>`?" (e.g., "...: if the user is an admin...")
+    * Operators: `::<statement>` (unbounded) or `::{quantifier}<statement>` (quantifier)
+
+* **Element-wise Breakdown**: Asks how an operation is applied individually to every item in a collection.
+    * Example: "How to square every element of `{number sequence}` by each of its member?" (e.g., "...: the sequence is squared by squaring each of its members...")
+    * Operator: `*every({collection})`
+
+**B. Questions for Action-Like Concepts** (`::()`, `::< >`):
+
+* **Methodology Declaration**: Specifies the method or means by which an action is performed.
+    * Example: "By what method is `::(Authenticate the user)` performed?" (e.g., "...: authenticate the user by checking their password...")
+    * Operator: `@by(:Subject:)`
+
+* **Conditional Dependency**: Asks about the condition required for an action to occur.
+    * Example: "Under what condition is `::(Show the admin dashboard)` executed?" (e.g., "...: show the dashboard if the user is an admin...")
+    * Operator: `@if(<condition>)` or `@if!(<condition>)`
+
+* **Sequential Dependency**: Asks about the order of actions.
+    * Example: "After what event is `::(Show the admin dashboard)` executed?" (e.g., "...: show the dashboard after the user is authenticated...")
+    * Operator: `@after({event})`
+
+---
+
+**STEP 2: Operator Construction Reference**
+
+| Question Type | Operator Pattern | Construction Logic |
+|--------------|-----------------|-------------------|
+| **Classification/Specification** | `$.({type})` | Identify the primary type or class. E.g., "...is a **record**..." → `$.({record})`. |
+| **Nominalization** | `$::` | Stands alone. Transforms action-as-a-noun into a formal process. |
+| **Continuation/Extension** | `$+({new_item}:{old_collection})` | Identify concepts being added/extended. |
+| **Instantiation** | `$%` | Stands alone. Specific instances created as children. |
+| **Identification** | `$={marker}` | Identify the marker or tag. E.g., `...marked by {1}` → `$={1}`. |
+| **Annotated Composition** | `&in[{field1}; {field2}]` | Identify the fields of the structure. |
+| **Ordered Composition** | `&across` | Stands alone. Ordered items created as children. |
+| **Process Request (Unbounded)** | `::(action)` | Extract the complete imperative action. |
+| **Process Request (Bounded)** | `:_:{method}({params})` | Extract the pre-defined method and parameters. |
+| **I/O Request (Input)** | `:>:({concept})?()` | Extract the concept being input. |
+| **I/O Request (Output)** | `:<:({concept})` | Extract the concept being output. |
+| **Judgement Request (Unbounded)** | `::<statement>` | Extract the complete simple statement. |
+| **Judgement Request (Quantifier)** | `::{quantifier}<statement>` | Extract the quantifier and statement. |
+| **Element-wise Breakdown** | `*every({collection})` | Identify the collection being operated on. |
+| **Methodology Declaration** | `@by(:Subject:)` | Identify the method described. Use appropriate subject marker. |
+| **Conditional Dependency** | `@if(<condition>)` | Extract the condition that gates the action. |
+| **Sequential Dependency** | `@after({event})` | Extract the event/action that must complete first. |
+
+---
+
+**STEP 3: Child Concept Creation Logic**
+
+The operator within the functional concept dictates the kind of children you must create:
+
+* `$.({type})` **(Specification)**: Create children for the `{type}` and any other components mentioned.
+* `$::` **(Nominalization)**: Create a single child representing the action being nominalized.
+* `$+({new_item}:{old_collection})` **(Continuation)**: Create children for the new item and old collection.
+* `$%` **(Instantiation)**: Create a single child representing the collection of items.
+* `&in[{key}; {value}]` **(Annotation Grouping)**: Create children for key and value components.
+* `&across` **(Order Grouping)**: Create children for each component of the combined sequence.
+* `::({action})` **(Unbounded Imperative)**: Create children for any parameters required.
+* `:_:{method}({params})` **(Bounded Imperative)**: Create children for method definition and parameters.
+* `:>:{input}?()` **(Input Imperative)**: Create a child for the input being requested.
+* `::<{statement}>` **(Unbounded Judgement)**: Create children for concepts within the statement.
+* `::{quantifier}<{statement}>` **(Quantifier Judgement)**: Create children for concepts being judged.
+* `*every({collection})` **(Element-wise)**: Create a child for the collection being operated on.
+* `@by(:Subject:)` **(Method)**: Create children representing the method or action described.
+* `@if(<condition>)` **(Conditional)**: Create a single child for the embedded condition.
+* `@after({event})` **(Sequence)**: Create a child for the event that must complete first.
+
+---
+
+**STEP 4: Annotation Assignment (Source Text Distribution)**
+
+For both the functional concept and all child concepts, decide whether they are:
+1. `...:` **(Source Text)**: Assign if the concept requires further decomposition (has complex conditions, clauses, or descriptive text).
+2. `/:` **(Description)**: Assign if the concept is definitive in the current context (self-contained, I/O operations, pre-defined).
+
+**Guiding Principles:**
+- **Functional Concept (`<=`)**: Assign `...:` if parent text contains conditions/clauses that apply to the operation itself. Assign `/:` if straightforward and fully described by children.
+- **Child Concepts (`<-`)**: Assign `/:` for I/O operations, self-contained concepts, or pre-defined concepts. Assign `...:` if complex with its own descriptive text needing further breakdown.
+
+---
+
+**Execution Steps:**
+
+1. Find the first concept with un-parsed `...:` annotation (reading top to bottom).
+2. Extract its full line and `...:` content.
+3. Determine the question type based on the concept type and source text.
+4. Formulate the question (`?:`).
+5. Construct the functional concept (`<= ...`) based on question type.
+6. Create all necessary child concepts (`<- ...`).
+7. Assign `...:` or `/:` annotations to functional and child concepts.
+8. Construct the complete inference block with proper indentation.
+9. Replace the original concept in the draft with the new inference block.
+10. Return the updated draft.
+
+---
+
+**Example:**
+
+**Input NormCode Draft:**
+```normcode
+:<:(::(register a new user))
+    ...: To register a new user, first check if the provided username already exists in the database.
+    <= @by(:_:)
+    <- {steps}
+        ...: "first, check if the provided username already exists."
+        ...: "second, if it does, report an error."
+```
+
+**Step-by-step execution:**
+1. Find first concept with `...:`: `<- {steps}` (has two `...:` lines)
+2. Extract: concept is `<- {steps}`, source text is the two `...:` lines
+3. Question type: **Ordered Composition** (multiple steps in sequence)
+4. Question: "How are `{steps}` composed as an ordered sequence?"
+5. Functional concept: `<= &across`
+6. Child concepts: `<- {step 1}` and `<- {step 2}`
+7. Annotations: Functional gets `/:`, children get `...:` with their respective texts
+8. Construct inference block
+9. Replace `<- {steps}` with new block
+10. Return updated draft
+
+**Output (in JSON):**
+```json
+{
+  "analysis": "Found `<- {steps}` with two source text lines. This represents an ordered composition of sequential steps. Used `&across` operator. Created two child steps, each with their respective source text for further decomposition.",
+  "answer": ":<:(::(register a new user))\\n    ...: To register a new user, first check if the provided username already exists in the database.\\n    <= @by(:_:)\\n    <- {steps}\\n        ?: How are the steps composed as an ordered sequence?\\n        <= &across\\n            /: The steps are composed as an ordered sequence.\\n        <- {step 1}\\n            ...: \"first, check if the provided username already exists.\"\\n        <- {step 2}\\n            ...: \"second, if it does, report an error.\""
+}
+```
+
+---
+
+**Your Turn:**
+
+**NormCode Draft:**
+---
+$input_1
+---
+
+Execute all steps and return a JSON object with "analysis" (your reasoning) and "answer" (the updated NormCode draft). Return only the JSON object.
+

@@ -820,7 +820,7 @@
         </p>
         <div class="video-container">
             <video id="demo-video" controls autoplay muted loop playsinline>
-                <source src="normcode_canvas_demo_vid1.mp4" type="video/mp4">
+                <source src="normcode_canvas_demo_combined.mp4" type="video/mp4">
                 <span data-i18n="demo.videoNotSupported">Your browser does not support the video tag.</span>
             </video>
         </div>
@@ -1302,19 +1302,19 @@
             observer.observe(el);
         });
 
-        // Set video playback speed to 1.35x
+        // Set video playback speed to 1.2x
         const video = document.getElementById('demo-video');
         if (video) {
             video.addEventListener('loadedmetadata', () => {
-                video.playbackRate = 1.35;
+                video.playbackRate = 1.2;
             });
             // Also set it when video can play (in case metadata loads before this script runs)
             video.addEventListener('canplay', () => {
-                video.playbackRate = 1.35;
+                video.playbackRate = 1.2;
             });
             // Set it immediately if video is already loaded
             if (video.readyState >= 1) {
-                video.playbackRate = 1.35;
+                video.playbackRate = 1.2;
             }
         }
     </script>

@@ -30,9 +30,21 @@ These patterns control execution flow, not actual computation:
 | Pattern | Description | When to Use |
 |---------|-------------|-------------|
 | **iteration** | Process each item in collection | "for each", "process all" |
-| **conditional** | Execute if condition is true | "if X then", gated execution |
-| **selection** | Pick first valid from options | "choose first", "prefer X else Y" |
+| **conditional** | Execute if condition is true | "if X then" (single branch) |
+| **selection** | Pick first valid from multiple options | "if A then X, if B then Y, if C then Z" (multiple branches) |
 | **grouping** | Bundle items together | "collect", "bundle", "combine" |
+
+**IMPORTANT: Conditional vs Selection**
+
+| Pattern | Structure | Use Case |
+|---------|-----------|----------|
+| **conditional** | One operation gated by one condition | "if valid, save the file" |
+| **selection** | Multiple operations, each gated by its own condition | "if type is A do X, if type is B do Y, if type is C do Z" |
+
+**Selection is used when**:
+- You have an "if/else if/else if" structure
+- You're choosing between multiple exclusive options
+- Each option has its own condition to check
 
 ---
 
@@ -131,17 +143,19 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Your classification reasoning using the decision tree",
-  "classification": {
-    "pattern": "linear" | "multi_input" | "judgement" | "iteration" | "conditional" | "selection" | "grouping",
-    "category": "semantic" | "syntactic",
-    "execution": "llm" | "script" | "orchestrator",
+  "result": {
+    "pattern": "linear | multi_input | judgement | iteration | conditional | selection | grouping",
+    "category": "semantic | syntactic",
+    "execution": "llm | script | orchestrator",
     "input_count": 0,
-    "output_type": "object" | "collection" | "condition",
+    "output_type": "object | collection | condition",
     "confidence": 0.0-1.0,
     "reasoning": "Brief explanation of why this pattern"
   }
 }
 ```
+
+**Important**: Put the classification in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -155,7 +169,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Produces object (not boolean) → not judgement. Not iterating itself. Not conditional. Not selecting. Not grouping. Single input → linear.",
-  "classification": {
+  "result": {
     "pattern": "linear",
     "category": "semantic",
     "execution": "llm",
@@ -175,7 +189,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Produces boolean/condition → judgement. Exact numeric comparison (> 0.7) → script.",
-  "classification": {
+  "result": {
     "pattern": "judgement",
     "category": "semantic",
     "execution": "script",
@@ -195,7 +209,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Iterates over collection → iteration. Control flow handled by orchestrator.",
-  "classification": {
+  "result": {
     "pattern": "iteration",
     "category": "syntactic",
     "execution": "orchestrator",
@@ -215,7 +229,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Execution gated by 'is positive' condition → conditional.",
-  "classification": {
+  "result": {
     "pattern": "conditional",
     "category": "syntactic",
     "execution": "orchestrator",
@@ -235,7 +249,7 @@ These patterns control execution flow, not actual computation:
 ```json
 {
   "thinking": "Multiple inputs (count, reviews) combined → multi_input. Uses LLM for generation.",
-  "classification": {
+  "result": {
     "pattern": "multi_input",
     "category": "semantic",
     "execution": "llm",
@@ -246,6 +260,30 @@ These patterns control execution flow, not actual computation:
   }
 }
 ```
+
+### Example 6: Selection Pattern
+
+**Operation**: "apply appropriate formalization based on concept type"  
+**Context**: Multiple exclusive options (if object → formalize as object, if relation → formalize as relation, etc.)
+
+```json
+{
+  "thinking": "This is choosing between 9 different options based on concept type. Each option is exclusive - only one will be executed. This is a selection pattern, not conditional (which would be a single gated operation).",
+  "result": {
+    "pattern": "selection",
+    "category": "syntactic",
+    "execution": "orchestrator",
+    "input_count": 9,
+    "output_type": "object",
+    "confidence": 0.95,
+    "reasoning": "Chooses first valid from multiple exclusive options based on type check"
+  }
+}
+```
+
+**Key distinction from conditional**:
+- Conditional: ONE operation gated by ONE condition
+- Selection: MULTIPLE operations, each gated by its OWN condition, pick first valid
 
 ---
 

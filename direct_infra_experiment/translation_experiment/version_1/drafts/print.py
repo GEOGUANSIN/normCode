@@ -1,3 +1,0 @@
-print('''%456(:<:(::(register a new user))\n    ...: To register a new user, first check if the provided username already exists in the database. If it does, report an error. Otherwise, create a new user account.\n    <= @if!(<username exists>)\n        /: Registration proceeds only if the username does not already exist.\n    <- <username exists>\n        ?: How to judge the truth of the statement <username exists>?\n        <= ::<username exists>?()\n         
-   ...: check if the provided username already exists in the database\n        <- {provided username}\n            /: The username submitted during registration.\n        <- {user database}\n          
-  /: The persistent storage containing existing user accounts.)''')

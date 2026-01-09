@@ -376,6 +376,215 @@ v_SentimentPrompt-h_Reviews-c_AnalyzeSentiment-o_SentimentScore
 
 ---
 
+## 3.5 Retrieving Vertical Inputs in Paradigms
+
+Vertical inputs (prompts, scripts, configurations) arrive at the paradigm wrapped in perceptual signs. The paradigm's `sequence_spec` must **extract the raw path** before using it.
+
+### The `states.vertical` Structure
+
+During MFP (Model Function Perception), the orchestrator populates `states.vertical` with the vertical input value. This value is a **perceptual sign** (e.g., `%{prompt_location}abc(provisions/prompts/task.md)`).
+
+### Extracting Paths with `perception_router.strip_sign`
+
+To get the raw path from a perceptual sign, use the `perception_router.strip_sign` function:
+
+```json
+{
+  "output_key": "prompt_path",
+  "function": {"__type__": "MetaValue", "key": "perception_router.strip_sign"},
+  "params": {"__positional__": {"__type__": "MetaValue", "key": "states.vertical"}}
+}
+```
+
+**Result**: `"provisions/prompts/task.md"` (the raw path, stripped of the sign wrapper)
+
+### ❌ Common Mistake: Accessing Non-Existent Keys
+
+```json
+{
+  "output_key": "prompt_path",
+  "function": {"__type__": "MetaValue", "key": "states.function.paradigm_config.vertical.prompt_path"},
+  "params": {}
+}
+```
+
+**Error**: `KeyError: 'paradigm_config'`
+
+This pattern assumes a nested structure that doesn't exist. Always use `perception_router.strip_sign` on `states.vertical`.
+
+### Script Paradigms: Extracting Multiple Fields
+
+For script paradigms where the vertical input contains multiple fields (script path and function name), extract each field separately:
+
+```json
+[
+  {
+    "output_key": "script_path",
+    "function": {"__type__": "MetaValue", "key": "perception_router.strip_sign"},
+    "params": {"__positional__": {"__type__": "MetaValue", "key": "states.vertical.script_path"}}
+  },
+  {
+    "output_key": "function_name",
+    "function": {"__type__": "MetaValue", "key": "perception_router.strip_sign"},
+    "params": {"__positional__": {"__type__": "MetaValue", "key": "states.vertical.function_name"}}
+  }
+]
+```
+
+### The Pattern Summary
+
+| Vertical Input Type | Access Pattern | Extract With |
+|---------------------|----------------|--------------|
+| **Prompt** (`v_PromptLocation`) | `states.vertical` | `perception_router.strip_sign(states.vertical)` |
+| **Script** (`v_ScriptLocation`) | `states.vertical.script_path`, `states.vertical.function_name` | `perception_router.strip_sign(...)` on each |
+| **Template** (`v_LiteralTemplate`) | `states.vertical` | Direct access (already literal) |
+
+### Critical: Read Prompts During MFP, Not in Composition
+
+**The composed function (TVA) cannot access step results from MFP.** Resources must be fully loaded during MFP steps, not inside the composition plan.
+
+#### ❌ Wrong Pattern: Reading in Composition
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "result_key": "raw_prompt_path"
+},
+{
+  "step_index": 2,
+  "affordance": "file_system.read",
+  "result_key": "read_fn"
+},
+{
+  "step_index": 3,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "prompt_content",
+        "function": {"__type__": "MetaValue", "key": "read_fn"},
+        "params": {"__positional__": {"__type__": "MetaValue", "key": "raw_prompt_path"}}
+      }
+    ]
+  }
+}
+```
+
+**Error**: `Key 'path/to/prompt.md' not found in context` — The `raw_prompt_path` value from step 1 isn't available in the composition's execution context.
+
+#### ✅ Correct Pattern: Reading During MFP
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "result_key": "raw_prompt_path"
+},
+{
+  "step_index": 2,
+  "affordance": "prompt_tool.read_now",
+  "params": {
+    "template_name": {"__type__": "MetaValue", "key": "raw_prompt_path"}
+  },
+  "result_key": "prompt_obj"
+},
+{
+  "step_index": 3,
+  "affordance": "prompt_tool.create_template_function",
+  "params": {
+    "template": {"__type__": "MetaValue", "key": "prompt_obj"}
+  },
+  "result_key": "template_fn"
+},
+{
+  "step_index": 4,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "filled_prompt",
+        "function": {"__type__": "MetaValue", "key": "template_fn"},
+        "params": {"__positional__": "__initial_input__"}
+      }
+    ]
+  }
+}
+```
+
+**Why this works**: The prompt is read and transformed into a function (`template_fn`) during MFP. The composition only uses the resulting function, not raw data from earlier steps.
+
+### Critical: Script Paradigms Must Also Read During MFP
+
+Script paradigms follow the same pattern — read the script file and create a bound executor function during MFP:
+
+#### ✅ Correct Pattern for Script Execution
+
+```json
+{
+  "step_index": 1,
+  "affordance": "perception_router.strip_sign",
+  "params": {
+    "token": {"__type__": "MetaValue", "key": "states.vertical"}
+  },
+  "result_key": "raw_script_path"
+},
+{
+  "step_index": 2,
+  "affordance": "file_system.read_now",
+  "params": {
+    "path": {"__type__": "MetaValue", "key": "raw_script_path"}
+  },
+  "result_key": "script_read_result"
+},
+{
+  "step_index": 3,
+  "affordance": "formatter_tool.extract_content",
+  "params": {
+    "data": {"__type__": "MetaValue", "key": "script_read_result"}
+  },
+  "result_key": "script_content"
+},
+{
+  "step_index": 4,
+  "affordance": "python_interpreter.create_function_executor",
+  "params": {
+    "script": {"__type__": "MetaValue", "key": "script_content"},
+    "function_name": "main"
+  },
+  "result_key": "execute_fn"
+},
+{
+  "step_index": 5,
+  "affordance": "composition_tool.compose",
+  "params": {
+    "plan": [
+      {
+        "output_key": "execution_result",
+        "function": {"__type__": "MetaValue", "key": "execute_fn"},
+        "params": {"__positional__": "__initial_input__"}
+      }
+    ]
+  }
+}
+```
+
+**Key steps**:
+1. **Strip sign** → get raw file path
+2. **Read file immediately** → get `{"status": "success", "content": "..."}` dict
+3. **Extract content** → get just the script code string
+4. **Create bound executor** → `python_interpreter.create_function_executor` binds script content into a callable
+5. **Composition uses bound executor** → only needs to pass input params
+
+**Note**: The `extract_content` affordance uses this call_code pattern:
+```json
+"call_code": "result = params['data']['content']"
+```
+
+This extracts the `content` field from the file read result during MFP, since MetaValue keys don't support nested access like `script_read_result.content`.
+
+---
+
 # Part IV: Resource Types & Directory Structure
 
 ## 4.1 Resource Types
@@ -466,7 +675,7 @@ def substitute_fn(vars: Dict[str, Any]) -> str:
 
 #### Script Function Requirements
 
-Scripts must define a **main function** that the `PythonInterpreterTool` will call. There are two execution modes:
+Scripts are executed via the `PythonInterpreterTool`. There are two execution modes:
 
 **Mode 1: Script Execution** (`execute` method)
 - Script sets a `result` variable
@@ -494,28 +703,76 @@ result = processed
 ```python
 # provisions/scripts/check_phase_complete.py
 
-def check_phase_complete(progress_data: dict, phase_name: str, body=None) -> bool:
+def check_phase_complete(input_1: dict, input_2: str = None, body=None) -> bool:
     """
     Check if a specific phase is marked complete in progress data.
     
     Args:
-        progress_data: The progress tracking dictionary
-        phase_name: Name of the phase to check (e.g., "phase_1")
+        input_1: The progress tracking dictionary
+        input_2: Name of the phase to check (e.g., "phase_1")
         body: Optional Body instance for accessing tools
         
     Returns:
         True if phase is complete, False otherwise
     """
-    if not progress_data:
+    if not input_1:
         return False
-    return progress_data.get(phase_name, {}).get("complete", False)
+    return input_1.get(input_2, {}).get("complete", False)
 ```
 
 **Function Signature Requirements**:
 1. **Named function** — The paradigm specifies which function to call
-2. **Keyword parameters** — All inputs passed as `**kwargs`
+2. **Positional-style parameters** — Use `input_1`, `input_2`, etc. to match MVP's value order
 3. **Optional `body` parameter** — If declared, receives the Body instance for tool access
 4. **Return value** — Directly returned (no `result` variable needed)
+
+### The `main` Function Convention
+
+Many paradigms are configured to call a function named `main`. When your script's primary function has a different name, **add a `main` alias**:
+
+```python
+# provisions/scripts/check_phase_complete.py
+
+def check_phase_complete(input_1: dict, input_2: str = None, body=None) -> bool:
+    """The actual implementation with a descriptive name."""
+    if not input_1:
+        return False
+    return input_1.get(input_2, {}).get("complete", False)
+
+
+# Convention: Add a main alias for paradigm compatibility
+def main(input_1: dict, input_2: str = None, body=None) -> bool:
+    """Alias for paradigm compatibility."""
+    return check_phase_complete(input_1, input_2, body)
+```
+
+**Why this pattern?**
+- **Paradigm reusability**: Generic paradigms (e.g., `v_ScriptLocation-h_Literal-c_Execute-o_Boolean`) can call `main` without knowing specific function names
+- **Code clarity**: The descriptive function name (`check_phase_complete`) documents intent
+- **Testability**: You can test `check_phase_complete` directly, while `main` serves as the paradigm entry point
+
+### Parameter Naming: `input_N` Pattern
+
+Scripts receive horizontal inputs as positional parameters named `input_1`, `input_2`, etc.:
+
+| Parameter | Source |
+|-----------|--------|
+| `input_1` | First value concept (by `value_order`) |
+| `input_2` | Second value concept |
+| `input_N` | Nth value concept |
+| `body` | Optional Body instance (injected if declared) |
+
+```python
+def main(input_1: Any, input_2: str = None, body=None) -> Any:
+    """
+    Args:
+        input_1: The primary data to process
+        input_2: Optional configuration or secondary input
+        body: Optional Body instance for tool access
+    """
+    # Process input_1 with optional input_2 configuration
+    return process(input_1, input_2)
+```
 
 **Body Injection** (from `PythonInterpreterTool`):
 ```python
@@ -753,6 +1010,15 @@ python compiler.py validate-provisions provisions/ --plan enriched.ncd
 | `DataFileNotFoundError` | Data file path doesn't exist | Create data file, fix path, or mark as optional |
 | `InvalidParadigmError` | Paradigm JSON missing required fields | Fix paradigm JSON structure |
 
+### Runtime Errors
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `KeyError: 'paradigm_config'` | Paradigm tries to access `states.function.paradigm_config.vertical.*` | Use `perception_router.strip_sign` on `states.vertical` instead (see Section 3.5) |
+| `Key 'path/to/file' not found in context` | Composition plan references a step result that isn't available during TVA | Read resources during MFP steps, not inside composition (see Section 3.5) |
+| `AttributeError: 'NoneType' has no attribute 'main'` | Paradigm calls `main` but script doesn't define it | Add a `main` function alias to the script (see Section 4.1) |
+| `KeyError: 'input_1'` | Script expects named parameters but receives different names | Use `input_1`, `input_2`, etc. pattern in function signature |
+
 ### Validation Warnings
 
 | Warning | Cause | Impact |
@@ -783,6 +1049,8 @@ python compiler.py validate-provisions provisions/ --plan enriched.ncd
 4. **Post-Formalization declares demands** — just string paths, no validation
 5. **Activation supplies resources** — validates, resolves, embeds
 6. **FormatterTool mirrors PerceptionRouter** — encode/decode symmetry for chaining inferences
+7. **Vertical inputs must be stripped** — use `perception_router.strip_sign` on `states.vertical` to extract raw paths in paradigms
+8. **Scripts should provide a `main` alias** — paradigms call `main`, delegate to descriptive function names
 
 ## The Provision Promise
 

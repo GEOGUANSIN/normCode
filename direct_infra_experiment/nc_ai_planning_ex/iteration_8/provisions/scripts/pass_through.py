@@ -30,6 +30,12 @@ def pass_through(
     return input_1
 
 
+# Main entry point for paradigm (calls pass_through)
+def main(input_1: Any = None, body=None, **kwargs) -> Any:
+    """Main entry point for paradigm execution."""
+    return pass_through(input_1, body)
+
+
 if __name__ == "__main__":
     # Test
     test_data = {"key": "value", "nested": [1, 2, 3]}

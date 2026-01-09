@@ -1,0 +1,36 @@
+Formalize a NormCode Draft Straightforward (.ncds) file into a formal NormCode Draft (.ncd).
+
+STEP 1: PARSE
+Use the parser to convert the .ncds into a JSON list of lines.
+Each line has: flow_index, content, depth, inference_marker, concept_type.
+The parser identifies comments vs concept lines.
+
+STEP 2: FOR EACH CONCEPT LINE
+For each line that is a concept (not a comment):
+
+Judge what type of concept it is:
+  - {object} → a thing, entity, data structure
+  - [relation] → a connection, mapping, relationship
+  - <proposition> → a truth value, condition, boolean
+  - ::() imperative → transforms/produces something
+  - ::<> judgement → evaluates/decides something
+  - $ assigning → variable binding operation
+  - & grouping → parallel operations
+  - @ timing → async/wait operations
+  - * looping → iteration operation
+
+If it is an {object}, apply formalization according to the syntax of {objects}
+If it is a [relation], apply formalization according to the syntax of [relation]
+If it is a <proposition>, apply formalization according to the syntax of <proposition>
+If it is a ::() imperative, apply formalization according to the syntax of ::() imperative and add | ?{sequence}: imperative
+If it is a ::<> judgement, apply formalization according to the syntax of ::<> judgement and add | ?{sequence}: judgement
+If it is an $ assigning, apply formalization according to the syntax of $ assigning and add | ?{sequence}: assigning
+If it is a & grouping, apply formalization according to the syntax of & grouping and add | ?{sequence}: grouping
+If it is a @ timing, apply formalization according to the syntax of @ timing and add | ?{sequence}: timing
+If it is a * looping, apply formalization according to the syntax of * looping and add | ?{sequence}: looping
+
+STEP 3: SERIALIZE
+Convert the formalized lines back to .ncd text format, using the parser in the body.
+
+Input: .ncds file
+Output: .ncd file with flow indices, semantic types, sequence types, value bindings with the help of parser. 

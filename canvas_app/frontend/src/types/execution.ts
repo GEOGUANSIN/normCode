@@ -4,6 +4,7 @@
 
 export type ExecutionStatus = 'idle' | 'running' | 'paused' | 'stepping' | 'completed' | 'failed';
 export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type RunMode = 'slow' | 'fast';
 
 export interface ExecutionState {
   status: ExecutionStatus;

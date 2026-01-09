@@ -1,8 +1,9 @@
 {
-  "_comment": "Input file for the NormCode Derivation Algorithm (Iteration 8)",
+  "_comment": "Input file for the NormCode Derivation Algorithm (Iteration 8 - v2 with incremental save)",
   "_instructions": "This provides the required ground concepts (file paths) for the derivation repository",
   "_note": "All file paths use the perceptual sign format %() for literal values, or direct strings for paths",
   "_execution_note": "These paths will be used by the paradigms to read/write checkpoint files during execution",
+  "_v2_note": "Using instruction_v2.txt which specifies line-by-line incremental save pattern for formalization",
   
   "_ground_concepts_overview": {
     "instruction_file_path": "Input file containing the natural language instruction to derive",
@@ -16,9 +17,9 @@
   },
   
   "{instruction file path}": {
-    "_description": "Path to the input instruction file",
+    "_description": "Path to the input instruction file (v2 with incremental save pattern)",
     "_type": "perceptual_sign (will be perceived by PerceptionRouter to load content)",
-    "data": [["%(instruction.txt)"]],
+    "data": [["%(instruction_v2.txt)"]],
     "axes": ["_none_axis"]
   },
   

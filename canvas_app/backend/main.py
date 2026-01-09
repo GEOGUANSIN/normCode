@@ -23,6 +23,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Suppress DEBUG logs from infra module (set to INFO to reduce noise)
+# These are only useful during development/debugging of the infra layer itself
+for infra_logger_name in ['infra', 'infra._core', 'infra._agent', 'infra._orchest', 'infra._loggers']:
+    logging.getLogger(infra_logger_name).setLevel(logging.INFO)
+
 # Create FastAPI app
 app = FastAPI(
     title="NormCode Canvas API",

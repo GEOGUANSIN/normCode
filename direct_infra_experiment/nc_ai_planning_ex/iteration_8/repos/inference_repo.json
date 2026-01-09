@@ -109,7 +109,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{instruction to be written}"
+        "assign_source": [
+          "{cached refined instruction}",
+          "{freshly refined instruction}"
+        ]
       }
     }
   },
@@ -235,7 +238,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{freshly refined instruction}"
+        "assign_source": [
+          "{original version}",
+          "{refined version}"
+        ]
       }
     }
   },
@@ -484,6 +490,11 @@
       "value_order": {
         "{extraction file path}": 1,
         "{extraction to be written}": 2
+      },
+      "value_selectors": {
+        "{extraction to be written}": {
+          "packed": true
+        }
       }
     }
   },
@@ -507,7 +518,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{extraction to be written}"
+        "assign_source": [
+          "{cached extraction data}",
+          "{freshly extracted data}"
+        ]
       }
     }
   },
@@ -849,6 +863,7 @@
     "value_concepts": [
       "<phase 3 already complete>",
       "{cached classifications}",
+      "[extracted operations]",
       "[freshly classified operations]"
     ],
     "context_concepts": [],
@@ -859,7 +874,11 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{classifications to be written}"
+        "assign_source": [
+          "{cached classifications}",
+          "[extracted operations]",
+          "[freshly classified operations]"
+        ]
       }
     }
   },
@@ -969,6 +988,54 @@
     "flow_info": {
       "flow_index": "1.16.3.4"
     },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "[extracted operations]",
+    "function_concept": "::(get operations from extraction data)",
+    "value_concepts": [
+      "{extraction data}",
+      "{field_name: \"operations\"}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4"
+      },
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "body_faculty": "python_interpreter",
+      "value_order": {
+        "{extraction data}": 1,
+        "{field_name: \"operations\"}": 2
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.4.2"
+    },
+    "inference_sequence": "imperative_in_composition",
+    "concept_to_infer": "{extraction data}",
+    "function_concept": "::(read extraction file from path)",
+    "value_concepts": [
+      "{extraction file path}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.4.2"
+      },
+      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
+      "body_faculty": "file_system",
+      "value_order": {
+        "{extraction file path}": 1
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.5"
+    },
     "inference_sequence": "looping",
     "concept_to_infer": "[freshly classified operations]",
     "function_concept": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
@@ -981,13 +1048,13 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4"
+        "flow_index": "1.16.3.5"
       },
       "syntax": {
         "marker": "every",
         "loop_index": 1,
         "LoopBaseConcept": "[extracted operations]",
-        "CurrentLoopBaseConcept": "{current operation}*1",
+        "CurrentLoopBaseConcept": "{current operation}",
         "group_base": "operation",
         "ConceptToInfer": [
           "{classification}"
@@ -997,13 +1064,34 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.16.3.4.1"
+      "flow_index": "1.16.3.5.1"
+    },
+    "inference_sequence": "assigning",
+    "concept_to_infer": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "function_concept": "$. %>({classification})",
+    "value_concepts": [
+      "{classification}"
+    ],
+    "context_concepts": [],
+    "working_interpretation": {
+      "workspace": {},
+      "flow_info": {
+        "flow_index": "1.16.3.5.1"
+      },
+      "syntax": {
+        "marker": ".",
+        "assign_source": "{classification}"
+      }
+    }
+  },
+  {
+    "flow_info": {
+      "flow_index": "1.16.3.5.1.1"
     },
     "inference_sequence": "timing",
-    "concept_to_infer": "*. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)",
+    "concept_to_infer": "$. %>({classification})",
     "function_concept": "@:!(<phase 3 already complete>)",
     "value_concepts": [
-      "{classification}",
       "<phase 3 already complete>"
     ],
     "context_concepts": [
@@ -1012,7 +1100,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1"
+        "flow_index": "1.16.3.5.1.1"
       },
       "syntax": {
         "marker": "if!",
@@ -1023,7 +1111,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.16.3.4.1.4"
+      "flow_index": "1.16.3.5.1.2"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{classification}",
@@ -1036,7 +1124,7 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1.4"
+        "flow_index": "1.16.3.5.1.2"
       },
       "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
@@ -1048,7 +1136,7 @@
   },
   {
     "flow_info": {
-      "flow_index": "1.16.3.4.1.4.3"
+      "flow_index": "1.16.3.5.1.2.3"
     },
     "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{operation context}",
@@ -1061,61 +1149,13 @@
     "working_interpretation": {
       "workspace": {},
       "flow_info": {
-        "flow_index": "1.16.3.4.1.4.3"
+        "flow_index": "1.16.3.5.1.2.3"
       },
       "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
       "body_faculty": "llm",
       "value_order": {
         "{current operation}": 1,
         "{extraction data}": 2
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.16.3.4.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "[extracted operations]",
-    "function_concept": "::(get operations from extraction data)",
-    "value_concepts": [
-      "{extraction data}",
-      "{field_name: \"operations\"}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.16.3.4.2"
-      },
-      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
-      "body_faculty": "python_interpreter",
-      "value_order": {
-        "{extraction data}": 1,
-        "{field_name: \"operations\"}": 2
-      }
-    }
-  },
-  {
-    "flow_info": {
-      "flow_index": "1.16.3.4.2.2"
-    },
-    "inference_sequence": "imperative_in_composition",
-    "concept_to_infer": "{extraction data}",
-    "function_concept": "::(read extraction file from path)",
-    "value_concepts": [
-      "{extraction file path}"
-    ],
-    "context_concepts": [],
-    "working_interpretation": {
-      "workspace": {},
-      "flow_info": {
-        "flow_index": "1.16.3.4.2.2"
-      },
-      "paradigm": "h_LiteralPath-c_ReadFile-o_Literal",
-      "body_faculty": "file_system",
-      "value_order": {
-        "{extraction file path}": 1
       }
     }
   },
@@ -1189,7 +1229,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{tree to be written}"
+        "assign_source": [
+          "{cached dependency tree}",
+          "{freshly constructed tree}"
+        ]
       }
     }
   },
@@ -1538,7 +1581,10 @@
       },
       "syntax": {
         "marker": ".",
-        "assign_source": "{ncds to be written}"
+        "assign_source": [
+          "{cached ncds content}",
+          "{freshly serialized ncds}"
+        ]
       }
     }
   },

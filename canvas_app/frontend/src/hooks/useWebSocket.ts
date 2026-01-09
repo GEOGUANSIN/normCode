@@ -12,7 +12,7 @@ import { useAgentStore } from '../stores/agentStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useChatStore } from '../stores/chatStore';
 import { useCanvasCommandStore } from '../stores/canvasCommandStore';
-import type { WebSocketEvent, StepProgress } from '../types/execution';
+import type { WebSocketEvent, StepProgress, RunMode } from '../types/execution';
 import type { NodeStatus } from '../types/execution';
 import type { ToolCallEvent, AgentConfig } from '../stores/agentStore';
 
@@ -30,6 +30,8 @@ export function useWebSocket() {
   const setStepProgress = useExecutionStore((s) => s.setStepProgress);
   const updateStepProgress = useExecutionStore((s) => s.updateStepProgress);
   const clearStepProgress = useExecutionStore((s) => s.clearStepProgress);
+  const fetchConceptStatuses = useExecutionStore((s) => s.fetchConceptStatuses);
+  const setRunMode = useExecutionStore((s) => s.setRunMode);
 
   // Agent store actions
   const addToolCall = useAgentStore((s) => s.addToolCall);
@@ -123,6 +125,8 @@ export function useWebSocket() {
           if (data.node_statuses) {
             setNodeStatuses(data.node_statuses as Record<string, NodeStatus>);
           }
+          // Fetch concept statuses from blackboard (source of truth for data availability)
+          fetchConceptStatuses();
           break;
 
         case 'execution:started':
@@ -141,6 +145,8 @@ export function useWebSocket() {
           if (data.inference) {
             setCurrentInference(data.inference as string);
           }
+          // Refresh concept statuses from blackboard when paused
+          fetchConceptStatuses();
           break;
 
         case 'execution:resumed':
@@ -236,6 +242,12 @@ export function useWebSocket() {
           setStatus('stepping');
           break;
 
+        case 'execution:run_mode_changed':
+          if (data.mode) {
+            setRunMode(data.mode as RunMode);
+          }
+          break;
+
         case 'execution:progress':
           if (data.completed_count !== undefined && data.total_count !== undefined) {
             setProgress(data.completed_count as number, data.total_count as number);
@@ -255,6 +267,8 @@ export function useWebSocket() {
         case 'inference:completed':
           if (data.flow_index) {
             setNodeStatus(data.flow_index as string, 'completed');
+            // Refresh concept statuses from blackboard - the completed concept may now have data
+            fetchConceptStatuses();
           }
           break;
 
@@ -556,7 +570,7 @@ export function useWebSocket() {
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setControllerStatus, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, fetchConceptStatuses, setRunMode, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setControllerStatus, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
   );
 
   const [isConnected, setIsConnected] = useState(false);

@@ -1,10 +1,9 @@
 {
   "metadata": {
-    "description": "Execute Python script function with literal data and return literal result",
+    "description": "Execute Python script function with literal data and return literal result. Reads script during MFP.",
     "inputs": {
       "vertical": {
-        "script_path": "Path to Python script file (paradigm resolves during MFP)",
-        "function_name": "Name of the function to call in the script"
+        "script_path": "Path to Python script file (perception-wrapped, stripped at runtime)"
       },
       "horizontal": {
         "data": "Runtime data passed as kwargs (value concept has perceptual sign, MVP perceives it)"
@@ -21,8 +20,8 @@
         "tool_name": "python_interpreter",
         "affordances": [
           {
-            "affordance_name": "function_execute",
-            "call_code": "result = tool.function_execute"
+            "affordance_name": "create_function_executor",
+            "call_code": "result = tool.create_function_executor(script_code=params['script'], function_name=params['function_name'])"
           }
         ]
       },
@@ -30,8 +29,8 @@
         "tool_name": "file_system",
         "affordances": [
           {
-            "affordance_name": "read",
-            "call_code": "result = tool.read"
+            "affordance_name": "read_now",
+            "call_code": "result = tool.read(params['path'])"
           }
         ]
       },
@@ -39,8 +38,8 @@
         "tool_name": "formatter_tool",
         "affordances": [
           {
-            "affordance_name": "get",
-            "call_code": "result = tool.get"
+            "affordance_name": "extract_content",
+            "call_code": "result = params['data']['content']"
           },
           {
             "affordance_name": "wrap",
@@ -56,6 +55,15 @@
             "call_code": "result = tool.compose(plan=params['plan'], return_key=params.get('return_key'))"
           }
         ]
+      },
+      {
+        "tool_name": "perception_router",
+        "affordances": [
+          {
+            "affordance_name": "strip_sign",
+            "call_code": "result = tool.strip_sign(params['token'])"
+          }
+        ]
       }
     ]
   },
@@ -63,70 +71,52 @@
     "steps": [
       {
         "step_index": 1,
-        "affordance": "file_system.read",
-        "params": {},
-        "result_key": "read_fn"
+        "affordance": "perception_router.strip_sign",
+        "params": {
+          "token": {"__type__": "MetaValue", "key": "states.vertical"}
+        },
+        "result_key": "raw_script_path"
       },
       {
         "step_index": 2,
-        "affordance": "formatter_tool.get",
-        "params": {},
-        "result_key": "get_fn"
+        "affordance": "file_system.read_now",
+        "params": {
+          "path": {"__type__": "MetaValue", "key": "raw_script_path"}
+        },
+        "result_key": "script_read_result"
       },
       {
         "step_index": 3,
-        "affordance": "python_interpreter.function_execute",
-        "params": {},
-        "result_key": "execute_fn"
+        "affordance": "formatter_tool.extract_content",
+        "params": {
+          "data": {"__type__": "MetaValue", "key": "script_read_result"}
+        },
+        "result_key": "script_content"
       },
       {
         "step_index": 4,
+        "affordance": "python_interpreter.create_function_executor",
+        "params": {
+          "script": {"__type__": "MetaValue", "key": "script_content"},
+          "function_name": "main"
+        },
+        "result_key": "execute_fn"
+      },
+      {
+        "step_index": 5,
         "affordance": "formatter_tool.wrap",
         "params": {},
         "result_key": "wrap_fn"
       },
       {
-        "step_index": 5,
+        "step_index": 6,
         "affordance": "composition_tool.compose",
         "params": {
           "plan": [
             {
-              "output_key": "script_path",
-              "function": {"__type__": "MetaValue", "key": "states.function.paradigm_config.vertical.script_path"},
-              "params": {}
-            },
-            {
-              "output_key": "function_name",
-              "function": {"__type__": "MetaValue", "key": "states.function.paradigm_config.vertical.function_name"},
-              "params": {}
-            },
-            {
-              "output_key": "script_read_result",
-              "function": {"__type__": "MetaValue", "key": "read_fn"},
-              "params": {"__positional__": "script_path"}
-            },
-            {
-              "output_key": "script_content",
-              "function": {"__type__": "MetaValue", "key": "get_fn"},
-              "params": {"dictionary": "script_read_result"},
-              "literal_params": {"key": "content"}
-            },
-            {
-              "output_key": "input_data_merged",
-              "function": {"__type__": "MetaValue", "key": "get_fn"},
-              "params": {
-                "dictionary": "__initial_input__"
-              },
-              "literal_params": {"key": "_merge_all_inputs"}
-            },
-            {
               "output_key": "execution_result",
               "function": {"__type__": "MetaValue", "key": "execute_fn"},
-              "params": {
-                "script": "script_content",
-                "function_name": "function_name",
-                "params": "input_data_merged"
-              }
+              "params": {"__positional__": "__initial_input__"}
             },
             {
               "output_key": "final_result",

@@ -78,22 +78,26 @@ Concepts are the **nouns** of your plan—the data being manipulated, observed, 
 ```json
 {
   "thinking": "Your analysis identifying each concept",
-  "concepts": [
-    {
-      "name": "concept name in natural language",
-      "type": "object" | "collection" | "condition",
-      "role": "input" | "output" | "intermediate" | "condition" | "loop_variable",
-      "description": "What this concept represents",
-      "source_phrase": "The phrase from the instruction"
+  "result": {
+    "concepts": [
+      {
+        "name": "concept name in natural language",
+        "type": "object | collection | condition",
+        "role": "input | output | intermediate | condition | loop_variable",
+        "description": "What this concept represents",
+        "source_phrase": "The phrase from the instruction"
+      }
+    ],
+    "summary": {
+      "output_concept": "name of the final output",
+      "input_concepts": ["names of input concepts"],
+      "total_count": 0
     }
-  ],
-  "summary": {
-    "output_concept": "name of the final output",
-    "input_concepts": ["names of input concepts"],
-    "total_count": 0
   }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -104,18 +108,20 @@ Concepts are the **nouns** of your plan—the data being manipulated, observed, 
 ```json
 {
   "thinking": "Output is 'summary report'. Input is 'customer reviews' (collection). Loop variable is 'customer review'. Intermediate: 'sentiment score', 'positive reviews'. Condition: 'is positive'.",
-  "concepts": [
-    {"name": "customer reviews", "type": "collection", "role": "input", "description": "Reviews to process", "source_phrase": "For each customer review"},
-    {"name": "customer review", "type": "object", "role": "loop_variable", "description": "Current review in iteration", "source_phrase": "For each customer review"},
-    {"name": "sentiment score", "type": "object", "role": "intermediate", "description": "Extracted sentiment value", "source_phrase": "extract sentiment"},
-    {"name": "is positive", "type": "condition", "role": "condition", "description": "Whether score > 0.7", "source_phrase": "If positive (score > 0.7)"},
-    {"name": "positive reviews", "type": "collection", "role": "intermediate", "description": "Reviews meeting threshold", "source_phrase": "add to positive reviews"},
-    {"name": "summary report", "type": "object", "role": "output", "description": "Final report", "source_phrase": "Generate a summary report"}
-  ],
-  "summary": {
-    "output_concept": "summary report",
-    "input_concepts": ["customer reviews"],
-    "total_count": 6
+  "result": {
+    "concepts": [
+      {"name": "customer reviews", "type": "collection", "role": "input", "description": "Reviews to process", "source_phrase": "For each customer review"},
+      {"name": "customer review", "type": "object", "role": "loop_variable", "description": "Current review in iteration", "source_phrase": "For each customer review"},
+      {"name": "sentiment score", "type": "object", "role": "intermediate", "description": "Extracted sentiment value", "source_phrase": "extract sentiment"},
+      {"name": "is positive", "type": "condition", "role": "condition", "description": "Whether score > 0.7", "source_phrase": "If positive (score > 0.7)"},
+      {"name": "positive reviews", "type": "collection", "role": "intermediate", "description": "Reviews meeting threshold", "source_phrase": "add to positive reviews"},
+      {"name": "summary report", "type": "object", "role": "output", "description": "Final report", "source_phrase": "Generate a summary report"}
+    ],
+    "summary": {
+      "output_concept": "summary report",
+      "input_concepts": ["customer reviews"],
+      "total_count": 6
+    }
   }
 }
 ```

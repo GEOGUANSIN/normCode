@@ -1,0 +1,11 @@
+Analyze a document from multiple perspectives simultaneously.
+
+Given a document:
+- Extract the main topics using topic modeling
+- Analyze the sentiment of the text
+- Identify named entities (people, places, organizations)
+- Combine all three analyses into a comprehensive document profile
+
+Input: document text
+Output: document profile with topics, sentiment, and entities
+

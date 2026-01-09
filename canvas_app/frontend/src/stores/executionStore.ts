@@ -3,7 +3,7 @@
  */
 
 import { create } from 'zustand';
-import type { ExecutionStatus, NodeStatus, StepProgress } from '../types/execution';
+import type { ExecutionStatus, NodeStatus, StepProgress, RunMode } from '../types/execution';
 
 interface LogEntry {
   flowIndex: string;
@@ -34,8 +34,12 @@ interface ExecutionState {
   totalCount: number;
   cycleCount: number;
 
-  // Node statuses
+  // Node statuses (by flow_index - for execution flow tracking)
   nodeStatuses: Record<string, NodeStatus>;
+  
+  // Concept statuses from blackboard (by concept_name - source of truth for data availability)
+  // This comes directly from infra's blackboard, not from canvas-app tracking
+  conceptStatuses: Record<string, string>;
 
   // Breakpoints
   breakpoints: Set<string>;
@@ -51,6 +55,9 @@ interface ExecutionState {
   
   // Verbose logging mode
   verboseLogging: boolean;
+  
+  // Run mode: 'slow' (one at a time) or 'fast' (all ready per cycle)
+  runMode: RunMode;
 
   // User input requests (human-in-the-loop)
   userInputRequests: UserInputRequest[];
@@ -61,6 +68,7 @@ interface ExecutionState {
   setProgress: (completed: number, total: number, cycle?: number) => void;
   setNodeStatus: (nodeId: string, status: NodeStatus) => void;
   setNodeStatuses: (statuses: Record<string, NodeStatus>) => void;
+  setConceptStatuses: (statuses: Record<string, string>) => void;
   addBreakpoint: (flowIndex: string) => void;
   removeBreakpoint: (flowIndex: string) => void;
   toggleBreakpoint: (flowIndex: string) => void;
@@ -71,10 +79,13 @@ interface ExecutionState {
   updateStepProgress: (flowIndex: string, update: Partial<StepProgress>) => void;
   clearStepProgress: (flowIndex?: string) => void;
   setVerboseLogging: (enabled: boolean) => void;
+  setRunMode: (mode: RunMode) => void;
   // User input actions
   addUserInputRequest: (request: UserInputRequest) => void;
   removeUserInputRequest: (requestId: string) => void;
   clearUserInputRequests: () => void;
+  // Fetch concept statuses from blackboard API
+  fetchConceptStatuses: () => Promise<void>;
   reset: () => void;
 }
 
@@ -85,11 +96,13 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
   totalCount: 0,
   cycleCount: 0,
   nodeStatuses: {},
+  conceptStatuses: {},
   breakpoints: new Set(),
   logs: [],
   runId: null,
   stepProgress: {},
   verboseLogging: false,
+  runMode: 'slow',
   userInputRequests: [],
 
   setStatus: (status) => set({ status }),
@@ -108,6 +121,20 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     })),
 
   setNodeStatuses: (statuses) => set({ nodeStatuses: statuses }),
+
+  setConceptStatuses: (statuses) => set({ conceptStatuses: statuses }),
+
+  fetchConceptStatuses: async () => {
+    try {
+      const response = await fetch('/api/execution/concept-statuses');
+      if (response.ok) {
+        const statuses = await response.json();
+        set({ conceptStatuses: statuses });
+      }
+    } catch (error) {
+      console.debug('Failed to fetch concept statuses:', error);
+    }
+  },
 
   addBreakpoint: (flowIndex) =>
     set((state) => ({
@@ -173,6 +200,8 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
     }),
 
   setVerboseLogging: (enabled) => set({ verboseLogging: enabled }),
+  
+  setRunMode: (mode) => set({ runMode: mode }),
 
   // User input actions
   addUserInputRequest: (request) =>
@@ -195,9 +224,11 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
       totalCount: 0,
       cycleCount: 0,
       nodeStatuses: {},
+      conceptStatuses: {},
       logs: [],
       runId: null,
       stepProgress: {},
       userInputRequests: [],
+      // Note: runMode is intentionally NOT reset - preserve user preference
     }),
 }));

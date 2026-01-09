@@ -51,10 +51,10 @@ Process each item in a collection.
 
 ---
 
-### 4. Conditional
-**Intent**: "If condition, then do A, else do B"
+### 4. Conditional (Single Gated Operation)
+**Intent**: "If condition, then do A" (optionally with else)
 
-Execute based on a boolean condition.
+Execute **one** operation based on a boolean condition.
 
 **Phrases**:
 | Phrase | Meaning |
@@ -62,25 +62,49 @@ Execute based on a boolean condition.
 | "if X then Y" | Do Y when X is true |
 | "when X" | Do when X is true |
 | "unless X" | Do when X is NOT true |
-| "otherwise" / "else" | Alternative branch |
 
 **Key elements**:
-- **Condition**: What is checked
-- **True branch**: What happens if true
-- **False branch**: What happens if not true (optional)
+- **Condition**: What is checked (produces boolean)
+- **Gated operation**: What happens if condition is met
+- **Alternative** (optional): What happens if NOT met
+
+**Example**: "If the file is valid, save it" → ONE operation gated by ONE condition
 
 ---
 
-### 5. Selection
-**Intent**: "Choose first valid from options"
+### 5. Selection (Multiple Exclusive Options)
+**Intent**: "If type is A do X, if type is B do Y, if type is C do Z"
 
-Pick one result from multiple possibilities.
+Pick one result from **multiple exclusive options**, each with its own condition.
 
-**Phrases**: "choose first", "select", "use X if available else Y", "prefer X otherwise Y"
+**CRITICAL DISTINCTION FROM CONDITIONAL**:
+| Conditional | Selection |
+|-------------|-----------|
+| ONE operation, ONE condition | MULTIPLE operations, each with OWN condition |
+| "if valid, save" | "if A do X, if B do Y, if C do Z" |
+| Simple gate | Multi-way branch based on type/category |
+
+**Phrases**:
+| Phrase | Meaning |
+|--------|---------|
+| "if type is A, do X; if type is B, do Y" | Selection between options |
+| "based on the type, apply..." | Selection |
+| "for each type, use appropriate..." | Selection |
+| "choose first valid" | Selection |
 
 **Key elements**:
-- **Options**: The choices available
-- **Priority**: Which to try first
+- **Discriminator**: What value determines which option (e.g., "concept type")
+- **Options**: The mutually exclusive choices
+- **Conditions**: One boolean check per option
+- **Gated operations**: Each option has its own operation
+
+**Example**: 
+```
+If it is an {object}, apply object formalization
+If it is a [relation], apply relation formalization
+If it is a <proposition>, apply proposition formalization
+```
+→ This is **SELECTION** (3 options, each with condition), NOT conditional
 
 ---
 
@@ -116,31 +140,35 @@ The loop appends to its own iteration base and terminates when append stops.
 ```json
 {
   "thinking": "Your pattern analysis",
-  "patterns": [
-    {
-      "type": "iteration" | "conditional" | "selection" | "grouping" | "linear" | "multi_input",
-      "trigger_phrase": "The phrase indicating this pattern",
-      "elements": {
-        "collection": "for iteration: what is iterated",
-        "current_item": "for iteration: the per-item variable",
-        "condition": "for conditional: what is checked",
-        "true_branch": "for conditional: what happens if true",
-        "false_branch": "for conditional: what happens if not true",
-        "options": "for selection: the choices",
-        "items": "for grouping: what is bundled"
+  "result": {
+    "patterns": [
+      {
+        "type": "iteration | conditional | selection | grouping | linear | multi_input",
+        "trigger_phrase": "The phrase indicating this pattern",
+        "elements": {
+          "collection": "for iteration: what is iterated",
+          "current_item": "for iteration: the per-item variable",
+          "condition": "for conditional: what is checked",
+          "gated_operation": "for conditional: what is executed when true",
+          "discriminator": "for selection: what value determines the choice",
+          "options": "for selection: list of {condition, operation} pairs",
+          "items": "for grouping: what is bundled"
+        }
       }
+    ],
+    "summary": {
+      "has_iteration": true | false,
+      "has_conditional": true | false,
+      "has_selection": true | false,
+      "has_grouping": true | false,
+      "is_self_seeding": true | false,
+      "pattern_count": 0
     }
-  ],
-  "summary": {
-    "has_iteration": true | false,
-    "has_conditional": true | false,
-    "has_selection": true | false,
-    "has_grouping": true | false,
-    "is_self_seeding": true | false,
-    "pattern_count": 0
   }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -151,54 +179,56 @@ The loop appends to its own iteration base and terminates when append stops.
 ```json
 {
   "thinking": "'For each file' = iteration. 'If valid JSON' = conditional with two branches. 'Bundle results and errors' = grouping.",
-  "patterns": [
-    {
-      "type": "iteration",
-      "trigger_phrase": "For each file",
-      "elements": {
-        "collection": "files",
-        "current_item": "file",
-        "condition": null,
-        "true_branch": null,
-        "false_branch": null,
-        "options": null,
-        "items": null
+  "result": {
+    "patterns": [
+      {
+        "type": "iteration",
+        "trigger_phrase": "For each file",
+        "elements": {
+          "collection": "files",
+          "current_item": "file",
+          "condition": null,
+          "true_branch": null,
+          "false_branch": null,
+          "options": null,
+          "items": null
+        }
+      },
+      {
+        "type": "conditional",
+        "trigger_phrase": "If valid JSON",
+        "elements": {
+          "collection": null,
+          "current_item": null,
+          "condition": "file is valid JSON",
+          "true_branch": "parse and add to results",
+          "false_branch": "log error",
+          "options": null,
+          "items": null
+        }
+      },
+      {
+        "type": "grouping",
+        "trigger_phrase": "Bundle results and errors",
+        "elements": {
+          "collection": null,
+          "current_item": null,
+          "condition": null,
+          "true_branch": null,
+          "false_branch": null,
+          "options": null,
+          "items": ["results", "errors"]
+        }
       }
-    },
-    {
-      "type": "conditional",
-      "trigger_phrase": "If valid JSON",
-      "elements": {
-        "collection": null,
-        "current_item": null,
-        "condition": "file is valid JSON",
-        "true_branch": "parse and add to results",
-        "false_branch": "log error",
-        "options": null,
-        "items": null
-      }
-    },
-    {
-      "type": "grouping",
-      "trigger_phrase": "Bundle results and errors",
-      "elements": {
-        "collection": null,
-        "current_item": null,
-        "condition": null,
-        "true_branch": null,
-        "false_branch": null,
-        "options": null,
-        "items": ["results", "errors"]
-      }
+    ],
+    "summary": {
+      "has_iteration": true,
+      "has_conditional": true,
+      "has_selection": false,
+      "has_grouping": true,
+      "is_self_seeding": false,
+      "pattern_count": 3
     }
-  ],
-  "summary": {
-    "has_iteration": true,
-    "has_conditional": true,
-    "has_selection": false,
-    "has_grouping": true,
-    "is_self_seeding": false,
-    "pattern_count": 3
   }
 }
 ```
@@ -207,9 +237,12 @@ The loop appends to its own iteration base and terminates when append stops.
 
 ## Common Mistakes
 
-1. **Missing both branches**: "if X then Y, otherwise Z" has TWO conditional patterns
-2. **Confusing selection with conditional**: Selection chooses between options; conditional gates execution
-3. **Missing loop variable**: "for each X" implies both "Xs" (collection) and "X" (current item)
+1. **Confusing selection with conditional**: 
+   - "if valid, save" = conditional (one operation, one condition)
+   - "if A do X, if B do Y, if C do Z" = selection (multiple options, each with condition)
+2. **Missing loop variable**: "for each X" implies both "Xs" (collection) and "X" (current item)
+3. **Missing selection discriminator**: "based on type, apply..." needs to identify WHAT determines the choice
+4. **Treating multi-way branch as multiple conditionals**: "if type A..., if type B..., if type C..." is ONE selection pattern, not three conditionals
 
 ---
 

@@ -1,0 +1,12 @@
+Build a translation matrix for multiple languages.
+
+For each source language in the list:
+    For each target language in the list:
+        - If source and target are different:
+            - Create a translation pair entry
+            - Generate sample translations
+        - Add the entry to the translation matrix
+
+Input: list of languages
+Output: translation matrix with all language pair combinations
+

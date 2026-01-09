@@ -19,7 +19,7 @@ The registry now uses WorkerRegistry internally for unified worker management.
 import logging
 from typing import Optional, Dict, List
 
-from schemas.execution_schemas import ExecutionStatus, NodeStatus
+from schemas.execution_schemas import ExecutionStatus, NodeStatus, RunMode
 
 # Import from modular sub-package
 from services.execution import (
@@ -420,4 +420,5 @@ __all__ = [
     # Enums (re-exported from schemas)
     'ExecutionStatus',
     'NodeStatus',
+    'RunMode',
 ]

@@ -171,6 +171,16 @@ export const executionApi = {
       body: JSON.stringify({ enabled }),
     }),
   
+  // Run mode control (slow = one inference at a time, fast = all ready per cycle)
+  getRunMode: (): Promise<{ mode: 'slow' | 'fast' }> =>
+    fetchJson(`${API_BASE}/execution/run-mode`),
+  
+  setRunMode: (mode: 'slow' | 'fast'): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/run-mode`, {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    }),
+  
   getStepProgress: (flowIndex?: string): Promise<StepProgressResponse> =>
     fetchJson(`${API_BASE}/execution/step-progress${flowIndex ? `?flow_index=${encodeURIComponent(flowIndex)}` : ''}`),
   

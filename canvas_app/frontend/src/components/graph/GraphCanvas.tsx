@@ -219,6 +219,32 @@ function GraphCanvasInner() {
           });
           break;
         
+        case 'focus_node':
+          // Focus on a node by its flow_index - center view and select it
+          const focusFlowIndex = command.params.flow_index as string;
+          if (focusFlowIndex) {
+            import('../../stores/graphStore').then(({ useGraphStore }) => {
+              const graphState = useGraphStore.getState();
+              const node = graphState.graphData?.nodes.find(n => n.flow_index === focusFlowIndex);
+              if (node) {
+                // Center view on the node
+                setCenter(node.position.x, node.position.y, { 
+                  zoom: Math.max(getViewport().zoom, 0.8), 
+                  duration: 400 
+                });
+                // Select and highlight the node
+                import('../../stores/selectionStore').then(({ useSelectionStore }) => {
+                  useSelectionStore.getState().setSelectedNode(node.id);
+                  graphState.highlightBranch(node.id);
+                  console.log(`[GraphCanvas] Focused on node with flow_index ${focusFlowIndex}`);
+                });
+              } else {
+                console.warn(`[GraphCanvas] Node with flow_index ${focusFlowIndex} not found`);
+              }
+            });
+          }
+          break;
+        
         default:
           console.log('[GraphCanvas] Unknown command type:', command.type);
       }

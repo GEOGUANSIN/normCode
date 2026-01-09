@@ -155,77 +155,81 @@ Return a JSON object:
 ```json
 {
   "thinking": "Your analysis of the instruction and what's missing",
-  "answers": [
-    {
-      "question_number": 1,
-      "question_short": "Final output?",
-      "question_full": "WHAT is the final output?",
-      "answer": "Your detailed answer describing the output",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 2,
-      "question_short": "Inputs?",
-      "question_full": "WHAT are the inputs?",
-      "answer": "Your detailed answer describing the inputs",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 3,
-      "question_short": "Transformation?",
-      "question_full": "HOW should the main transformation happen?",
-      "answer": "Your detailed answer describing the steps",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 4,
-      "question_short": "Iterations?",
-      "question_full": "Are there ITERATIONS needed?",
-      "answer": "Your detailed answer about loops",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 5,
-      "question_short": "Conditions?",
-      "question_full": "Are there CONDITIONS or branching?",
-      "answer": "Your detailed answer about conditions",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 6,
-      "question_short": "Intermediates?",
-      "question_full": "What INTERMEDIATE results are needed?",
-      "answer": "Your detailed answer about intermediate steps",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    },
-    {
-      "question_number": 7,
-      "question_short": "Error handling?",
-      "question_full": "What could go WRONG and how to handle it?",
-      "answer": "Your detailed answer about error cases",
-      "source": "explicit" | "inferred" | "unknown",
-      "confidence": 0.0-1.0,
-      "evidence": "Quote or reasoning from the instruction"
-    }
-  ],
-  "critical_gaps": [
-    "List of questions that could not be answered even with inference"
-  ],
-  "overall_refinement_needed": true | false
+  "result": {
+    "answers": [
+      {
+        "question_number": 1,
+        "question_short": "Final output?",
+        "question_full": "WHAT is the final output?",
+        "answer": "Your detailed answer describing the output",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 2,
+        "question_short": "Inputs?",
+        "question_full": "WHAT are the inputs?",
+        "answer": "Your detailed answer describing the inputs",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 3,
+        "question_short": "Transformation?",
+        "question_full": "HOW should the main transformation happen?",
+        "answer": "Your detailed answer describing the steps",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 4,
+        "question_short": "Iterations?",
+        "question_full": "Are there ITERATIONS needed?",
+        "answer": "Your detailed answer about loops",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 5,
+        "question_short": "Conditions?",
+        "question_full": "Are there CONDITIONS or branching?",
+        "answer": "Your detailed answer about conditions",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 6,
+        "question_short": "Intermediates?",
+        "question_full": "What INTERMEDIATE results are needed?",
+        "answer": "Your detailed answer about intermediate steps",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      },
+      {
+        "question_number": 7,
+        "question_short": "Error handling?",
+        "question_full": "What could go WRONG and how to handle it?",
+        "answer": "Your detailed answer about error cases",
+        "source": "explicit | inferred | unknown",
+        "confidence": 0.0-1.0,
+        "evidence": "Quote or reasoning from the instruction"
+      }
+    ],
+    "critical_gaps": [
+      "List of questions that could not be answered even with inference"
+    ],
+    "overall_refinement_needed": true | false
+  }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -238,77 +242,79 @@ Return a JSON object:
 ```json
 {
   "thinking": "This instruction is vague. I need to infer most details from the general concept of a chatbot.",
-  "answers": [
-    {
-      "question_number": 1,
-      "question_short": "Final output?",
-      "question_full": "WHAT is the final output?",
-      "answer": "A response message sent to the user in text format",
-      "source": "inferred",
-      "confidence": 0.7,
-      "evidence": "Chatbots typically produce text responses"
-    },
-    {
-      "question_number": 2,
-      "question_short": "Inputs?",
-      "question_full": "WHAT are the inputs?",
-      "answer": "User's message (text) and possibly chat history",
-      "source": "inferred",
-      "confidence": 0.8,
-      "evidence": "'helps users' implies receiving user input"
-    },
-    {
-      "question_number": 3,
-      "question_short": "Transformation?",
-      "question_full": "HOW should the main transformation happen?",
-      "answer": "1. Receive user message, 2. Understand intent, 3. Generate appropriate response, 4. Send response",
-      "source": "inferred",
-      "confidence": 0.6,
-      "evidence": "Standard chatbot flow, but 'helps' is vague - could mean many things"
-    },
-    {
-      "question_number": 4,
-      "question_short": "Iterations?",
-      "question_full": "Are there ITERATIONS needed?",
-      "answer": "Yes - for each user message in the session, process and respond. This is a self-seeding loop.",
-      "source": "inferred",
-      "confidence": 0.9,
-      "evidence": "Chatbots inherently involve multiple message exchanges"
-    },
-    {
-      "question_number": 5,
-      "question_short": "Conditions?",
-      "question_full": "Are there CONDITIONS or branching?",
-      "answer": "Likely: different response types based on intent. Possibly: end session if user says goodbye.",
-      "source": "inferred",
-      "confidence": 0.5,
-      "evidence": "Not specified, but common in chatbots"
-    },
-    {
-      "question_number": 6,
-      "question_short": "Intermediates?",
-      "question_full": "What INTERMEDIATE results are needed?",
-      "answer": "Parsed intent from user message, possibly entity extraction, generated response before sending",
-      "source": "inferred",
-      "confidence": 0.6,
-      "evidence": "Standard NLU pipeline, but not specified"
-    },
-    {
-      "question_number": 7,
-      "question_short": "Error handling?",
-      "question_full": "What could go WRONG and how to handle it?",
-      "answer": "Unknown - no error handling specified. Should probably handle: unintelligible input, empty messages, connection issues.",
-      "source": "unknown",
-      "confidence": 0.3,
-      "evidence": "No mention of error cases"
-    }
-  ],
-  "critical_gaps": [
-    "What specific types of 'help' should the chatbot provide?",
-    "When should the session end?",
-    "Error handling strategy"
-  ],
-  "overall_refinement_needed": true
+  "result": {
+    "answers": [
+      {
+        "question_number": 1,
+        "question_short": "Final output?",
+        "question_full": "WHAT is the final output?",
+        "answer": "A response message sent to the user in text format",
+        "source": "inferred",
+        "confidence": 0.7,
+        "evidence": "Chatbots typically produce text responses"
+      },
+      {
+        "question_number": 2,
+        "question_short": "Inputs?",
+        "question_full": "WHAT are the inputs?",
+        "answer": "User's message (text) and possibly chat history",
+        "source": "inferred",
+        "confidence": 0.8,
+        "evidence": "'helps users' implies receiving user input"
+      },
+      {
+        "question_number": 3,
+        "question_short": "Transformation?",
+        "question_full": "HOW should the main transformation happen?",
+        "answer": "1. Receive user message, 2. Understand intent, 3. Generate appropriate response, 4. Send response",
+        "source": "inferred",
+        "confidence": 0.6,
+        "evidence": "Standard chatbot flow, but 'helps' is vague - could mean many things"
+      },
+      {
+        "question_number": 4,
+        "question_short": "Iterations?",
+        "question_full": "Are there ITERATIONS needed?",
+        "answer": "Yes - for each user message in the session, process and respond. This is a self-seeding loop.",
+        "source": "inferred",
+        "confidence": 0.9,
+        "evidence": "Chatbots inherently involve multiple message exchanges"
+      },
+      {
+        "question_number": 5,
+        "question_short": "Conditions?",
+        "question_full": "Are there CONDITIONS or branching?",
+        "answer": "Likely: different response types based on intent. Possibly: end session if user says goodbye.",
+        "source": "inferred",
+        "confidence": 0.5,
+        "evidence": "Not specified, but common in chatbots"
+      },
+      {
+        "question_number": 6,
+        "question_short": "Intermediates?",
+        "question_full": "What INTERMEDIATE results are needed?",
+        "answer": "Parsed intent from user message, possibly entity extraction, generated response before sending",
+        "source": "inferred",
+        "confidence": 0.6,
+        "evidence": "Standard NLU pipeline, but not specified"
+      },
+      {
+        "question_number": 7,
+        "question_short": "Error handling?",
+        "question_full": "What could go WRONG and how to handle it?",
+        "answer": "Unknown - no error handling specified. Should probably handle: unintelligible input, empty messages, connection issues.",
+        "source": "unknown",
+        "confidence": 0.3,
+        "evidence": "No mention of error cases"
+      }
+    ],
+    "critical_gaps": [
+      "What specific types of 'help' should the chatbot provide?",
+      "When should the session end?",
+      "Error handling strategy"
+    ],
+    "overall_refinement_needed": true
+  }
 }
 ```
 

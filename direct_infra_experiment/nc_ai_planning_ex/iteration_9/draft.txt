@@ -1,0 +1,277 @@
+               1 │ :<:{ncds}
+             1.1 │     <= $. %>({ncds})
+             1.2 │     <- {derivation complete}
+           1.2.1 │         <= ::(write completion status to progress file)
+           1.2.2 │         <- {progress file path}<:{1}>
+           1.2.3 │         <- {ncds output written}<:{2}>
+             1.3 │     <- {ncds output written}
+           1.3.1 │         <= ::(write ncds file to output path)
+         1.3.1.1 │             <= @:!(<phase 5 already complete>)
+         1.3.1.2 │             <* <phase 5 already complete>
+           1.3.2 │         <- {output file path}<:{1}>
+           1.3.3 │         <- {ncds content}<:{2}>
+         1.3.3.1 │             <= ::(serialize dependency tree to ncds text format)
+         1.3.3.2 │             <- {dependency tree}
+           1.3.4 │         <- <phase 5 already complete>
+         1.3.4.1 │             <= ::<{check if phase 5 already complete in progress}><ALL True>
+         1.3.4.2 │             <- {current progress}
+           1.3.5 │         <- {phase 4 complete}
+             1.4 │     <- {phase 4 complete}
+           1.4.1 │         <= ::(write phase 4 status to progress file)
+           1.4.2 │         <- {progress file path}<:{1}>
+           1.4.3 │         <- {tree file written}<:{2}>
+             1.5 │     <- {tree file written}
+           1.5.1 │         <= ::(write dependency tree to checkpoint file)
+         1.5.1.1 │             <= @:!(<phase 4 already complete>)
+         1.5.1.2 │             <* <phase 4 already complete>
+           1.5.2 │         <- {tree file path}<:{1}>
+           1.5.3 │         <- {dependency tree}<:{2}>
+         1.5.3.1 │             <= ::(construct tree from classifications and extractions)
+         1.5.3.2 │             <- {final output concept}<:{1}>
+       1.5.3.2.1 │                 <= ::(identify goal from extraction data)
+       1.5.3.2.2 │                 <- {extraction data}
+         1.5.3.3 │             <- {classified operations}<:{2}>
+       1.5.3.3.1 │                 <= ::(read classifications from checkpoint)
+       1.5.3.3.2 │                 <- {classifications file path}
+         1.5.3.4 │             <- [all dependencies]<:{3}>
+       1.5.3.4.1 │                 <= ::(extract dependencies from extraction data)
+       1.5.3.4.2 │                 <- {extraction data}
+           1.5.4 │         <- <phase 4 already complete>
+         1.5.4.1 │             <= ::<{check if phase 4 already complete in progress}><ALL True>
+         1.5.4.2 │             <- {current progress}
+           1.5.5 │         <- {phase 3 complete}
+             1.6 │     <- {phase 3 complete}
+           1.6.1 │         <= ::(write phase 3 status to progress file)
+           1.6.2 │         <- {progress file path}<:{1}>
+           1.6.3 │         <- {classifications file written}<:{2}>
+             1.7 │     <- {classifications file written}
+           1.7.1 │         <= ::(write classifications to checkpoint file)
+         1.7.1.1 │             <= @:!(<phase 3 already complete>)
+         1.7.1.2 │             <* <phase 3 already complete>
+           1.7.2 │         <- {classifications file path}<:{1}>
+           1.7.3 │         <- [all classifications]<:{2}>
+         1.7.3.1 │             <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)
+       1.7.3.1.1 │                 <= $. %>({classification})
+       1.7.3.1.2 │                 <- {classification}
+     1.7.3.1.2.1 │                     <= ::(determine pattern type for operation)
+     1.7.3.1.2.2 │                     <- {current operation}<:{1}>
+     1.7.3.1.2.3 │                     <- {operation context}<:{2}>
+   1.7.3.1.2.3.1 │                         <= ::(gather context from extraction data)
+   1.7.3.1.2.3.2 │                         <- {current operation}<:{1}>
+   1.7.3.1.2.3.3 │                         <- {extraction data}<:{2}>
+         1.7.3.2 │             <- [extracted operations]
+       1.7.3.2.1 │                 <= ::(get operations from extraction data)
+       1.7.3.2.2 │                 <- {extraction data}
+         1.7.3.3 │             <* {current operation}<$([extracted operations])*>
+           1.7.4 │         <- <phase 3 already complete>
+         1.7.4.1 │             <= ::<{check if phase 3 already complete in progress}><ALL True>
+         1.7.4.2 │             <- {current progress}
+           1.7.5 │         <- {phase 2 complete}
+             1.8 │     <- {phase 2 complete}
+           1.8.1 │         <= ::(write phase 2 status to progress file)
+           1.8.2 │         <- {progress file path}<:{1}>
+           1.8.3 │         <- {extraction file written}<:{2}>
+             1.9 │     <- {extraction file written}
+           1.9.1 │         <= ::(write extraction results to checkpoint file)
+         1.9.1.1 │             <= @:!(<phase 2 already complete>)
+         1.9.1.2 │             <* <phase 2 already complete>
+           1.9.2 │         <- {extraction file path}<:{1}>
+           1.9.3 │         <- {extraction data}<:{2}>
+         1.9.3.1 │             <= &[{}] %>[{extracted concepts}, [extracted operations], [extracted dependencies], [extracted control patterns]] %+(extraction)
+         1.9.3.2 │             <- {extracted concepts}
+       1.9.3.2.1 │                 <= ::(identify all nouns and data entities)
+       1.9.3.2.2 │                 <- {refined instruction content}
+         1.9.3.3 │             <- [extracted operations]
+       1.9.3.3.1 │                 <= ::(identify all verbs and actions)
+       1.9.3.3.2 │                 <- {refined instruction content}
+         1.9.3.4 │             <- [extracted dependencies]
+       1.9.3.4.1 │                 <= ::(identify what needs what)
+       1.9.3.4.2 │                 <- {refined instruction content}<:{1}>
+       1.9.3.4.3 │                 <- {extracted concepts}<:{2}>
+       1.9.3.4.4 │                 <- [extracted operations]<:{3}>
+         1.9.3.5 │             <- [extracted control patterns]
+       1.9.3.5.1 │                 <= ::(identify loops and conditions)
+       1.9.3.5.2 │                 <- {refined instruction content}
+           1.9.4 │         <- <phase 2 already complete>
+         1.9.4.1 │             <= ::<{check if phase 2 already complete in progress}><ALL True>
+         1.9.4.2 │             <- {current progress}
+           1.9.5 │         <- {phase 1 complete}
+            1.10 │     <- {phase 1 complete}
+          1.10.1 │         <= ::(write phase 1 status to progress file)
+          1.10.2 │         <- {progress file path}<:{1}>
+          1.10.3 │         <- {refined instruction file written}<:{2}>
+            1.11 │     <- {refined instruction file written}
+          1.11.1 │         <= ::(write refined instruction to checkpoint file)
+        1.11.1.1 │             <= @:!(<phase 1 already complete>)
+        1.11.1.2 │             <* <phase 1 already complete>
+          1.11.2 │         <- {refined instruction file path}<:{1}>
+          1.11.3 │         <- {refined instruction content}<:{2}>
+        1.11.3.1 │             <= $. %>[{cached refined instruction}, {freshly refined instruction}]
+        1.11.3.2 │             <- {cached refined instruction}
+      1.11.3.2.1 │                 <= ::(read refined instruction from checkpoint)
+    1.11.3.2.1.1 │                     <= @:'(<phase 1 already complete>)
+    1.11.3.2.1.2 │                     <* <phase 1 already complete>
+      1.11.3.2.2 │                 <- {refined instruction file path}
+        1.11.3.3 │             <- {freshly refined instruction}
+      1.11.3.3.1 │                 <= $. %>[{refined version}, {original version}]
+    1.11.3.3.1.1 │                     <= @:!(<phase 1 already complete>)
+    1.11.3.3.1.2 │                     <* <phase 1 already complete>
+      1.11.3.3.2 │                 <- {refined version}
+    1.11.3.3.2.1 │                     <= ::(synthesize from refinement answers)
+    1.11.3.3.2.2 │                     <= @:'(<instruction is vague>)
+    1.11.3.3.2.3 │                     <* <instruction is vague>
+      1.11.3.3.3 │                 <- {refinement answers}
+    1.11.3.3.3.1 │                     <= ::(apply each refinement question)
+    1.11.3.3.3.2 │                     <- {raw instruction content}<:{1}>
+    1.11.3.3.3.3 │                     <- {refinement questions content}<:{2}>
+  1.11.3.3.3.3.1 │                         <= ::(read refinement questions from file)
+  1.11.3.3.3.3.2 │                         <- {refinement questions file path}
+        1.11.3.4 │             <- {original version}
+      1.11.3.4.1 │                 <= ::(pass through raw instruction)
+    1.11.3.4.1.1 │                     <= @:!(<instruction is vague>)
+    1.11.3.4.1.2 │                     <* <instruction is vague>
+    1.11.3.4.2 │                 <- {raw instruction content}
+        1.11.3.5 │             <- <instruction is vague>
+      1.11.3.5.1 │                 <= ::<{judge if instruction lacks concrete details}><ALL True>
+      1.11.3.5.2 │                 <- {raw instruction content}
+          1.11.4 │         <- <phase 1 already complete>
+        1.11.4.1 │             <= ::<{check if phase 1 already complete in progress}><ALL True>
+        1.11.4.2 │             <- {current progress}
+            1.12 │     <- {raw instruction content}
+          1.12.1 │         <= ::(read instruction from input file)
+          1.12.2 │         <- {instruction file path}
+            1.13 │     <- {current progress}
+          1.13.1 │         <= ::(read progress from file if exists)
+          1.13.2 │         <- {progress file path}
+            1.14 │     <- {instruction file path}
+            1.15 │     <- {refinement questions file path}
+            1.16 │     <- {progress file path}
+            1.17 │     <- {refined instruction file path}
+            1.18 │     <- {extraction file path}
+            1.19 │     <- {classifications file path}
+            1.20 │     <- {tree file path}
+            1.21 │     <- {output file path}
+
+
+---------
+
+            1.11 │     <- {refined instruction file written}
+                 │         | %{ref_axes}: [_none_axis]
+                 │         | %{ref_shape}: (1,)
+                 │         | %{ref_element}: str
+          1.11.1 │         <= ::(write refined instruction to checkpoint file)
+                 │             | %{norm_input}: h_FilePath-h_Content-c_WriteFile-o_Literal
+                 │             | %{h_input_norm}: in-memory
+                 │             | %{body_faculty}: file_system
+                 │             | %{o_shape}: str in memory
+        1.11.1.1 │             <= @:!(<phase 1 already complete>)
+        1.11.1.2 │             <* <phase 1 already complete>
+                 │         /: PHASE 1: Refine and save
+          1.11.2 │         <- {refined instruction file path}<:{1}>
+                 │             | %{ref_axes}: [_none_axis]
+                 │             | %{ref_element}: str
+          1.11.3 │         <- {refined instruction content}<:{2}>
+                 │             | %{ref_axes}: [_none_axis]
+                 │             | %{ref_shape}: (1,)
+                 │             | %{ref_element}: str
+        1.11.3.1 │             <= $. %>[{cached refined instruction}, {freshly refined instruction}]
+        1.11.3.2 │             <- {cached refined instruction}
+                 │                 | %{ref_axes}: [_none_axis]
+                 │                 | %{ref_shape}: (1,)
+                 │                 | %{ref_element}: str
+      1.11.3.2.1 │                 <= ::(read refined instruction from checkpoint)
+                 │                     | %{norm_input}: h_FilePath-c_ReadFile-o_Literal
+                 │                     | %{h_input_norm}: in-memory
+                 │                     | %{body_faculty}: file_system
+                 │                     | %{o_shape}: str in memory
+    1.11.3.2.1.1 │                     <= @:'(<phase 1 already complete>)
+    1.11.3.2.1.2 │                     <* <phase 1 already complete>
+      1.11.3.2.2 │                 <- {refined instruction file path}
+                 │                     | %{ref_axes}: [_none_axis]
+                 │                     | %{ref_element}: str
+        1.11.3.3 │             <- {freshly refined instruction}
+                 │                 | %{ref_axes}: [_none_axis]
+                 │                 | %{ref_shape}: (1,)
+                 │                 | %{ref_element}: str
+      1.11.3.3.1 │                 <= $. %>[{refined version}, {original version}]
+    1.11.3.3.1.1 │                     <= @:!(<phase 1 already complete>)
+    1.11.3.3.1.2 │                     <* <phase 1 already complete>
+      1.11.3.3.2 │                 <- {refined version}
+                 │                     | %{ref_axes}: [_none_axis]
+                 │                     | %{ref_shape}: (1,)
+                 │                     | %{ref_element}: str
+    1.11.3.3.2.1 │                     <= ::(synthesize from refinement answers)
+                 │                             | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
+                 │                             | %{v_input_norm}: {prompt_location}
+                 │                             | %{v_input_provision}: provisions/prompts/phase_1/synthesize_refined_instruction.md
+                 │                         | %{h_input_norm}: in-memory
+                 │                         | %{body_faculty}: llm
+                 │                         | %{o_shape}: str in memory
+    1.11.3.3.2.2 │                     <= @:'(<instruction is vague>)
+    1.11.3.3.2.3 │                     <* <instruction is vague>
+      1.11.3.3.3 │                 <- {refinement answers}
+                 │                         | %{ref_axes}: [question]
+                 │                         | %{ref_shape}: (n_question,)
+                 │                         | %{ref_element}: dict(question: str, answer: str)
+    1.11.3.3.3.1 │                     <= ::(apply each refinement question)
+                 │                                 | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Literal
+                 │                                 | %{v_input_norm}: {prompt_location}
+                 │                                 | %{v_input_provision}: provisions/prompts/phase_1/apply_refinement_questions.md
+                 │                             | %{h_input_norm}: in-memory
+                 │                             | %{body_faculty}: llm
+                 │                             | %{o_shape}: list in memory
+    1.11.3.3.3.2 │                     <- {raw instruction content}<:{1}>
+                 │                             | %{ref_axes}: [_none_axis]
+                 │                             | %{ref_element}: str
+    1.11.3.3.3.3 │                     <- {refinement questions content}<:{2}>
+                 │                             | %{ref_axes}: [_none_axis]
+                 │                             | %{ref_shape}: (1,)
+                 │                             | %{ref_element}: str
+  1.11.3.3.3.3.1 │                         <= ::(read refinement questions from file)
+                 │                                 | %{norm_input}: h_FilePath-c_ReadFile-o_Literal
+                 │                                 | %{h_input_norm}: in-memory
+                 │                                 | %{body_faculty}: file_system
+                 │                                 | %{o_shape}: str in memory
+  1.11.3.3.3.3.2 │                         <- {refinement questions file path}
+                 │                                 | %{ref_axes}: [_none_axis]
+                 │                                 | %{ref_element}: perceptual_sign
+      1.11.3.3.4 │                 <- {original version}
+                 │                     | %{ref_axes}: [_none_axis]
+                 │                     | %{ref_shape}: (1,)
+                 │                     | %{ref_element}: str
+    1.11.3.3.4.1 │                     <= ::(pass through raw instruction)
+                 │                         | %{norm_input}: h_Data-c_PassThrough-o_Literal
+                 │                         | %{h_input_norm}: in-memory
+                 │                         | %{body_faculty}: python_interpreter
+                 │                         | %{o_shape}: str in memory
+  1.11.3.3.4.1.1 │                         <= @:!(<instruction is vague>)
+  1.11.3.3.4.1.2 │                         <* <instruction is vague>
+    1.11.3.3.4.2 │                     <- {raw instruction content}
+                 │                         | %{ref_axes}: [_none_axis]
+                 │                         | %{ref_element}: str
+      1.11.3.3.5 │                 <- <instruction is vague>
+                 │                     | %{ref_axes}: [_none_axis]
+                 │                     | %{ref_shape}: (1,)
+                 │                     | %{ref_element}: %{truth_value}
+    1.11.3.3.5.1 │                     <= ::<{judge if instruction lacks concrete details}><ALL True>
+                 │                             | %{norm_input}: h_PromptTemplate-h_Data-c_GenerateThinkJson-o_Boolean
+                 │                             | %{v_input_norm}: {prompt_location}
+                 │                             | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
+                 │                         | %{h_input_norm}: in-memory
+                 │                         | %{body_faculty}: llm
+                 │                         | %{o_shape}: boolean
+    1.11.3.3.5.2 │                     <- {raw instruction content}
+                 │                         | %{ref_axes}: [_none_axis]
+                 │                         | %{ref_element}: str
+          1.11.4 │         <- <phase 1 already complete>
+                 │             | %{ref_axes}: [_none_axis]
+                 │             | %{ref_shape}: (1,)
+                 │             | %{ref_element}: %{truth_value}
+        1.11.4.1 │             <= ::<{check if phase 1 already complete in progress}><ALL True>
+                 │                 | %{norm_input}: h_Data-c_CheckPhaseComplete-o_Boolean
+                 │                 | %{h_input_norm}: in-memory
+                 │                 | %{body_faculty}: python_interpreter
+                 │                 | %{o_shape}: boolean
+        1.11.4.2 │             <- {current progress}
+                 │                 | %{ref_axes}: [_none_axis]
+                 │                 | %{ref_element}: str

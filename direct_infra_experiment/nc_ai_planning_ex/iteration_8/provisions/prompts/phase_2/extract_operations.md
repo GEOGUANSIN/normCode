@@ -32,7 +32,19 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 | **File I/O** | Read file, write to file | Script |
 | **Computation** | Calculate sum, divide | Script |
 | **Iteration** | For each X, process all | Control flow |
+| **Selection** | Select first valid, choose based on type | Control flow |
 | **Aggregation** | Collect, bundle, combine | Control flow |
+| **Return** | Return result for this item (in loops) | Control flow |
+
+### Special Operations
+
+**Loop Return Operations**: Inside a loop, there's always an implicit or explicit "return" operation that specifies what gets collected:
+- "return the processed item" → what gets aggregated
+- Often implied by "for each X, do Y" → Y is returned
+
+**Selection Operations**: When choosing between multiple options:
+- "select first valid option" → the selection operator
+- "apply appropriate formalization" → implies selection based on some criterion
 
 ---
 
@@ -68,25 +80,29 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 ```json
 {
   "thinking": "Your analysis identifying each operation",
-  "operations": [
-    {
-      "name": "operation description",
-      "type": "imperative" | "judgement",
-      "category": "generation" | "analysis" | "extraction" | "evaluation" | "file_io" | "computation" | "iteration" | "aggregation",
-      "execution": "llm" | "script",
-      "source_phrase": "The phrase from the instruction",
-      "inputs_hint": ["likely input concepts"],
-      "output_hint": "likely output concept"
+  "result": {
+    "operations": [
+      {
+        "name": "operation description",
+        "type": "imperative | judgement",
+        "category": "generation | analysis | extraction | evaluation | file_io | computation | iteration | aggregation",
+        "execution": "llm | script",
+        "source_phrase": "The phrase from the instruction",
+        "inputs_hint": ["likely input concepts"],
+        "output_hint": "likely output concept"
+      }
+    ],
+    "summary": {
+      "imperative_count": 0,
+      "judgement_count": 0,
+      "llm_operations": 0,
+      "script_operations": 0
     }
-  ],
-  "summary": {
-    "imperative_count": 0,
-    "judgement_count": 0,
-    "llm_operations": 0,
-    "script_operations": 0
   }
 }
 ```
+
+**Important**: Put all data in the `result` field. The `thinking` field is for your reasoning only.
 
 ---
 
@@ -97,18 +113,20 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 ```json
 {
   "thinking": "'For each' is iteration. 'extract sentiment' is LLM extraction. 'If positive (score > 0.7)' is a comparison judgement. 'add to' is aggregation. 'Generate report' is LLM generation.",
-  "operations": [
-    {"name": "iterate over customer reviews", "type": "imperative", "category": "iteration", "execution": "script", "source_phrase": "For each customer review", "inputs_hint": ["customer reviews"], "output_hint": "customer review"},
-    {"name": "extract sentiment score", "type": "imperative", "category": "extraction", "execution": "llm", "source_phrase": "extract sentiment", "inputs_hint": ["customer review"], "output_hint": "sentiment score"},
-    {"name": "check if score is positive", "type": "judgement", "category": "evaluation", "execution": "script", "source_phrase": "If positive (score > 0.7)", "inputs_hint": ["sentiment score"], "output_hint": "is positive"},
-    {"name": "add review to positive reviews", "type": "imperative", "category": "aggregation", "execution": "script", "source_phrase": "add to positive reviews", "inputs_hint": ["customer review", "is positive"], "output_hint": "positive reviews"},
-    {"name": "generate summary report", "type": "imperative", "category": "generation", "execution": "llm", "source_phrase": "Generate a summary report", "inputs_hint": ["positive reviews"], "output_hint": "summary report"}
-  ],
-  "summary": {
-    "imperative_count": 4,
-    "judgement_count": 1,
-    "llm_operations": 2,
-    "script_operations": 3
+  "result": {
+    "operations": [
+      {"name": "iterate over customer reviews", "type": "imperative", "category": "iteration", "execution": "script", "source_phrase": "For each customer review", "inputs_hint": ["customer reviews"], "output_hint": "customer review"},
+      {"name": "extract sentiment score", "type": "imperative", "category": "extraction", "execution": "llm", "source_phrase": "extract sentiment", "inputs_hint": ["customer review"], "output_hint": "sentiment score"},
+      {"name": "check if score is positive", "type": "judgement", "category": "evaluation", "execution": "script", "source_phrase": "If positive (score > 0.7)", "inputs_hint": ["sentiment score"], "output_hint": "is positive"},
+      {"name": "add review to positive reviews", "type": "imperative", "category": "aggregation", "execution": "script", "source_phrase": "add to positive reviews", "inputs_hint": ["customer review", "is positive"], "output_hint": "positive reviews"},
+      {"name": "generate summary report", "type": "imperative", "category": "generation", "execution": "llm", "source_phrase": "Generate a summary report", "inputs_hint": ["positive reviews"], "output_hint": "summary report"}
+    ],
+    "summary": {
+      "imperative_count": 4,
+      "judgement_count": 1,
+      "llm_operations": 2,
+      "script_operations": 3
+    }
   }
 }
 ```

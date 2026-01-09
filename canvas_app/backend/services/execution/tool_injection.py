@@ -3,9 +3,15 @@ Tool Injection - Wraps Body tools with monitoring proxies.
 
 This module provides functionality to:
 1. Wrap Body tools with MonitoredToolProxy for real-time monitoring
-2. Inject canvas-specific tools (chat, user_input, canvas) into Body
+2. Inject canvas-specific tools (chat, user_input, canvas, parser) into Body
 
 This enables the Agent Panel to show tool calls during execution.
+
+Available injected tools:
+- user_input: Human-in-the-loop input tool
+- chat: Chat/message display tool
+- canvas: Canvas display and query tool
+- parser: NormCode parsing and serialization tool
 """
 
 import logging
@@ -15,6 +21,7 @@ from services.agent_service import MonitoredToolProxy, ToolCallEvent, agent_regi
 from tools.user_input_tool import CanvasUserInputTool
 from tools.chat_tool import CanvasChatTool
 from tools.canvas_tool import CanvasDisplayTool
+from tools.parser_tool import CanvasParserTool
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +90,12 @@ def wrap_body_with_monitoring(
             emit_tool_event, get_flow_index
         )
     
+    if hasattr(body, 'parser') and body.parser is not None:
+        body.parser = MonitoredToolProxy(
+            "default", "parser", body.parser,
+            emit_tool_event, get_flow_index
+        )
+    
     # Note: formatter_tool and composition_tool are internal tools used by paradigm
     # execution. They don't benefit from monitoring as they are low-level utilities.
     
@@ -93,7 +106,8 @@ class CanvasToolSet:
     """
     Container for canvas-specific tools that can be injected into a Body.
     
-    These tools enable human-in-the-loop interactions and canvas operations.
+    These tools enable human-in-the-loop interactions, canvas operations,
+    and NormCode parsing capabilities.
     """
     
     def __init__(
@@ -115,13 +129,15 @@ class CanvasToolSet:
             emit_callback=emit_callback,
             execution_getter=execution_getter
         )
+        self.parser_tool = CanvasParserTool()
     
     def inject_into_body(self, body: Any) -> None:
         """Inject all canvas tools into a Body instance."""
         body.user_input = self.user_input_tool
         body.chat = self.chat_tool
         body.canvas = self.canvas_tool
-        logger.info("Injected canvas tools into body")
+        body.parser = self.parser_tool
+        logger.info("Injected canvas tools into body (including parser)")
     
     def set_execution_getter(self, getter: Callable[[], Any]) -> None:
         """

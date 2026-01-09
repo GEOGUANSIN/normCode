@@ -5,7 +5,7 @@ from typing import Optional, Any, List, Dict
 
 from services.execution_service import (
     execution_controller, execution_controller_registry, get_execution_controller,
-    get_worker_registry, PanelType,
+    get_worker_registry, PanelType, RunMode,
 )
 from services.project_service import project_service
 from schemas.execution_schemas import (
@@ -238,6 +238,20 @@ async def get_all_references():
     return execution_controller.get_all_reference_data()
 
 
+@router.get("/concept-statuses")
+async def get_concept_statuses():
+    """Get concept statuses directly from the blackboard.
+    
+    Returns a dict mapping concept_name -> status ('complete' | 'empty' | etc.)
+    This queries the infra layer directly, making it the source of truth
+    for whether a concept has data.
+    
+    This is useful for the frontend to determine if a concept has data
+    without needing to maintain parallel state in the canvas app.
+    """
+    return execution_controller.get_concept_statuses()
+
+
 @router.get("/reference/{concept_name}/history")
 async def get_reference_history(
     concept_name: str, 
@@ -335,6 +349,41 @@ async def set_verbose_logging(request: VerboseLoggingRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class RunModeRequest(BaseModel):
+    """Request to set the run mode."""
+    mode: str  # "slow" or "fast"
+
+
+@router.post("/run-mode", response_model=CommandResponse)
+async def set_run_mode(request: RunModeRequest):
+    """Set the execution run mode.
+    
+    Run modes:
+    - "slow" (default): Execute one inference at a time. Easier to follow execution flow.
+    - "fast": Execute all ready inferences per cycle. Faster but harder to track.
+    """
+    try:
+        mode = RunMode(request.mode)
+        execution_controller.set_run_mode(mode)
+        return CommandResponse(
+            success=True,
+            message=f"Run mode set to '{mode.value}'"
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid run mode: {request.mode}. Must be 'slow' or 'fast'"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/run-mode")
+async def get_run_mode():
+    """Get the current run mode."""
+    return {"mode": execution_controller.run_mode.value}
 
 
 @router.get("/step-progress")

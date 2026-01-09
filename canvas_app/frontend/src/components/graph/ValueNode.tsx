@@ -67,6 +67,20 @@ export const ValueNode = memo(({ data, id, selected }: NodeProps<ValueNodeData>)
     shallow
   );
   
+  // Check if this concept has data - query blackboard directly (source of truth)
+  // This is cleaner than trying to infer from node statuses, and allows
+  // the infra layer to remain independent of canvas-app state tracking
+  const conceptStatuses = useExecutionStore((s) => s.conceptStatuses);
+  
+  const conceptHasData = useMemo(() => {
+    if (!data.label) return false;
+    // If this node itself is completed, obviously has data
+    if (status === 'completed') return true;
+    // Check blackboard's concept status (source of truth from infra layer)
+    const conceptStatus = conceptStatuses[data.label];
+    return conceptStatus === 'complete';
+  }, [data.label, status, conceptStatuses]);
+  
   // OPTIMIZED: Use custom hook that batches all graph state for this node
   const { 
     isCollapsed, 
@@ -188,6 +202,16 @@ export const ValueNode = memo(({ data, id, selected }: NodeProps<ValueNodeData>)
         `}
         title={status}
       />
+      
+      {/* "Concept has data" indicator - shows when this concept has data from an alias
+          but THIS node's inference hasn't run yet. Helps distinguish "data available" 
+          from "inference not yet executed" */}
+      {conceptHasData && status === 'pending' && (
+        <div
+          className="absolute -top-1 right-2 w-2 h-2 rounded-full bg-green-400 border border-white opacity-70"
+          title="Concept has data (from another inference)"
+        />
+      )}
 
       {/* Breakpoint indicator - position adjusted based on whether node has children (collapse button) */}
       {hasBreakpoint && (

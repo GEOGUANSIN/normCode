@@ -649,6 +649,35 @@
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
 
+            <- [extracted operations]
+                | %{ref_axes}: [operation]
+                | %{ref_shape}: (n_operation,)
+                | %{ref_element}: str
+                <= ::(get operations from extraction data)
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/extract_field.py
+                    | %{v_function_name}: extract_field
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: DATA ACCESS: Get the list of operations to iterate over
+                <- {extraction data}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: dict
+                    <= ::(read extraction file from path)
+                        | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+                        | %{h_input_norm}: LiteralPath
+                        | %{body_faculty}: file_system
+                        | %{parse}: json
+                        /: FILE I/O: Load Phase 2 output
+                    <- {extraction file path}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                <- {field_name: "operations"}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                    | %{literal<$% field_name>}: operations
+
             <- [freshly classified operations]
                 | %{ref_axes}: [operation]
                 | %{ref_shape}: (n_operation,)
@@ -656,13 +685,12 @@
                 <= *. %>([extracted operations]) %<({classification}) %:({operation}) %@(1)
                     /: ITERATION: For each operation, produce a classification
                     /: %<() = output type, %:() = element name, %@() = axis index
-                    <= @:!(<phase 3 already complete>)
-                        /: TIMING GATE: Only execute if phase NOT complete
-                    <* <phase 3 already complete>
-
 
                     <= $. %>({classification})
                         /: LOOP BODY: Return the classification for this operation
+                        <= @:!(<phase 3 already complete>)
+                            /: TIMING GATE: Only execute if phase NOT complete
+                        <* <phase 3 already complete>
 
                     <- {classification}
                         | %{ref_axes}: [_none_axis]
@@ -708,36 +736,7 @@
                             <- {extraction data}<:{2}>
                                 | %{ref_axes}: [_none_axis]
                                 | %{ref_element}: dict
-
                 <- [extracted operations]
-                    | %{ref_axes}: [operation]
-                    | %{ref_shape}: (n_operation,)
-                    | %{ref_element}: str
-                    <= ::(get operations from extraction data)
-                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
-                        | %{v_input_norm}: script_location
-                        | %{v_input_provision}: provisions/scripts/extract_field.py
-                        | %{v_function_name}: extract_field
-                        | %{h_input_norm}: Literal
-                        | %{body_faculty}: python_interpreter
-                        /: DATA ACCESS: Get the list of operations to iterate over
-                    <- {extraction data}<:{1}>
-                        | %{ref_axes}: [_none_axis]
-                        | %{ref_element}: dict
-                        <= ::(read extraction file from path)
-                            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
-                            | %{h_input_norm}: LiteralPath
-                            | %{body_faculty}: file_system
-                            | %{parse}: json
-                            /: FILE I/O: Load Phase 2 output
-                        <- {extraction file path}<:{1}>
-                            | %{ref_axes}: [_none_axis]
-                            | %{ref_element}: str
-                    <- {field_name: "operations"}<:{2}>
-                        | %{ref_axes}: [_none_axis]
-                        | %{ref_element}: str
-                        | %{literal<$% field_name>}: operations
-
                 <* {current operation}<$([extracted operations])*>
                     | %{ref_axes}: [_none_axis]
                     | %{ref_element}: str
