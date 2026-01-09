@@ -32,7 +32,19 @@ Operations are the **verbs** of your plan—they transform data or evaluate cond
 | **File I/O** | Read file, write to file | Script |
 | **Computation** | Calculate sum, divide | Script |
 | **Iteration** | For each X, process all | Control flow |
+| **Selection** | Select first valid, choose based on type | Control flow |
 | **Aggregation** | Collect, bundle, combine | Control flow |
+| **Return** | Return result for this item (in loops) | Control flow |
+
+### Special Operations
+
+**Loop Return Operations**: Inside a loop, there's always an implicit or explicit "return" operation that specifies what gets collected:
+- "return the processed item" → what gets aggregated
+- Often implied by "for each X, do Y" → Y is returned
+
+**Selection Operations**: When choosing between multiple options:
+- "select first valid option" → the selection operator
+- "apply appropriate formalization" → implies selection based on some criterion
 
 ---
 
