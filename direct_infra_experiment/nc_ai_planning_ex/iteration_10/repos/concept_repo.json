@@ -1,0 +1,1589 @@
+[
+  {
+    "id": "c-ncd-file-complete",
+    "concept_name": "{.ncd file complete}",
+    "type": "{}",
+    "flow_indices": [
+      "1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": true,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": ".ncd file complete"
+  },
+  {
+    "id": "fc-return-the-completed-ncd-output",
+    "concept_name": "::(return the completed .ncd output)",
+    "type": "({})",
+    "flow_indices": [
+      "1.1"
+    ],
+    "description": "return the completed .ncd output",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}5f4(provisions/scripts/pass_through.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "return the completed .ncd output"
+  },
+  {
+    "id": "c-final-ncd-file-written",
+    "concept_name": "{final .ncd file written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.2",
+      "1.8"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "final .ncd file written"
+  },
+  {
+    "id": "c-ncds-file",
+    "concept_name": "{.ncds file}",
+    "type": "{}",
+    "flow_indices": [
+      "1.3",
+      "1.5.2"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": ".ncds file"
+  },
+  {
+    "id": "c-ncd-output-path",
+    "concept_name": "{.ncd output path}",
+    "type": "{}",
+    "flow_indices": [
+      "1.4",
+      "1.8.1.2.2",
+      "1.8.1.5.2"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": ".ncd output path"
+  },
+  {
+    "id": "c-ncds-content",
+    "concept_name": "{.ncds content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.5",
+      "1.6.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": ".ncds content"
+  },
+  {
+    "id": "fc-read-ncds-file-content",
+    "concept_name": "::(read .ncds file content)",
+    "type": "({})",
+    "flow_indices": [
+      "1.5.1"
+    ],
+    "description": "read .ncds file content",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read .ncds file content"
+  },
+  {
+    "id": "c-parsed-lines",
+    "concept_name": "[parsed lines]",
+    "type": "[]",
+    "flow_indices": [
+      "1.6",
+      "1.7.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "line"
+    ],
+    "reference_element_type": "dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)",
+    "natural_name": "parsed lines"
+  },
+  {
+    "id": "fc-parse-ncds-file-into-json-list-of-lines",
+    "concept_name": "::(parse .ncds file into JSON list of lines)",
+    "type": "({})",
+    "flow_indices": [
+      "1.6.1"
+    ],
+    "description": "parse .ncds file into JSON list of lines",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}c89(provisions/scripts/ncds_parser.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "parse .ncds file into JSON list of lines"
+  },
+  {
+    "id": "c-concept-lines",
+    "concept_name": "[concept lines]",
+    "type": "[]",
+    "flow_indices": [
+      "1.7",
+      "1.8.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "concept_line"
+    ],
+    "reference_element_type": "dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)",
+    "natural_name": "concept lines"
+  },
+  {
+    "id": "fc-filter-out-comment-lines-from-parsed-lines",
+    "concept_name": "::(filter out comment lines from parsed lines)",
+    "type": "({})",
+    "flow_indices": [
+      "1.7.1"
+    ],
+    "description": "filter out comment lines from parsed lines",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}08f(provisions/scripts/filter_concepts.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "filter out comment lines from parsed lines"
+  },
+  {
+    "id": "fc-concept-lines-ncd-file-written-concept-line-1",
+    "concept_name": "*. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1"
+    ],
+    "description": "<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)"
+  },
+  {
+    "id": "fc-ncd-file-written",
+    "concept_name": "$. %>({.ncd file written})",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.1"
+    ],
+    "description": "<= $. %>({.ncd file written})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({.ncd file written})"
+  },
+  {
+    "id": "c-current-ncd-content",
+    "concept_name": "{current .ncd content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.2",
+      "1.8.1.4.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "current .ncd content"
+  },
+  {
+    "id": "fc-read-current-ncd-file-if-exists",
+    "concept_name": "::(read current .ncd file if exists)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.2.1"
+    ],
+    "description": "read current .ncd file if exists",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "read current .ncd file if exists"
+  },
+  {
+    "id": "c-formalized-line",
+    "concept_name": "{formalized line}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3",
+      "1.8.1.4.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "formalized line"
+  },
+  {
+    "id": "fc-formalized-line",
+    "concept_name": "$. %>({formalized line})",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.1"
+    ],
+    "description": "<= $. %>({formalized line})",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= $. %>({formalized line})"
+  },
+  {
+    "id": "fc-judge-what-type-of-concept-this-line-is",
+    "concept_name": "::(judge what type of concept this line is)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.2.1"
+    ],
+    "description": "judge what type of concept this line is",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}ae1(provisions/prompts/formalization/judge_concept_type.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "judge what type of concept this line is"
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-object",
+    "concept_name": "::(check if concept type equals object)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.3.1"
+    ],
+    "description": "check if concept type equals object",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}9d8(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals object"
+  },
+  {
+    "id": "c-expectedtype-object",
+    "concept_name": "{expected_type: \"object\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "object"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"object\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-relation",
+    "concept_name": "::(check if concept type equals relation)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.4.1"
+    ],
+    "description": "check if concept type equals relation",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}13b(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals relation"
+  },
+  {
+    "id": "c-expectedtype-relation",
+    "concept_name": "{expected_type: \"relation\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.4.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "relation"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"relation\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-proposition",
+    "concept_name": "::(check if concept type equals proposition)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.5.1"
+    ],
+    "description": "check if concept type equals proposition",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}2e0(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals proposition"
+  },
+  {
+    "id": "c-expectedtype-proposition",
+    "concept_name": "{expected_type: \"proposition\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.5.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "proposition"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"proposition\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-imperative",
+    "concept_name": "::(check if concept type equals imperative)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.6.1"
+    ],
+    "description": "check if concept type equals imperative",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}953(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals imperative"
+  },
+  {
+    "id": "c-expectedtype-imperative",
+    "concept_name": "{expected_type: \"imperative\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.6.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "imperative"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"imperative\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-judgement",
+    "concept_name": "::(check if concept type equals judgement)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.7.1"
+    ],
+    "description": "check if concept type equals judgement",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}05c(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals judgement"
+  },
+  {
+    "id": "c-expectedtype-judgement",
+    "concept_name": "{expected_type: \"judgement\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.7.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "judgement"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"judgement\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-assigning",
+    "concept_name": "::(check if concept type equals assigning)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.8.1"
+    ],
+    "description": "check if concept type equals assigning",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}3a7(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals assigning"
+  },
+  {
+    "id": "c-expectedtype-assigning",
+    "concept_name": "{expected_type: \"assigning\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.8.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "assigning"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"assigning\""
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-grouping",
+    "concept_name": "::(check if concept type equals grouping)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.9.1"
+    ],
+    "description": "check if concept type equals grouping",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}104(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals grouping"
+  },
+  {
+    "id": "c-expectedtype-grouping",
+    "concept_name": "{expected_type: \"grouping\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.9.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "grouping"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"grouping\""
+  },
+  {
+    "id": "c-is-timing-type",
+    "concept_name": "<is timing type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.10",
+      "1.8.1.3.19.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is timing type"
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-timing",
+    "concept_name": "::(check if concept type equals timing)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.10.1"
+    ],
+    "description": "check if concept type equals timing",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}31b(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals timing"
+  },
+  {
+    "id": "c-concept-type",
+    "concept_name": "{concept type}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.10.2",
+      "1.8.1.3.11.2",
+      "1.8.1.3.2",
+      "1.8.1.3.3.2",
+      "1.8.1.3.4.2",
+      "1.8.1.3.5.2",
+      "1.8.1.3.6.2",
+      "1.8.1.3.7.2",
+      "1.8.1.3.8.2",
+      "1.8.1.3.9.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "concept type"
+  },
+  {
+    "id": "c-expectedtype-timing",
+    "concept_name": "{expected_type: \"timing\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.10.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "timing"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"timing\""
+  },
+  {
+    "id": "c-is-looping-type",
+    "concept_name": "<is looping type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.11",
+      "1.8.1.3.20.1.2"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is looping type"
+  },
+  {
+    "id": "fc-check-if-concept-type-equals-looping",
+    "concept_name": "::(check if concept type equals looping)<{ALL True}>",
+    "type": "<{}>",
+    "flow_indices": [
+      "1.8.1.3.11.1"
+    ],
+    "description": "check if concept type equals looping",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}2be(provisions/scripts/check_type.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "check if concept type equals looping"
+  },
+  {
+    "id": "c-expectedtype-looping",
+    "concept_name": "{expected_type: \"looping\"}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.11.3"
+    ],
+    "description": null,
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "looping"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "expected_type: \"looping\""
+  },
+  {
+    "id": "c-object-formalized",
+    "concept_name": "{object formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.12"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "object formalized"
+  },
+  {
+    "id": "c-formalize-according-to-object-syntax",
+    "concept_name": "{formalize according to {object} syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.12.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to {object} syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-object-syntax",
+    "concept_name": "::(formalize according to {object} syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.12.1"
+    ],
+    "description": "formalize according to {object} syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}f03(provisions/prompts/formalization/formalize_object.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to {object} syntax"
+  },
+  {
+    "id": "fc-is-object-type",
+    "concept_name": "@:'(<is object type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.12.1.1"
+    ],
+    "description": "<= @:'(<is object type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is object type>)"
+  },
+  {
+    "id": "c-is-object-type",
+    "concept_name": "<is object type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.12.1.2",
+      "1.8.1.3.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is object type"
+  },
+  {
+    "id": "c-concept-line",
+    "concept_name": "{concept line}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.12.2",
+      "1.8.1.3.13.2",
+      "1.8.1.3.14.2",
+      "1.8.1.3.15.2",
+      "1.8.1.3.16.2",
+      "1.8.1.3.17.2",
+      "1.8.1.3.18.2",
+      "1.8.1.3.19.2",
+      "1.8.1.3.2.2",
+      "1.8.1.3.20.2",
+      "1.8.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "dict",
+    "natural_name": "concept line"
+  },
+  {
+    "id": "c-relation-formalized",
+    "concept_name": "{relation formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.13"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "relation formalized"
+  },
+  {
+    "id": "c-formalize-according-to-relation-syntax",
+    "concept_name": "{formalize according to [relation] syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.13.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to [relation] syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-relation-syntax",
+    "concept_name": "::(formalize according to [relation] syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.13.1"
+    ],
+    "description": "formalize according to [relation] syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}06e(provisions/prompts/formalization/formalize_relation.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to [relation] syntax"
+  },
+  {
+    "id": "fc-is-relation-type",
+    "concept_name": "@:'(<is relation type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.13.1.1"
+    ],
+    "description": "<= @:'(<is relation type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is relation type>)"
+  },
+  {
+    "id": "c-is-relation-type",
+    "concept_name": "<is relation type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.13.1.2",
+      "1.8.1.3.4"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is relation type"
+  },
+  {
+    "id": "c-proposition-formalized",
+    "concept_name": "{proposition formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.14"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "proposition formalized"
+  },
+  {
+    "id": "c-formalize-according-to-proposition-syntax",
+    "concept_name": "{formalize according to <proposition> syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.14.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to <proposition> syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-proposition-syntax",
+    "concept_name": "::(formalize according to <proposition> syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.14.1"
+    ],
+    "description": "formalize according to <proposition> syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}73e(provisions/prompts/formalization/formalize_proposition.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to <proposition> syntax"
+  },
+  {
+    "id": "fc-is-proposition-type",
+    "concept_name": "@:'(<is proposition type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.14.1.1"
+    ],
+    "description": "<= @:'(<is proposition type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is proposition type>)"
+  },
+  {
+    "id": "c-is-proposition-type",
+    "concept_name": "<is proposition type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.14.1.2",
+      "1.8.1.3.5"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is proposition type"
+  },
+  {
+    "id": "c-imperative-formalized",
+    "concept_name": "{imperative formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.15"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "imperative formalized"
+  },
+  {
+    "id": "c-formalize-according-to-",
+    "concept_name": "{formalize according to ::(}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.15.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to ::("
+  },
+  {
+    "id": "fc-formalize-according-to",
+    "concept_name": "::(formalize according to ::() imperative syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.15.1"
+    ],
+    "description": "formalize according to ::(",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}8b6(provisions/prompts/formalization/formalize_imperative.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to ::("
+  },
+  {
+    "id": "fc-is-imperative-type",
+    "concept_name": "@:'(<is imperative type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.15.1.1"
+    ],
+    "description": "<= @:'(<is imperative type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is imperative type>)"
+  },
+  {
+    "id": "c-is-imperative-type",
+    "concept_name": "<is imperative type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.15.1.2",
+      "1.8.1.3.6"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is imperative type"
+  },
+  {
+    "id": "c-judgement-formalized",
+    "concept_name": "{judgement formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.16"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "judgement formalized"
+  },
+  {
+    "id": "c-formalize-according-to--judgement-syntax",
+    "concept_name": "{formalize according to ::<> judgement syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.16.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to ::<> judgement syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-judgement-syntax",
+    "concept_name": "::(formalize according to ::<> judgement syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.16.1"
+    ],
+    "description": "formalize according to ::<> judgement syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}703(provisions/prompts/formalization/formalize_judgement.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to ::<> judgement syntax"
+  },
+  {
+    "id": "fc-is-judgement-type",
+    "concept_name": "@:'(<is judgement type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.16.1.1"
+    ],
+    "description": "<= @:'(<is judgement type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is judgement type>)"
+  },
+  {
+    "id": "c-is-judgement-type",
+    "concept_name": "<is judgement type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.16.1.2",
+      "1.8.1.3.7"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is judgement type"
+  },
+  {
+    "id": "c-assigning-formalized",
+    "concept_name": "{assigning formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.17"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "assigning formalized"
+  },
+  {
+    "id": "c-formalize-according-to--assigning-syntax",
+    "concept_name": "{formalize according to $ assigning syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.17.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to $ assigning syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-assigning-syntax",
+    "concept_name": "::(formalize according to $ assigning syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.17.1"
+    ],
+    "description": "formalize according to $ assigning syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}bd1(provisions/prompts/formalization/formalize_assigning.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to $ assigning syntax"
+  },
+  {
+    "id": "fc-is-assigning-type",
+    "concept_name": "@:'(<is assigning type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.17.1.1"
+    ],
+    "description": "<= @:'(<is assigning type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is assigning type>)"
+  },
+  {
+    "id": "c-is-assigning-type",
+    "concept_name": "<is assigning type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.17.1.2",
+      "1.8.1.3.8"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is assigning type"
+  },
+  {
+    "id": "c-grouping-formalized",
+    "concept_name": "{grouping formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.18"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "grouping formalized"
+  },
+  {
+    "id": "c-formalize-according-to--grouping-syntax",
+    "concept_name": "{formalize according to & grouping syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.18.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to & grouping syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-grouping-syntax",
+    "concept_name": "::(formalize according to & grouping syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.18.1"
+    ],
+    "description": "formalize according to & grouping syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}262(provisions/prompts/formalization/formalize_grouping.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to & grouping syntax"
+  },
+  {
+    "id": "fc-is-grouping-type",
+    "concept_name": "@:'(<is grouping type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.18.1.1"
+    ],
+    "description": "<= @:'(<is grouping type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is grouping type>)"
+  },
+  {
+    "id": "c-is-grouping-type",
+    "concept_name": "<is grouping type>",
+    "type": "<>",
+    "flow_indices": [
+      "1.8.1.3.18.1.2",
+      "1.8.1.3.9"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "%{truth_value}",
+    "natural_name": "is grouping type"
+  },
+  {
+    "id": "c-timing-formalized",
+    "concept_name": "{timing formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.19"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "timing formalized"
+  },
+  {
+    "id": "c-formalize-according-to--timing-syntax",
+    "concept_name": "{formalize according to @ timing syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.19.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to @ timing syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-timing-syntax",
+    "concept_name": "::(formalize according to @ timing syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.19.1"
+    ],
+    "description": "formalize according to @ timing syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}66a(provisions/prompts/formalization/formalize_timing.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to @ timing syntax"
+  },
+  {
+    "id": "fc-is-timing-type",
+    "concept_name": "@:'(<is timing type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.19.1.1"
+    ],
+    "description": "<= @:'(<is timing type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is timing type>)"
+  },
+  {
+    "id": "c-looping-formalized",
+    "concept_name": "{looping formalized}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.20"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "looping formalized"
+  },
+  {
+    "id": "c-formalize-according-to--looping-syntax",
+    "concept_name": "{formalize according to * looping syntax}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.3.20.1"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": null,
+    "natural_name": "formalize according to * looping syntax"
+  },
+  {
+    "id": "fc-formalize-according-to-looping-syntax",
+    "concept_name": "::(formalize according to * looping syntax)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.20.1"
+    ],
+    "description": "formalize according to * looping syntax",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{prompt_location}ef0(provisions/prompts/formalization/formalize_looping.md)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "formalize according to * looping syntax"
+  },
+  {
+    "id": "fc-is-looping-type",
+    "concept_name": "@:'(<is looping type>)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.3.20.1.1"
+    ],
+    "description": "<= @:'(<is looping type>)",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "operator",
+    "natural_name": "<= @:'(<is looping type>)"
+  },
+  {
+    "id": "c-updated-ncd-content",
+    "concept_name": "{updated .ncd content}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.4",
+      "1.8.1.5.3"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": "updated .ncd content"
+  },
+  {
+    "id": "fc-append-formalized-line-to-current-content",
+    "concept_name": "::(append formalized line to current content)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.4.1"
+    ],
+    "description": "append formalized line to current content",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{script_location}7e8(provisions/scripts/append_line.py)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "append formalized line to current content"
+  },
+  {
+    "id": "c-ncd-file-written",
+    "concept_name": "{.ncd file written}",
+    "type": "{}",
+    "flow_indices": [
+      "1.8.1.5"
+    ],
+    "description": null,
+    "is_ground_concept": false,
+    "is_final_concept": false,
+    "reference_data": null,
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "str",
+    "natural_name": ".ncd file written"
+  },
+  {
+    "id": "fc-write-updated-ncd-to-output-path",
+    "concept_name": "::(write updated .ncd to output path)",
+    "type": "({})",
+    "flow_indices": [
+      "1.8.1.5.1"
+    ],
+    "description": "write updated .ncd to output path",
+    "is_ground_concept": true,
+    "is_final_concept": false,
+    "reference_data": [
+      "%{dummy}(_)"
+    ],
+    "reference_axis_names": [
+      "_none_axis"
+    ],
+    "reference_element_type": "paradigm",
+    "natural_name": "write updated .ncd to output path"
+  }
+]

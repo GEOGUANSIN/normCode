@@ -1,0 +1,28 @@
+{
+  "_comment": "Input file for the NormCode Formalization Algorithm (Iteration 10)",
+  "_instructions": "This provides the required ground concepts (file paths) for the formalization process",
+  "_note": "All file paths use the perceptual sign format %() for literal values",
+  "_execution_note": "The formalization plan reads .ncds and writes .ncd incrementally line-by-line",
+  
+  "_ground_concepts_overview": {
+    ".ncds file": "Source NCDS plan file to be formalized (input)",
+    ".ncd output path": "Where to write the formalized .ncd file (output)"
+  },
+  
+  "{.ncds file}": {
+    "_description": "Path to the source .ncds file to formalize",
+    "_type": "perceptual_sign (will be perceived by PerceptionRouter to load content)",
+    "_note": "This is the NCDS plan that will be converted to formal NCD",
+    "data": [["%(formalization.ncds)"]],
+    "axes": ["_none_axis"]
+  },
+  
+  "{.ncd output path}": {
+    "_description": "Path where the formalized .ncd file will be written",
+    "_type": "literal<$% file_path> (passed as-is to paradigm for file I/O)",
+    "_note": "The plan writes incrementally, saving after each line for checkpointing",
+    "data": [["%(formalization.output.ncd)"]],
+    "axes": ["_none_axis"]
+  }
+}
+

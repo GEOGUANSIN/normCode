@@ -3,7 +3,7 @@
   "name": "\u9ec4\u91d1\u6295\u8d44\u5efa\u8bae",
   "description": "\u4e2d\u6587\u7248",
   "created_at": "2025-12-21T16:30:00.046487",
-  "updated_at": "2026-01-09T15:27:35.489239",
+  "updated_at": "2026-01-12T14:06:04.008759",
   "repositories": {
     "concepts": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos\\gold_chinese.concept.json",
     "inferences": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos\\gold_chinese.inference.json",
@@ -17,8 +17,6 @@
     "paradigm_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\provision\\paradigm",
     "agent_config": null
   },
-  "breakpoints": [
-    "1.7"
-  ],
+  "breakpoints": [],
   "ui_preferences": {}
 }

@@ -1,0 +1,71 @@
+{
+  "_comment": "Maps inference_repo references to actual file locations",
+  "_base_dir": "provisions",
+  
+  "prompts": {
+    "_derivation": "Derivation Phase Prompts (from iteration_8)",
+    "provisions/prompts/phase_1/judge_instruction_vagueness.md": "prompts/phase_1/judge_instruction_vagueness.md",
+    "provisions/prompts/phase_1/apply_refinement_questions.md": "prompts/phase_1/apply_refinement_questions.md",
+    "provisions/prompts/phase_1/synthesize_refined_instruction.md": "prompts/phase_1/synthesize_refined_instruction.md",
+    
+    "provisions/prompts/phase_2/extract_concepts.md": "prompts/phase_2/extract_concepts.md",
+    "provisions/prompts/phase_2/extract_operations.md": "prompts/phase_2/extract_operations.md",
+    "provisions/prompts/phase_2/extract_dependencies.md": "prompts/phase_2/extract_dependencies.md",
+    "provisions/prompts/phase_2/extract_control_patterns.md": "prompts/phase_2/extract_control_patterns.md",
+    
+    "provisions/prompts/phase_3/gather_operation_context.md": "prompts/phase_3/gather_operation_context.md",
+    "provisions/prompts/phase_3/classify_operation.md": "prompts/phase_3/classify_operation.md",
+    
+    "provisions/prompts/phase_4/identify_goal.md": "prompts/phase_4/identify_goal.md",
+    "provisions/prompts/phase_4/construct_dependency_tree.md": "prompts/phase_4/construct_dependency_tree.md",
+    "provisions/prompts/phase_4/extract_dependencies.md": "prompts/phase_4/extract_dependencies.md",
+    
+    "provisions/prompts/phase_5/serialize_tree_to_ncds.md": "prompts/phase_5/serialize_tree_to_ncds.md",
+    
+    "_formalization": "Formalization Phase Prompts",
+    "provisions/prompts/formalization/judge_concept_type.md": "prompts/formalization/judge_concept_type.md",
+    "provisions/prompts/formalization/formalize_object.md": "prompts/formalization/formalize_object.md",
+    "provisions/prompts/formalization/formalize_relation.md": "prompts/formalization/formalize_relation.md",
+    "provisions/prompts/formalization/formalize_proposition.md": "prompts/formalization/formalize_proposition.md",
+    "provisions/prompts/formalization/formalize_imperative.md": "prompts/formalization/formalize_imperative.md",
+    "provisions/prompts/formalization/formalize_judgement.md": "prompts/formalization/formalize_judgement.md",
+    "provisions/prompts/formalization/formalize_assigning.md": "prompts/formalization/formalize_assigning.md",
+    "provisions/prompts/formalization/formalize_grouping.md": "prompts/formalization/formalize_grouping.md",
+    "provisions/prompts/formalization/formalize_timing.md": "prompts/formalization/formalize_timing.md",
+    "provisions/prompts/formalization/formalize_looping.md": "prompts/formalization/formalize_looping.md"
+  },
+  
+  "data": {
+    "provisions/data/refinement_questions.txt": "data/refinement_questions.txt"
+  },
+  
+  "paradigms": {
+    "_comment": "MINIMAL PARADIGM SET (6 paradigms per new vision)",
+    
+    "_file_system": "File System Paradigms (3)",
+    "h_LiteralPath-c_ReadFile-o_Literal": "paradigms/h_LiteralPath-c_ReadFile-o_Literal.json",
+    "h_LiteralPath-c_ReadFileIfExists-o_Literal": "paradigms/h_LiteralPath-c_ReadFileIfExists-o_Literal.json",
+    "h_LiteralPath-h_Literal-c_WriteFile-o_Literal": "paradigms/h_LiteralPath-h_Literal-c_WriteFile-o_Literal.json",
+    
+    "_llm": "LLM Paradigms (2)",
+    "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal": "paradigms/v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal.json",
+    "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean": "paradigms/v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean.json",
+    
+    "_python": "Python Paradigms (2)",
+    "v_ScriptLocation-h_Literal-c_Execute-o_Literal": "paradigms/v_ScriptLocation-h_Literal-c_Execute-o_Literal.json",
+    "v_ScriptLocation-h_Literal-c_Execute-o_Boolean": "paradigms/v_ScriptLocation-h_Literal-c_Execute-o_Boolean.json"
+  },
+  
+  "scripts": {
+    "_derivation": "Derivation Phase Scripts",
+    "provisions/scripts/check_phase_complete.py": "scripts/check_phase_complete.py",
+    "provisions/scripts/extract_field.py": "scripts/extract_field.py",
+    
+    "_formalization": "Formalization Phase Scripts",
+    "provisions/scripts/pass_through.py": "scripts/pass_through.py",
+    "provisions/scripts/ncds_parser.py": "scripts/ncds_parser.py",
+    "provisions/scripts/filter_concepts.py": "scripts/filter_concepts.py",
+    "provisions/scripts/check_type.py": "scripts/check_type.py",
+    "provisions/scripts/append_line.py": "scripts/append_line.py"
+  }
+}
