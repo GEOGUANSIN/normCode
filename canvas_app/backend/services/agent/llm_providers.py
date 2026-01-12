@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 # Settings location - same directory as the tools
 TOOLS_DIR = Path(__file__).parent.parent.parent / "tools"
 LLM_SETTINGS_FILE = TOOLS_DIR / "llm-settings.json"
+
+# Legacy settings.yaml location (for backward-compatible imports only, NOT for export)
+# This allows importing from existing settings.yaml files if llm-settings.json doesn't exist
 SETTINGS_YAML_FILE = TOOLS_DIR / "settings.yaml"
 
 # Fallback to user config dir
@@ -148,7 +151,7 @@ class LLMSettingsService:
         return imported
     
     def _save_settings(self):
-        """Save settings to file and also export to YAML."""
+        """Save settings to llm-settings.json file."""
         if self._settings is None:
             return
         
@@ -167,61 +170,9 @@ class LLMSettingsService:
             
             logger.info(f"Saved LLM settings to {self._settings_file}")
             
-            # Also export to settings.yaml for compatibility
-            self._export_to_yaml()
-            
         except Exception as e:
             logger.error(f"Failed to save LLM settings: {e}")
             raise
-    
-    def _export_to_yaml(self):
-        """Export providers to settings.yaml for compatibility with legacy code."""
-        if self._settings is None:
-            return
-        
-        try:
-            yaml_data = {}
-            
-            # Add BASE_URL for DashScope providers
-            base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-            yaml_data['BASE_URL'] = base_url
-            
-            # Convert providers to YAML format
-            for provider in self._settings.providers:
-                if provider.id == "demo" or not provider.api_key:
-                    continue
-                
-                # Use model name as key for compatibility
-                key = provider.model if provider.model else provider.name
-                
-                # Determine API key field based on provider type
-                if provider.provider == LLMProvider.DASHSCOPE:
-                    yaml_data[key] = {
-                        'DASHSCOPE_API_KEY': provider.api_key
-                    }
-                elif provider.provider == LLMProvider.OPENAI:
-                    yaml_data[key] = {
-                        'OPENAI_API_KEY': provider.api_key
-                    }
-                elif provider.provider == LLMProvider.ANTHROPIC:
-                    yaml_data[key] = {
-                        'ANTHROPIC_API_KEY': provider.api_key
-                    }
-                else:
-                    # Generic format for other providers
-                    yaml_data[key] = {
-                        'API_KEY': provider.api_key,
-                        'BASE_URL': provider.base_url or ''
-                    }
-            
-            # Write to YAML file
-            with open(SETTINGS_YAML_FILE, 'w', encoding='utf-8') as f:
-                yaml.dump(yaml_data, f, default_flow_style=False, allow_unicode=True)
-            
-            logger.info(f"Exported settings to {SETTINGS_YAML_FILE}")
-            
-        except Exception as e:
-            logger.warning(f"Failed to export to YAML: {e}")
     
     def get_settings(self) -> LLMSettingsConfig:
         """Get the current LLM settings."""

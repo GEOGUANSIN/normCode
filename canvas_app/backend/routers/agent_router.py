@@ -86,7 +86,7 @@ class ToolCallResponse(BaseModel):
 # Agent CRUD Endpoints
 # ============================================================================
 
-@router.get("/", response_model=List[AgentConfigResponse])
+@router.get("", response_model=List[AgentConfigResponse])
 async def list_agents():
     """List all registered agents."""
     agents = agent_registry.list_agents()
@@ -102,7 +102,7 @@ async def get_agent(agent_id: str):
     return AgentConfigResponse(**config.to_dict())
 
 
-@router.post("/", response_model=AgentConfigResponse)
+@router.post("", response_model=AgentConfigResponse)
 async def create_or_update_agent(request: AgentConfigRequest):
     """Create or update an agent configuration."""
     config = AgentConfig(

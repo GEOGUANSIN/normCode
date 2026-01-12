@@ -63,42 +63,10 @@
       "created_at": "2025-12-24T17:04:03.840451",
       "updated_at": "2025-12-25T17:14:41.951212",
       "description": null
-    },
-    {
-      "id": "1fc0254c",
-      "name": "nw",
-      "provider": "openai",
-      "api_key": "sk-1fbd0fcfdaa94ba0972f9d60c1e9c7cb",
-      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "model": "qwen-plus",
-      "temperature": 0.0,
-      "max_tokens": null,
-      "top_p": null,
-      "is_default": false,
-      "is_enabled": true,
-      "created_at": "2025-12-25T17:22:45.621247",
-      "updated_at": "2025-12-25T17:22:45.621247",
-      "description": null
-    },
-    {
-      "id": "164fab5c",
-      "name": "Alibaba qwen-plus",
-      "provider": "dashscope",
-      "api_key": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "model": "qwen-plus",
-      "temperature": 0.0,
-      "max_tokens": null,
-      "top_p": null,
-      "is_default": false,
-      "is_enabled": true,
-      "created_at": "2025-12-25T17:23:04.264464",
-      "updated_at": "2025-12-25T17:23:18.603454",
-      "description": null
     }
   ],
   "default_provider_id": "demo",
   "timeout_seconds": 120,
   "retry_count": 3,
-  "updated_at": "2025-12-25T17:23:18.603454"
+  "updated_at": "2026-01-12T13:50:40.371648"
 }

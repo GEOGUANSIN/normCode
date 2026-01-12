@@ -107,13 +107,21 @@ class AgentRegistry:
             paradigm_tool = self._create_paradigm_tool(config.paradigm_dir, base_dir)
         
         # Create body with LLM model name
-        # Note: The actual LLM configuration (API key, base_url, etc.) is resolved
-        # by the Body class using llm_settings_service
         body = Body(
             llm_name=config.llm_model,
             base_dir=base_dir,
             paradigm_tool=paradigm_tool
         )
+        
+        # Replace body.llm with CanvasLLMTool configured from llm-settings.json
+        # This ensures we use canvas app's LLM configuration, not infra's settings.yaml
+        try:
+            from tools.llm_tool import CanvasLLMTool
+            canvas_llm = CanvasLLMTool(model_name=config.llm_model)
+            body.llm = canvas_llm
+            logger.info(f"Using CanvasLLMTool for agent '{config.id}' with model={config.llm_model}")
+        except Exception as e:
+            logger.warning(f"Failed to create CanvasLLMTool, using default: {e}")
         
         # Wrap tools with monitoring proxies
         def get_flow_index():
