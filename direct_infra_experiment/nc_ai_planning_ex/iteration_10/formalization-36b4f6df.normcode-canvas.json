@@ -1,0 +1,22 @@
+{
+  "id": "08e8c8ee",
+  "name": "Formalization",
+  "description": null,
+  "created_at": "2026-01-12T22:56:44.762878",
+  "updated_at": "2026-01-12T22:57:01.973837",
+  "repositories": {
+    "concepts": "repos\\concept_repo.json",
+    "inferences": "repos\\inference_repo.json",
+    "inputs": "repos\\inputs.json"
+  },
+  "execution": {
+    "llm_model": "qwen-plus",
+    "max_cycles": 50,
+    "db_path": "orchestration.db",
+    "base_dir": null,
+    "paradigm_dir": "provisions\\paradigms",
+    "agent_config": null
+  },
+  "breakpoints": [],
+  "ui_preferences": {}
+}
