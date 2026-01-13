@@ -42,6 +42,9 @@ BUILD_REQUIREMENTS = [
     "pillow",  # For icon conversion if needed
 ]
 
+# Required icon sizes for Windows (all contexts: taskbar, explorer, etc.)
+ICON_SIZES = [16, 24, 32, 48, 64, 128, 256]
+
 
 def print_header(text: str):
     """Print a formatted header."""
@@ -282,6 +285,86 @@ def build_frontend():
     return True
 
 
+def ensure_icon():
+    """Ensure icon.ico exists with all required sizes."""
+    print_step("Checking/Creating application icon...")
+    
+    resources_dir = BUILD_DIR / "resources"
+    icon_path = resources_dir / "icon.ico"
+    png_path = resources_dir / "Psylensai_log_raw.png"
+    
+    # Check if we need to regenerate the icon
+    regenerate = False
+    
+    if not icon_path.exists():
+        print("  icon.ico not found, will create from PNG")
+        regenerate = True
+    else:
+        # Check if icon has all required sizes
+        try:
+            from PIL import Image
+            img = Image.open(icon_path)
+            # ICO files can have multiple sizes, check if we have enough
+            sizes = []
+            try:
+                for i in range(20):  # Check up to 20 frames
+                    img.seek(i)
+                    sizes.append(img.size[0])
+            except EOFError:
+                pass
+            
+            missing = [s for s in ICON_SIZES if s not in sizes]
+            if missing:
+                print(f"  icon.ico missing sizes: {missing}")
+                regenerate = True
+            else:
+                print(f"  [OK] icon.ico has all required sizes: {sorted(set(sizes))}")
+        except Exception as e:
+            print(f"  Could not verify icon: {e}")
+            regenerate = True
+    
+    if regenerate and png_path.exists():
+        print(f"  Creating icon.ico from {png_path.name}...")
+        try:
+            from PIL import Image
+            
+            # Open source PNG
+            source = Image.open(png_path)
+            
+            # Convert to RGBA if needed
+            if source.mode != 'RGBA':
+                source = source.convert('RGBA')
+            
+            # Create icons at all required sizes
+            icons = []
+            for size in ICON_SIZES:
+                resized = source.resize((size, size), Image.Resampling.LANCZOS)
+                icons.append(resized)
+            
+            # Save as ICO with all sizes
+            icons[0].save(
+                icon_path,
+                format='ICO',
+                sizes=[(s, s) for s in ICON_SIZES],
+                append_images=icons[1:]
+            )
+            
+            print(f"  [OK] Created icon.ico with sizes: {ICON_SIZES}")
+            return True
+            
+        except ImportError:
+            print("  [WARN] Pillow not available, cannot create icon")
+            return False
+        except Exception as e:
+            print(f"  [ERROR] Failed to create icon: {e}")
+            return False
+    elif regenerate:
+        print(f"  [WARN] PNG source not found at {png_path}")
+        return False
+    
+    return True
+
+
 def build_exe():
     """Build the executable using PyInstaller."""
     print_step("Building executable with PyInstaller...")
@@ -448,6 +531,9 @@ Examples:
         print_step("Skipping frontend build (--skip-frontend)")
         if not (FRONTEND_DIR / "dist" / "index.html").exists():
             print("  [WARN] Warning: Frontend dist not found. Build may fail.")
+    
+    # Ensure icon exists with all sizes
+    ensure_icon()
     
     # Build executable
     if not build_exe():

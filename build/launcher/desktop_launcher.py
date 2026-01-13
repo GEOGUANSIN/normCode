@@ -42,7 +42,19 @@ import yaml
 if getattr(sys, 'frozen', False):
     # Running as compiled executable
     BUNDLE_DIR = Path(sys._MEIPASS)
-    APP_DIR = Path(sys.executable).parent
+    
+    # Handle macOS .app bundle structure
+    # In a .app bundle: NormCodeCanvas.app/Contents/MacOS/NormCodeCanvas
+    if sys.platform == 'darwin':
+        exe_path = Path(sys.executable)
+        # Go from MacOS/executable to Contents to the .app parent
+        if exe_path.parent.name == 'MacOS':
+            APP_DIR = exe_path.parent.parent.parent  # .app bundle location
+        else:
+            APP_DIR = exe_path.parent
+    else:
+        APP_DIR = Path(sys.executable).parent
+    
     IS_FROZEN = True
 else:
     # Running as script from build/launcher/
@@ -192,9 +204,20 @@ class NormCodeLauncher:
         
         # Try to set icon
         try:
-            icon_path = APP_DIR / "resources" / "icon.ico"
+            if sys.platform == 'darwin':
+                # macOS uses .icns format
+                icon_path = APP_DIR / "resources" / "icon.icns"
+            else:
+                # Windows uses .ico format
+                icon_path = APP_DIR / "resources" / "icon.ico"
+            
             if icon_path.exists():
-                self.root.iconbitmap(str(icon_path))
+                if sys.platform == 'darwin':
+                    # On macOS, the app icon is set in the .app bundle Info.plist
+                    # Tkinter window icon can be set using a PhotoImage
+                    pass
+                else:
+                    self.root.iconbitmap(str(icon_path))
         except Exception:
             pass
         
