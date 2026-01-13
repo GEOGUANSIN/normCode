@@ -93,7 +93,7 @@ npm run build
 ```
 
 ### Icon not showing
-Place `icon.ico` in the `resources/` folder before building.
+Place `icon.ico` in the `build/resources/` folder before building.
 
 ### Large executable size
 The executable includes the full Python runtime. To reduce size:
@@ -103,7 +103,7 @@ The executable includes the full Python runtime. To reduce size:
 ## Customization
 
 ### Application Icon
-1. Create `resources/icon.ico` with multiple sizes (16x16, 32x32, 48x48, 256x256)
+1. Create `build/resources/icon.ico` with multiple sizes (16x16, 32x32, 48x48, 256x256)
 2. Rebuild the application
 
 ### Version Info
@@ -113,7 +113,7 @@ Edit `build/installer.iss`:
 ```
 
 ### Installer Branding
-Place these files in `resources/`:
+Place these files in `build/resources/`:
 - `banner.bmp` (164×314 pixels)
 - `wizard.bmp` (55×58 pixels)
 

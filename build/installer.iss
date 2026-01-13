@@ -40,7 +40,7 @@ SolidCompression=yes
 
 ; UI settings
 WizardStyle=modern
-; SetupIconFile=..\resources\icon.ico  ; Uncomment when icon.ico exists
+SetupIconFile=resources\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 ; Privileges
