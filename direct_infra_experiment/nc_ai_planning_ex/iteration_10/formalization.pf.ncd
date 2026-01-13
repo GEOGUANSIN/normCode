@@ -1,0 +1,613 @@
+/: ========================================
+/: NormCode Formalization Process (v2)
+/: ========================================
+/: Post-Formalized NormCode Plan (.ncd)
+/:
+/: GOAL: Convert .ncds plan text to formal .ncd format
+/:
+/: FORMALIZATION with INCREMENTAL SAVE:
+/:   1. Parse .ncds into structured lines, filter comments
+/:   2. For each concept line:
+/:      - Read current .ncd output file
+/:      - Judge type and formalize the line
+/:      - Append formalized line to content
+/:      - Write updated .ncd file (checkpoint)
+/:   3. Return completed .ncd file
+/:
+/: INPUT:  .ncds file (source plan), .ncd output path
+/: OUTPUT: .ncd file (built line-by-line with checkpoints)
+/:
+/: MINIMAL PARADIGM SET (6 paradigms):
+/:   File System:
+/:     - h_LiteralPath-c_ReadFile-o_Literal
+/:     - h_LiteralPath-c_ReadFileIfExists-o_Literal
+/:     - h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+/:   LLM:
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
+/:   Python:
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal
+/:
+
+:<:{.ncd file complete}
+    | %{ref_axes}: [_none_axis]
+    | %{ref_shape}: (1,)
+    | %{ref_element}: str
+    <= ::(return the completed .ncd output)
+        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+        | %{v_input_norm}: script_location
+        | %{v_input_provision}: provisions/scripts/pass_through.py
+        | %{v_function_name}: pass_through
+        | %{h_input_norm}: Literal
+        | %{body_faculty}: python_interpreter
+    /: ROOT: The final result after all lines processed incrementally
+    /: Each line was saved as a checkpoint during the loop
+    <- {final .ncd file written}<:{1}>
+        | %{ref_axes}: [_none_axis]
+        | %{ref_element}: str
+
+    /: ========================================
+    /: GROUND CONCEPTS (External Inputs)
+    /: ========================================
+
+    <- {.ncds file}
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: source NCDS plan file to be formalized
+
+    <- {.ncd output path}
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: str
+        | %{literal<$% file_path>}: (runtime provided)
+        /: Ground: where to write the formalized .ncd file
+
+    /: ========================================
+    /: PHASE 1: PARSE AND FILTER
+    /: ========================================
+    /: Parse the .ncds file into a JSON list of lines
+    /: Each line has: flow_index, content, depth, inference_marker, concept_type
+    /: Filter out comment lines - only process concept lines
+
+    <- {.ncds content}
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: str
+        <= ::(read .ncds file content)
+            | %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal
+            | %{h_input_norm}: LiteralPath
+            | %{body_faculty}: file_system
+            /: FILE I/O: Load the source .ncds file
+        <- {.ncds file}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+    <- [parsed lines]
+        | %{ref_axes}: [line]
+        | %{ref_shape}: (n_line,)
+        | %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)
+        <= ::(parse .ncds file into JSON list of lines)
+            | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+            | %{v_input_norm}: script_location
+            | %{v_input_provision}: provisions/scripts/ncds_parser.py
+            | %{v_function_name}: parse_ncds
+            | %{h_input_norm}: Literal
+            | %{body_faculty}: python_interpreter
+            /: Uses parser to convert text to structured data
+        <- {.ncds content}<:{1}>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: str
+
+    <- [concept lines]
+        | %{ref_axes}: [concept_line]
+        | %{ref_shape}: (n_concept,)
+        | %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)
+        <= ::(filter out comment lines from parsed lines)
+            | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+            | %{v_input_norm}: script_location
+            | %{v_input_provision}: provisions/scripts/filter_concepts.py
+            | %{v_function_name}: filter_concepts
+            | %{h_input_norm}: Literal
+            | %{body_faculty}: python_interpreter
+            /: Only keep lines that are concepts (not /: comments)
+        <- [parsed lines]<:{1}>
+            | %{ref_axes}: [line]
+            | %{ref_element}: dict
+
+    /: ========================================
+    /: PHASE 2: FOR EACH CONCEPT LINE - FORMALIZE AND SAVE
+    /: ========================================
+    /: For each line that is a concept (not a comment):
+    /:   1. Read current .ncd output file
+    /:   2. Judge type and formalize this line
+    /:   3. Append formalized line to content
+    /:   4. Write updated .ncd file (checkpoint)
+    /:
+    /: This incremental save pattern enables:
+    /:   - Crash recovery (partial output preserved)
+    /:   - Visibility (watch .ncd grow line-by-line)
+    /:   - Resume capability
+
+    <- {final .ncd file written}
+        | %{ref_axes}: [_none_axis]
+        | %{ref_shape}: (1,)
+        | %{ref_element}: str
+        <= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)
+            /: Loop processes lines sequentially, building the .ncd incrementally
+            /: After each line: read current file, append new line, write updated file
+
+            <= $. %>({.ncd file written})
+                /: LOOP RETURN: Each iteration saves progress to file
+                | %{sequence}: looping
+
+            /: ----------------------------------------
+            /: STEP 2a: READ CURRENT .NCD STATE
+            /: ----------------------------------------
+            <- {current .ncd content}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= ::(read current .ncd file if exists)
+                    | %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal
+                    | %{h_input_norm}: LiteralPath
+                    | %{body_faculty}: file_system
+                    /: On first line this is empty, grows with each iteration
+                <- {.ncd output path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            /: ----------------------------------------
+            /: STEP 2b: FORMALIZE THIS LINE
+            /: ----------------------------------------
+            <- {formalized line}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= $. %>({formalized line})
+                    /: CONDITIONAL SELECTION: Based on judged type, apply matching formalization
+                    /: Only one option will produce a result (timing-gated)
+                    | %{sequence}: assigning
+
+                /: STEP 2b-i: JUDGE CONCEPT TYPE (executed first)
+                <- {concept type}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(judge what type of concept this line is)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/judge_concept_type.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Returns one of: {object}, [relation], <proposition>,
+                        /:   ::() imperative, ::<> judgement, $ assigning,
+                        /:   & grouping, @ timing, * looping
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                /: STEP 2b-ii: CHECK TYPE CONDITIONS (executed second)
+                <- <is object type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals object)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "object"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: object
+
+                <- <is relation type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals relation)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "relation"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: relation
+
+                <- <is proposition type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals proposition)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "proposition"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: proposition
+
+                <- <is imperative type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals imperative)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "imperative"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: imperative
+
+                <- <is judgement type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals judgement)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "judgement"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: judgement
+
+                <- <is assigning type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals assigning)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "assigning"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: assigning
+
+                <- <is grouping type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals grouping)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "grouping"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: grouping
+
+                <- <is timing type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals timing)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "timing"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: timing
+
+                <- <is looping type>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: %{truth_value}
+                    <= ::(check if concept type equals looping)<{ALL True}>
+                        | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+                        | %{v_input_norm}: script_location
+                        | %{v_input_provision}: provisions/scripts/check_type.py
+                        | %{v_function_name}: check_type
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: python_interpreter
+                    <- {concept type}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                    <- {expected_type: "looping"}<:{2}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: str
+                        | %{literal<$% expected_type>}: looping
+
+                /: STEP 2b-iii: APPLY FORMALIZATION (executed third, timing-gated)
+                /: Only the matching type's formalization will execute
+
+                <- {object formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to {object} syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_object.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        <= @:'(<is object type>)
+                            /: TIMING GATE: Only execute if type is object
+                        <* <is object type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {relation formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to [relation] syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_relation.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        <= @:'(<is relation type>)
+                            /: TIMING GATE: Only execute if type is relation
+                        <* <is relation type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {proposition formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to <proposition> syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_proposition.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        <= @:'(<is proposition type>)
+                            /: TIMING GATE: Only execute if type is proposition
+                        <* <is proposition type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {imperative formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to ::() imperative syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_imperative.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: imperative
+                        <= @:'(<is imperative type>)
+                            /: TIMING GATE: Only execute if type is imperative
+                        <* <is imperative type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {judgement formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to ::<> judgement syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_judgement.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: judgement
+                        <= @:'(<is judgement type>)
+                            /: TIMING GATE: Only execute if type is judgement
+                        <* <is judgement type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {assigning formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to $ assigning syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_assigning.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: assigning
+                        <= @:'(<is assigning type>)
+                            /: TIMING GATE: Only execute if type is assigning
+                        <* <is assigning type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {grouping formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to & grouping syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_grouping.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: grouping
+                        <= @:'(<is grouping type>)
+                            /: TIMING GATE: Only execute if type is grouping
+                        <* <is grouping type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {timing formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to @ timing syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_timing.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: timing
+                        <= @:'(<is timing type>)
+                            /: TIMING GATE: Only execute if type is timing
+                        <* <is timing type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+                <- {looping formalized}
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_shape}: (1,)
+                    | %{ref_element}: str
+                    <= ::(formalize according to * looping syntax)
+                        | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+                        | %{v_input_norm}: prompt_location
+                        | %{v_input_provision}: provisions/prompts/formalization/formalize_looping.md
+                        | %{h_input_norm}: Literal
+                        | %{body_faculty}: llm
+                        /: Add annotation: | ?{sequence}: looping
+                        <= @:'(<is looping type>)
+                            /: TIMING GATE: Only execute if type is looping
+                        <* <is looping type>
+                    <- {concept line}<:{1}>
+                        | %{ref_axes}: [_none_axis]
+                        | %{ref_element}: dict
+
+            /: ----------------------------------------
+            /: STEP 2c: APPEND TO CURRENT CONTENT
+            /: ----------------------------------------
+            <- {updated .ncd content}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= ::(append formalized line to current content)
+                    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal
+                    | %{v_input_norm}: script_location
+                    | %{v_input_provision}: provisions/scripts/append_line.py
+                    | %{v_function_name}: append_line
+                    | %{h_input_norm}: Literal
+                    | %{body_faculty}: python_interpreter
+                    /: Adds the new line with proper formatting/newline
+                <- {current .ncd content}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                <- {formalized line}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+            /: ----------------------------------------
+            /: STEP 2d: WRITE UPDATED FILE (CHECKPOINT)
+            /: ----------------------------------------
+            <- {.ncd file written}
+                | %{ref_axes}: [_none_axis]
+                | %{ref_shape}: (1,)
+                | %{ref_element}: str
+                <= ::(write updated .ncd to output path)
+                    | %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+                    | %{h_input_norm}: LiteralPath, Literal
+                    | %{body_faculty}: file_system
+                    /: INCREMENTAL SAVE: Progress preserved after each line
+                    /: If execution stops here, we have partial but valid output
+                <- {.ncd output path}<:{1}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+                <- {updated .ncd content}<:{2}>
+                    | %{ref_axes}: [_none_axis]
+                    | %{ref_element}: str
+
+        /: === Loop input and context ===
+        <- [concept lines]
+        <* {concept line}<$([concept lines])*>
+            | %{ref_axes}: [_none_axis]
+            | %{ref_element}: dict
+            /: Loop context: the current concept line being processed
+
+/: ========================================
+/: SUMMARY: Incremental Save Pattern
+/: ========================================
+/:
+/: DATA FLOW PER ITERATION:
+/:   {concept line}
+/:     → judge type → {concept type}
+/:     → check conditions → <is X type>
+/:     → apply matching syntax (timing-gated) → {formalized line}
+/:     → read current file → {current .ncd content}
+/:     → append → {updated .ncd content}
+/:     → write to file → {.ncd file written}
+/:     → next line
+/:
+/: BENEFITS:
+/:   - Crash recovery: partial output preserved
+/:   - Visibility: watch .ncd grow line-by-line in real-time
+/:   - Resume capability: can skip already-processed lines
+/:   - Pattern consistency: matches derivation.pf.ncd checkpoint pattern
+/:
+/: PARADIGM SET USED:
+/:   File System (3):
+/:     - h_LiteralPath-c_ReadFile-o_Literal
+/:     - h_LiteralPath-c_ReadFileIfExists-o_Literal
+/:     - h_LiteralPath-h_Literal-c_WriteFile-o_Literal
+/:   LLM (1):
+/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal
+/:   Python (2):
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal
+/:     - v_ScriptLocation-h_Literal-c_Execute-o_Boolean
+/:
+/: CUE FILES FOR PROMPTS:
+/:   formalization/judge_concept_type.md:
+/:     - documentation/current/2_grammar/semantic_concepts.md
+/:     - documentation/current/2_grammar/sequence_concepts.md
+/:   formalization/formalize_*.md:
+/:     - documentation/current/2_grammar/semantic_concepts.md
+/:     - documentation/current/3_formalization/formalization.md
+/:     - documentation/current/4_compilation/provision_new_vision.md
+

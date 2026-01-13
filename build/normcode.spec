@@ -171,12 +171,20 @@ datas = [
     (str(CANVAS_APP / "settings.yaml.example"), "."),
 ]
 
-# Add icon if exists
+# Add icon if exists - use absolute path for reliability
 icon_path = RESOURCES_DIR / "icon.ico"
-if not icon_path.exists():
-    icon_path = None
-else:
+print(f"Looking for icon at: {icon_path}")
+print(f"Icon exists: {icon_path.exists()}")
+
+if icon_path.exists():
+    # Include resources folder in data files
     datas.append((str(RESOURCES_DIR), "resources"))
+    # Convert to absolute path string for PyInstaller
+    icon_path = str(icon_path.resolve())
+    print(f"Using icon: {icon_path}")
+else:
+    icon_path = None
+    print("WARNING: icon.ico not found, building without icon")
 
 a = Analysis(
     [str(LAUNCHER_DIR / "desktop_launcher.py")],
@@ -232,8 +240,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(icon_path) if icon_path else None,
-    version_file=None,
+    icon=icon_path,  # Already a string or None
+    version_file=str(SPEC_DIR / "version_info.txt") if (SPEC_DIR / "version_info.txt").exists() else None,
 )
 
 coll = COLLECT(

@@ -1,0 +1,57 @@
+Formalize a NormCode Draft Straightforward (.ncds) file into a formal NormCode Draft (.ncd).
+
+INPUTS:
+- .ncds file (source plan to formalize)
+- .ncd output file path (where to write the formalized result)
+
+OUTPUTS:
+- .ncd file with flow indices, semantic types, sequence types, value bindings
+
+STEP 1: PARSE
+Use the parser to convert the .ncds into a JSON list of lines.
+Each line has: flow_index, content, depth, inference_marker, concept_type.
+The parser identifies comments vs concept lines.
+Filter out comment lines - only process concept lines.
+
+STEP 2: FOR EACH CONCEPT LINE (with incremental save)
+For each line that is a concept (not a comment):
+
+  2a. Read the current .ncd output file (empty on first line, growing with each line)
+  
+  2b. Judge what type of concept this line is:
+    - {object} → a thing, entity, data structure
+    - [relation] → a connection, mapping, relationship
+    - <proposition> → a truth value, condition, boolean
+    - ::() imperative → transforms/produces something
+    - ::<> judgement → evaluates/decides something
+    - $ assigning → variable binding operation
+    - & grouping → parallel operations
+    - @ timing → async/wait operations
+    - * looping → iteration operation
+
+  2c. Apply formalization based on type:
+    - If {object}: apply object syntax formatting
+    - If [relation]: apply relation syntax formatting
+    - If <proposition>: apply proposition syntax formatting
+    - If ::() imperative: apply imperative syntax and add | ?{sequence}: imperative
+    - If ::<> judgement: apply judgement syntax and add | ?{sequence}: judgement
+    - If $ assigning: apply assigning syntax and add | ?{sequence}: assigning
+    - If & grouping: apply grouping syntax and add | ?{sequence}: grouping
+    - If @ timing: apply timing syntax and add | ?{sequence}: timing
+    - If * looping: apply looping syntax and add | ?{sequence}: looping
+
+  2d. Append the formalized line to the current .ncd content
+  
+  2e. Write the updated .ncd content to the output file
+      (This saves progress after each line - enables resume and visibility)
+
+STEP 3: RETURN
+The final .ncd file is complete after all lines are processed.
+Each line was saved incrementally, so the file grew line-by-line.
+
+CHECKPOINTING BEHAVIOR:
+- After each concept line is formalized, the .ncd file is updated
+- If execution is interrupted, partial progress is preserved
+- On resume, can potentially skip already-processed lines by comparing line counts
+
+

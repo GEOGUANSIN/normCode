@@ -1,0 +1,5469 @@
+[
+  {
+    "concept_to_infer": {
+      "flow_index": "1",
+      "type": "main",
+      "depth": 0,
+      "nc_main": ":<:{.ncd file complete}",
+      "inference_marker": ":<:",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": ".ncd file complete",
+      "attached_comments": [
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.1",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<= ::(return the completed .ncd output)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "return the completed .ncd output",
+      "attached_comments": [
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/pass_through.py"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{v_function_name}: pass_through"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "/: ROOT: The final result after all lines processed incrementally"
+        },
+        {
+          "flow_index": "1.1",
+          "type": "comment",
+          "depth": 1,
+          "nc_comment": "/: Each line was saved as a checkpoint during the loop"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.2",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {final .ncd file written}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "final .ncd file written",
+        "attached_comments": [
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: GROUND CONCEPTS (External Inputs)"
+          },
+          {
+            "flow_index": "1.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.3",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {.ncds file}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncds file",
+        "attached_comments": [
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{literal<$% file_path>}: (runtime provided)"
+          },
+          {
+            "flow_index": "1.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "/: Ground: source NCDS plan file to be formalized"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.4",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {.ncd output path}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncd output path",
+        "attached_comments": [
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{literal<$% file_path>}: (runtime provided)"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "/: Ground: where to write the formalized .ncd file"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: PHASE 1: PARSE AND FILTER"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: Parse the .ncds file into a JSON list of lines"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: Each line has: flow_index, content, depth, inference_marker, concept_type"
+          },
+          {
+            "flow_index": "1.4",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: Filter out comment lines - only process concept lines"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.5",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {.ncds content}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncds content",
+        "attached_comments": [
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.5",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.6",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [parsed lines]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "parsed lines",
+        "attached_comments": [
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [line]"
+          },
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_line,)"
+          },
+          {
+            "flow_index": "1.6",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.7",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- [concept lines]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "concept lines",
+        "attached_comments": [
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [concept_line]"
+          },
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (n_concept,)"
+          },
+          {
+            "flow_index": "1.7",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8",
+        "type": "main",
+        "depth": 1,
+        "nc_main": "<- {final .ncd file written}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "final .ncd file written",
+        "attached_comments": [
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.5",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {.ncds content}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": ".ncds content",
+      "attached_comments": [
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.5",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.5.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= ::(read .ncds file content)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "read .ncds file content",
+      "attached_comments": [
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{norm_input}: h_LiteralPath-c_ReadFile-o_Literal"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{h_input_norm}: LiteralPath"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.5.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: FILE I/O: Load the source .ncds file"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.5.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {.ncds file}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncds file",
+        "attached_comments": [
+          {
+            "flow_index": "1.5.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.5.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.6",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [parsed lines]",
+      "inference_marker": "<-",
+      "concept_type": "relation",
+      "operator_type": null,
+      "concept_name": "parsed lines",
+      "attached_comments": [
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [line]"
+        },
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_line,)"
+        },
+        {
+          "flow_index": "1.6",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.6.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= ::(parse .ncds file into JSON list of lines)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "parse .ncds file into JSON list of lines",
+      "attached_comments": [
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/ncds_parser.py"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_function_name}: parse_ncds"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        },
+        {
+          "flow_index": "1.6.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Uses parser to convert text to structured data"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.6.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- {.ncds content}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncds content",
+        "attached_comments": [
+          {
+            "flow_index": "1.6.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.6.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.7",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- [concept lines]",
+      "inference_marker": "<-",
+      "concept_type": "relation",
+      "operator_type": null,
+      "concept_name": "concept lines",
+      "attached_comments": [
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [concept_line]"
+        },
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (n_concept,)"
+        },
+        {
+          "flow_index": "1.7",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: dict(flow_index: str, content: str, depth: int, inference_marker: str, concept_type: str)"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.7.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= ::(filter out comment lines from parsed lines)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "filter out comment lines from parsed lines",
+      "attached_comments": [
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/filter_concepts.py"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{v_function_name}: filter_concepts"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        },
+        {
+          "flow_index": "1.7.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Only keep lines that are concepts (not /: comments)"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.7.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- [parsed lines]<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "parsed lines",
+        "attached_comments": [
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [line]"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: dict"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: PHASE 2: FOR EACH CONCEPT LINE - FORMALIZE AND SAVE"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: For each line that is a concept (not a comment):"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   1. Read current .ncd output file"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   2. Judge type and formalize this line"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   3. Append formalized line to content"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   4. Write updated .ncd file (checkpoint)"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/: This incremental save pattern enables:"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   - Crash recovery (partial output preserved)"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   - Visibility (watch .ncd grow line-by-line)"
+          },
+          {
+            "flow_index": "1.7.2",
+            "type": "comment",
+            "depth": 1,
+            "nc_comment": "/:   - Resume capability"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8",
+      "type": "main",
+      "depth": 1,
+      "nc_main": "<- {final .ncd file written}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "final .ncd file written",
+      "attached_comments": [
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8",
+          "type": "comment",
+          "depth": 2,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "looping",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Loop processes lines sequentially, building the .ncd incrementally"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: After each line: read current file, append new line, write updated file"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.2",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<- [concept lines]",
+        "inference_marker": "<-",
+        "concept_type": "relation",
+        "operator_type": null,
+        "concept_name": "concept lines",
+        "attached_comments": []
+      }
+    ],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.3",
+        "type": "main",
+        "depth": 2,
+        "nc_main": "<* {concept line}<$([concept lines])*>",
+        "inference_marker": "<*",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "| %{ref_element}: dict"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: Loop context: the current concept line being processed"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: SUMMARY: Incremental Save Pattern"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: ========================================"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: DATA FLOW PER ITERATION:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   {concept line}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → judge type → {concept type}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → check conditions → <is X type>"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → apply matching syntax (timing-gated) → {formalized line}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → read current file → {current .ncd content}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → append → {updated .ncd content}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → write to file → {.ncd file written}"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     → next line"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: BENEFITS:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   - Crash recovery: partial output preserved"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   - Visibility: watch .ncd grow line-by-line in real-time"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   - Resume capability: can skip already-processed lines"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   - Pattern consistency: matches derivation.pf.ncd checkpoint pattern"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: PARADIGM SET USED:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   File System (3):"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - h_LiteralPath-c_ReadFile-o_Literal"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - h_LiteralPath-c_ReadFileIfExists-o_Literal"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - h_LiteralPath-h_Literal-c_WriteFile-o_Literal"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   LLM (1):"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   Python (2):"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - v_ScriptLocation-h_Literal-c_Execute-o_Literal"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/: CUE FILES FOR PROMPTS:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   formalization/judge_concept_type.md:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - documentation/current/2_grammar/semantic_concepts.md"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - documentation/current/2_grammar/sequence_concepts.md"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:   formalization/formalize_*.md:"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - documentation/current/2_grammar/semantic_concepts.md"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - documentation/current/3_formalization/formalization.md"
+          },
+          {
+            "flow_index": "1.8.3",
+            "type": "comment",
+            "depth": 0,
+            "nc_comment": "/:     - documentation/current/4_compilation/provision_new_vision.md"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1",
+      "type": "main",
+      "depth": 2,
+      "nc_main": "<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "looping",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: Loop processes lines sequentially, building the .ncd incrementally"
+        },
+        {
+          "flow_index": "1.8.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: After each line: read current file, append new line, write updated file"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.1",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<= $. %>({.ncd file written})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "/: LOOP RETURN: Each iteration saves progress to file"
+        },
+        {
+          "flow_index": "1.8.1.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{sequence}: looping"
+        },
+        {
+          "flow_index": "1.8.1.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: ----------------------------------------"
+        },
+        {
+          "flow_index": "1.8.1.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: STEP 2a: READ CURRENT .NCD STATE"
+        },
+        {
+          "flow_index": "1.8.1.1",
+          "type": "comment",
+          "depth": 3,
+          "nc_comment": "/: ----------------------------------------"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.2",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {current .ncd content}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current .ncd content",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {formalized line}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "formalized line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.4",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {updated .ncd content}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "updated .ncd content",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.4",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.5",
+        "type": "main",
+        "depth": 3,
+        "nc_main": "<- {.ncd file written}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncd file written",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.5",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.5",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.5",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.2",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {current .ncd content}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "current .ncd content",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.2",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.2.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= ::(read current .ncd file if exists)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "read current .ncd file if exists",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.2.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{norm_input}: h_LiteralPath-c_ReadFileIfExists-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.2.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{h_input_norm}: LiteralPath"
+        },
+        {
+          "flow_index": "1.8.1.2.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.8.1.2.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: On first line this is empty, grows with each iteration"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.2.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {.ncd output path}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncd output path",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.2.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.2.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.2.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          },
+          {
+            "flow_index": "1.8.1.2.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: STEP 2b: FORMALIZE THIS LINE"
+          },
+          {
+            "flow_index": "1.8.1.2.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {formalized line}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "formalized line",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= $. %>({formalized line})",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "specification",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: CONDITIONAL SELECTION: Based on judged type, apply matching formalization"
+        },
+        {
+          "flow_index": "1.8.1.3.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: Only one option will produce a result (timing-gated)"
+        },
+        {
+          "flow_index": "1.8.1.3.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{sequence}: assigning"
+        },
+        {
+          "flow_index": "1.8.1.3.1",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "/: STEP 2b-i: JUDGE CONCEPT TYPE (executed first)"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {concept type}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is object type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is object type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.4",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is relation type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is relation type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.4",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.5",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is proposition type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is proposition type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.5",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.5",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.5",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.6",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is imperative type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is imperative type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.6",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.6",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.6",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.7",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is judgement type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is judgement type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.7",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.7",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.7",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.8",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is assigning type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is assigning type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.8",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.8",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.8",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.9",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is grouping type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is grouping type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.9",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.9",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.9",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.10",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is timing type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is timing type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.10",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.10",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.10",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.11",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- <is looping type>",
+        "inference_marker": "<-",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is looping type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.11",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.11",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.11",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: %{truth_value}"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.12",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {object formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "object formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.12",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.12",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.12",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.13",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {relation formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "relation formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.13",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.13",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.13",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.14",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {proposition formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "proposition formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.14",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.14",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.14",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.15",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {imperative formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "imperative formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.15",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.15",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.15",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.16",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {judgement formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "judgement formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.16",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.16",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.16",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.17",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {assigning formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "assigning formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.17",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.17",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.17",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.18",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {grouping formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "grouping formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.18",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.18",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.18",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.19",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {timing formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "timing formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.19",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.19",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.19",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.20",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {looping formalized}",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "looping formalized",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.20",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.20",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_shape}: (1,)"
+          },
+          {
+            "flow_index": "1.8.1.3.20",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.2",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {concept type}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "concept type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.2",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.2",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.2",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.2.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(judge what type of concept this line is)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "judge what type of concept this line is",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/judge_concept_type.md"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Returns one of: {object}, [relation], <proposition>,"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/:   ::() imperative, ::<> judgement, $ assigning,"
+        },
+        {
+          "flow_index": "1.8.1.3.2.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/:   & grouping, @ timing, * looping"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.2.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.2.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.2.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          },
+          {
+            "flow_index": "1.8.1.3.2.2",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: STEP 2b-ii: CHECK TYPE CONDITIONS (executed second)"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.3",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is object type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is object type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.3",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.3.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals object)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals object",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.3.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.3.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.3.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.3.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.3.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"object\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"object\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.3.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: object"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.4",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is relation type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is relation type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.4",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.4.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals relation)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals relation",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.4.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.4.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.4.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.4.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.4.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"relation\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"relation\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.4.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.4.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.4.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: relation"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.5",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is proposition type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is proposition type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.5",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.5",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.5",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.5.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals proposition)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals proposition",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.5.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.5.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.5.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.5.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.5.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"proposition\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"proposition\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.5.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.5.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.5.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: proposition"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.6",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is imperative type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is imperative type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.6",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.6",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.6",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.6.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals imperative)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals imperative",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.6.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.6.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.6.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.6.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.6.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"imperative\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"imperative\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.6.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.6.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.6.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: imperative"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.7",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is judgement type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is judgement type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.7",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.7",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.7",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.7.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals judgement)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals judgement",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.7.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.7.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.7.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.7.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.7.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"judgement\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"judgement\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.7.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.7.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.7.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: judgement"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.8",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is assigning type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is assigning type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.8",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.8",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.8",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.8.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals assigning)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals assigning",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.8.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.8.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.8.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.8.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.8.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"assigning\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"assigning\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.8.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.8.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.8.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: assigning"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.9",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is grouping type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is grouping type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.9",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.9",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.9",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.9.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals grouping)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals grouping",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.9.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.9.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.9.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.9.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.9.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"grouping\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"grouping\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.9.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.9.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.9.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: grouping"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.10",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is timing type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is timing type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.10",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.10",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.10",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.10.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals timing)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals timing",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.10.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.10.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.10.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.10.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.10.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"timing\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"timing\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.10.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.10.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.10.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: timing"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.11",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- <is looping type>",
+      "inference_marker": "<-",
+      "concept_type": "proposition",
+      "operator_type": null,
+      "concept_name": "is looping type",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.11",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.11",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.11",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: %{truth_value}"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.11.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(check if concept type equals looping)<{ALL True}>",
+      "inference_marker": "<=",
+      "concept_type": "judgement",
+      "operator_type": null,
+      "concept_name": "check if concept type equals looping",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean"
+        },
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/check_type.py"
+        },
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_function_name}: check_type"
+        },
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.11.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.11.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept type}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept type",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.11.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.11.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.3.11.3",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {expected_type: \"looping\"}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "expected_type: \"looping\"",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.11.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.11.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.3.11.3",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{literal<$% expected_type>}: looping"
+          },
+          {
+            "flow_index": "1.8.1.3.11.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: STEP 2b-iii: APPLY FORMALIZATION (executed third, timing-gated)"
+          },
+          {
+            "flow_index": "1.8.1.3.11.3",
+            "type": "comment",
+            "depth": 4,
+            "nc_comment": "/: Only the matching type's formalization will execute"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.12",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {object formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "object formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.12",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.12",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.12",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.12.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to {object} syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to {object} syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_object.md"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.12.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.12.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.12.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.12.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to {object} syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to {object} syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_object.md"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.12.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.12.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is object type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.12.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is object"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.12.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is object type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is object type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.13",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {relation formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "relation formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.13",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.13",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.13",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.13.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to [relation] syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to [relation] syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_relation.md"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.13.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.13.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.13.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.13.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to [relation] syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to [relation] syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_relation.md"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.13.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.13.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is relation type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.13.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is relation"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.13.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is relation type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is relation type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.14",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {proposition formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "proposition formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.14",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.14",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.14",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.14.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to <proposition> syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to <proposition> syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_proposition.md"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.14.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.14.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.14.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.14.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to <proposition> syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to <proposition> syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_proposition.md"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.14.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.14.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is proposition type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.14.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is proposition"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.14.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is proposition type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is proposition type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.15",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {imperative formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "imperative formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.15",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.15",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.15",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.15.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to ::() imperative syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to ::(",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_imperative.md"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: imperative"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.15.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.15.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.15.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.15.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to ::() imperative syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to ::(",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_imperative.md"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.15.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: imperative"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.15.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is imperative type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.15.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is imperative"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.15.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is imperative type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is imperative type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.16",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {judgement formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "judgement formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.16",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.16",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.16",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.16.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to ::<> judgement syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to ::<> judgement syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_judgement.md"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: judgement"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.16.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.16.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.16.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.16.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to ::<> judgement syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to ::<> judgement syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_judgement.md"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.16.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: judgement"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.16.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is judgement type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.16.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is judgement"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.16.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is judgement type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is judgement type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.17",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {assigning formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "assigning formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.17",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.17",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.17",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.17.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to $ assigning syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to $ assigning syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_assigning.md"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: assigning"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.17.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.17.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.17.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.17.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to $ assigning syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to $ assigning syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_assigning.md"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.17.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: assigning"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.17.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is assigning type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.17.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is assigning"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.17.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is assigning type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is assigning type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.18",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {grouping formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "grouping formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.18",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.18",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.18",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.18.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to & grouping syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to & grouping syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_grouping.md"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: grouping"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.18.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.18.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.18.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.18.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to & grouping syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to & grouping syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_grouping.md"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.18.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: grouping"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.18.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is grouping type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.18.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is grouping"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.18.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is grouping type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is grouping type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.19",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {timing formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "timing formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.19",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.19",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.19",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.19.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to @ timing syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to @ timing syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_timing.md"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: timing"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.19.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.19.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.19.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.19.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to @ timing syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to @ timing syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_timing.md"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.19.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: timing"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.19.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is timing type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.19.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is timing"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.19.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is timing type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is timing type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.20",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<- {looping formalized}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "looping formalized",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.20",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.3.20",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.3.20",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.20.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to * looping syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to * looping syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_looping.md"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: looping"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.3.20.2",
+        "type": "main",
+        "depth": 5,
+        "nc_main": "<- {concept line}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "concept line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.3.20.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.3.20.2",
+            "type": "comment",
+            "depth": 6,
+            "nc_comment": "| %{ref_element}: dict"
+          },
+          {
+            "flow_index": "1.8.1.3.20.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          },
+          {
+            "flow_index": "1.8.1.3.20.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: STEP 2c: APPEND TO CURRENT CONTENT"
+          },
+          {
+            "flow_index": "1.8.1.3.20.2",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.3.20.1",
+      "type": "main",
+      "depth": 5,
+      "nc_main": "<= ::(formalize according to * looping syntax)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "formalize according to * looping syntax",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_norm}: prompt_location"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{v_input_provision}: provisions/prompts/formalization/formalize_looping.md"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "| %{body_faculty}: llm"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "comment",
+          "depth": 6,
+          "nc_comment": "/: Add annotation:"
+        },
+        {
+          "flow_index": "1.8.1.3.20.1",
+          "type": "inline_comment",
+          "depth": 6,
+          "nc_comment": "?{sequence}: looping"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.3.20.1.1",
+      "type": "main",
+      "depth": 6,
+      "nc_main": "<= @:'(<is looping type>)",
+      "inference_marker": "<=",
+      "concept_type": "operator",
+      "operator_type": "timing_conditional",
+      "concept_name": null,
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.3.20.1.1",
+          "type": "comment",
+          "depth": 7,
+          "nc_comment": "/: TIMING GATE: Only execute if type is looping"
+        }
+      ]
+    },
+    "value_concepts": [],
+    "other_concepts": [
+      {
+        "flow_index": "1.8.1.3.20.1.2",
+        "type": "main",
+        "depth": 6,
+        "nc_main": "<* <is looping type>",
+        "inference_marker": "<*",
+        "concept_type": "proposition",
+        "operator_type": null,
+        "concept_name": "is looping type",
+        "attached_comments": []
+      }
+    ]
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.4",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {updated .ncd content}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": "updated .ncd content",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.4",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.4.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= ::(append formalized line to current content)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "append formalized line to current content",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{v_input_norm}: script_location"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{v_input_provision}: provisions/scripts/append_line.py"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{v_function_name}: append_line"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{h_input_norm}: Literal"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{body_faculty}: python_interpreter"
+        },
+        {
+          "flow_index": "1.8.1.4.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: Adds the new line with proper formatting/newline"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.4.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {current .ncd content}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "current .ncd content",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.4.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.4.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.4.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {formalized line}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "formalized line",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.4.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.4.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.4.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          },
+          {
+            "flow_index": "1.8.1.4.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: STEP 2d: WRITE UPDATED FILE (CHECKPOINT)"
+          },
+          {
+            "flow_index": "1.8.1.4.3",
+            "type": "comment",
+            "depth": 3,
+            "nc_comment": "/: ----------------------------------------"
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  },
+  {
+    "concept_to_infer": {
+      "flow_index": "1.8.1.5",
+      "type": "main",
+      "depth": 3,
+      "nc_main": "<- {.ncd file written}",
+      "inference_marker": "<-",
+      "concept_type": "object",
+      "operator_type": null,
+      "concept_name": ".ncd file written",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.5",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_axes}: [_none_axis]"
+        },
+        {
+          "flow_index": "1.8.1.5",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_shape}: (1,)"
+        },
+        {
+          "flow_index": "1.8.1.5",
+          "type": "comment",
+          "depth": 4,
+          "nc_comment": "| %{ref_element}: str"
+        }
+      ]
+    },
+    "function_concept": {
+      "flow_index": "1.8.1.5.1",
+      "type": "main",
+      "depth": 4,
+      "nc_main": "<= ::(write updated .ncd to output path)",
+      "inference_marker": "<=",
+      "concept_type": "imperative",
+      "operator_type": null,
+      "concept_name": "write updated .ncd to output path",
+      "attached_comments": [
+        {
+          "flow_index": "1.8.1.5.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{norm_input}: h_LiteralPath-h_Literal-c_WriteFile-o_Literal"
+        },
+        {
+          "flow_index": "1.8.1.5.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{h_input_norm}: LiteralPath, Literal"
+        },
+        {
+          "flow_index": "1.8.1.5.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "| %{body_faculty}: file_system"
+        },
+        {
+          "flow_index": "1.8.1.5.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: INCREMENTAL SAVE: Progress preserved after each line"
+        },
+        {
+          "flow_index": "1.8.1.5.1",
+          "type": "comment",
+          "depth": 5,
+          "nc_comment": "/: If execution stops here, we have partial but valid output"
+        }
+      ]
+    },
+    "value_concepts": [
+      {
+        "flow_index": "1.8.1.5.2",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {.ncd output path}<:{1}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": ".ncd output path",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.5.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.5.2",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          }
+        ]
+      },
+      {
+        "flow_index": "1.8.1.5.3",
+        "type": "main",
+        "depth": 4,
+        "nc_main": "<- {updated .ncd content}<:{2}>",
+        "inference_marker": "<-",
+        "concept_type": "object",
+        "operator_type": null,
+        "concept_name": "updated .ncd content",
+        "attached_comments": [
+          {
+            "flow_index": "1.8.1.5.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_axes}: [_none_axis]"
+          },
+          {
+            "flow_index": "1.8.1.5.3",
+            "type": "comment",
+            "depth": 5,
+            "nc_comment": "| %{ref_element}: str"
+          },
+          {
+            "flow_index": "1.8.1.5.3",
+            "type": "comment",
+            "depth": 2,
+            "nc_comment": "/: === Loop input and context ==="
+          }
+        ]
+      }
+    ],
+    "other_concepts": []
+  }
+]

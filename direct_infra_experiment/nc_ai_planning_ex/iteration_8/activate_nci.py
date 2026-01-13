@@ -286,11 +286,11 @@ def build_concept_repo(nci_data: list) -> list:
         concept_type = data.get("concept_type", "operator")
         
         # Determine function concept type marker
-        if "<{" in nc_main and "}>" in nc_main:
-            # Judgement
+        if (")<{" in nc_main) or ("<{" in nc_main and "}>" in nc_main):
+            # Judgement: ::(...).<{...}> (new) or ::<{...}><...> (legacy)
             func_type_marker = "<{}>"
             element_type = "paradigm"
-        elif "::" in nc_main:
+        elif "::" in nc_main and ")<{" not in nc_main:
             # Imperative
             func_type_marker = "({})"
             element_type = "paradigm"
@@ -306,7 +306,11 @@ def build_concept_repo(nci_data: list) -> list:
         if name_match:
             natural_name = name_match.group(1)
         else:
-            name_match = re.search(r"::<\{([^}]+)\}>", nc_main)
+            # Try new syntax first: ::(name)<{...}>
+            name_match = re.search(r"::\(([^)]+)\)<\{", nc_main)
+            if not name_match:
+                # Fall back to legacy: ::<{name}><...>
+                name_match = re.search(r"::<\{([^}]+)\}>", nc_main)
             if name_match:
                 natural_name = name_match.group(1)
         
@@ -626,8 +630,10 @@ def build_working_interpretation(inference: dict, sequence_type: str) -> dict:
 
 def infer_sequence_type_from_nc_main(nc_main: str, concept_data: dict) -> str | None:
     """Infer sequence type from nc_main pattern - extracted for reuse"""
-    # Judgement: ::<{...}><...>
-    if "::<{" in nc_main and "}>" in nc_main:
+    # Judgement: ::(...).<{...}> (new syntax) or ::<{...}><...> (legacy)
+    if "::" in nc_main and ")<{" in nc_main:
+        return "judgement"
+    if "::<{" in nc_main and "}>" in nc_main:  # Legacy support
         return "judgement"
     # Grouping: &[{}] or &[#]
     if "&[{}]" in nc_main or "&[#]" in nc_main:
@@ -754,8 +760,10 @@ def build_inference_repo(nci_data: list) -> list:
             # Try to infer from nc_main pattern first (most reliable)
             nc_main = func_concept.get("nc_main", "")
             
-            # Judgement: ::<{...}><...>
-            if "::<{" in nc_main and "}>" in nc_main:
+            # Judgement: ::(...).<{...}> (new syntax) or ::<{...}><...> (legacy)
+            if "::" in nc_main and ")<{" in nc_main:
+                sequence_type = "judgement"
+            elif "::<{" in nc_main and "}>" in nc_main:  # Legacy support
                 sequence_type = "judgement"
             # Grouping: &[{}] or &[#]
             elif "&[{}]" in nc_main or "&[#]" in nc_main:

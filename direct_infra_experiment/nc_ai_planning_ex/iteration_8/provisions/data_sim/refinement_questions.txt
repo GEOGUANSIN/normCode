@@ -1,0 +1,53 @@
+# Refinement Questions for NormCode Derivation
+
+Use these questions to refine vague or underspecified instructions into concrete, executable plans.
+
+## The 7 Refinement Questions
+
+### 1. WHAT is the final output?
+- What exactly should be produced at the end?
+- What format should it be in (text, JSON, file, etc.)?
+- What fields/properties must it contain?
+
+### 2. WHAT are the inputs?
+- What data/files/information are given at the start?
+- What format are they in?
+- Are there any constraints on input size/structure?
+
+### 3. HOW should the main transformation happen?
+- What is the core logic or algorithm?
+- Are there specific steps that must occur in order?
+- What tools/capabilities are needed (LLM, file I/O, computation)?
+
+### 4. Are there ITERATIONS needed?
+- Does anything need to happen "for each" item in a collection?
+- What is the collection being iterated over?
+- What should be produced per iteration?
+
+### 5. Are there CONDITIONS or branching?
+- Are there "if/then" decisions to make?
+- What conditions trigger different paths?
+- What happens in each branch?
+
+### 6. What INTERMEDIATE results are needed?
+- What must be computed before the final output?
+- Are there dependencies between intermediate steps?
+- What should each intermediate step produce?
+
+### 7. What could go WRONG and how to handle it?
+- What errors or edge cases might occur?
+- Should there be validation steps?
+- Are there fallbacks or retries needed?
+
+---
+
+## How to Apply
+
+For each question:
+1. Read the original instruction
+2. Determine if the instruction already answers this question clearly
+3. If not, infer a reasonable answer from context
+4. Document your answer explicitly
+
+The goal is to transform vague intent into concrete, unambiguous steps.
+

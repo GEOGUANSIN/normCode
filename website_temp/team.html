@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Meet the Psylens.AI Team - Building auditable AI workflows with NormCode.">
+    <link rel="icon" type="image/png" href="Psylensai_log_raw.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>Team - NormCode 规范码</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --accent: #4DA3FF;
+            --accent-hover: #3B8FE8;
+            --text-primary: #111827;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --bg-page: #fafafa;
+            --bg-white: #ffffff;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 0.75rem 2rem;
+        }
+
+        nav .nav-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        nav .logo-small {
+            height: 28px;
+        }
+
+        nav .company-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        nav .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .menu-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.925rem;
+            transition: color 0.15s ease;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--accent);
+        }
+
+        /* Docs dropdown */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.925rem;
+            transition: color 0.15s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+        }
+
+        .nav-dropdown-trigger:hover,
+        .nav-dropdown-trigger.active {
+            color: var(--accent);
+        }
+
+        .nav-dropdown-trigger svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-trigger svg {
+            transform: rotate(180deg);
+        }
+
+        .nav-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-dropdown:hover .nav-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-dropdown-menu a {
+            display: block;
+            padding: 0.6rem 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            transition: all 0.1s ease;
+        }
+
+        .nav-dropdown-menu a:hover {
+            background: rgba(77, 163, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0.25rem;
+            margin-left: 1.5rem;
+        }
+
+        .lang-btn {
+            padding: 0.35rem 0.7rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-secondary);
+        }
+
+        .lang-btn.active {
+            background: var(--text-primary);
+            color: white;
+            border-color: var(--text-primary);
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-top: 56px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Info Card */
+        .info-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .info-card p {
+            margin-bottom: 0;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .contact-section h2 {
+            margin-bottom: 0.75rem;
+        }
+
+        .contact-section p {
+            margin-bottom: 0;
+        }
+
+        .contact-section a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .contact-section a:hover {
+            color: var(--accent-hover);
+        }
+
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.925rem;
+            margin-top: 2rem;
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: var(--accent-hover);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text-primary);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        footer strong {
+            color: white;
+        }
+
+        footer a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: opacity 0.15s ease;
+        }
+
+        footer a:hover {
+            opacity: 0.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 0.75rem 1rem;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            nav .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                max-width: 280px;
+                height: 100vh;
+                background: var(--bg-white);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 1.5rem;
+                padding: 2rem;
+                transition: right 0.2s ease;
+                border-left: 1px solid var(--border);
+            }
+
+            nav .nav-links.active {
+                right: 0;
+            }
+
+            .nav-dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin-top: 0.5rem;
+                background: transparent;
+            }
+
+            .nav-dropdown-menu a {
+                padding: 0.4rem 0.6rem;
+            }
+
+            .lang-switcher {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+
+            .page-header {
+                padding: 2rem 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            main {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">
+                <img src="Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
+                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
+            </a>
+            <button class="menu-toggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="index.html" data-i18n="nav.home">Home</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
+                <a href="team.html" class="active" data-i18n="nav.team">Team</a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <h1 data-i18n="page.title">Our Team</h1>
+        <p data-i18n="page.subtitle">Building auditable AI for the future.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <section>
+            <div class="info-card">
+                <h3 data-i18n="team.credentialsTitle">Background</h3>
+                <p data-i18n="team.credentials">
+                    Talent from Oxford, UCL, CMU, the Chinese Academy of Sciences, and Shenzhen University. 100% holding master's degrees or higher.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3 data-i18n="team.visionTitle">Our Vision</h3>
+                <p data-i18n="team.vision">
+                    We're building auditable AI so people can invest their values, own their contributions, and turn them into tangible benefits.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h3 data-i18n="team.companyTitle">Company</h3>
+                <p data-i18n="team.company">
+                    广州心镜智科技工作室 (Guangzhou Psylens Technology Studio)
+                </p>
+            </div>
+        </section>
+
+        <section class="contact-section">
+            <h2 data-i18n="contact.title">Get in Touch</h2>
+            <p>
+                <a href="mailto:xin.guan@psylensai.com">xin.guan@psylensai.com</a>
+            </p>
+        </section>
+
+        <a href="index.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span data-i18n="nav.backHome">Back to Home</span>
+        </a>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
+    </footer>
+
+    <script>
+        const translations = {
+            en: {
+                nav: {
+                    companyName: 'Psylens.AI',
+                    home: 'Home',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
+                    team: 'Team',
+                    backHome: 'Back to Home'
+                },
+                page: {
+                    title: 'Our Team',
+                    subtitle: 'Building auditable AI for the future.'
+                },
+                team: {
+                    credentialsTitle: 'Background',
+                    credentials: 'Talent from Oxford, UCL, CMU, the Chinese Academy of Sciences, and Shenzhen University. 100% holding master\'s degrees or higher.',
+                    visionTitle: 'Our Vision',
+                    vision: 'We\'re building auditable AI so people can invest their values, own their contributions, and turn them into tangible benefits.',
+                    companyTitle: 'Company',
+                    company: 'Guangzhou Psylens Technology Studio (广州心镜智科技工作室)'
+                },
+                contact: {
+                    title: 'Get in Touch'
+                },
+                footer: {
+                    paper: 'Paper'
+                }
+            },
+            zh: {
+                nav: {
+                    companyName: '心镜智',
+                    home: '首页',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
+                    team: '团队',
+                    backHome: '返回首页'
+                },
+                page: {
+                    title: '我们的团队',
+                    subtitle: '构建面向未来的可审计AI。'
+                },
+                team: {
+                    credentialsTitle: '背景',
+                    credentials: '汇集了来自牛津大学、伦敦大学学院、卡内基梅隆大学、中国科学院和深圳大学的人才。100%拥有硕士及以上学历。',
+                    visionTitle: '我们的愿景',
+                    vision: '我们正在构建可审计的AI，让人们可以投入自己的价值观，拥有自己的贡献，并将其转化为切实的收益。',
+                    companyTitle: '公司',
+                    company: '广州心镜智科技工作室'
+                },
+                contact: {
+                    title: '联系我们'
+                },
+                footer: {
+                    paper: '论文'
+                }
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.textContent = value;
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        setLanguage(currentLang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.getAttribute('data-lang'));
+            });
+        });
+
+        // Mobile menu
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        const menuOverlay = document.querySelector('.menu-overlay');
+
+        function toggleMenu(open) {
+            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
+            menuToggle.classList.toggle('active', isOpen);
+            navLinks.classList.toggle('active', isOpen);
+            menuOverlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', () => toggleMenu());
+        menuOverlay.addEventListener('click', () => toggleMenu(false));
+    </script>
+</body>
+</html>
+

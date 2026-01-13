@@ -170,7 +170,7 @@
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: %{truth_value}
-                <= ::<{check if phase 1 already complete in progress}><ALL True>
+                <= ::(check if phase 1 already complete in progress)<{ALL True}>
                     | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
                     | %{v_input_norm}: script_location
                     | %{v_input_provision}: provisions/scripts/check_phase_complete.py
@@ -227,7 +227,7 @@
                     | %{ref_axes}: [_none_axis]
                     | %{ref_shape}: (1,)
                     | %{ref_element}: %{truth_value}
-                    <= ::<{judge if instruction lacks concrete details}><ALL True>
+                    <= ::(judge if instruction lacks concrete details)<{ALL True}>
                         | %{norm_input}: v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean
                         | %{v_input_norm}: prompt_location
                         | %{v_input_provision}: provisions/prompts/phase_1/judge_instruction_vagueness.md
@@ -381,7 +381,7 @@
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: %{truth_value}
-                <= ::<{check if phase 2 already complete in progress}><ALL True>
+                <= ::(check if phase 2 already complete in progress)<{ALL True}>
                     | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
                     | %{v_input_norm}: script_location
                     | %{v_input_provision}: provisions/scripts/check_phase_complete.py
@@ -608,7 +608,7 @@
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: %{truth_value}
-                <= ::<{check if phase 3 already complete in progress}><ALL True>
+                <= ::(check if phase 3 already complete in progress)<{ALL True}>
                     | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
                     | %{v_input_norm}: script_location
                     | %{v_input_provision}: provisions/scripts/check_phase_complete.py
@@ -796,7 +796,7 @@
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: %{truth_value}
-                <= ::<{check if phase 4 already complete in progress}><ALL True>
+                <= ::(check if phase 4 already complete in progress)<{ALL True}>
                     | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
                     | %{v_input_norm}: script_location
                     | %{v_input_provision}: provisions/scripts/check_phase_complete.py
@@ -1010,7 +1010,7 @@
                 | %{ref_axes}: [_none_axis]
                 | %{ref_shape}: (1,)
                 | %{ref_element}: %{truth_value}
-                <= ::<{check if phase 5 already complete in progress}><ALL True>
+                <= ::(check if phase 5 already complete in progress)<{ALL True}>
                     | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
                     | %{v_input_norm}: script_location
                     | %{v_input_provision}: provisions/scripts/check_phase_complete.py

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NormCode Syntax Reference - Learn the complete syntax for writing structured AI plans.">
+    <link rel="icon" type="image/png" href="../Psylensai_log_raw.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Syntax Reference - NormCode 规范码</title>
+</head>
+<body>
+    <div class="menu-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="nav-brand">
+                <img src="../Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
+                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
+            </a>
+            <button class="menu-toggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" data-i18n="nav.home">Home</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger active" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="syntax.html" class="active" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
+                <a href="../team.html" data-i18n="nav.team">Team</a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <h1 data-i18n="page.title">Syntax Reference</h1>
+        <p data-i18n="page.subtitle">The complete guide to NormCode's plan syntax.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="breadcrumb">
+            <a href="../how-it-works.html" data-i18n="nav.docs">Documentation</a>
+            <span>›</span>
+            <span data-i18n="page.title">Syntax Reference</span>
+        </div>
+
+        <!-- Core Syntax -->
+        <section>
+            <h2 data-i18n="section.coreMarkers">Core Markers</h2>
+            <p data-i18n="section.coreMarkersDesc">NormCode uses just two primary symbols. Everything else is natural language.</p>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.symbol">Symbol</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.meaning">Meaning</th>
+                            <th data-i18n="table.example">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">&lt;-</code></td>
+                            <td data-i18n="markers.value">Value Concept</td>
+                            <td data-i18n="markers.valueDesc">"This is data" (nouns)</td>
+                            <td><code class="inline-code">&lt;- document summary</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">&lt;=</code></td>
+                            <td data-i18n="markers.function">Functional Concept</td>
+                            <td data-i18n="markers.functionDesc">"This is an action" (verbs)</td>
+                            <td><code class="inline-code">&lt;= summarize this text</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">&lt;*</code></td>
+                            <td data-i18n="markers.context">Context Concept</td>
+                            <td data-i18n="markers.contextDesc">Loop/timing state</td>
+                            <td><code class="inline-code">&lt;* current item</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Basic Structure -->
+        <section>
+            <h2 data-i18n="section.structure">Basic Structure</h2>
+            <p data-i18n="section.structureDesc">Plans execute <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
+            
+            <div class="code-example">
+                <code>
+<span class="comment">/: Final output (produced last)</span><br>
+&lt;- document summary<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Action to produce the output</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Input for the action (produced first)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document
+                </code>
+            </div>
+
+            <div class="info-box">
+                <p data-i18n="section.goldenRule"><strong>The Golden Rule:</strong> Each inference has exactly ONE action (<code class="inline-code">&lt;=</code>). If you need multiple steps, nest them.</p>
+            </div>
+        </section>
+
+        <!-- Concept Types -->
+        <section>
+            <h2 data-i18n="section.conceptTypes">Concept Types</h2>
+            <p data-i18n="section.conceptTypesDesc">In formal <code class="inline-code">.ncd</code> syntax, concepts have explicit type markers:</p>
+            
+            <h3 data-i18n="section.valueTypes">Value Types (Non-Functional)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.symbol">Symbol</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.description">Description</th>
+                            <th data-i18n="table.example">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">{}</code></td>
+                            <td data-i18n="types.object">Object</td>
+                            <td data-i18n="types.objectDesc">Generic entity/data</td>
+                            <td><code class="inline-code">{document}</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">&lt;&gt;</code></td>
+                            <td data-i18n="types.proposition">Proposition</td>
+                            <td data-i18n="types.propositionDesc">State/condition (boolean)</td>
+                            <td><code class="inline-code">&lt;validation passed&gt;</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">[]</code></td>
+                            <td data-i18n="types.relation">Relation</td>
+                            <td data-i18n="types.relationDesc">Collection (list/dict)</td>
+                            <td><code class="inline-code">[documents]</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 data-i18n="section.actionTypes">Action Types (Functional)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.symbol">Symbol</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.description">Description</th>
+                            <th data-i18n="table.example">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">::()</code></td>
+                            <td data-i18n="types.imperative">Imperative</td>
+                            <td data-i18n="types.imperativeDesc">Command/action</td>
+                            <td><code class="inline-code">::(calculate sum)</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">::()&lt;&gt;</code></td>
+                            <td data-i18n="types.judgement">Judgement</td>
+                            <td data-i18n="types.judgementDesc">Evaluation (true/false)</td>
+                            <td><code class="inline-code">::(is valid)&lt;ALL True&gt;</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Operators -->
+        <section>
+            <h2 data-i18n="section.operators">Syntactic Operators</h2>
+            <p data-i18n="section.operatorsDesc">These operators are free (no LLM call), instant, and deterministic.</p>
+            
+            <h3 data-i18n="section.assigning">Assigning Operators ($)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.operator">Operator</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">$.</code></td>
+                            <td data-i18n="ops.specification">Specification</td>
+                            <td data-i18n="ops.specificationDesc">Select first valid value from candidates</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">$+</code></td>
+                            <td data-i18n="ops.continuation">Continuation</td>
+                            <td data-i18n="ops.continuationDesc">Append along an axis (accumulation)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">$-</code></td>
+                            <td data-i18n="ops.selection">Selection</td>
+                            <td data-i18n="ops.selectionDesc">Extract specific elements</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">$=</code></td>
+                            <td data-i18n="ops.identity">Identity</td>
+                            <td data-i18n="ops.identityDesc">Merge concepts (alias)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 data-i18n="section.grouping">Grouping Operators (&amp;)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.operator">Operator</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">&amp;[{}]</code></td>
+                            <td data-i18n="ops.groupIn">Group In</td>
+                            <td data-i18n="ops.groupInDesc">Collect items with labels (dictionary)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">&amp;[#]</code></td>
+                            <td data-i18n="ops.groupAcross">Group Across</td>
+                            <td data-i18n="ops.groupAcrossDesc">Flatten items to list</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 data-i18n="section.timing">Timing Operators (@)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.operator">Operator</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">@:'</code></td>
+                            <td data-i18n="ops.conditional">Conditional</td>
+                            <td data-i18n="ops.conditionalDesc">Execute if condition is true</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">@:!</code></td>
+                            <td data-i18n="ops.negated">Negated</td>
+                            <td data-i18n="ops.negatedDesc">Execute if condition is false</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">@.</code></td>
+                            <td data-i18n="ops.completion">Completion</td>
+                            <td data-i18n="ops.completionDesc">Wait for dependency to complete</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 data-i18n="section.looping">Looping Operator (*)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.operator">Operator</th>
+                            <th data-i18n="table.name">Name</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">*.</code></td>
+                            <td data-i18n="ops.iterate">Iterate</td>
+                            <td data-i18n="ops.iterateDesc">For each item in collection</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Multi-Input -->
+        <section>
+            <h2 data-i18n="section.multiInput">Multi-Input Operations</h2>
+            <p data-i18n="section.multiInputDesc">Actions can have multiple inputs. They see all listed inputs—but nothing else.</p>
+            
+            <div class="code-example">
+                <code>
+&lt;- user sentiment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine if the user is satisfied<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- support ticket<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- conversation history
+                </code>
+            </div>
+            
+            <p data-i18n="section.multiInputNote">The action sees both <code class="inline-code">support ticket</code> AND <code class="inline-code">conversation history</code>—but nothing else from the workflow.</p>
+        </section>
+
+        <!-- Iteration -->
+        <section>
+            <h2 data-i18n="section.iteration">Iteration Pattern</h2>
+            <p data-i18n="section.iterationDesc">Loop over collections with the iteration pattern:</p>
+            
+            <div class="code-example">
+                <code>
+&lt;- all summaries<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document summary<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this document<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document to process now<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- documents<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;* document to process now
+                </code>
+            </div>
+            
+            <div class="info-box">
+                <p data-i18n="section.iterationNote"><strong>Key components:</strong> <code class="inline-code">&lt;- documents</code> is the base collection. <code class="inline-code">&lt;* document to process now</code> marks the current element in each iteration.</p>
+            </div>
+        </section>
+
+        <!-- Conditional -->
+        <section>
+            <h2 data-i18n="section.conditional">Conditional Execution</h2>
+            <p data-i18n="section.conditionalDesc">Execute steps only when conditions are met:</p>
+            
+            <div class="code-example">
+                <code>
+&lt;- final output<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check if draft requires review<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- reviewed output<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= perform human review<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= if draft needs review<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* draft needs review?<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output
+                </code>
+            </div>
+            
+            <p data-i18n="section.conditionalNote">The review step only runs if <code class="inline-code">draft needs review?</code> evaluates to true.</p>
+        </section>
+
+        <!-- Formats -->
+        <section>
+            <h2 data-i18n="section.formats">File Formats</h2>
+            <p data-i18n="section.formatsDesc">NormCode has multiple formats for different stages:</p>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.format">Format</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                            <th data-i18n="table.description">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">.ncds</code></td>
+                            <td data-i18n="formats.draft">Draft/Authoring</td>
+                            <td data-i18n="formats.draftDesc">Start here—rough logic, easy to write</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.ncd</code></td>
+                            <td data-i18n="formats.formal">Formal Syntax</td>
+                            <td data-i18n="formats.formalDesc">Structured with operators and types</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.nci.json</code></td>
+                            <td data-i18n="formats.structure">Inference Structure</td>
+                            <td data-i18n="formats.structureDesc">Clear flow structure for analysis</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code></td>
+                            <td data-i18n="formats.executable">Executable</td>
+                            <td data-i18n="formats.executableDesc">Loaded by orchestrator at runtime</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <p data-i18n="section.formatNote"><strong>Typical workflow:</strong> Write <code class="inline-code">.ncds</code> → Compiler transforms to <code class="inline-code">.ncd</code> → Activation produces <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> → Orchestrator executes.</p>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <div class="card-grid">
+                <a href="execution.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">⚙️</span>
+                        <h3 data-i18n="next.execution">Next: Execution Model</h3>
+                        <p data-i18n="next.executionDesc">Learn how NormCode plans are executed step by step.</p>
+                    </div>
+                </a>
+                <a href="examples.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">💡</span>
+                        <h3 data-i18n="next.examples">See Examples</h3>
+                        <p data-i18n="next.examplesDesc">Real-world patterns and complete code samples.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <a href="../how-it-works.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span data-i18n="nav.backDocs">Back to Documentation</span>
+        </a>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
+    </footer>
+
+    <script>
+        const translations = {
+            en: {
+                nav: {
+                    companyName: 'Psylens.AI',
+                    home: 'Home',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
+                    team: 'Team',
+                    backDocs: 'Back to Documentation'
+                },
+                page: {
+                    title: 'Syntax Reference',
+                    subtitle: 'The complete guide to NormCode\'s plan syntax.'
+                },
+                section: {
+                    coreMarkers: 'Core Markers',
+                    coreMarkersDesc: 'NormCode uses just two primary symbols. Everything else is natural language.',
+                    structure: 'Basic Structure',
+                    structureDesc: 'Plans execute <strong>bottom-up</strong>: child inferences complete before their parents can run.',
+                    goldenRule: '<strong>The Golden Rule:</strong> Each inference has exactly ONE action (<code class="inline-code">&lt;=</code>). If you need multiple steps, nest them.',
+                    conceptTypes: 'Concept Types',
+                    conceptTypesDesc: 'In formal <code class="inline-code">.ncd</code> syntax, concepts have explicit type markers:',
+                    valueTypes: 'Value Types (Non-Functional)',
+                    actionTypes: 'Action Types (Functional)',
+                    operators: 'Syntactic Operators',
+                    operatorsDesc: 'These operators are free (no LLM call), instant, and deterministic.',
+                    assigning: 'Assigning Operators ($)',
+                    grouping: 'Grouping Operators (&)',
+                    timing: 'Timing Operators (@)',
+                    looping: 'Looping Operator (*)',
+                    multiInput: 'Multi-Input Operations',
+                    multiInputDesc: 'Actions can have multiple inputs. They see all listed inputs—but nothing else.',
+                    multiInputNote: 'The action sees both <code class="inline-code">support ticket</code> AND <code class="inline-code">conversation history</code>—but nothing else from the workflow.',
+                    iteration: 'Iteration Pattern',
+                    iterationDesc: 'Loop over collections with the iteration pattern:',
+                    iterationNote: '<strong>Key components:</strong> <code class="inline-code">&lt;- documents</code> is the base collection. <code class="inline-code">&lt;* document to process now</code> marks the current element in each iteration.',
+                    conditional: 'Conditional Execution',
+                    conditionalDesc: 'Execute steps only when conditions are met:',
+                    conditionalNote: 'The review step only runs if <code class="inline-code">draft needs review?</code> evaluates to true.',
+                    formats: 'File Formats',
+                    formatsDesc: 'NormCode has multiple formats for different stages:',
+                    formatNote: '<strong>Typical workflow:</strong> Write <code class="inline-code">.ncds</code> → Compiler transforms to <code class="inline-code">.ncd</code> → Activation produces <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> → Orchestrator executes.'
+                },
+                table: {
+                    symbol: 'Symbol',
+                    name: 'Name',
+                    meaning: 'Meaning',
+                    example: 'Example',
+                    description: 'Description',
+                    operator: 'Operator',
+                    purpose: 'Purpose',
+                    format: 'Format'
+                },
+                markers: {
+                    value: 'Value Concept',
+                    valueDesc: '"This is data" (nouns)',
+                    function: 'Functional Concept',
+                    functionDesc: '"This is an action" (verbs)',
+                    context: 'Context Concept',
+                    contextDesc: 'Loop/timing state'
+                },
+                types: {
+                    object: 'Object',
+                    objectDesc: 'Generic entity/data',
+                    proposition: 'Proposition',
+                    propositionDesc: 'State/condition (boolean)',
+                    relation: 'Relation',
+                    relationDesc: 'Collection (list/dict)',
+                    imperative: 'Imperative',
+                    imperativeDesc: 'Command/action',
+                    judgement: 'Judgement',
+                    judgementDesc: 'Evaluation (true/false)'
+                },
+                ops: {
+                    specification: 'Specification',
+                    specificationDesc: 'Select first valid value from candidates',
+                    continuation: 'Continuation',
+                    continuationDesc: 'Append along an axis (accumulation)',
+                    selection: 'Selection',
+                    selectionDesc: 'Extract specific elements',
+                    identity: 'Identity',
+                    identityDesc: 'Merge concepts (alias)',
+                    groupIn: 'Group In',
+                    groupInDesc: 'Collect items with labels (dictionary)',
+                    groupAcross: 'Group Across',
+                    groupAcrossDesc: 'Flatten items to list',
+                    conditional: 'Conditional',
+                    conditionalDesc: 'Execute if condition is true',
+                    negated: 'Negated',
+                    negatedDesc: 'Execute if condition is false',
+                    completion: 'Completion',
+                    completionDesc: 'Wait for dependency to complete',
+                    iterate: 'Iterate',
+                    iterateDesc: 'For each item in collection'
+                },
+                formats: {
+                    draft: 'Draft/Authoring',
+                    draftDesc: 'Start here—rough logic, easy to write',
+                    formal: 'Formal Syntax',
+                    formalDesc: 'Structured with operators and types',
+                    structure: 'Inference Structure',
+                    structureDesc: 'Clear flow structure for analysis',
+                    executable: 'Executable',
+                    executableDesc: 'Loaded by orchestrator at runtime'
+                },
+                next: {
+                    execution: 'Next: Execution Model',
+                    executionDesc: 'Learn how NormCode plans are executed step by step.',
+                    examples: 'See Examples',
+                    examplesDesc: 'Real-world patterns and complete code samples.'
+                },
+                footer: {
+                    paper: 'Paper'
+                }
+            },
+            zh: {
+                nav: {
+                    companyName: '心镜智',
+                    home: '首页',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
+                    team: '团队',
+                    backDocs: '返回文档'
+                },
+                page: {
+                    title: '语法参考',
+                    subtitle: 'NormCode计划语法的完整指南。'
+                },
+                section: {
+                    coreMarkers: '核心标记',
+                    coreMarkersDesc: 'NormCode只使用两个主要符号。其他都是自然语言。',
+                    structure: '基本结构',
+                    structureDesc: '计划<strong>自下而上</strong>执行：子推理在父推理运行之前完成。',
+                    goldenRule: '<strong>黄金法则：</strong>每个推理只有一个动作（<code class="inline-code">&lt;=</code>）。如果需要多个步骤，请嵌套它们。',
+                    conceptTypes: '概念类型',
+                    conceptTypesDesc: '在正式的<code class="inline-code">.ncd</code>语法中，概念有明确的类型标记：',
+                    valueTypes: '值类型（非功能性）',
+                    actionTypes: '动作类型（功能性）',
+                    operators: '语法操作符',
+                    operatorsDesc: '这些操作符是免费的（无LLM调用）、即时的和确定性的。',
+                    assigning: '赋值操作符 ($)',
+                    grouping: '分组操作符 (&)',
+                    timing: '时序操作符 (@)',
+                    looping: '循环操作符 (*)',
+                    multiInput: '多输入操作',
+                    multiInputDesc: '动作可以有多个输入。它们看到所有列出的输入——但仅此而已。',
+                    multiInputNote: '动作同时看到<code class="inline-code">support ticket</code>和<code class="inline-code">conversation history</code>——但看不到工作流中的其他内容。',
+                    iteration: '迭代模式',
+                    iterationDesc: '使用迭代模式遍历集合：',
+                    iterationNote: '<strong>关键组件：</strong><code class="inline-code">&lt;- documents</code>是基础集合。<code class="inline-code">&lt;* document to process now</code>标记每次迭代中的当前元素。',
+                    conditional: '条件执行',
+                    conditionalDesc: '仅在满足条件时执行步骤：',
+                    conditionalNote: '审查步骤仅在<code class="inline-code">draft needs review?</code>评估为true时运行。',
+                    formats: '文件格式',
+                    formatsDesc: 'NormCode有多种格式用于不同阶段：',
+                    formatNote: '<strong>典型工作流：</strong>编写<code class="inline-code">.ncds</code> → 编译器转换为<code class="inline-code">.ncd</code> → 激活产生<code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> → 编排器执行。'
+                },
+                table: {
+                    symbol: '符号',
+                    name: '名称',
+                    meaning: '含义',
+                    example: '示例',
+                    description: '描述',
+                    operator: '操作符',
+                    purpose: '用途',
+                    format: '格式'
+                },
+                markers: {
+                    value: '值概念',
+                    valueDesc: '"这是数据"（名词）',
+                    function: '功能概念',
+                    functionDesc: '"这是动作"（动词）',
+                    context: '上下文概念',
+                    contextDesc: '循环/时序状态'
+                },
+                types: {
+                    object: '对象',
+                    objectDesc: '通用实体/数据',
+                    proposition: '命题',
+                    propositionDesc: '状态/条件（布尔值）',
+                    relation: '关系',
+                    relationDesc: '集合（列表/字典）',
+                    imperative: '祈使式',
+                    imperativeDesc: '命令/动作',
+                    judgement: '判断',
+                    judgementDesc: '评估（真/假）'
+                },
+                ops: {
+                    specification: '规范',
+                    specificationDesc: '从候选项中选择第一个有效值',
+                    continuation: '继续',
+                    continuationDesc: '沿轴追加（累积）',
+                    selection: '选择',
+                    selectionDesc: '提取特定元素',
+                    identity: '恒等',
+                    identityDesc: '合并概念（别名）',
+                    groupIn: '分组入',
+                    groupInDesc: '使用标签收集项目（字典）',
+                    groupAcross: '跨组',
+                    groupAcrossDesc: '将项目展平为列表',
+                    conditional: '条件',
+                    conditionalDesc: '如果条件为真则执行',
+                    negated: '否定',
+                    negatedDesc: '如果条件为假则执行',
+                    completion: '完成',
+                    completionDesc: '等待依赖完成',
+                    iterate: '迭代',
+                    iterateDesc: '对集合中的每个项目'
+                },
+                formats: {
+                    draft: '草稿/编写',
+                    draftDesc: '从这里开始——粗略逻辑，易于编写',
+                    formal: '正式语法',
+                    formalDesc: '带有操作符和类型的结构化',
+                    structure: '推理结构',
+                    structureDesc: '用于分析的清晰流程结构',
+                    executable: '可执行',
+                    executableDesc: '运行时由编排器加载'
+                },
+                next: {
+                    execution: '下一步：执行模型',
+                    executionDesc: '了解NormCode计划如何逐步执行。',
+                    examples: '查看示例',
+                    examplesDesc: '真实世界的模式和完整代码示例。'
+                },
+                footer: {
+                    paper: '论文'
+                }
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    if (value.includes('<code') || value.includes('<strong')) {
+                        el.innerHTML = value;
+                    } else {
+                        el.textContent = value;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        setLanguage(currentLang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.getAttribute('data-lang'));
+            });
+        });
+
+        // Mobile menu
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        const menuOverlay = document.querySelector('.menu-overlay');
+
+        function toggleMenu(open) {
+            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
+            menuToggle.classList.toggle('active', isOpen);
+            navLinks.classList.toggle('active', isOpen);
+            menuOverlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', () => toggleMenu());
+        menuOverlay.addEventListener('click', () => toggleMenu(false));
+    </script>
+</body>
+</html>
+

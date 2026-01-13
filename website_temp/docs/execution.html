@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NormCode Execution Model - Learn how NormCode plans run at runtime with dependency resolution and checkpointing.">
+    <link rel="icon" type="image/png" href="../Psylensai_log_raw.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Execution Model - NormCode 规范码</title>
+</head>
+<body>
+    <div class="menu-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="nav-brand">
+                <img src="../Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
+                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
+            </a>
+            <button class="menu-toggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" data-i18n="nav.home">Home</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger active" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="execution.html" class="active" data-i18n="nav.execution">Execution Model</a>
+                        <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
+                <a href="../team.html" data-i18n="nav.team">Team</a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <h1 data-i18n="page.title">Execution Model</h1>
+        <p data-i18n="page.subtitle">How NormCode plans run at runtime—from compilation to completion.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="breadcrumb">
+            <a href="../how-it-works.html" data-i18n="nav.docs">Documentation</a>
+            <span>›</span>
+            <span data-i18n="page.title">Execution Model</span>
+        </div>
+
+        <!-- Pipeline -->
+        <section>
+            <h2 data-i18n="section.pipeline">The Compilation Pipeline</h2>
+            <p data-i18n="section.pipelineDesc">NormCode plans go through a compilation process from draft to execution:</p>
+            
+            <div class="code-example">
+                <code>
+<span class="string">1. Author</span> (.ncds draft format)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="string">2. Formalization</span> (Add types and operators → .ncd)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="string">3. Activation</span> (Generate executable repositories)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="keyword">&nbsp;&nbsp;Orchestrator Executes</span>
+                </code>
+            </div>
+
+            <div class="info-box">
+                <p data-i18n="section.pipelineNote"><strong>For most users:</strong> You write <code class="inline-code">.ncds</code>, run the compiler, and get <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution. The intermediate steps are automatic.</p>
+            </div>
+        </section>
+
+        <!-- Dependency Resolution -->
+        <section>
+            <h2 data-i18n="section.dependency">Bottom-Up Dependency Resolution</h2>
+            <p data-i18n="section.dependencyDesc">NormCode executes <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
+            
+            <div class="code-example">
+                <code>
+<span class="comment">/: Step 3 - Runs last (needs both inputs)</span><br>
+&lt;- result<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= calculate<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1a - Can run immediately</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input A<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process A<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw A<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1b - Can run in parallel with 1a</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input B<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process B<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw B
+                </code>
+            </div>
+
+            <h3 data-i18n="section.executionOrder">Execution Order</h3>
+            <ol>
+                <li data-i18n="exec.step1">Inferences for <code class="inline-code">input A</code> and <code class="inline-code">input B</code> are ready immediately (only need raw inputs)</li>
+                <li data-i18n="exec.step2">They can run <strong>in parallel</strong> since they don't depend on each other</li>
+                <li data-i18n="exec.step3">Once both complete → the <code class="inline-code">calculate</code> inference can run</li>
+                <li data-i18n="exec.step4">Result is produced</li>
+            </ol>
+
+            <h3 data-i18n="section.readiness">Readiness Criteria</h3>
+            <p data-i18n="section.readinessDesc">An inference becomes ready to execute when:</p>
+            <ul>
+                <li data-i18n="ready.deps">All child inferences are complete (dependencies met)</li>
+                <li data-i18n="ready.func">Functional concept is ready (the operation definition exists)</li>
+                <li data-i18n="ready.vals">Value concepts are ready (all inputs have data)</li>
+            </ul>
+        </section>
+
+        <!-- Two Types -->
+        <section>
+            <h2 data-i18n="section.twoTypes">The Two Types of Execution</h2>
+            
+            <h3 data-i18n="section.semantic">Semantic Sequences (LLM Calls)</h3>
+            <p data-i18n="section.semanticDesc">Create information through reasoning, generation, or evaluation.</p>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.sequence">Sequence</th>
+                            <th data-i18n="table.llm">LLM?</th>
+                            <th data-i18n="table.cost">Cost</th>
+                            <th data-i18n="table.examples">Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-i18n="seq.imperative">Imperative</strong></td>
+                            <td>✅</td>
+                            <td data-i18n="table.tokens">Tokens</td>
+                            <td data-i18n="seq.imperativeEx">Extract, generate, transform, analyze</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="seq.judgement">Judgement</strong></td>
+                            <td>✅</td>
+                            <td data-i18n="table.tokens">Tokens</td>
+                            <td data-i18n="seq.judgementEx">Evaluate, validate, decide, check</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 data-i18n="section.syntactic">Syntactic Sequences (Data Manipulation)</h3>
+            <p data-i18n="section.syntacticDesc">Reshape information through deterministic operations. No LLM involved.</p>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.sequence">Sequence</th>
+                            <th data-i18n="table.llm">LLM?</th>
+                            <th data-i18n="table.cost">Cost</th>
+                            <th data-i18n="table.examples">Examples</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-i18n="seq.assigning">Assigning</strong></td>
+                            <td>❌</td>
+                            <td data-i18n="table.free">Free</td>
+                            <td data-i18n="seq.assigningEx">Select, accumulate, pick first valid</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="seq.grouping">Grouping</strong></td>
+                            <td>❌</td>
+                            <td data-i18n="table.free">Free</td>
+                            <td data-i18n="seq.groupingEx">Collect, combine, bundle items</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="seq.timing">Timing</strong></td>
+                            <td>❌</td>
+                            <td data-i18n="table.free">Free</td>
+                            <td data-i18n="seq.timingEx">Branch, wait, depend on condition</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="seq.looping">Looping</strong></td>
+                            <td>❌</td>
+                            <td data-i18n="table.free">Free*</td>
+                            <td data-i18n="seq.loopingEx">Iterate, repeat for each item</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <p style="font-size: 0.875rem; color: var(--text-muted);" data-i18n="section.loopNote">* The loop structure is free; semantic operations inside the loop cost tokens.</p>
+        </section>
+
+        <!-- Orchestrator -->
+        <section>
+            <h2 data-i18n="section.orchestrator">The Orchestrator</h2>
+            <p data-i18n="section.orchestratorDesc">The Orchestrator runs in cycles, managing execution flow:</p>
+            
+            <div class="code-example">
+                <code>
+<span class="keyword">FOR EACH CYCLE:</span><br>
+&nbsp;&nbsp;1. <span class="function">CHECK</span>&nbsp;&nbsp;&nbsp;→ Scan waitlist for ready inferences<br>
+&nbsp;&nbsp;2. <span class="function">EXECUTE</span> → Run ready inferences (via AgentFrames)<br>
+&nbsp;&nbsp;3. <span class="function">UPDATE</span>&nbsp;&nbsp;→ Mark completed, store results<br>
+&nbsp;&nbsp;4. <span class="function">REPEAT</span>&nbsp;&nbsp;→ Until all inferences complete
+                </code>
+            </div>
+
+            <h3 data-i18n="section.stateManagement">State Management</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.component">Component</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Waitlist</strong></td>
+                            <td data-i18n="state.waitlist">Static list of all inferences (by flow_index)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Blackboard</strong></td>
+                            <td data-i18n="state.blackboard">Dynamic status tracker (pending/in_progress/completed/skipped)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ConceptRepo</strong></td>
+                            <td data-i18n="state.conceptRepo">Stores data references for all concepts</td>
+                        </tr>
+                        <tr>
+                            <td><strong>InferenceRepo</strong></td>
+                            <td data-i18n="state.inferenceRepo">Stores inference definitions and sequences</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Checkpointing -->
+        <section>
+            <h2 data-i18n="section.checkpointing">Checkpointing & Resuming</h2>
+            <p data-i18n="section.checkpointingDesc">The Orchestrator saves complete state to SQLite, enabling powerful workflow control:</p>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <span class="card-icon">⏸️</span>
+                    <h3 data-i18n="checkpoint.pause">Pause & Resume</h3>
+                    <p data-i18n="checkpoint.pauseDesc">Stop execution at any cycle and continue later from exactly where you left off.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🔀</span>
+                    <h3 data-i18n="checkpoint.fork">Fork & Branch</h3>
+                    <p data-i18n="checkpoint.forkDesc">Create a new run from any checkpoint to experiment with different approaches.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🔄</span>
+                    <h3 data-i18n="checkpoint.patch">Smart Patching</h3>
+                    <p data-i18n="checkpoint.patchDesc">Re-run only changed logic while keeping valid cached results.</p>
+                </div>
+            </div>
+
+            <h3 data-i18n="section.whatsSaved">What Gets Saved</h3>
+            <ul>
+                <li data-i18n="saved.metadata">Run metadata (run_id, timestamp, configuration)</li>
+                <li data-i18n="saved.snapshots">Full state snapshots at each cycle</li>
+                <li data-i18n="saved.blackboard">Blackboard state (status of all concepts/inferences)</li>
+                <li data-i18n="saved.references">All concept data references</li>
+                <li data-i18n="saved.workspace">Loop iteration workspace</li>
+            </ul>
+        </section>
+
+        <!-- Flow Index -->
+        <section>
+            <h2 data-i18n="section.flowIndex">Flow Index System</h2>
+            <p data-i18n="section.flowIndexDesc">Every node has a unique flow index that identifies its position in the execution DAG:</p>
+            
+            <div class="code-example">
+                <code>
+<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept (output)</span><br>
+├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Function concept</span><br>
+├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># First value input</span><br>
+├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Second value input</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.1</span>&nbsp;&nbsp;<span class="comment"># Sub-inference function</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.2</span>&nbsp;&nbsp;<span class="comment"># Sub-inference value</span>
+                </code>
+            </div>
+
+            <p data-i18n="section.flowIndexUse">Flow indices are used for:</p>
+            <ul>
+                <li data-i18n="flowUse.id">Node identification in the graph</li>
+                <li data-i18n="flowUse.breakpoints">Breakpoint targeting for debugging</li>
+                <li data-i18n="flowUse.logs">Log filtering and tracing</li>
+                <li data-i18n="flowUse.order">Execution ordering and scheduling</li>
+            </ul>
+        </section>
+
+        <!-- Canvas App -->
+        <section>
+            <h2 data-i18n="section.canvasApp">Visual Debugging with Canvas App</h2>
+            <p data-i18n="section.canvasAppDesc">The Canvas App provides a visual, interactive environment for executing and debugging NormCode plans:</p>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <span class="card-icon">📊</span>
+                    <h3 data-i18n="canvas.visualize">Visualize</h3>
+                    <p data-i18n="canvas.visualizeDesc">See the entire inference graph before execution.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">👁️</span>
+                    <h3 data-i18n="canvas.watch">Watch</h3>
+                    <p data-i18n="canvas.watchDesc">Monitor execution progress in real-time.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🐛</span>
+                    <h3 data-i18n="canvas.debug">Debug</h3>
+                    <p data-i18n="canvas.debugDesc">Set breakpoints and step through execution.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🔍</span>
+                    <h3 data-i18n="canvas.inspect">Inspect</h3>
+                    <p data-i18n="canvas.inspectDesc">View tensor data at any node in the graph.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Debugging -->
+        <section>
+            <h2 data-i18n="section.debugging">Debugging Patterns</h2>
+            
+            <h3 data-i18n="debug.notRunning">Inference not running?</h3>
+            <ul>
+                <li data-i18n="debug.checkDeps">Check dependencies: Are all child inferences completed?</li>
+                <li data-i18n="debug.checkInputs">Check inputs: Are all value concepts ready?</li>
+            </ul>
+
+            <h3 data-i18n="debug.wrongResult">Wrong result?</h3>
+            <ul>
+                <li data-i18n="debug.inspectRefs">Inspect input references: What did the inference actually see?</li>
+                <li data-i18n="debug.checkParadigm">Check paradigm configuration: Is the right tool being used?</li>
+            </ul>
+
+            <h3 data-i18n="debug.loopNotTerminating">Loop not terminating?</h3>
+            <ul>
+                <li data-i18n="debug.checkWorkspace">Check Quantifier workspace: Are items being marked as processed?</li>
+                <li data-i18n="debug.checkBase">Check loop base reference: Is it empty or has skip values?</li>
+            </ul>
+        </section>
+
+        <!-- Guarantee -->
+        <section>
+            <h2 data-i18n="section.guarantee">The Execution Guarantee</h2>
+            
+            <div class="info-box success">
+                <p data-i18n="section.guaranteeText"><strong>NormCode's core promise:</strong> Every inference sees exactly—and only—what you explicitly declare. No hidden context, no state bleeding, full auditability.</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.mechanism">Mechanism</th>
+                            <th data-i18n="table.enforcement">Enforcement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-i18n="mech.bottomUp">Bottom-up execution</td>
+                            <td data-i18n="mech.bottomUpHow">Can't run until inputs ready</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="mech.refIsolation">Reference isolation</td>
+                            <td data-i18n="mech.refIsolationHow">Each concept has its own Reference</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="mech.explicitRetrieval">Explicit retrieval</td>
+                            <td data-i18n="mech.explicitRetrievalHow">Only fetches declared inputs</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="mech.noGlobal">No global state</td>
+                            <td data-i18n="mech.noGlobalHow">No hidden context bleeding</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <div class="card-grid">
+                <a href="syntax.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">📝</span>
+                        <h3 data-i18n="prev.syntax">Previous: Syntax Reference</h3>
+                        <p data-i18n="prev.syntaxDesc">Learn the markers, concept types, and operators.</p>
+                    </div>
+                </a>
+                <a href="examples.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">💡</span>
+                        <h3 data-i18n="next.examples">Next: Examples</h3>
+                        <p data-i18n="next.examplesDesc">Real-world patterns and complete code samples.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <a href="../how-it-works.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span data-i18n="nav.backDocs">Back to Documentation</span>
+        </a>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
+    </footer>
+
+    <script>
+        const translations = {
+            en: {
+                nav: {
+                    companyName: 'Psylens.AI',
+                    home: 'Home',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
+                    team: 'Team',
+                    backDocs: 'Back to Documentation'
+                },
+                page: {
+                    title: 'Execution Model',
+                    subtitle: 'How NormCode plans run at runtime—from compilation to completion.'
+                },
+                section: {
+                    pipeline: 'The Compilation Pipeline',
+                    pipelineDesc: 'NormCode plans go through a compilation process from draft to execution:',
+                    pipelineNote: '<strong>For most users:</strong> You write <code class="inline-code">.ncds</code>, run the compiler, and get <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution. The intermediate steps are automatic.',
+                    dependency: 'Bottom-Up Dependency Resolution',
+                    dependencyDesc: 'NormCode executes <strong>bottom-up</strong>: child inferences complete before their parents can run.',
+                    executionOrder: 'Execution Order',
+                    readiness: 'Readiness Criteria',
+                    readinessDesc: 'An inference becomes ready to execute when:',
+                    twoTypes: 'The Two Types of Execution',
+                    semantic: 'Semantic Sequences (LLM Calls)',
+                    semanticDesc: 'Create information through reasoning, generation, or evaluation.',
+                    syntactic: 'Syntactic Sequences (Data Manipulation)',
+                    syntacticDesc: 'Reshape information through deterministic operations. No LLM involved.',
+                    loopNote: '* The loop structure is free; semantic operations inside the loop cost tokens.',
+                    orchestrator: 'The Orchestrator',
+                    orchestratorDesc: 'The Orchestrator runs in cycles, managing execution flow:',
+                    stateManagement: 'State Management',
+                    checkpointing: 'Checkpointing & Resuming',
+                    checkpointingDesc: 'The Orchestrator saves complete state to SQLite, enabling powerful workflow control:',
+                    whatsSaved: 'What Gets Saved',
+                    flowIndex: 'Flow Index System',
+                    flowIndexDesc: 'Every node has a unique flow index that identifies its position in the execution DAG:',
+                    flowIndexUse: 'Flow indices are used for:',
+                    canvasApp: 'Visual Debugging with Canvas App',
+                    canvasAppDesc: 'The Canvas App provides a visual, interactive environment for executing and debugging NormCode plans:',
+                    debugging: 'Debugging Patterns',
+                    guarantee: 'The Execution Guarantee',
+                    guaranteeText: '<strong>NormCode\'s core promise:</strong> Every inference sees exactly—and only—what you explicitly declare. No hidden context, no state bleeding, full auditability.'
+                },
+                exec: {
+                    step1: 'Inferences for input A and input B are ready immediately (only need raw inputs)',
+                    step2: 'They can run <strong>in parallel</strong> since they don\'t depend on each other',
+                    step3: 'Once both complete → the calculate inference can run',
+                    step4: 'Result is produced'
+                },
+                ready: {
+                    deps: 'All child inferences are complete (dependencies met)',
+                    func: 'Functional concept is ready (the operation definition exists)',
+                    vals: 'Value concepts are ready (all inputs have data)'
+                },
+                table: {
+                    sequence: 'Sequence',
+                    llm: 'LLM?',
+                    cost: 'Cost',
+                    examples: 'Examples',
+                    tokens: 'Tokens',
+                    free: 'Free',
+                    component: 'Component',
+                    purpose: 'Purpose',
+                    mechanism: 'Mechanism',
+                    enforcement: 'Enforcement'
+                },
+                seq: {
+                    imperative: 'Imperative',
+                    imperativeEx: 'Extract, generate, transform, analyze',
+                    judgement: 'Judgement',
+                    judgementEx: 'Evaluate, validate, decide, check',
+                    assigning: 'Assigning',
+                    assigningEx: 'Select, accumulate, pick first valid',
+                    grouping: 'Grouping',
+                    groupingEx: 'Collect, combine, bundle items',
+                    timing: 'Timing',
+                    timingEx: 'Branch, wait, depend on condition',
+                    looping: 'Looping',
+                    loopingEx: 'Iterate, repeat for each item'
+                },
+                state: {
+                    waitlist: 'Static list of all inferences (by flow_index)',
+                    blackboard: 'Dynamic status tracker (pending/in_progress/completed/skipped)',
+                    conceptRepo: 'Stores data references for all concepts',
+                    inferenceRepo: 'Stores inference definitions and sequences'
+                },
+                checkpoint: {
+                    pause: 'Pause & Resume',
+                    pauseDesc: 'Stop execution at any cycle and continue later from exactly where you left off.',
+                    fork: 'Fork & Branch',
+                    forkDesc: 'Create a new run from any checkpoint to experiment with different approaches.',
+                    patch: 'Smart Patching',
+                    patchDesc: 'Re-run only changed logic while keeping valid cached results.'
+                },
+                saved: {
+                    metadata: 'Run metadata (run_id, timestamp, configuration)',
+                    snapshots: 'Full state snapshots at each cycle',
+                    blackboard: 'Blackboard state (status of all concepts/inferences)',
+                    references: 'All concept data references',
+                    workspace: 'Loop iteration workspace'
+                },
+                flowUse: {
+                    id: 'Node identification in the graph',
+                    breakpoints: 'Breakpoint targeting for debugging',
+                    logs: 'Log filtering and tracing',
+                    order: 'Execution ordering and scheduling'
+                },
+                canvas: {
+                    visualize: 'Visualize',
+                    visualizeDesc: 'See the entire inference graph before execution.',
+                    watch: 'Watch',
+                    watchDesc: 'Monitor execution progress in real-time.',
+                    debug: 'Debug',
+                    debugDesc: 'Set breakpoints and step through execution.',
+                    inspect: 'Inspect',
+                    inspectDesc: 'View tensor data at any node in the graph.'
+                },
+                debug: {
+                    notRunning: 'Inference not running?',
+                    checkDeps: 'Check dependencies: Are all child inferences completed?',
+                    checkInputs: 'Check inputs: Are all value concepts ready?',
+                    wrongResult: 'Wrong result?',
+                    inspectRefs: 'Inspect input references: What did the inference actually see?',
+                    checkParadigm: 'Check paradigm configuration: Is the right tool being used?',
+                    loopNotTerminating: 'Loop not terminating?',
+                    checkWorkspace: 'Check Quantifier workspace: Are items being marked as processed?',
+                    checkBase: 'Check loop base reference: Is it empty or has skip values?'
+                },
+                mech: {
+                    bottomUp: 'Bottom-up execution',
+                    bottomUpHow: 'Can\'t run until inputs ready',
+                    refIsolation: 'Reference isolation',
+                    refIsolationHow: 'Each concept has its own Reference',
+                    explicitRetrieval: 'Explicit retrieval',
+                    explicitRetrievalHow: 'Only fetches declared inputs',
+                    noGlobal: 'No global state',
+                    noGlobalHow: 'No hidden context bleeding'
+                },
+                prev: {
+                    syntax: 'Previous: Syntax Reference',
+                    syntaxDesc: 'Learn the markers, concept types, and operators.'
+                },
+                next: {
+                    examples: 'Next: Examples',
+                    examplesDesc: 'Real-world patterns and complete code samples.'
+                },
+                footer: {
+                    paper: 'Paper'
+                }
+            },
+            zh: {
+                nav: {
+                    companyName: '心镜智',
+                    home: '首页',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
+                    team: '团队',
+                    backDocs: '返回文档'
+                },
+                page: {
+                    title: '执行模型',
+                    subtitle: 'NormCode计划如何在运行时执行——从编译到完成。'
+                },
+                section: {
+                    pipeline: '编译流水线',
+                    pipelineDesc: 'NormCode计划经历从草稿到执行的编译过程：',
+                    pipelineNote: '<strong>对于大多数用户：</strong>您编写<code class="inline-code">.ncds</code>，运行编译器，获得<code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code>用于执行。中间步骤是自动的。',
+                    dependency: '自下而上的依赖解析',
+                    dependencyDesc: 'NormCode<strong>自下而上</strong>执行：子推理在父推理运行之前完成。',
+                    executionOrder: '执行顺序',
+                    readiness: '就绪条件',
+                    readinessDesc: '推理在以下情况下准备好执行：',
+                    twoTypes: '两种执行类型',
+                    semantic: '语义序列（LLM调用）',
+                    semanticDesc: '通过推理、生成或评估创建信息。',
+                    syntactic: '语法序列（数据操作）',
+                    syntacticDesc: '通过确定性操作重塑信息。不涉及LLM。',
+                    loopNote: '* 循环结构是免费的；循环内的语义操作消耗token。',
+                    orchestrator: '编排器',
+                    orchestratorDesc: '编排器以周期运行，管理执行流程：',
+                    stateManagement: '状态管理',
+                    checkpointing: '检查点和恢复',
+                    checkpointingDesc: '编排器将完整状态保存到SQLite，实现强大的工作流控制：',
+                    whatsSaved: '保存的内容',
+                    flowIndex: '流程索引系统',
+                    flowIndexDesc: '每个节点都有一个唯一的流程索引，标识其在执行DAG中的位置：',
+                    flowIndexUse: '流程索引用于：',
+                    canvasApp: '使用Canvas App进行可视化调试',
+                    canvasAppDesc: 'Canvas App提供了一个可视化、交互式环境，用于执行和调试NormCode计划：',
+                    debugging: '调试模式',
+                    guarantee: '执行保证',
+                    guaranteeText: '<strong>NormCode的核心承诺：</strong>每个推理都只能看到您明确声明的内容——仅此而已。没有隐藏上下文，没有状态泄漏，完全可审计。'
+                },
+                exec: {
+                    step1: '输入A和输入B的推理立即准备就绪（只需要原始输入）',
+                    step2: '它们可以<strong>并行</strong>运行，因为它们不相互依赖',
+                    step3: '两者都完成后 → 计算推理可以运行',
+                    step4: '产生结果'
+                },
+                ready: {
+                    deps: '所有子推理已完成（依赖已满足）',
+                    func: '功能概念准备就绪（操作定义存在）',
+                    vals: '值概念准备就绪（所有输入都有数据）'
+                },
+                table: {
+                    sequence: '序列',
+                    llm: 'LLM？',
+                    cost: '成本',
+                    examples: '示例',
+                    tokens: 'Token',
+                    free: '免费',
+                    component: '组件',
+                    purpose: '用途',
+                    mechanism: '机制',
+                    enforcement: '执行方式'
+                },
+                seq: {
+                    imperative: '祈使式',
+                    imperativeEx: '提取、生成、转换、分析',
+                    judgement: '判断',
+                    judgementEx: '评估、验证、决定、检查',
+                    assigning: '赋值',
+                    assigningEx: '选择、累积、选取第一个有效值',
+                    grouping: '分组',
+                    groupingEx: '收集、组合、打包项目',
+                    timing: '时序',
+                    timingEx: '分支、等待、依赖条件',
+                    looping: '循环',
+                    loopingEx: '迭代、对每个项目重复'
+                },
+                state: {
+                    waitlist: '所有推理的静态列表（按flow_index）',
+                    blackboard: '动态状态跟踪器（pending/in_progress/completed/skipped）',
+                    conceptRepo: '存储所有概念的数据引用',
+                    inferenceRepo: '存储推理定义和序列'
+                },
+                checkpoint: {
+                    pause: '暂停和恢复',
+                    pauseDesc: '在任何周期停止执行，稍后从中断处继续。',
+                    fork: '分叉和分支',
+                    forkDesc: '从任何检查点创建新运行，尝试不同方法。',
+                    patch: '智能补丁',
+                    patchDesc: '仅重新运行更改的逻辑，同时保留有效的缓存结果。'
+                },
+                saved: {
+                    metadata: '运行元数据（run_id、时间戳、配置）',
+                    snapshots: '每个周期的完整状态快照',
+                    blackboard: '黑板状态（所有概念/推理的状态）',
+                    references: '所有概念数据引用',
+                    workspace: '循环迭代工作区'
+                },
+                flowUse: {
+                    id: '图中的节点标识',
+                    breakpoints: '调试断点目标',
+                    logs: '日志过滤和跟踪',
+                    order: '执行顺序和调度'
+                },
+                canvas: {
+                    visualize: '可视化',
+                    visualizeDesc: '在执行前查看整个推理图。',
+                    watch: '监控',
+                    watchDesc: '实时监控执行进度。',
+                    debug: '调试',
+                    debugDesc: '设置断点并逐步执行。',
+                    inspect: '检查',
+                    inspectDesc: '查看图中任何节点的张量数据。'
+                },
+                debug: {
+                    notRunning: '推理没有运行？',
+                    checkDeps: '检查依赖：所有子推理都完成了吗？',
+                    checkInputs: '检查输入：所有值概念都准备好了吗？',
+                    wrongResult: '结果错误？',
+                    inspectRefs: '检查输入引用：推理实际看到了什么？',
+                    checkParadigm: '检查范式配置：使用了正确的工具吗？',
+                    loopNotTerminating: '循环没有终止？',
+                    checkWorkspace: '检查量词工作区：项目是否被标记为已处理？',
+                    checkBase: '检查循环基础引用：是否为空或有跳过值？'
+                },
+                mech: {
+                    bottomUp: '自下而上执行',
+                    bottomUpHow: '输入准备好后才能运行',
+                    refIsolation: '引用隔离',
+                    refIsolationHow: '每个概念都有自己的引用',
+                    explicitRetrieval: '显式检索',
+                    explicitRetrievalHow: '只获取声明的输入',
+                    noGlobal: '无全局状态',
+                    noGlobalHow: '无隐藏上下文泄漏'
+                },
+                prev: {
+                    syntax: '上一篇：语法参考',
+                    syntaxDesc: '学习标记、概念类型和操作符。'
+                },
+                next: {
+                    examples: '下一篇：示例',
+                    examplesDesc: '真实世界的模式和完整代码示例。'
+                },
+                footer: {
+                    paper: '论文'
+                }
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    if (value.includes('<code') || value.includes('<strong')) {
+                        el.innerHTML = value;
+                    } else {
+                        el.textContent = value;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        setLanguage(currentLang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.getAttribute('data-lang'));
+            });
+        });
+
+        // Mobile menu
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        const menuOverlay = document.querySelector('.menu-overlay');
+
+        function toggleMenu(open) {
+            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
+            menuToggle.classList.toggle('active', isOpen);
+            navLinks.classList.toggle('active', isOpen);
+            menuOverlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', () => toggleMenu());
+        menuOverlay.addEventListener('click', () => toggleMenu(false));
+    </script>
+</body>
+</html>
+

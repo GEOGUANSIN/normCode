@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NormCode Compilation Pipeline - How natural language transforms into executable AI plans through progressive formalization.">
+    <link rel="icon" type="image/png" href="../Psylensai_log_raw.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Compilation Pipeline - NormCode 规范码</title>
+</head>
+<body>
+    <div class="menu-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="nav-brand">
+                <img src="../Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
+                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
+            </a>
+            <button class="menu-toggle" aria-label="Toggle navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" data-i18n="nav.home">Home</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger active" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="compilation.html" class="active" data-i18n="nav.compilation">Compilation</a>
+                        <a href="examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
+                <a href="../team.html" data-i18n="nav.team">Team</a>
+                <div class="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <h1 data-i18n="page.title">Compilation Pipeline</h1>
+        <p data-i18n="page.subtitle">How natural language transforms into executable AI plans through progressive formalization.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="breadcrumb">
+            <a href="../how-it-works.html" data-i18n="nav.docs">Documentation</a>
+            <span>›</span>
+            <span data-i18n="page.title">Compilation Pipeline</span>
+        </div>
+
+        <!-- Pipeline Overview -->
+        <section>
+            <h2 data-i18n="section.pipeline">The 4-Phase Pipeline</h2>
+            <p data-i18n="section.pipelineDesc">NormCode progressively formalizes intent into structure. Each phase answers a specific question while preserving semantic intent.</p>
+            
+            <div class="pipeline-diagram">
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label input">
+                        Natural Language Instruction
+                    </div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label phase">
+                        Phase 1: Derivation
+                    </div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.derivationComment">Extract structure and hierarchy</div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label output">
+                        <span class="file-ext">.ncds</span> <span class="comment">(draft straightforward)</span>
+                    </div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label phase">
+                        Phase 2: Formalization
+                    </div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.formalizationComment">Add flow indices and sequence types</div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label output">
+                        <span class="file-ext">.ncd</span> <span class="comment">(with flow indices and sequences)</span>
+                    </div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label phase">
+                        Phase 3: Post-Formalization
+                    </div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.postFormalizationComment">Enrich with annotations and resources</div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label output">
+                        <span class="file-ext">.ncd</span> <span class="comment">(enriched with annotations)</span>
+                    </div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label phase">
+                        Phase 4: Activation
+                    </div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.activationComment">Generate executable repositories</div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label output">
+                        <span class="file-ext">.concept.json</span> + <span class="file-ext">.inference.json</span>
+                    </div>
+                </div>
+                
+                <div class="pipeline-step">
+                    <div class="pipeline-step-label final">
+                        Orchestrator Execution
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- What Each Phase Does -->
+        <section>
+            <h2 data-i18n="section.phases">What Each Phase Does</h2>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.phase">Phase</th>
+                            <th data-i18n="table.question">Question Answered</th>
+                            <th data-i18n="table.input">Input</th>
+                            <th data-i18n="table.output">Output</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-i18n="phase.derivation">Derivation</strong></td>
+                            <td data-i18n="phase.derivationQ"><em>What</em> are we trying to do?</td>
+                            <td data-i18n="phase.derivationIn">Natural language</td>
+                            <td><code class="inline-code">.ncds</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="phase.formalization">Formalization</strong></td>
+                            <td data-i18n="phase.formalizationQ"><em>In what order</em> and <em>which sequence</em>?</td>
+                            <td><code class="inline-code">.ncds</code></td>
+                            <td><code class="inline-code">.ncd</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="phase.postFormalization">Post-Formalization</strong></td>
+                            <td data-i18n="phase.postFormalizationQ"><em>How</em> and <em>with what resources</em>?</td>
+                            <td><code class="inline-code">.ncd</code></td>
+                            <td><code class="inline-code">.ncd</code> <span data-i18n="phase.enriched">(enriched)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="phase.activation">Activation</strong></td>
+                            <td data-i18n="phase.activationQ"><em>What</em> does the Orchestrator need?</td>
+                            <td><code class="inline-code">.ncd</code> <span data-i18n="phase.enriched">(enriched)</span></td>
+                            <td data-i18n="phase.activationOut">JSON repositories</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase 1: Derivation -->
+        <section>
+            <h2 data-i18n="section.derivation">Phase 1: Derivation</h2>
+            <p data-i18n="section.derivationDesc">Transform unstructured natural language into hierarchical inference structure.</p>
+            
+            <h3 data-i18n="section.derivationWhat">What It Does</h3>
+            <ul>
+                <li data-i18n="deriv.concepts">Identifies <strong>concepts</strong> (data entities)</li>
+                <li data-i18n="deriv.operations">Identifies <strong>operations</strong> (actions to perform)</li>
+                <li data-i18n="deriv.deps">Extracts dependencies (which concepts feed into which operations)</li>
+                <li data-i18n="deriv.tree">Creates hierarchical tree structure</li>
+            </ul>
+
+            <h3 data-i18n="section.derivationExample">Example</h3>
+            <p class="code-label" data-i18n="label.input">Input (Natural Language)</p>
+            <div class="code-example">
+                <code>
+"Summarize this document by first cleaning it and then extracting key points."
+                </code>
+            </div>
+
+            <p class="code-label" data-i18n="label.output">Output (.ncds)</p>
+            <div class="code-example">
+                <code>
+&lt;- document summary<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document
+                </code>
+            </div>
+
+            <div class="info-box">
+                <p data-i18n="deriv.note"><strong>Key features:</strong> Bottom-up reading, simple markers (<code class="inline-code">&lt;-</code>, <code class="inline-code">&lt;=</code>), natural language descriptions. No flow indices or sequence types yet.</p>
+            </div>
+        </section>
+
+        <!-- Phase 2: Formalization -->
+        <section>
+            <h2 data-i18n="section.formalization">Phase 2: Formalization</h2>
+            <p data-i18n="section.formalizationDesc">Add structural rigor to make the plan unambiguous and executable.</p>
+            
+            <h3 data-i18n="section.formalizationWhat">What It Adds</h3>
+            <ul>
+                <li data-i18n="form.flowIdx"><strong>Unique flow indices</strong> (e.g., <code class="inline-code">1.2.3</code>) to every step</li>
+                <li data-i18n="form.seqTypes"><strong>Sequence types</strong> for each inference (imperative, grouping, timing, looping)</li>
+                <li data-i18n="form.bindings"><strong>Value bindings</strong> (<code class="inline-code">&lt;:{1}&gt;</code>, <code class="inline-code">&lt;:{2}&gt;</code>) for input ordering</li>
+                <li data-i18n="form.metadata"><strong>Metadata comments</strong> (<code class="inline-code">?{sequence}:</code>, <code class="inline-code">?{flow_index}:</code>)</li>
+            </ul>
+
+            <h3 data-i18n="section.formalizationExample">Example</h3>
+            <p class="code-label" data-i18n="label.output">Output (.ncd)</p>
+            <div class="code-example">
+                <code>
+:<span class="variable">:{document summary}</span> | <span class="comment">?{flow_index}: 1</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(summarize this text)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{clean text}</span> | <span class="comment">?{flow_index}: 1.2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(extract main content)</span> | <span class="comment">?{flow_index}: 1.2.1 | ?{sequence}: imperative</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{raw document}</span> | <span class="comment">?{flow_index}: 1.2.1.1</span>
+                </code>
+            </div>
+
+            <div class="info-box">
+                <p data-i18n="form.note"><strong>Key changes:</strong> Every line has a flow index. Functional concepts have sequence types. Root concept marked with <code class="inline-code">:&lt;:</code>. Semantic types added (<code class="inline-code">{}</code> for objects, <code class="inline-code">::()</code> for imperatives).</p>
+            </div>
+        </section>
+
+        <!-- Phase 3: Post-Formalization -->
+        <section>
+            <h2 data-i18n="section.postFormalization">Phase 3: Post-Formalization</h2>
+            <p data-i18n="section.postFormalizationDesc">Prepare the plan for execution by enriching it with configuration and grounding.</p>
+            
+            <h3 data-i18n="section.postFormThree">Three Sub-Phases</h3>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <span class="card-icon">🔗</span>
+                    <h3 data-i18n="post.recomp">Re-composition</h3>
+                    <p data-i18n="post.recompDesc">Maps abstract intent to normative context: paradigms, body faculties, perception norms.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">📁</span>
+                    <h3 data-i18n="post.provision">Provision</h3>
+                    <p data-i18n="post.provisionDesc">Links to concrete resources: file paths, prompt templates, script locations.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">📐</span>
+                    <h3 data-i18n="post.syntax">Syntax Re-confirmation</h3>
+                    <p data-i18n="post.syntaxDesc">Ensures tensor coherence: axes, shape, element types for reference structure.</p>
+                </div>
+            </div>
+
+            <h3 data-i18n="section.annotationsAdded">Annotations Added</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.annotation">Annotation</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                            <th data-i18n="table.example">Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">%{norm_input}:</code></td>
+                            <td data-i18n="annot.paradigm">Paradigm ID to load</td>
+                            <td><code class="inline-code">h_PromptTemplate-c_Generate-o_Text</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">%{body_faculty}:</code></td>
+                            <td data-i18n="annot.faculty">Body faculty to invoke</td>
+                            <td><code class="inline-code">llm</code>, <code class="inline-code">file_system</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">%{ref_axes}:</code></td>
+                            <td data-i18n="annot.axes">Named axes for tensors</td>
+                            <td><code class="inline-code">[signal]</code>, <code class="inline-code">[_none_axis]</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">%{file_location}:</code></td>
+                            <td data-i18n="annot.file">Path to ground data</td>
+                            <td><code class="inline-code">provision/data/input.json</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Phase 4: Activation -->
+        <section>
+            <h2 data-i18n="section.activation">Phase 4: Activation</h2>
+            <p data-i18n="section.activationDesc">Transform the annotated .ncd into executable JSON repositories that the Orchestrator can load and run.</p>
+            
+            <h3 data-i18n="section.activationWhat">What It Produces</h3>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <span class="card-icon">📦</span>
+                    <h3 data-i18n="activ.concept">concept_repo.json</h3>
+                    <p data-i18n="activ.conceptDesc">All concept definitions with types, ground flags, axes, and initial data.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">⚙️</span>
+                    <h3 data-i18n="activ.inference">inference_repo.json</h3>
+                    <p data-i18n="activ.inferenceDesc">All inference definitions with working_interpretation for each sequence.</p>
+                </div>
+            </div>
+
+            <h3 data-i18n="section.sampleOutput">Sample Output Structure</h3>
+            <p class="code-label">concept_repo.json</p>
+            <div class="code-example">
+                <code>
+[<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"concept_name"</span>: <span class="string">"{document summary}"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"type"</span>: <span class="string">"{}"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"is_ground_concept"</span>: <span class="keyword">false</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"is_final_concept"</span>: <span class="keyword">true</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"reference_axis_names"</span>: [<span class="string">"_none_axis"</span>]<br>
+&nbsp;&nbsp;}<br>
+]
+                </code>
+            </div>
+
+            <p class="code-label">inference_repo.json</p>
+            <div class="code-example">
+                <code>
+[<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"flow_info"</span>: {<span class="string">"flow_index"</span>: <span class="string">"1.1"</span>},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"inference_sequence"</span>: <span class="string">"imperative"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"concept_to_infer"</span>: <span class="string">"{document summary}"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"function_concept"</span>: <span class="string">::(summarize this text)"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"value_concepts"</span>: [<span class="string">"{clean text}"</span>],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"working_interpretation"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"paradigm"</span>: <span class="string">"h_PromptTemplate-c_Generate-o_Text"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"value_order"</span>: {<span class="string">"{clean text}"</span>: 1}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+]
+                </code>
+            </div>
+
+            <div class="info-box success">
+                <p data-i18n="activ.note"><strong>Key insight:</strong> The <code class="inline-code">working_interpretation</code> dict contains exactly what each sequence's IWI (Input Working Interpretation) step needs to execute.</p>
+            </div>
+        </section>
+
+        <!-- Format Ecosystem -->
+        <section>
+            <h2 data-i18n="section.formats">Format Ecosystem</h2>
+            <p data-i18n="section.formatsDesc">Different representations for different purposes throughout the pipeline.</p>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.format">Format</th>
+                            <th data-i18n="table.purpose">Purpose</th>
+                            <th data-i18n="table.createdBy">Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">.ncds</code></td>
+                            <td data-i18n="fmt.ncds">Draft (easiest to write)</td>
+                            <td data-i18n="fmt.ncdsBy">You or LLM</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.ncd</code></td>
+                            <td data-i18n="fmt.ncd">Formal syntax</td>
+                            <td data-i18n="fmt.ncdBy">Compiler</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.ncn</code></td>
+                            <td data-i18n="fmt.ncn">Natural language companion</td>
+                            <td data-i18n="fmt.ncnBy">Compiler</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.ncdn</code></td>
+                            <td data-i18n="fmt.ncdn">Hybrid (NCD + NCN together)</td>
+                            <td data-i18n="fmt.ncdnBy">Editor tools</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.concept.json</code></td>
+                            <td data-i18n="fmt.concept">Concept repository</td>
+                            <td data-i18n="fmt.conceptBy">Activation</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">.inference.json</code></td>
+                            <td data-i18n="fmt.inference">Inference repository</td>
+                            <td data-i18n="fmt.inferenceBy">Activation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Key Concepts -->
+        <section>
+            <h2 data-i18n="section.keyConcepts">Key Compilation Concepts</h2>
+            
+            <h3 data-i18n="key.flowIdx">Flow Indices</h3>
+            <p data-i18n="key.flowIdxDesc">Hierarchical addresses for every step in the plan. Format: <code class="inline-code">1.2.3</code> where each number is a level in the tree.</p>
+            <div class="code-example">
+                <code>
+<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept</span><br>
+├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Functional concept (operation)</span><br>
+├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (first input)</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1</span>&nbsp;<span class="comment"># Nested functional concept</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1.1</span>&nbsp;<span class="comment"># Nested value concept</span><br>
+├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (second input)</span>
+                </code>
+            </div>
+
+            <h3 data-i18n="key.seqTypes">Sequence Types</h3>
+            <p data-i18n="key.seqTypesDesc">Categories of operations that determine execution strategy:</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.category">Category</th>
+                            <th data-i18n="table.types">Types</th>
+                            <th data-i18n="table.llm">LLM?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-i18n="seq.semantic">Semantic</strong></td>
+                            <td><code class="inline-code">imperative</code>, <code class="inline-code">judgement</code></td>
+                            <td>✅ <span data-i18n="seq.yes">Yes</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong data-i18n="seq.syntactic">Syntactic</strong></td>
+                            <td><code class="inline-code">assigning</code>, <code class="inline-code">grouping</code>, <code class="inline-code">timing</code>, <code class="inline-code">looping</code></td>
+                            <td>❌ <span data-i18n="seq.no">No (free)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Compilation Guarantees -->
+        <section>
+            <h2 data-i18n="section.guarantees">Compilation Guarantees</h2>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <span class="card-icon">✅</span>
+                    <h3 data-i18n="guar.ensured">What Compilation Ensures</h3>
+                    <ul style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        <li data-i18n="guar.syntax">Syntactic validity</li>
+                        <li data-i18n="guar.flow">Flow consistency</li>
+                        <li data-i18n="guar.sequence">Sequence completeness</li>
+                        <li data-i18n="guar.reference">Reference structure</li>
+                        <li data-i18n="guar.working">Working interpretation</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <span class="card-icon">⚠️</span>
+                    <h3 data-i18n="guar.notEnsured">What It Does NOT Ensure</h3>
+                    <ul style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        <li data-i18n="guar.notSemantic">Semantic correctness</li>
+                        <li data-i18n="guar.notRuntime">Runtime success</li>
+                        <li data-i18n="guar.notLogic">Logical soundness</li>
+                        <li data-i18n="guar.notOptimal">Optimal performance</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <p data-i18n="guar.note"><strong>Key insight:</strong> Compilation validates <em>structure</em>, not <em>intent</em>. The plan might be syntactically perfect but semantically wrong.</p>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <div class="card-grid">
+                <a href="execution.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">⚙️</span>
+                        <h3 data-i18n="nav.execution">Execution Model</h3>
+                        <p data-i18n="next.executionDesc">How compiled plans run at runtime.</p>
+                    </div>
+                </a>
+                <a href="examples.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">💡</span>
+                        <h3 data-i18n="nav.examples">Examples</h3>
+                        <p data-i18n="next.examplesDesc">Real-world patterns and code samples.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <a href="../how-it-works.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span data-i18n="nav.backDocs">Back to Documentation</span>
+        </a>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
+    </footer>
+
+    <script>
+        const translations = {
+            en: {
+                nav: {
+                    companyName: 'Psylens.AI',
+                    home: 'Home',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
+                    team: 'Team',
+                    backDocs: 'Back to Documentation'
+                },
+                page: {
+                    title: 'Compilation Pipeline',
+                    subtitle: 'How natural language transforms into executable AI plans through progressive formalization.'
+                },
+                section: {
+                    pipeline: 'The 4-Phase Pipeline',
+                    pipelineDesc: 'NormCode progressively formalizes intent into structure. Each phase answers a specific question while preserving semantic intent.',
+                    phases: 'What Each Phase Does',
+                    derivation: 'Phase 1: Derivation',
+                    derivationDesc: 'Transform unstructured natural language into hierarchical inference structure.',
+                    derivationWhat: 'What It Does',
+                    derivationExample: 'Example',
+                    formalization: 'Phase 2: Formalization',
+                    formalizationDesc: 'Add structural rigor to make the plan unambiguous and executable.',
+                    formalizationWhat: 'What It Adds',
+                    formalizationExample: 'Example',
+                    postFormalization: 'Phase 3: Post-Formalization',
+                    postFormalizationDesc: 'Prepare the plan for execution by enriching it with configuration and grounding.',
+                    postFormThree: 'Three Sub-Phases',
+                    annotationsAdded: 'Annotations Added',
+                    activation: 'Phase 4: Activation',
+                    activationDesc: 'Transform the annotated .ncd into executable JSON repositories that the Orchestrator can load and run.',
+                    activationWhat: 'What It Produces',
+                    sampleOutput: 'Sample Output Structure',
+                    formats: 'Format Ecosystem',
+                    formatsDesc: 'Different representations for different purposes throughout the pipeline.',
+                    keyConcepts: 'Key Compilation Concepts',
+                    guarantees: 'Compilation Guarantees'
+                },
+                pipeline: {
+                    derivationComment: 'Extract structure and hierarchy',
+                    formalizationComment: 'Add flow indices and sequence types',
+                    postFormalizationComment: 'Enrich with annotations and resources',
+                    activationComment: 'Generate executable repositories'
+                },
+                table: {
+                    phase: 'Phase',
+                    question: 'Question Answered',
+                    input: 'Input',
+                    output: 'Output',
+                    annotation: 'Annotation',
+                    purpose: 'Purpose',
+                    example: 'Example',
+                    format: 'Format',
+                    createdBy: 'Created By',
+                    category: 'Category',
+                    types: 'Types',
+                    llm: 'LLM?'
+                },
+                phase: {
+                    derivation: 'Derivation',
+                    derivationQ: 'What are we trying to do?',
+                    derivationIn: 'Natural language',
+                    formalization: 'Formalization',
+                    formalizationQ: 'In what order and which sequence?',
+                    postFormalization: 'Post-Formalization',
+                    postFormalizationQ: 'How and with what resources?',
+                    enriched: '(enriched)',
+                    activation: 'Activation',
+                    activationQ: 'What does the Orchestrator need?',
+                    activationOut: 'JSON repositories'
+                },
+                label: {
+                    input: 'Input (Natural Language)',
+                    output: 'Output'
+                },
+                deriv: {
+                    concepts: 'Identifies concepts (data entities)',
+                    operations: 'Identifies operations (actions to perform)',
+                    deps: 'Extracts dependencies (which concepts feed into which operations)',
+                    tree: 'Creates hierarchical tree structure',
+                    note: '<strong>Key features:</strong> Bottom-up reading, simple markers (<code class="inline-code">&lt;-</code>, <code class="inline-code">&lt;=</code>), natural language descriptions. No flow indices or sequence types yet.'
+                },
+                form: {
+                    flowIdx: '<strong>Unique flow indices</strong> (e.g., <code class="inline-code">1.2.3</code>) to every step',
+                    seqTypes: '<strong>Sequence types</strong> for each inference (imperative, grouping, timing, looping)',
+                    bindings: '<strong>Value bindings</strong> (<code class="inline-code">&lt;:{1}&gt;</code>, <code class="inline-code">&lt;:{2}&gt;</code>) for input ordering',
+                    metadata: '<strong>Metadata comments</strong> (<code class="inline-code">?{sequence}:</code>, <code class="inline-code">?{flow_index}:</code>)',
+                    note: '<strong>Key changes:</strong> Every line has a flow index. Functional concepts have sequence types. Root concept marked with <code class="inline-code">:&lt;:</code>. Semantic types added (<code class="inline-code">{}</code> for objects, <code class="inline-code">::()</code> for imperatives).'
+                },
+                post: {
+                    recomp: 'Re-composition',
+                    recompDesc: 'Maps abstract intent to normative context: paradigms, body faculties, perception norms.',
+                    provision: 'Provision',
+                    provisionDesc: 'Links to concrete resources: file paths, prompt templates, script locations.',
+                    syntax: 'Syntax Re-confirmation',
+                    syntaxDesc: 'Ensures tensor coherence: axes, shape, element types for reference structure.'
+                },
+                annot: {
+                    paradigm: 'Paradigm ID to load',
+                    faculty: 'Body faculty to invoke',
+                    axes: 'Named axes for tensors',
+                    file: 'Path to ground data'
+                },
+                activ: {
+                    concept: 'concept_repo.json',
+                    conceptDesc: 'All concept definitions with types, ground flags, axes, and initial data.',
+                    inference: 'inference_repo.json',
+                    inferenceDesc: 'All inference definitions with working_interpretation for each sequence.',
+                    note: '<strong>Key insight:</strong> The <code class="inline-code">working_interpretation</code> dict contains exactly what each sequence\'s IWI (Input Working Interpretation) step needs to execute.'
+                },
+                fmt: {
+                    ncds: 'Draft (easiest to write)',
+                    ncdsBy: 'You or LLM',
+                    ncd: 'Formal syntax',
+                    ncdBy: 'Compiler',
+                    ncn: 'Natural language companion',
+                    ncnBy: 'Compiler',
+                    ncdn: 'Hybrid (NCD + NCN together)',
+                    ncdnBy: 'Editor tools',
+                    concept: 'Concept repository',
+                    conceptBy: 'Activation',
+                    inference: 'Inference repository',
+                    inferenceBy: 'Activation'
+                },
+                key: {
+                    flowIdx: 'Flow Indices',
+                    flowIdxDesc: 'Hierarchical addresses for every step in the plan. Format: 1.2.3 where each number is a level in the tree.',
+                    seqTypes: 'Sequence Types',
+                    seqTypesDesc: 'Categories of operations that determine execution strategy:'
+                },
+                seq: {
+                    semantic: 'Semantic',
+                    syntactic: 'Syntactic',
+                    yes: 'Yes',
+                    no: 'No (free)'
+                },
+                guar: {
+                    ensured: 'What Compilation Ensures',
+                    syntax: 'Syntactic validity',
+                    flow: 'Flow consistency',
+                    sequence: 'Sequence completeness',
+                    reference: 'Reference structure',
+                    working: 'Working interpretation',
+                    notEnsured: 'What It Does NOT Ensure',
+                    notSemantic: 'Semantic correctness',
+                    notRuntime: 'Runtime success',
+                    notLogic: 'Logical soundness',
+                    notOptimal: 'Optimal performance',
+                    note: '<strong>Key insight:</strong> Compilation validates <em>structure</em>, not <em>intent</em>. The plan might be syntactically perfect but semantically wrong.'
+                },
+                next: {
+                    executionDesc: 'How compiled plans run at runtime.',
+                    examplesDesc: 'Real-world patterns and code samples.'
+                },
+                footer: {
+                    paper: 'Paper'
+                }
+            },
+            zh: {
+                nav: {
+                    companyName: '心镜智',
+                    home: '首页',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
+                    team: '团队',
+                    backDocs: '返回文档'
+                },
+                page: {
+                    title: '编译流程',
+                    subtitle: '自然语言如何通过渐进式形式化转换为可执行的AI计划。'
+                },
+                section: {
+                    pipeline: '4阶段流水线',
+                    pipelineDesc: 'NormCode逐步将意图形式化为结构。每个阶段回答一个特定问题，同时保留语义意图。',
+                    phases: '每个阶段的作用',
+                    derivation: '阶段1：推导',
+                    derivationDesc: '将非结构化自然语言转换为层次化推理结构。',
+                    derivationWhat: '它做什么',
+                    derivationExample: '示例',
+                    formalization: '阶段2：形式化',
+                    formalizationDesc: '添加结构严谨性，使计划明确且可执行。',
+                    formalizationWhat: '它添加什么',
+                    formalizationExample: '示例',
+                    postFormalization: '阶段3：后形式化',
+                    postFormalizationDesc: '通过丰富配置和基础为执行准备计划。',
+                    postFormThree: '三个子阶段',
+                    annotationsAdded: '添加的注释',
+                    activation: '阶段4：激活',
+                    activationDesc: '将注释的.ncd转换为编排器可以加载和运行的可执行JSON存储库。',
+                    activationWhat: '它产生什么',
+                    sampleOutput: '示例输出结构',
+                    formats: '格式生态系统',
+                    formatsDesc: '在整个流水线中用于不同目的的不同表示。',
+                    keyConcepts: '关键编译概念',
+                    guarantees: '编译保证'
+                },
+                pipeline: {
+                    derivationComment: '提取结构和层次',
+                    formalizationComment: '添加流程索引和序列类型',
+                    postFormalizationComment: '丰富注释和资源',
+                    activationComment: '生成可执行存储库'
+                },
+                table: {
+                    phase: '阶段',
+                    question: '回答的问题',
+                    input: '输入',
+                    output: '输出',
+                    annotation: '注释',
+                    purpose: '用途',
+                    example: '示例',
+                    format: '格式',
+                    createdBy: '创建者',
+                    category: '类别',
+                    types: '类型',
+                    llm: 'LLM？'
+                },
+                phase: {
+                    derivation: '推导',
+                    derivationQ: '我们想做什么？',
+                    derivationIn: '自然语言',
+                    formalization: '形式化',
+                    formalizationQ: '以什么顺序和哪种序列？',
+                    postFormalization: '后形式化',
+                    postFormalizationQ: '如何以及用什么资源？',
+                    enriched: '（丰富的）',
+                    activation: '激活',
+                    activationQ: '编排器需要什么？',
+                    activationOut: 'JSON存储库'
+                },
+                label: {
+                    input: '输入（自然语言）',
+                    output: '输出'
+                },
+                deriv: {
+                    concepts: '识别概念（数据实体）',
+                    operations: '识别操作（要执行的动作）',
+                    deps: '提取依赖关系（哪些概念流入哪些操作）',
+                    tree: '创建层次树结构',
+                    note: '<strong>关键特性：</strong>自下而上阅读，简单标记（<code class="inline-code">&lt;-</code>，<code class="inline-code">&lt;=</code>），自然语言描述。还没有流程索引或序列类型。'
+                },
+                form: {
+                    flowIdx: '<strong>唯一流程索引</strong>（例如，<code class="inline-code">1.2.3</code>）到每个步骤',
+                    seqTypes: '<strong>序列类型</strong>用于每个推理（祈使式、分组、时序、循环）',
+                    bindings: '<strong>值绑定</strong>（<code class="inline-code">&lt;:{1}&gt;</code>，<code class="inline-code">&lt;:{2}&gt;</code>）用于输入排序',
+                    metadata: '<strong>元数据注释</strong>（<code class="inline-code">?{sequence}:</code>，<code class="inline-code">?{flow_index}:</code>）',
+                    note: '<strong>关键变化：</strong>每行都有流程索引。功能概念有序列类型。根概念用<code class="inline-code">:&lt;:</code>标记。添加了语义类型（对象用<code class="inline-code">{}</code>，祈使式用<code class="inline-code">::()</code>）。'
+                },
+                post: {
+                    recomp: '重组',
+                    recompDesc: '将抽象意图映射到规范上下文：范式、主体能力、感知规范。',
+                    provision: '配置',
+                    provisionDesc: '链接到具体资源：文件路径、提示模板、脚本位置。',
+                    syntax: '语法再确认',
+                    syntaxDesc: '确保张量一致性：轴、形状、引用结构的元素类型。'
+                },
+                annot: {
+                    paradigm: '要加载的范式ID',
+                    faculty: '要调用的主体能力',
+                    axes: '张量的命名轴',
+                    file: '基础数据的路径'
+                },
+                activ: {
+                    concept: 'concept_repo.json',
+                    conceptDesc: '所有概念定义，包含类型、基础标志、轴和初始数据。',
+                    inference: 'inference_repo.json',
+                    inferenceDesc: '所有推理定义，包含每个序列的working_interpretation。',
+                    note: '<strong>关键见解：</strong><code class="inline-code">working_interpretation</code>字典包含每个序列的IWI（输入工作解释）步骤执行所需的确切内容。'
+                },
+                fmt: {
+                    ncds: '草稿（最易编写）',
+                    ncdsBy: '您或LLM',
+                    ncd: '正式语法',
+                    ncdBy: '编译器',
+                    ncn: '自然语言伴随',
+                    ncnBy: '编译器',
+                    ncdn: '混合（NCD + NCN一起）',
+                    ncdnBy: '编辑器工具',
+                    concept: '概念存储库',
+                    conceptBy: '激活',
+                    inference: '推理存储库',
+                    inferenceBy: '激活'
+                },
+                key: {
+                    flowIdx: '流程索引',
+                    flowIdxDesc: '计划中每个步骤的层次地址。格式：1.2.3，其中每个数字是树中的一个级别。',
+                    seqTypes: '序列类型',
+                    seqTypesDesc: '决定执行策略的操作类别：'
+                },
+                seq: {
+                    semantic: '语义',
+                    syntactic: '语法',
+                    yes: '是',
+                    no: '否（免费）'
+                },
+                guar: {
+                    ensured: '编译确保什么',
+                    syntax: '语法有效性',
+                    flow: '流程一致性',
+                    sequence: '序列完整性',
+                    reference: '引用结构',
+                    working: '工作解释',
+                    notEnsured: '它不确保什么',
+                    notSemantic: '语义正确性',
+                    notRuntime: '运行时成功',
+                    notLogic: '逻辑健全性',
+                    notOptimal: '最佳性能',
+                    note: '<strong>关键见解：</strong>编译验证<em>结构</em>，而非<em>意图</em>。计划可能在语法上完美，但在语义上是错误的。'
+                },
+                next: {
+                    executionDesc: '编译后的计划如何在运行时执行。',
+                    examplesDesc: '真实世界的模式和代码示例。'
+                },
+                footer: {
+                    paper: '论文'
+                }
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    if (value.includes('<code') || value.includes('<strong') || value.includes('<em')) {
+                        el.innerHTML = value;
+                    } else {
+                        el.textContent = value;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+        }
+
+        setLanguage(currentLang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.getAttribute('data-lang'));
+            });
+        });
+
+        // Mobile menu
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        const menuOverlay = document.querySelector('.menu-overlay');
+
+        function toggleMenu(open) {
+            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
+            menuToggle.classList.toggle('active', isOpen);
+            navLinks.classList.toggle('active', isOpen);
+            menuOverlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', () => toggleMenu());
+        menuOverlay.addEventListener('click', () => toggleMenu(false));
+    </script>
+</body>
+</html>
+

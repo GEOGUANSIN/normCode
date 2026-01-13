@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-Build a simple calculator that takes two numbers and adds them together, then returns the sum.
-
-The calculator should:
-- Accept two input numbers
-- Add them together
-- Return the result
-
-Input: two numbers
-Output: their sum
-
-=======
 Formalize a NormCode Draft Straightforward (.ncds) file into a formal NormCode Draft (.ncd).
 
 STEP 1: PARSE
@@ -46,4 +34,3 @@ Convert the formalized lines back to .ncd text format, using the parser in the b
 
 Input: .ncds file
 Output: .ncd file with flow indices, semantic types, sequence types, value bindings with the help of parser. 
->>>>>>> origin/dev
