@@ -1,22 +1,26 @@
 /: ========================================
-/: NormCode Formalization Process
+/: NormCode Formalization Process (v2)
 /: ========================================
 /:
 /: GOAL: Convert .ncds plan text to formal .ncd format
 /:
-/: FORMALIZATION means:
-/:   1. Parse .ncds into structured lines
-/:   2. For each concept line, judge type and formalize accordingly
-/:   3. Serialize formalized lines back to .ncd text
+/: FORMALIZATION with INCREMENTAL SAVE:
+/:   1. Parse .ncds into structured lines, filter comments
+/:   2. For each concept line:
+/:      - Read current .ncd output file
+/:      - Judge type and formalize the line
+/:      - Append formalized line to content
+/:      - Write updated .ncd file (checkpoint)
+/:   3. Return completed .ncd file
 /:
-/: INPUT:  .ncds file (source plan)
-/: OUTPUT: .ncd file (formalized plan with flow indices, semantic types, etc.)
+/: INPUT:  .ncds file (source plan), .ncd output path
+/: OUTPUT: .ncd file (built line-by-line with checkpoints)
 /:
 
-:<:{.ncd file}
-    <= return the formalized .ncd output
-    /: ROOT: The final result is the serialized .ncd file
-    /: The real work happens in the phases below
+:<:{.ncd file complete}
+    <= return the completed .ncd output
+    /: ROOT: The final result after all lines processed incrementally
+    /: Each line was saved as a checkpoint during the loop
 
     /: ========================================
     /: GROUND CONCEPTS (External Inputs)
@@ -25,41 +29,64 @@
     <- {.ncds file}
         /: Ground: source NCDS plan file to be formalized
 
+    <- {.ncd output path}
+        /: Ground: where to write the formalized .ncd file
+
     /: ========================================
-    /: PHASE 1: PARSE
+    /: PHASE 1: PARSE AND FILTER
     /: ========================================
     /: Parse the .ncds file into a JSON list of lines
     /: Each line has: flow_index, content, depth, inference_marker, concept_type
+    /: Filter out comment lines - only process concept lines
 
     <- [parsed lines]
         <= parse .ncds file into JSON list of lines
         /: Uses parser to convert text to structured data
         <- {.ncds file}
 
+    <- [concept lines]
+        <= filter out comment lines from parsed lines
+        /: Only keep lines that are concepts (not /: comments)
+        <- [parsed lines]
+
     /: ========================================
-    /: PHASE 2: FOR EACH CONCEPT LINE - FORMALIZE
+    /: PHASE 2: FOR EACH CONCEPT LINE - FORMALIZE AND SAVE
     /: ========================================
     /: For each line that is a concept (not a comment):
-    /:   1. Judge what type of concept it is
-    /:   2. Apply appropriate formalization based on type
-    /:   3. Collect all formalized lines
+    /:   1. Read current .ncd output file
+    /:   2. Judge type and formalize this line
+    /:   3. Append formalized line to content
+    /:   4. Write updated .ncd file (checkpoint)
+    /:
+    /: This incremental save pattern enables:
+    /:   - Crash recovery (partial output preserved)
+    /:   - Visibility (watch .ncd grow line-by-line)
+    /:   - Resume capability
 
-    <- [formalized lines]
-        <= for each concept line in parsed lines
-        /: Loop over all concept lines, produce formalized version of each
-        /: The looper collects each {formalized line} and joins them into [formalized lines]
-            <= return formalized line for this concept
-            /: LOOP RETURN: Specifies what gets aggregated into [formalized lines]
-            /: This return operation wraps the selection that produces {formalized line}
+    <- {final .ncd file written}
+        <= for each concept line in concept lines
+        /: Loop processes lines sequentially, building the .ncd incrementally
+        /: After each line: read current file, append new line, write updated file
+            <= return .ncd file status after processing this line
+            /: LOOP RETURN: Each iteration saves progress to file
 
+            /: ----------------------------------------
+            /: STEP 2a: READ CURRENT .NCD STATE
+            /: ----------------------------------------
+            <- {current .ncd content}
+                <= read current .ncd file if exists
+                /: On first line this is empty, grows with each iteration
+                <- {.ncd output path}
+
+            /: ----------------------------------------
+            /: STEP 2b: FORMALIZE THIS LINE
+            /: ----------------------------------------
             <- {formalized line}
                 <= select first valid formalization result
                 /: CONDITIONAL SELECTION: Based on judged type, apply matching formalization
                 /: Only one option will produce a result (timing-gated)
 
-                /: ========================================
-                /: STEP 2a: JUDGE CONCEPT TYPE (executed first)
-                /: ========================================
+                /: STEP 2b-i: JUDGE CONCEPT TYPE (executed first)
                 <- {concept type}
                     <= judge what type of concept this line is
                     /: Returns one of: {object}, [relation], <proposition>,
@@ -67,9 +94,7 @@
                     /:   & grouping, @ timing, * looping
                     <- {concept line}
 
-                /: ========================================
-                /: STEP 2b: CHECK TYPE CONDITIONS (executed second)
-                /: ========================================
+                /: STEP 2b-ii: CHECK TYPE CONDITIONS (executed second)
                 <- <is object type>
                     <= check if concept type equals object
                     <- {concept type}
@@ -106,10 +131,8 @@
                     <= check if concept type equals looping
                     <- {concept type}
 
-                /: ========================================
-                /: STEP 2c: APPLY FORMALIZATION (executed third)
-                /: ========================================
-                /: Only the matching type's formalization will execute (timing-gated)
+                /: STEP 2b-iii: APPLY FORMALIZATION (executed third, timing-gated)
+                /: Only the matching type's formalization will execute
 
                 <- {object formalized}
                     <= formalize according to {object} syntax
@@ -171,21 +194,47 @@
                         <* <is looping type>
                     <- {concept line}
 
+            /: ----------------------------------------
+            /: STEP 2c: APPEND TO CURRENT CONTENT
+            /: ----------------------------------------
+            <- {updated .ncd content}
+                <= append formalized line to current content
+                /: Adds the new line with proper formatting/newline
+                <- {current .ncd content}
+                <- {formalized line}
+
+            /: ----------------------------------------
+            /: STEP 2d: WRITE UPDATED FILE (CHECKPOINT)
+            /: ----------------------------------------
+            <- {.ncd file written}
+                <= write updated .ncd to output path
+                /: INCREMENTAL SAVE: Progress preserved after each line
+                /: If execution stops here, we have partial but valid output
+                <- {.ncd output path}
+                <- {updated .ncd content}
+
         /: === Loop input and context ===
-        <- [parsed lines]
+        <- [concept lines]
         <* {concept line}
             /: Loop context: the current concept line being processed
 
-    /: ========================================
-    /: PHASE 3: SERIALIZE
-    /: ========================================
-    /: Convert the formalized lines back to .ncd text format
-
-    <- {serialized .ncd content}
-        <= serialize formalized lines to .ncd text format
-        /: Uses parser to convert structured data back to text
-        /: Produces the final .ncd file content
-        <- [formalized lines]
-        <- {.ncds file}
-            /: Need original file for structure reference during serialization
+/: ========================================
+/: SUMMARY: Incremental Save Pattern
+/: ========================================
+/:
+/: DATA FLOW PER ITERATION:
+/:   {concept line}
+/:     → judge type → {concept type}
+/:     → check conditions → <is X type>
+/:     → apply matching syntax (timing-gated) → {formalized line}
+/:     → read current file → {current .ncd content}
+/:     → append → {updated .ncd content}
+/:     → write to file → {.ncd file written}
+/:     → next line
+/:
+/: BENEFITS:
+/:   - Crash recovery: partial output preserved
+/:   - Visibility: watch .ncd grow line-by-line in real-time
+/:   - Resume capability: can skip already-processed lines
+/:   - Pattern consistency: matches derivation.pf.ncd checkpoint pattern
 

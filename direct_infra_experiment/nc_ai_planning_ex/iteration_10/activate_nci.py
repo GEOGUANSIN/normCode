@@ -904,7 +904,7 @@ def build_inference_repo(nci_data: list) -> list:
 def main():
     # Paths
     base_dir = Path(__file__).parent
-    nci_path = base_dir / "derivation.pf.nci.json"
+    nci_path = base_dir / "formalization.pf.nci.json"
     repos_dir = base_dir / "repos"
     repos_dir.mkdir(exist_ok=True)
     

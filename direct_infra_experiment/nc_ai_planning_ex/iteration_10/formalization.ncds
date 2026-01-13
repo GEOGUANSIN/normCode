@@ -1,288 +1,240 @@
 /: ========================================
-/: Formalization Algorithm
+/: NormCode Formalization Process (v2)
 /: ========================================
-/: 
-/: GOAL: Transform .ncds (draft) into .ncd (formal) with:
-/:   - Flow indices (unique hierarchical addresses)
-/:   - Sequence types (operation classification)
-/:   - Semantic types (concept classification)
-/:   - Value bindings (input ordering)
 /:
-/: INPUT:  ncds_content (string)
-/: OUTPUT: ncd_content (string)
+/: GOAL: Convert .ncds plan text to formal .ncd format
 /:
-/: PROCESSING: Inference-by-inference with global context
+/: FORMALIZATION with INCREMENTAL SAVE:
+/:   1. Parse .ncds into structured lines, filter comments
+/:   2. For each concept line:
+/:      - Read current .ncd output file
+/:      - Judge type and formalize the line
+/:      - Append formalized line to content
+/:      - Write updated .ncd file (checkpoint)
+/:   3. Return completed .ncd file
 /:
-/: CHECKPOINTING: Each phase writes to checkpoint file for resumability
+/: INPUT:  .ncds file (source plan), .ncd output path
+/: OUTPUT: .ncd file (built line-by-line with checkpoints)
+/:
 
-:<: ncd content
-    <= return ncd output written
-    /: ROOT: The final formalized .ncd content
+:<:{.ncd file complete}
+    <= return the completed .ncd output
+    /: ROOT: The final result after all lines processed incrementally
+    /: Each line was saved as a checkpoint during the loop
 
     /: ========================================
     /: GROUND CONCEPTS (External Inputs)
     /: ========================================
 
-    <- ncds input file path
-        /: Ground: Path to the .ncds file to formalize
+    <- {.ncds file}
+        /: Ground: source NCDS plan file to be formalized
 
-    <- progress file path
-        /: Ground: Tracks which phases completed
-
-    <- parsed structure file path
-        /: Ground: Phase 1 checkpoint
-
-    <- indexed structure file path
-        /: Ground: Phase 2 checkpoint
-
-    <- typed structure file path
-        /: Ground: Phase 3-4 checkpoint
-
-    <- output file path
-        /: Ground: Final .ncd output path
+    <- {.ncd output path}
+        /: Ground: where to write the formalized .ncd file
 
     /: ========================================
-    /: PHASE 0: READ INPUT
+    /: PHASE 1: PARSE AND FILTER
     /: ========================================
+    /: Parse the .ncds file into a JSON list of lines
+    /: Each line has: flow_index, content, depth, inference_marker, concept_type
+    /: Filter out comment lines - only process concept lines
 
-    <- ncds content
-        <= read ncds from input file
-        /: FILE I/O: Load the .ncds content
-        <- ncds input file path
+    <- [parsed lines]
+        <= parse .ncds file into JSON list of lines
+        /: Uses parser to convert text to structured data
+        <- {.ncds file}
+
+    <- [concept lines]
+        <= filter out comment lines from parsed lines
+        /: Only keep lines that are concepts (not /: comments)
+        <- [parsed lines]
 
     /: ========================================
-    /: PHASE 1: PARSE NCDS STRUCTURE
+    /: PHASE 2: FOR EACH CONCEPT LINE - FORMALIZE AND SAVE
     /: ========================================
-    /: PURPOSE: Convert text into structured tree representation
+    /: For each line that is a concept (not a comment):
+    /:   1. Read current .ncd output file
+    /:   2. Judge type and formalize this line
+    /:   3. Append formalized line to content
+    /:   4. Write updated .ncd file (checkpoint)
     /:
-    /: - Tokenize each line (marker, content, indentation)
-    /: - Build parent-child relationships from indentation
-    /: - Identify ground concepts (leaves without producers)
+    /: This incremental save pattern enables:
+    /:   - Crash recovery (partial output preserved)
+    /:   - Visibility (watch .ncd grow line-by-line)
+    /:   - Resume capability
 
-    <- parsed structure file written
-        <= write parsed structure to checkpoint
-        /: CHECKPOINT: Save parsed tree for resume
+    <- {final .ncd file written}
+        <= for each concept line in concept lines
+        /: Loop processes lines sequentially, building the .ncd incrementally
+        /: After each line: read current file, append new line, write updated file
+            <= return .ncd file status after processing this line
+            /: LOOP RETURN: Each iteration saves progress to file
 
-        <- parsed structure file path
-        <- parsed structure to be written
-            <= select first available result
-            /: SELECTION: Cache or compute
+            /: ----------------------------------------
+            /: STEP 2a: READ CURRENT .NCD STATE
+            /: ----------------------------------------
+            <- {current .ncd content}
+                <= read current .ncd file if exists
+                /: On first line this is empty, grows with each iteration
+                <- {.ncd output path}
 
-            <- phase 1 already complete?
-                <= check if phase 1 already complete in progress
-                <- current progress
-                    <= read progress from file if exists
-                    <- progress file path
+            /: ----------------------------------------
+            /: STEP 2b: FORMALIZE THIS LINE
+            /: ----------------------------------------
+            <- {formalized line}
+                <= select first valid formalization result
+                /: CONDITIONAL SELECTION: Based on judged type, apply matching formalization
+                /: Only one option will produce a result (timing-gated)
 
-            <- cached parsed structure
-                <= read parsed structure from checkpoint
-                    <= if phase 1 already complete
-                    <* phase 1 already complete?
-                <- parsed structure file path
+                /: STEP 2b-i: JUDGE CONCEPT TYPE (executed first)
+                <- {concept type}
+                    <= judge what type of concept this line is
+                    /: Returns one of: {object}, [relation], <proposition>,
+                    /:   ::() imperative, ::<> judgement, $ assigning,
+                    /:   & grouping, @ timing, * looping
+                    <- {concept line}
 
-            <- freshly parsed structure
-                <= parse ncds text into tree structure
-                /: LLM/SCRIPT: Parse the ncds content
-                /:
-                /: For each line:
-                /:   1. Extract marker (<-, <=, <*, /:, :<:)
-                /:   2. Extract content (text after marker)
-                /:   3. Calculate indentation level (spaces / 4)
-                /:   4. Build parent-child tree from levels
-                /:
-                /: Output: JSON tree with nodes containing:
-                /:   - marker, content, level, children[]
-                    <= if phase 1 NOT already complete
-                    <* phase 1 already complete?
-                <- ncds content
+                /: STEP 2b-ii: CHECK TYPE CONDITIONS (executed second)
+                <- <is object type>
+                    <= check if concept type equals object
+                    <- {concept type}
 
-    <- phase 1 complete
-        <= write phase 1 status to progress
-        <- progress file path
-        <- parsed structure file written
+                <- <is relation type>
+                    <= check if concept type equals relation
+                    <- {concept type}
 
-    /: ========================================
-    /: PHASE 2: ASSIGN FLOW INDICES
-    /: ========================================
-    /: PURPOSE: Give each node a unique hierarchical address
-    /:
-    /: - Root gets "1"
-    /: - Children get parent.1, parent.2, etc.
-    /: - All concept lines get indices
+                <- <is proposition type>
+                    <= check if concept type equals proposition
+                    <- {concept type}
 
-    <- indexed structure file written
-        <= write indexed structure to checkpoint
-        /: CHECKPOINT: Save tree with flow indices
+                <- <is imperative type>
+                    <= check if concept type equals imperative
+                    <- {concept type}
 
-        <- indexed structure file path
-        <- indexed structure to be written
-            <= select first available result
+                <- <is judgement type>
+                    <= check if concept type equals judgement
+                    <- {concept type}
 
-            <- phase 2 already complete?
-                <= check if phase 2 already complete in progress
-                <- current progress
+                <- <is assigning type>
+                    <= check if concept type equals assigning
+                    <- {concept type}
 
-            <- cached indexed structure
-                <= read indexed structure from checkpoint
-                    <= if phase 2 already complete
-                    <* phase 2 already complete?
-                <- indexed structure file path
+                <- <is grouping type>
+                    <= check if concept type equals grouping
+                    <- {concept type}
 
-            <- freshly indexed structure
-                <= assign flow indices to tree
-                /: SCRIPT: Traverse tree and assign indices
-                /:
-                /: Algorithm:
-                /:   assign_index(root, "1")
-                /:   for each node:
-                /:     node.flow_index = current_index
-                /:     for i, child in enumerate(children, 1):
-                /:       assign_index(child, current_index + "." + i)
-                    <= if phase 2 NOT already complete
-                    <* phase 2 already complete?
-                <- parsed structure
-                    <= read parsed structure from checkpoint
-                    <- parsed structure file path
+                <- <is timing type>
+                    <= check if concept type equals timing
+                    <- {concept type}
 
-    <- phase 2 complete
-        <= write phase 2 status to progress
-        <- progress file path
-        <- indexed structure file written
+                <- <is looping type>
+                    <= check if concept type equals looping
+                    <- {concept type}
 
-    /: ========================================
-    /: PHASE 3: DETERMINE SEQUENCE TYPES
-    /: ========================================
-    /: PURPOSE: Classify each functional concept
-    /:
-    /: Check syntactic operators first:
-    /:   $= $. $+ $- $% → assigning
-    /:   &[{}] &[#] → grouping
-    /:   @:' @:! @. → timing
-    /:   *. → looping
-    /:
-    /: If no operator, infer from NL:
-    /:   action verbs → imperative
-    /:   evaluation phrases → judgement
+                /: STEP 2b-iii: APPLY FORMALIZATION (executed third, timing-gated)
+                /: Only the matching type's formalization will execute
 
-    <- typed structure file written
-        <= write typed structure to checkpoint
-        /: CHECKPOINT: Save tree with sequence and semantic types
+                <- {object formalized}
+                    <= formalize according to {object} syntax
+                        <= when condition holds
+                        <* <is object type>
+                    <- {concept line}
 
-        <- typed structure file path
-        <- typed structure to be written
-            <= select first available result
+                <- {relation formalized}
+                    <= formalize according to [relation] syntax
+                        <= when condition holds
+                        <* <is relation type>
+                    <- {concept line}
 
-            <- phase 3 already complete?
-                <= check if phase 3 already complete in progress
-                <- current progress
+                <- {proposition formalized}
+                    <= formalize according to <proposition> syntax
+                        <= when condition holds
+                        <* <is proposition type>
+                    <- {concept line}
 
-            <- cached typed structure
-                <= read typed structure from checkpoint
-                    <= if phase 3 already complete
-                    <* phase 3 already complete?
-                <- typed structure file path
+                <- {imperative formalized}
+                    <= formalize according to ::() imperative syntax
+                    /: Add annotation: | ?{sequence}: imperative
+                        <= when condition holds
+                        <* <is imperative type>
+                    <- {concept line}
 
-            <- freshly typed structure
-                <= process inferences with types and bindings
-                /: MAIN PROCESSING: For each inference in tree
-                    <= if phase 3 NOT already complete
-                    <* phase 3 already complete?
+                <- {judgement formalized}
+                    <= formalize according to ::<> judgement syntax
+                    /: Add annotation: | ?{sequence}: judgement
+                        <= when condition holds
+                        <* <is judgement type>
+                    <- {concept line}
 
-                <- indexed structure
-                    <= read indexed structure from checkpoint
-                    <- indexed structure file path
+                <- {assigning formalized}
+                    <= formalize according to $ assigning syntax
+                    /: Add annotation: | ?{sequence}: assigning
+                        <= when condition holds
+                        <* <is assigning type>
+                    <- {concept line}
 
-                <- all inferences processed
-                    <= for each inference in tree
-                    /: ITERATION: Process one inference at a time
+                <- {grouping formalized}
+                    <= formalize according to & grouping syntax
+                    /: Add annotation: | ?{sequence}: grouping
+                        <= when condition holds
+                        <* <is grouping type>
+                    <- {concept line}
 
-                    <- processed inference
-                        <= process single inference
-                        /: For this inference:
-                        /:   1. If functional: determine sequence type
-                        /:   2. Add semantic type ({}, [], <>, ::(), ::<>)
-                        /:   3. If multi-input: add value bindings
-                        <- current inference
-                        <- inference context
-                            <= gather context for inference
-                            /: Get parent, siblings, tree position
-                            <- current inference
-                            <- indexed structure
+                <- {timing formalized}
+                    <= formalize according to @ timing syntax
+                    /: Add annotation: | ?{sequence}: timing
+                        <= when condition holds
+                        <* <is timing type>
+                    <- {concept line}
 
-                    <- all inferences
-                        <= extract inferences from tree
-                        <- indexed structure
-                    <* current inference
+                <- {looping formalized}
+                    <= formalize according to * looping syntax
+                    /: Add annotation: | ?{sequence}: looping
+                        <= when condition holds
+                        <* <is looping type>
+                    <- {concept line}
 
-    <- phase 3 complete
-        <= write phase 3 status to progress
-        <- progress file path
-        <- typed structure file written
+            /: ----------------------------------------
+            /: STEP 2c: APPEND TO CURRENT CONTENT
+            /: ----------------------------------------
+            <- {updated .ncd content}
+                <= append formalized line to current content
+                /: Adds the new line with proper formatting/newline
+                <- {current .ncd content}
+                <- {formalized line}
 
-    /: ========================================
-    /: PHASE 4: SERIALIZE TO NCD
-    /: ========================================
-    /: PURPOSE: Convert annotated tree back to text format
-    /:
-    /: Format each line as:
-    /:   [marker] [semantic_type][content][binding] | ?{flow_index}: X.Y.Z [| ?{sequence}: type]
-    /:
-    /: Mark root with :<:
+            /: ----------------------------------------
+            /: STEP 2d: WRITE UPDATED FILE (CHECKPOINT)
+            /: ----------------------------------------
+            <- {.ncd file written}
+                <= write updated .ncd to output path
+                /: INCREMENTAL SAVE: Progress preserved after each line
+                /: If execution stops here, we have partial but valid output
+                <- {.ncd output path}
+                <- {updated .ncd content}
 
-    <- ncd output written
-        <= write ncd file to output path
-
-        <- output file path
-        <- ncd content to be written
-            <= select first available result
-
-            <- phase 4 already complete?
-                <= check if phase 4 already complete in progress
-                <- current progress
-
-            <- cached ncd content
-                <= read ncd from checkpoint
-                    <= if phase 4 already complete
-                    <* phase 4 already complete?
-                <- output file path
-
-            <- freshly serialized ncd
-                <= serialize typed tree to ncd format
-                /: Convert tree back to formatted text
-                /:
-                /: For each node in tree order:
-                /:   1. Apply indentation (level * 4 spaces)
-                /:   2. Format marker and content with types
-                /:   3. Append flow index annotation
-                /:   4. Append sequence type if functional
-                /:   5. Handle root marker (:<:)
-                    <= if phase 4 NOT already complete
-                    <* phase 4 already complete?
-                <- typed structure
-                    <= read typed structure from checkpoint
-                    <- typed structure file path
-
-    <- phase 4 complete
-        <= write phase 4 status to progress
-        <- progress file path
-        <- ncd output written
+        /: === Loop input and context ===
+        <- [concept lines]
+        <* {concept line}
+            /: Loop context: the current concept line being processed
 
 /: ========================================
-/: SUMMARY
+/: SUMMARY: Incremental Save Pattern
 /: ========================================
 /:
-/: Phase 1: PARSE     ncds text → tree structure
-/: Phase 2: INDEX     tree → tree with flow indices
-/: Phase 3: TYPE      tree → tree with sequence/semantic types and bindings
-/: Phase 4: SERIALIZE tree → ncd text
+/: DATA FLOW PER ITERATION:
+/:   {concept line}
+/:     → judge type → {concept type}
+/:     → check conditions → <is X type>
+/:     → apply matching syntax (timing-gated) → {formalized line}
+/:     → read current file → {current .ncd content}
+/:     → append → {updated .ncd content}
+/:     → write to file → {.ncd file written}
+/:     → next line
 /:
-/: Each phase:
-/:   1. Check if already complete (resume support)
-/:   2. If yes → read from checkpoint
-/:   3. If no → compute and write checkpoint
-/:   4. Update progress tracker
-/:
-/: Key insight: Phase 3 processes inference-by-inference
-/: with context from the indexed structure, allowing
-/: focused LLM prompts for type determination.
+/: BENEFITS:
+/:   - Crash recovery: partial output preserved
+/:   - Visibility: watch .ncd grow line-by-line in real-time
+/:   - Resume capability: can skip already-processed lines
+/:   - Pattern consistency: matches derivation.pf.ncd checkpoint pattern
 
