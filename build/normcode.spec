@@ -22,8 +22,9 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 SPEC_DIR = Path(SPECPATH)
 PROJECT_ROOT = SPEC_DIR.parent
 CANVAS_APP = PROJECT_ROOT / "canvas_app"
-LAUNCHER_DIR = PROJECT_ROOT / "launcher"
-RESOURCES_DIR = PROJECT_ROOT / "resources"
+# Launcher and resources are now inside build/
+LAUNCHER_DIR = SPEC_DIR / "launcher"
+RESOURCES_DIR = SPEC_DIR / "resources"
 
 block_cipher = None
 

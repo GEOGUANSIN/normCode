@@ -37,6 +37,9 @@ REQUIRED_PACKAGES = [
     "pydantic",
     "pydantic_settings",
     "python_multipart",
+    # Infra module dependencies
+    "openai",
+    "yaml",  # pyyaml
 ]
 
 
