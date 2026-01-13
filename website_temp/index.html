@@ -141,6 +141,77 @@
             color: var(--accent);
         }
 
+        /* Docs dropdown */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.925rem;
+            transition: color 0.15s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+        }
+
+        .nav-dropdown-trigger:hover,
+        .nav-dropdown-trigger.active {
+            color: var(--accent);
+        }
+
+        .nav-dropdown-trigger svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-trigger svg {
+            transform: rotate(180deg);
+        }
+
+        .nav-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-dropdown:hover .nav-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-dropdown-menu a {
+            display: block;
+            padding: 0.6rem 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            transition: all 0.1s ease;
+        }
+
+        .nav-dropdown-menu a:hover {
+            background: rgba(77, 163, 255, 0.1);
+            color: var(--accent);
+        }
+
         .lang-switcher {
             display: flex;
             gap: 0.25rem;
@@ -260,18 +331,29 @@
 
         /* Section Styles */
         section {
-            padding: 5rem 2rem;
+            padding: 3rem 2rem;
             max-width: 1100px;
             margin: 0 auto;
         }
 
+        #features {
+            background: var(--bg-page);
+            padding: 3rem 2rem;
+        }
+
+        .use-cases-section {
+            background: var(--bg-white);
+            padding: 3rem 2rem;
+        }
+
         section h2 {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
             color: var(--text-primary);
             text-align: center;
             font-weight: 600;
             letter-spacing: -0.02em;
+            line-height: 1.4;
         }
 
         section h3 {
@@ -279,17 +361,6 @@
             margin-bottom: 0.5rem;
             color: var(--text-primary);
             font-weight: 600;
-        }
-
-        .section-description {
-            text-align: center;
-            font-size: 1.05rem;
-            color: var(--text-muted);
-            margin-bottom: 3rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            line-height: 1.7;
         }
 
         /* Features Grid */
@@ -418,6 +489,22 @@
                 font-size: 1.1rem;
             }
 
+            .nav-dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin-top: 0.5rem;
+                background: transparent;
+            }
+
+            .nav-dropdown-menu a {
+                padding: 0.4rem 0.6rem;
+            }
+
             .lang-switcher {
                 margin-left: 0;
                 margin-top: 1rem;
@@ -432,7 +519,15 @@
             }
 
             section {
-                padding: 3.5rem 1.5rem;
+                padding: 2.5rem 1.5rem;
+            }
+
+            #features {
+                padding: 2.5rem 1.5rem;
+            }
+
+            .use-cases-section {
+                padding: 2.5rem 1.5rem;
             }
 
             section h2 {
@@ -508,7 +603,21 @@
             </button>
             <div class="nav-links">
                 <a href="#features" data-i18n="nav.features">Features</a>
-                <a href="how-it-works.html" data-i18n="nav.howItWorks">How It Works</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
                 <a href="team.html" data-i18n="nav.team">Team</a>
                 <div class="lang-switcher">
                     <button class="lang-btn active" data-lang="en">EN</button>
@@ -560,10 +669,7 @@
 
     <!-- Key Features -->
     <section id="features" class="fade-in">
-        <h2 data-i18n="features.title">Key Features</h2>
-        <p class="section-description" data-i18n="features.description">
-            Explicit data isolation as a language-level constraint. Auditable by construction.
-        </p>
+        <h2 class="section-title" data-i18n="features.title">Key Features — Explicit data isolation as a language-level constraint.</h2>
         
         <div class="features-grid">
             <div class="feature-card">
@@ -605,11 +711,8 @@
     </section>
 
     <!-- Use Cases -->
-    <section class="fade-in">
-        <h2 data-i18n="useCases.title">When to Use NormCode</h2>
-        <p class="section-description" data-i18n="useCases.description">
-            Best for complex workflows where transparency matters.
-        </p>
+    <section class="use-cases-section fade-in">
+        <h2 class="section-title" data-i18n="useCases.title">When to Use NormCode — Best for complex workflows where transparency matters.</h2>
         
         <div class="use-cases-grid">
             <div class="use-case-card">
@@ -649,7 +752,12 @@
                 nav: {
                     companyName: 'Psylens.AI',
                     features: 'Features',
-                    howItWorks: 'How It Works',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
                     team: 'Team'
                 },
                 hero: {
@@ -659,8 +767,7 @@
                     paperBtn: 'Paper'
                 },
                 features: {
-                    title: 'Key Features',
-                    description: 'Explicit data isolation as a language-level constraint. Auditable by construction.',
+                    title: 'Key Features — Explicit data isolation as a language-level constraint.',
                     dataIsolation: {
                         title: 'Data Isolation',
                         text: 'Each step only sees what you explicitly pass. No hidden context. Full visibility when debugging.'
@@ -687,8 +794,7 @@
                     }
                 },
                 useCases: {
-                    title: 'When to Use NormCode',
-                    description: 'Best for complex workflows where transparency matters.',
+                    title: 'When to Use NormCode — Best for complex workflows where transparency matters.',
                     multiStep: {
                         title: 'Multi-step Workflows',
                         text: 'Workflows with 5+ LLM calls where isolation and debuggability pay off.'
@@ -712,7 +818,12 @@
                 nav: {
                     companyName: '心镜智',
                     features: '核心功能',
-                    howItWorks: '工作原理',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
                     team: '团队'
                 },
                 hero: {
@@ -722,8 +833,7 @@
                     paperBtn: '论文'
                 },
                 features: {
-                    title: '核心功能',
-                    description: '显式数据隔离作为语言级约束。构建时即可审计。',
+                    title: '核心功能 — 显式数据隔离作为语言级约束。构建时即可审计。',
                     dataIsolation: {
                         title: '数据隔离',
                         text: '每个步骤只能看到您明确传递的内容。没有隐藏上下文。调试时完全可见。'
@@ -750,8 +860,7 @@
                     }
                 },
                 useCases: {
-                    title: '何时使用NormCode',
-                    description: '最适合需要透明度的复杂工作流。',
+                    title: '何时使用NormCode — 最适合需要透明度的复杂工作流。',
                     multiStep: {
                         title: '多步骤工作流',
                         text: '包含5+ LLM调用的工作流，隔离和可调试性会带来回报。'

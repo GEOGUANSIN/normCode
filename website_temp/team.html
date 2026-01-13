@@ -141,6 +141,77 @@
             color: var(--accent);
         }
 
+        /* Docs dropdown */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.925rem;
+            transition: color 0.15s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: inherit;
+        }
+
+        .nav-dropdown-trigger:hover,
+        .nav-dropdown-trigger.active {
+            color: var(--accent);
+        }
+
+        .nav-dropdown-trigger svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-trigger svg {
+            transform: rotate(180deg);
+        }
+
+        .nav-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-dropdown:hover .nav-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-dropdown-menu a {
+            display: block;
+            padding: 0.6rem 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            transition: all 0.1s ease;
+        }
+
+        .nav-dropdown-menu a:hover {
+            background: rgba(77, 163, 255, 0.1);
+            color: var(--accent);
+        }
+
         .lang-switcher {
             display: flex;
             gap: 0.25rem;
@@ -281,21 +352,29 @@
 
         /* Footer */
         footer {
-            background: var(--bg-white);
-            padding: 2rem;
+            background: var(--text-primary);
+            padding: 3rem 2rem;
             text-align: center;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
+            color: rgba(255, 255, 255, 0.7);
             font-size: 0.875rem;
         }
 
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        footer strong {
+            color: white;
+        }
+
         footer a {
-            color: var(--accent);
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
+            transition: opacity 0.15s ease;
         }
 
         footer a:hover {
-            color: var(--accent-hover);
+            opacity: 0.8;
         }
 
         /* Responsive */
@@ -327,6 +406,22 @@
 
             nav .nav-links.active {
                 right: 0;
+            }
+
+            .nav-dropdown-menu {
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin-top: 0.5rem;
+                background: transparent;
+            }
+
+            .nav-dropdown-menu a {
+                padding: 0.4rem 0.6rem;
             }
 
             .lang-switcher {
@@ -369,7 +464,21 @@
             </button>
             <div class="nav-links">
                 <a href="index.html" data-i18n="nav.home">Home</a>
-                <a href="how-it-works.html" data-i18n="nav.howItWorks">How It Works</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
                 <a href="team.html" class="active" data-i18n="nav.team">Team</a>
                 <div class="lang-switcher">
                     <button class="lang-btn active" data-lang="en">EN</button>
@@ -436,7 +545,12 @@
                 nav: {
                     companyName: 'Psylens.AI',
                     home: 'Home',
-                    howItWorks: 'How It Works',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
                     team: 'Team',
                     backHome: 'Back to Home'
                 },
@@ -463,7 +577,12 @@
                 nav: {
                     companyName: '心镜智',
                     home: '首页',
-                    howItWorks: '工作原理',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
                     team: '团队',
                     backHome: '返回首页'
                 },

@@ -8,404 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="docs/styles.css">
     <title>How It Works - NormCode 规范码</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --accent: #4DA3FF;
-            --accent-hover: #3B8FE8;
-            --text-primary: #111827;
-            --text-secondary: #374151;
-            --text-muted: #6b7280;
-            --bg-page: #fafafa;
-            --bg-white: #ffffff;
-            --border: #e5e7eb;
-            --code-bg: #1e1e1e;
-        }
-
-        body {
-            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-page);
-            color: var(--text-primary);
-            line-height: 1.7;
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.97);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 0.75rem 2rem;
-        }
-
-        nav .nav-content {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        nav .logo-small {
-            height: 28px;
-        }
-
-        nav .company-name {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: -0.01em;
-        }
-
-        nav .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        /* Mobile menu toggle */
-        .menu-toggle {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            z-index: 1001;
-        }
-
-        .menu-toggle span {
-            display: block;
-            width: 22px;
-            height: 2px;
-            background: var(--text-primary);
-            transition: all 0.2s ease;
-        }
-
-        .menu-toggle.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-
-        .menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .menu-toggle.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
-        }
-
-        .menu-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .menu-overlay.active {
-            display: block;
-            opacity: 1;
-        }
-
-        nav a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.925rem;
-            transition: color 0.15s ease;
-        }
-
-        nav a:hover, nav a.active {
-            color: var(--accent);
-        }
-
-        .lang-switcher {
-            display: flex;
-            gap: 0.25rem;
-            margin-left: 1.5rem;
-        }
-
-        .lang-btn {
-            padding: 0.35rem 0.7rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.15s ease;
-        }
-
-        .lang-btn:hover {
-            border-color: var(--text-secondary);
-            color: var(--text-secondary);
-        }
-
-        .lang-btn.active {
-            background: var(--text-primary);
-            color: white;
-            border-color: var(--text-primary);
-        }
-
-        /* Page Header */
-        .page-header {
-            margin-top: 56px;
-            padding: 3rem 2rem;
-            text-align: center;
-            background: var(--bg-white);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .page-header h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-            color: var(--text-muted);
-            font-size: 1.05rem;
-        }
-
-        /* Main Content */
-        main {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        section {
-            margin-bottom: 4rem;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.75rem;
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        p {
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
-        }
-
-        /* Code Example */
-        .code-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .code-example {
-            background: var(--code-bg);
-            color: #d4d4d4;
-            padding: 2rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 1rem 0 2rem;
-            font-family: 'IBM Plex Mono', 'Monaco', 'Menlo', monospace;
-            font-size: 0.875rem;
-            line-height: 1.9;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .code-example code {
-            color: #9cdcfe;
-        }
-
-        .inline-code {
-            background: var(--bg-page);
-            padding: 0.15rem 0.35rem;
-            border-radius: 3px;
-            font-size: 0.85em;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
-        /* Comparison Table */
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
-            background: var(--bg-white);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            font-size: 0.925rem;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 1rem 1.25rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .comparison-table th {
-            background: var(--bg-page);
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .comparison-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .comparison-table td strong {
-            font-weight: 600;
-        }
-
-        /* Info Box */
-        .info-box {
-            background: var(--bg-white);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--accent);
-            padding: 1.5rem;
-            border-radius: 0 8px 8px 0;
-            margin: 2rem 0;
-        }
-
-        .info-box p {
-            margin: 0;
-            color: var(--text-secondary);
-        }
-
-        /* Back Link */
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.925rem;
-            margin-top: 2rem;
-            transition: color 0.15s ease;
-        }
-
-        .back-link:hover {
-            color: var(--accent-hover);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--bg-white);
-            padding: 2rem;
-            text-align: center;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
-            font-size: 0.875rem;
-        }
-
-        footer a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            color: var(--accent-hover);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            nav {
-                padding: 0.75rem 1rem;
-            }
-
-            .menu-toggle {
-                display: flex;
-            }
-
-            nav .nav-links {
-                position: fixed;
-                top: 0;
-                right: -100%;
-                width: 70%;
-                max-width: 280px;
-                height: 100vh;
-                background: var(--bg-white);
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                gap: 1.5rem;
-                padding: 2rem;
-                transition: right 0.2s ease;
-                border-left: 1px solid var(--border);
-            }
-
-            nav .nav-links.active {
-                right: 0;
-            }
-
-            .lang-switcher {
-                margin-left: 0;
-                margin-top: 1rem;
-            }
-
-            .page-header {
-                padding: 2rem 1.5rem;
-            }
-
-            .page-header h1 {
-                font-size: 1.5rem;
-            }
-
-            main {
-                padding: 2rem 1.5rem;
-            }
-
-            .code-example {
-                padding: 1.5rem;
-                font-size: 0.8rem;
-            }
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-    </style>
 </head>
 <body>
     <div class="menu-overlay"></div>
@@ -424,7 +28,21 @@
             </button>
             <div class="nav-links">
                 <a href="index.html" data-i18n="nav.home">Home</a>
-                <a href="how-it-works.html" class="active" data-i18n="nav.howItWorks">How It Works</a>
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-trigger active" data-i18n="nav.docs">
+                        Documentation
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="how-it-works.html" class="active" data-i18n="nav.overview">Overview</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
+                        <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
+                        <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
+                    </div>
+                </div>
                 <a href="team.html" data-i18n="nav.team">Team</a>
                 <div class="lang-switcher">
                     <button class="lang-btn active" data-lang="en">EN</button>
@@ -437,11 +55,22 @@
     <!-- Page Header -->
     <header class="page-header">
         <h1 data-i18n="page.title">How NormCode Works</h1>
-        <p data-i18n="page.subtitle">Data flow is explicit and isolated. Each step declares its inputs.</p>
+        <p data-i18n="page.subtitle">A language for structured AI plans that enforce data isolation by design.</p>
     </header>
 
     <!-- Main Content -->
     <main>
+        <!-- Quick Overview -->
+        <section>
+            <h2 data-i18n="section.overview">What Problem Does It Solve?</h2>
+            <p data-i18n="section.overviewDesc">When you chain multiple LLM calls together, context pollution causes failures. By step 4 of a workflow, the model might have 50 pages of documents, raw database results, and extraction metadata all mixed in context—leading to hallucinations and unpredictable results.</p>
+            
+            <div class="info-box">
+                <p data-i18n="section.solution"><strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.</p>
+            </div>
+        </section>
+
+        <!-- Core Example -->
         <section>
             <h2 data-i18n="section.example">Example: Document Analysis Pipeline</h2>
             <p data-i18n="section.exampleDesc">NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.</p>
@@ -463,17 +92,18 @@
                 <p data-i18n="section.readingNote">
                     <strong>Reading bottom-up:</strong> The extraction step sees only <code class="inline-code">raw document</code>. 
                     The mismatch check sees <code class="inline-code">extracted figures</code> + <code class="inline-code">database results</code>. 
-                    The summary step sees only <code class="inline-code">discrepancy flags</code>.
+                    The summary step sees only <code class="inline-code">discrepancy flags</code>—never the full document.
                 </p>
             </div>
         </section>
 
+        <!-- Semantic vs Syntactic -->
         <section>
             <h2 data-i18n="section.stepsTitle">Semantic vs. Syntactic Steps</h2>
-            <p data-i18n="section.stepsDesc">NormCode distinguishes between two types of steps:</p>
+            <p data-i18n="section.stepsDesc">NormCode distinguishes between two types of operations. Only semantic steps call an LLM—syntactic steps are free, instant, and deterministic.</p>
             
             <div class="table-wrapper">
-                <table class="comparison-table">
+                <table>
                     <thead>
                         <tr>
                             <th data-i18n="table.type">Type</th>
@@ -496,13 +126,56 @@
                             <td data-i18n="table.no">❌ No</td>
                             <td data-i18n="table.free">Free</td>
                             <td data-i18n="table.deterministic">100% Deterministic</td>
-                            <td data-i18n="table.syntacticExamples">Collecting, selecting, routing</td>
+                            <td data-i18n="table.syntacticExamples">Collecting, selecting, routing, looping</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <p data-i18n="section.costNote">A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.</p>
         </section>
 
+        <!-- Dive Deeper -->
+        <section>
+            <h2 data-i18n="section.learnMore">Dive Deeper</h2>
+            <p data-i18n="section.learnMoreDesc">Explore the documentation to learn how to write NormCode plans:</p>
+            
+            <div class="card-grid">
+                <a href="docs/syntax.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">📝</span>
+                        <h3 data-i18n="cards.syntax.title">Syntax Reference</h3>
+                        <p data-i18n="cards.syntax.desc">Learn the <code class="inline-code">&lt;-</code> and <code class="inline-code">&lt;=</code> markers, concept types, and operators.</p>
+                    </div>
+                </a>
+                
+                <a href="docs/execution.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">⚙️</span>
+                        <h3 data-i18n="cards.execution.title">Execution Model</h3>
+                        <p data-i18n="cards.execution.desc">How plans run—dependency resolution, orchestration, and checkpointing.</p>
+                    </div>
+                </a>
+                
+                <a href="docs/compilation.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">🔄</span>
+                        <h3 data-i18n="cards.compilation.title">Compilation</h3>
+                        <p data-i18n="cards.compilation.desc">The 4-phase pipeline from natural language to executable JSON repositories.</p>
+                    </div>
+                </a>
+                
+                <a href="docs/examples.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">💡</span>
+                        <h3 data-i18n="cards.examples.title">Examples</h3>
+                        <p data-i18n="cards.examples.desc">Real-world patterns: linear flows, loops, conditionals, and error handling.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Core Principles -->
         <section>
             <h2 data-i18n="section.principlesTitle">Core Principles</h2>
             
@@ -514,6 +187,48 @@
             
             <h3 data-i18n="principles.efficiency">3. Efficient Execution</h3>
             <p data-i18n="principles.efficiencyDesc">Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.</p>
+
+            <h3 data-i18n="principles.semiFormal">4. Semi-Formal Balance</h3>
+            <p data-i18n="principles.semiFormalDesc">Structured enough for reliable execution, readable enough for human review. AI can generate NormCode, and non-programmers can verify the logic.</p>
+        </section>
+
+        <!-- When to Use -->
+        <section>
+            <h2 data-i18n="section.whenTitle">When to Use NormCode</h2>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="when.scenario">Scenario</th>
+                            <th data-i18n="when.use">Use NormCode?</th>
+                            <th data-i18n="when.why">Why</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-i18n="when.multiStep">Multi-step workflow (5+ LLM calls)</td>
+                            <td>✅ <span data-i18n="when.yes">Yes</span></td>
+                            <td data-i18n="when.multiStepWhy">Isolation pays off</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="when.auditable">Auditable AI (legal, medical, finance)</td>
+                            <td>✅ <span data-i18n="when.yes">Yes</span></td>
+                            <td data-i18n="when.auditableWhy">Need proof of reasoning</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="when.longRunning">Long-running resumable workflows</td>
+                            <td>✅ <span data-i18n="when.yes">Yes</span></td>
+                            <td data-i18n="when.longRunningWhy">Built-in checkpointing</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="when.simple">Simple Q&A chatbot</td>
+                            <td>❌ <span data-i18n="when.no">No</span></td>
+                            <td data-i18n="when.simpleWhy">Just prompt directly</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <a href="index.html" class="back-link">
@@ -535,21 +250,33 @@
                 nav: {
                     companyName: 'Psylens.AI',
                     home: 'Home',
-                    howItWorks: 'How It Works',
+                    docs: 'Documentation',
+                    overview: 'Overview',
+                    syntax: 'Syntax Reference',
+                    execution: 'Execution Model',
+                    compilation: 'Compilation',
+                    examples: 'Examples',
                     team: 'Team',
                     backHome: 'Back to Home'
                 },
                 page: {
                     title: 'How NormCode Works',
-                    subtitle: 'Data flow is explicit and isolated. Each step declares its inputs.'
+                    subtitle: 'A language for structured AI plans that enforce data isolation by design.'
                 },
                 section: {
+                    overview: 'What Problem Does It Solve?',
+                    overviewDesc: 'When you chain multiple LLM calls together, context pollution causes failures. By step 4 of a workflow, the model might have 50 pages of documents, raw database results, and extraction metadata all mixed in context—leading to hallucinations and unpredictable results.',
+                    solution: '<strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.',
                     example: 'Example: Document Analysis Pipeline',
                     exampleDesc: 'NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.',
-                    readingNote: '<strong>Reading bottom-up:</strong> The extraction step sees only <code class="inline-code">raw document</code>. The mismatch check sees <code class="inline-code">extracted figures</code> + <code class="inline-code">database results</code>. The summary step sees only <code class="inline-code">discrepancy flags</code>.',
+                    readingNote: '<strong>Reading bottom-up:</strong> The extraction step sees only <code class="inline-code">raw document</code>. The mismatch check sees <code class="inline-code">extracted figures</code> + <code class="inline-code">database results</code>. The summary step sees only <code class="inline-code">discrepancy flags</code>—never the full document.',
                     stepsTitle: 'Semantic vs. Syntactic Steps',
-                    stepsDesc: 'NormCode distinguishes between two types of steps:',
-                    principlesTitle: 'Core Principles'
+                    stepsDesc: 'NormCode distinguishes between two types of operations. Only semantic steps call an LLM—syntactic steps are free, instant, and deterministic.',
+                    costNote: 'A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.',
+                    learnMore: 'Dive Deeper',
+                    learnMoreDesc: 'Explore the documentation to learn how to write NormCode plans:',
+                    principlesTitle: 'Core Principles',
+                    whenTitle: 'When to Use NormCode'
                 },
                 table: {
                     type: 'Type',
@@ -566,7 +293,25 @@
                     nonDeterministic: 'Non-deterministic',
                     deterministic: '100% Deterministic',
                     semanticExamples: 'Reasoning, generating, analyzing',
-                    syntacticExamples: 'Collecting, selecting, routing'
+                    syntacticExamples: 'Collecting, selecting, routing, looping'
+                },
+                cards: {
+                    syntax: {
+                        title: 'Syntax Reference',
+                        desc: 'Learn the <- and <= markers, concept types, and operators.'
+                    },
+                    execution: {
+                        title: 'Execution Model',
+                        desc: 'How plans run—dependency resolution, orchestration, and checkpointing.'
+                    },
+                    compilation: {
+                        title: 'Compilation',
+                        desc: 'The 4-phase pipeline from natural language to executable JSON repositories.'
+                    },
+                    examples: {
+                        title: 'Examples',
+                        desc: 'Real-world patterns: linear flows, loops, conditionals, and error handling.'
+                    }
                 },
                 principles: {
                     isolation: '1. Data Isolation',
@@ -574,7 +319,24 @@
                     auditability: '2. Full Auditability',
                     auditabilityDesc: 'Inspect what each step saw and produced. Complete state tracking with SQLite checkpointing—pause, resume, or fork from any cycle.',
                     efficiency: '3. Efficient Execution',
-                    efficiencyDesc: 'Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.'
+                    efficiencyDesc: 'Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.',
+                    semiFormal: '4. Semi-Formal Balance',
+                    semiFormalDesc: 'Structured enough for reliable execution, readable enough for human review. AI can generate NormCode, and non-programmers can verify the logic.'
+                },
+                when: {
+                    scenario: 'Scenario',
+                    use: 'Use NormCode?',
+                    why: 'Why',
+                    multiStep: 'Multi-step workflow (5+ LLM calls)',
+                    yes: 'Yes',
+                    no: 'No',
+                    multiStepWhy: 'Isolation pays off',
+                    auditable: 'Auditable AI (legal, medical, finance)',
+                    auditableWhy: 'Need proof of reasoning',
+                    longRunning: 'Long-running resumable workflows',
+                    longRunningWhy: 'Built-in checkpointing',
+                    simple: 'Simple Q&A chatbot',
+                    simpleWhy: 'Just prompt directly'
                 },
                 footer: {
                     paper: 'Paper'
@@ -584,21 +346,33 @@
                 nav: {
                     companyName: '心镜智',
                     home: '首页',
-                    howItWorks: '工作原理',
+                    docs: '文档',
+                    overview: '概述',
+                    syntax: '语法参考',
+                    execution: '执行模型',
+                    compilation: '编译流程',
+                    examples: '示例',
                     team: '团队',
                     backHome: '返回首页'
                 },
                 page: {
                     title: 'NormCode 工作原理',
-                    subtitle: '数据流是显式且隔离的。每个步骤声明其输入。'
+                    subtitle: '一种通过设计强制数据隔离的结构化AI规划语言。'
                 },
                 section: {
+                    overview: '它解决什么问题？',
+                    overviewDesc: '当您链接多个LLM调用时，上下文污染会导致失败。在工作流的第4步，模型可能混合了50页文档、原始数据库结果和提取元数据——导致幻觉和不可预测的结果。',
+                    solution: '<strong>NormCode解决方案：</strong>每个步骤都是一个密封的房间。它只能看到您明确传递的内容。没有隐藏上下文，没有上下文污染。如果出现问题，您可以准确看到该步骤接收到的内容。',
                     example: '示例：文档分析流水线',
                     exampleDesc: 'NormCode使用缩进来显示数据依赖关系。每个步骤只接收显式传递给它的内容。',
-                    readingNote: '<strong>自下而上阅读：</strong>提取步骤只能看到<code class="inline-code">原始文档</code>。不匹配检查看到<code class="inline-code">提取的数值</code> + <code class="inline-code">数据库结果</code>。摘要步骤只能看到<code class="inline-code">差异标志</code>。',
+                    readingNote: '<strong>自下而上阅读：</strong>提取步骤只能看到<code class="inline-code">原始文档</code>。不匹配检查看到<code class="inline-code">提取的数值</code> + <code class="inline-code">数据库结果</code>。摘要步骤只能看到<code class="inline-code">差异标志</code>——永远看不到完整文档。',
                     stepsTitle: '语义步骤 vs. 语法步骤',
-                    stepsDesc: 'NormCode区分两种类型的步骤：',
-                    principlesTitle: '核心原则'
+                    stepsDesc: 'NormCode区分两种类型的操作。只有语义步骤调用LLM——语法步骤是免费的、即时的和确定性的。',
+                    costNote: '一个典型的20步计划可能只调用LLM 8次。其余是免费的语法操作：分组数据、选择值、控制流程和迭代。',
+                    learnMore: '深入了解',
+                    learnMoreDesc: '探索文档以学习如何编写NormCode计划：',
+                    principlesTitle: '核心原则',
+                    whenTitle: '何时使用NormCode'
                 },
                 table: {
                     type: '类型',
@@ -615,7 +389,25 @@
                     nonDeterministic: '非确定性',
                     deterministic: '100% 确定性',
                     semanticExamples: '推理、生成、分析',
-                    syntacticExamples: '收集、选择、路由'
+                    syntacticExamples: '收集、选择、路由、循环'
+                },
+                cards: {
+                    syntax: {
+                        title: '语法参考',
+                        desc: '学习 <- 和 <= 标记、概念类型和操作符。'
+                    },
+                    execution: {
+                        title: '执行模型',
+                        desc: '计划如何运行——依赖解析、编排和检查点。'
+                    },
+                    compilation: {
+                        title: '编译流程',
+                        desc: '从自然语言到可执行JSON存储库的4阶段流水线。'
+                    },
+                    examples: {
+                        title: '示例',
+                        desc: '实际模式：线性流程、循环、条件和错误处理。'
+                    }
                 },
                 principles: {
                     isolation: '1. 数据隔离',
@@ -623,7 +415,24 @@
                     auditability: '2. 完全可审计',
                     auditabilityDesc: '检查每个步骤看到和产生的内容。完整的状态跟踪，支持SQLite检查点——可以从任何周期暂停、恢复或分叉。',
                     efficiency: '3. 高效执行',
-                    efficiencyDesc: '许多步骤只是数据路由——不需要LLM。只有"思考"步骤需要消耗token。依赖驱动的调度确保最佳性能。'
+                    efficiencyDesc: '许多步骤只是数据路由——不需要LLM。只有"思考"步骤需要消耗token。依赖驱动的调度确保最佳性能。',
+                    semiFormal: '4. 半形式化平衡',
+                    semiFormalDesc: '结构化程度足以可靠执行，可读性足以供人工审查。AI可以生成NormCode，非程序员可以验证逻辑。'
+                },
+                when: {
+                    scenario: '场景',
+                    use: '使用NormCode？',
+                    why: '原因',
+                    multiStep: '多步骤工作流（5+ LLM调用）',
+                    yes: '是',
+                    no: '否',
+                    multiStepWhy: '隔离带来回报',
+                    auditable: '可审计AI（法律、医疗、金融）',
+                    auditableWhy: '需要推理证明',
+                    longRunning: '长时间运行的可恢复工作流',
+                    longRunningWhy: '内置检查点',
+                    simple: '简单的问答聊天机器人',
+                    simpleWhy: '直接提示即可'
                 },
                 footer: {
                     paper: '论文'
@@ -687,4 +496,3 @@
     </script>
 </body>
 </html>
-
