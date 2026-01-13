@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <title>NormCode 规范码 - Structured AI Planning That You Can Audit</title>
+    <title>PsylensAI 心镜智 - Structured AI Planning That You Can Audit</title>
     <style>
         * {
             margin: 0;
@@ -270,13 +270,119 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--border);
-            background: #000;
+            background: #0a0a0a;
+            position: relative;
+            aspect-ratio: 16 / 9;
         }
 
         .hero-video video {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
+            object-fit: cover;
+        }
+
+        /* Video loading overlay */
+        .video-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f26 50%, #0f1419 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 10;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        .video-loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .video-loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(77, 163, 255, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .video-loading-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .video-loading-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .video-loading-progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .video-error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1f26 0%, #0f1419 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 11;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .video-error-overlay.visible {
+            display: flex;
+        }
+
+        .video-error-icon {
+            font-size: 2rem;
+        }
+
+        .video-error-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .video-retry-btn {
+            padding: 0.5rem 1.25rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.15s ease;
+        }
+
+        .video-retry-btn:hover {
+            background: var(--accent-hover);
         }
 
         .hero-actions {
@@ -297,11 +403,66 @@
             border-radius: 6px;
             font-size: 0.95rem;
             font-weight: 500;
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, transform 0.1s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary:hover {
             background: var(--accent-hover);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary .btn-icon {
+            flex-shrink: 0;
+        }
+
+        .download-size {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* Download button states */
+        .btn-primary.downloading {
+            background: linear-gradient(90deg, var(--accent-hover) 0%, var(--accent) 50%, var(--accent-hover) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .btn-primary.download-started {
+            background: #22c55e;
+            pointer-events: none;
+        }
+
+        /* Ripple effect */
+        .btn-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .download-spinner {
+            animation: spin 1s linear infinite;
         }
 
         .btn-secondary {
@@ -489,6 +650,18 @@
                 font-size: 1.1rem;
             }
 
+            /* Center the Documentation dropdown trigger in mobile */
+            .nav-dropdown {
+                text-align: center;
+                width: 100%;
+            }
+
+            .nav-dropdown-trigger {
+                font-size: 1.1rem;
+                justify-content: center;
+                width: 100%;
+            }
+
             .nav-dropdown-menu {
                 position: static;
                 transform: none;
@@ -499,6 +672,7 @@
                 padding: 0;
                 margin-top: 0.5rem;
                 background: transparent;
+                text-align: center;
             }
 
             .nav-dropdown-menu a {
@@ -511,7 +685,11 @@
             }
 
             h1 {
-                font-size: 1.35rem;
+                font-size: 1.25rem;
+            }
+
+            section h2 {
+                font-size: 1.25rem;
             }
 
             .hero {
@@ -530,10 +708,6 @@
                 padding: 2.5rem 1.5rem;
             }
 
-            section h2 {
-                font-size: 1.6rem;
-            }
-
             .features-grid {
                 grid-template-columns: 1fr;
             }
@@ -547,7 +721,11 @@
 
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.15rem;
+                font-size: 1.1rem;
+            }
+
+            section h2 {
+                font-size: 1.1rem;
             }
 
             .hero {
@@ -633,19 +811,35 @@
             <h1 data-i18n="hero.title">NormCode 规范码 — Structured AI Planning That You Can Audit</h1>
             
             <div class="hero-video">
-                <video id="demo-video" autoplay muted loop playsinline>
+                <!-- Loading overlay -->
+                <div class="video-loading-overlay" id="video-loading">
+                    <div class="video-loading-spinner"></div>
+                    <div class="video-loading-text" id="video-loading-text" data-i18n="video.loading">Loading demo video...</div>
+                    <div class="video-loading-progress">
+                        <div class="video-loading-progress-bar" id="video-progress-bar"></div>
+                    </div>
+                </div>
+                <!-- Error overlay -->
+                <div class="video-error-overlay" id="video-error">
+                    <div class="video-error-icon">📹</div>
+                    <div class="video-error-text" data-i18n="video.error">Video couldn't load. This may be due to a slow connection.</div>
+                    <button class="video-retry-btn" onclick="retryVideo()" data-i18n="video.retry">Retry</button>
+                </div>
+                <!-- Video element -->
+                <video id="demo-video" autoplay muted loop playsinline preload="auto">
                     <source src="normcode_canvas_demo_combined.mp4" type="video/mp4">
                 </video>
             </div>
             
             <div class="hero-actions">
-                <a href="NormCodeCanvasSetup-1.0.0.exe" class="btn-primary" download>
+                <a href="NormCodeCanvasSetup-1.0.0.exe" class="btn-primary" download title="~22 MB download">
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                     <span data-i18n="hero.downloadBtn">Download for Windows</span>
+                    <span class="download-size" data-i18n="hero.downloadSize">(~22 MB)</span>
                 </a>
                 <a href="https://github.com/GEOGUANSIN/normCode" class="btn-secondary" target="_blank" rel="noopener noreferrer">
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -763,6 +957,7 @@
                 hero: {
                     title: 'NormCode 规范码 — Structured AI Planning That You Can Audit',
                     downloadBtn: 'Download for Windows',
+                    downloadSize: '(~22 MB)',
                     githubBtn: 'GitHub',
                     paperBtn: 'Paper'
                 },
@@ -812,6 +1007,11 @@
                     tagline: 'Structured AI Planning That You Can Audit',
                     researchPaper: 'Research Paper',
                     contact: 'Contact:'
+                },
+                video: {
+                    loading: 'Loading demo video...',
+                    error: "Video couldn't load. This may be due to a slow connection.",
+                    retry: 'Retry'
                 }
             },
             zh: {
@@ -829,6 +1029,7 @@
                 hero: {
                     title: 'NormCode 规范码 — 可审计的结构化AI规划',
                     downloadBtn: 'Windows 下载',
+                    downloadSize: '(~22 MB)',
                     githubBtn: 'GitHub',
                     paperBtn: '论文'
                 },
@@ -878,6 +1079,11 @@
                     tagline: '可审计的结构化AI规划',
                     researchPaper: '研究论文',
                     contact: '联系方式：'
+                },
+                video: {
+                    loading: '正在加载演示视频...',
+                    error: '视频无法加载。可能是由于网络连接缓慢。',
+                    retry: '重试'
                 }
             }
         };
@@ -975,19 +1181,165 @@
             observer.observe(el);
         });
 
-        // Set video playback speed
+        // Video loading handling
         const video = document.getElementById('demo-video');
+        const loadingOverlay = document.getElementById('video-loading');
+        const loadingText = document.getElementById('video-loading-text');
+        const progressBar = document.getElementById('video-progress-bar');
+        const errorOverlay = document.getElementById('video-error');
+        
+        let videoLoadTimeout;
+        
+        function hideLoadingOverlay() {
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+        
+        function showError() {
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+            if (errorOverlay) errorOverlay.classList.add('visible');
+        }
+        
+        function retryVideo() {
+            if (errorOverlay) errorOverlay.classList.remove('visible');
+            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+            if (progressBar) progressBar.style.width = '0%';
+            if (loadingText) loadingText.textContent = 'Retrying...';
+            
+            if (video) {
+                video.load();
+                video.play().catch(() => {});
+            }
+            startVideoLoadTimeout();
+        }
+        
+        function startVideoLoadTimeout() {
+            // If video doesn't start playing within 30 seconds, show error
+            clearTimeout(videoLoadTimeout);
+            videoLoadTimeout = setTimeout(() => {
+                if (video && video.readyState < 3) {
+                    showError();
+                }
+            }, 30000);
+        }
+        
         if (video) {
+            startVideoLoadTimeout();
+            
+            // Track loading progress via XHR for accurate progress
+            const videoSrc = video.querySelector('source')?.src || 'normcode_canvas_demo_combined.mp4';
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', videoSrc, true);
+            xhr.responseType = 'blob';
+            
+            xhr.onprogress = (e) => {
+                if (e.lengthComputable && progressBar && loadingText) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+                    const totalMB = (e.total / (1024 * 1024)).toFixed(1);
+                    loadingText.textContent = `Loading video... ${loadedMB}/${totalMB} MB (${percent}%)`;
+                }
+            };
+            
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const blob = xhr.response;
+                    const blobUrl = URL.createObjectURL(blob);
+                    video.src = blobUrl;
+                    video.load();
+                    video.play().catch(() => {});
+                } else {
+                    showError();
+                }
+            };
+            
+            xhr.onerror = () => {
+                // Fallback to native loading if XHR fails (CORS)
+                console.log('XHR failed, falling back to native video loading');
+            };
+            
+            xhr.send();
+            
+            // Native video events as fallback/backup
             video.addEventListener('loadedmetadata', () => {
                 video.playbackRate = 1.2;
             });
-            video.addEventListener('canplay', () => {
+            
+            video.addEventListener('canplaythrough', () => {
+                clearTimeout(videoLoadTimeout);
+                hideLoadingOverlay();
                 video.playbackRate = 1.2;
             });
-            if (video.readyState >= 1) {
+            
+            video.addEventListener('playing', () => {
+                clearTimeout(videoLoadTimeout);
+                hideLoadingOverlay();
+            });
+            
+            video.addEventListener('error', () => {
+                clearTimeout(videoLoadTimeout);
+                showError();
+            });
+            
+            // If video is already ready (cached)
+            if (video.readyState >= 3) {
                 video.playbackRate = 1.2;
+                hideLoadingOverlay();
             }
         }
+
+        // Download button with enhanced feedback
+        document.querySelectorAll('.btn-primary[download]').forEach(btn => {
+            // Add ripple effect on click
+            btn.addEventListener('click', function(e) {
+                // Create ripple element
+                const ripple = document.createElement('span');
+                ripple.classList.add('btn-ripple');
+                
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                
+                this.appendChild(ripple);
+                
+                // Remove ripple after animation
+                setTimeout(() => ripple.remove(), 600);
+                
+                // Store original content
+                const originalContent = this.innerHTML.replace(/<span class="btn-ripple".*?<\/span>/g, '');
+                
+                // Show downloading state
+                this.classList.add('downloading');
+                this.innerHTML = `
+                    <svg class="btn-icon download-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15" stroke-linecap="round"></circle>
+                    </svg>
+                    <span>Preparing download...</span>
+                `;
+                
+                // Show success state after brief delay
+                setTimeout(() => {
+                    this.classList.remove('downloading');
+                    this.classList.add('download-started');
+                    this.innerHTML = `
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Download started!</span>
+                    `;
+                }, 800);
+                
+                // Restore original button after download has started
+                setTimeout(() => {
+                    this.classList.remove('download-started');
+                    this.innerHTML = originalContent;
+                }, 4000);
+            });
+        });
     </script>
 </body>
 </html>

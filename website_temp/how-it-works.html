@@ -63,10 +63,10 @@
         <!-- Quick Overview -->
         <section>
             <h2 data-i18n="section.overview">What Problem Does It Solve?</h2>
-            <p data-i18n="section.overviewDesc">When you chain multiple LLM calls together, context pollution causes failures. By step 4 of a workflow, the model might have 50 pages of documents, raw database results, and extraction metadata all mixed in context—leading to hallucinations and unpredictable results.</p>
+            <p data-i18n="section.overviewDesc">When you chain multiple LLM calls together, context pollution causes failures. By step 4, the model has 50 pages of documents, raw database results, and extraction metadata all swimming in context. It hallucinates because it's drowning in noise.</p>
             
             <div class="info-box">
-                <p data-i18n="section.solution"><strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.</p>
+                <p data-i18n="section.solution"><strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no accidental leakage. When something goes wrong, you can see exactly what that step received.</p>
             </div>
         </section>
 
@@ -135,6 +135,32 @@
             <p data-i18n="section.costNote">A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.</p>
         </section>
 
+        <!-- Progressive Formalization -->
+        <section>
+            <h2 data-i18n="section.progressiveTitle">Progressive Formalization</h2>
+            <p data-i18n="section.progressiveDesc">NormCode uses a compilation pipeline that progressively transforms rough ideas into executable plans. Each phase adds structure while preserving intent—making complex logic explicit and auditable.</p>
+            
+            <div class="code-example" style="text-align: center; font-family: 'IBM Plex Mono', monospace;">
+                <code>
+Natural Language Instruction<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<strong>Phase 1:</strong> Derivation → <em>WHAT</em> to do<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<strong>Phase 2:</strong> Formalization → <em>IN WHAT ORDER</em><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<strong>Phase 3:</strong> Post-Formalization → <em>HOW</em> and <em>WITH WHAT</em><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<strong>Phase 4:</strong> Activation → Executable Repositories<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+Orchestrator Executes
+                </code>
+            </div>
+            
+            <div class="info-box">
+                <p data-i18n="section.progressiveBenefit"><strong>Why this matters:</strong> AI can generate rough plans from natural language. The compiler then makes every decision explicit—what data flows where, what order things run, what resources are needed. Each stage can be reviewed, so complex logic becomes transparent.</p>
+            </div>
+        </section>
+
         <!-- Dive Deeper -->
         <section>
             <h2 data-i18n="section.learnMore">Dive Deeper</h2>
@@ -190,6 +216,9 @@
 
             <h3 data-i18n="principles.semiFormal">4. Semi-Formal Balance</h3>
             <p data-i18n="principles.semiFormalDesc">Structured enough for reliable execution, readable enough for human review. AI can generate NormCode, and non-programmers can verify the logic.</p>
+
+            <h3 data-i18n="principles.progressive">5. Progressive Formalization</h3>
+            <p data-i18n="principles.progressiveDesc">Start with a rough draft, then incrementally refine. The compiler transforms natural language into explicit structure—each phase answering a specific question while preserving intent.</p>
         </section>
 
         <!-- When to Use -->
@@ -265,14 +294,17 @@
                 },
                 section: {
                     overview: 'What Problem Does It Solve?',
-                    overviewDesc: 'When you chain multiple LLM calls together, context pollution causes failures. By step 4 of a workflow, the model might have 50 pages of documents, raw database results, and extraction metadata all mixed in context—leading to hallucinations and unpredictable results.',
-                    solution: '<strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no context pollution. If something goes wrong, you can see exactly what that step received.',
+                    overviewDesc: 'When you chain multiple LLM calls together, context pollution causes failures. By step 4, the model has 50 pages of documents, raw database results, and extraction metadata all swimming in context. It hallucinates because it\'s drowning in noise.',
+                    solution: '<strong>The NormCode solution:</strong> Each step is a sealed room. It only sees what you explicitly pass in. No hidden context, no accidental leakage. When something goes wrong, you can see exactly what that step received.',
                     example: 'Example: Document Analysis Pipeline',
                     exampleDesc: 'NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.',
                     readingNote: '<strong>Reading bottom-up:</strong> The extraction step sees only <code class="inline-code">raw document</code>. The mismatch check sees <code class="inline-code">extracted figures</code> + <code class="inline-code">database results</code>. The summary step sees only <code class="inline-code">discrepancy flags</code>—never the full document.',
                     stepsTitle: 'Semantic vs. Syntactic Steps',
                     stepsDesc: 'NormCode distinguishes between two types of operations. Only semantic steps call an LLM—syntactic steps are free, instant, and deterministic.',
                     costNote: 'A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.',
+                    progressiveTitle: 'Progressive Formalization',
+                    progressiveDesc: 'NormCode uses a compilation pipeline that progressively transforms rough ideas into executable plans. Each phase adds structure while preserving intent—making complex logic explicit and auditable.',
+                    progressiveBenefit: '<strong>Why this matters:</strong> AI can generate rough plans from natural language. The compiler then makes every decision explicit—what data flows where, what order things run, what resources are needed. Each stage can be reviewed, so complex logic becomes transparent.',
                     learnMore: 'Dive Deeper',
                     learnMoreDesc: 'Explore the documentation to learn how to write NormCode plans:',
                     principlesTitle: 'Core Principles',
@@ -321,7 +353,9 @@
                     efficiency: '3. Efficient Execution',
                     efficiencyDesc: 'Many steps are just data routing—no LLM needed. Only the "thinking" steps cost tokens. Dependency-driven scheduling ensures optimal performance.',
                     semiFormal: '4. Semi-Formal Balance',
-                    semiFormalDesc: 'Structured enough for reliable execution, readable enough for human review. AI can generate NormCode, and non-programmers can verify the logic.'
+                    semiFormalDesc: 'Structured enough for reliable execution, readable enough for human review. AI can generate NormCode, and non-programmers can verify the logic.',
+                    progressive: '5. Progressive Formalization',
+                    progressiveDesc: 'Start with a rough draft, then incrementally refine. The compiler transforms natural language into explicit structure—each phase answering a specific question while preserving intent.'
                 },
                 when: {
                     scenario: 'Scenario',
@@ -361,14 +395,17 @@
                 },
                 section: {
                     overview: '它解决什么问题？',
-                    overviewDesc: '当您链接多个LLM调用时，上下文污染会导致失败。在工作流的第4步，模型可能混合了50页文档、原始数据库结果和提取元数据——导致幻觉和不可预测的结果。',
-                    solution: '<strong>NormCode解决方案：</strong>每个步骤都是一个密封的房间。它只能看到您明确传递的内容。没有隐藏上下文，没有上下文污染。如果出现问题，您可以准确看到该步骤接收到的内容。',
+                    overviewDesc: '当您链接多个LLM调用时，上下文污染会导致失败。到第4步时，模型已经被50页文档、原始数据库结果和提取元数据淹没。它产生幻觉，因为它被噪音淹没了。',
+                    solution: '<strong>NormCode解决方案：</strong>每个步骤都是一个密封的房间。它只能看到您明确传递的内容。没有隐藏上下文，没有意外泄漏。当出现问题时，您可以准确看到该步骤接收到的内容。',
                     example: '示例：文档分析流水线',
                     exampleDesc: 'NormCode使用缩进来显示数据依赖关系。每个步骤只接收显式传递给它的内容。',
                     readingNote: '<strong>自下而上阅读：</strong>提取步骤只能看到<code class="inline-code">原始文档</code>。不匹配检查看到<code class="inline-code">提取的数值</code> + <code class="inline-code">数据库结果</code>。摘要步骤只能看到<code class="inline-code">差异标志</code>——永远看不到完整文档。',
                     stepsTitle: '语义步骤 vs. 语法步骤',
                     stepsDesc: 'NormCode区分两种类型的操作。只有语义步骤调用LLM——语法步骤是免费的、即时的和确定性的。',
                     costNote: '一个典型的20步计划可能只调用LLM 8次。其余是免费的语法操作：分组数据、选择值、控制流程和迭代。',
+                    progressiveTitle: '渐进式形式化',
+                    progressiveDesc: 'NormCode使用编译流水线，将粗略的想法逐步转化为可执行的计划。每个阶段都在保留意图的同时增加结构——使复杂逻辑变得清晰可审计。',
+                    progressiveBenefit: '<strong>为什么重要：</strong>AI可以从自然语言生成粗略计划。然后编译器使每个决策变得明确——数据流向哪里、运行顺序、需要什么资源。每个阶段都可以审查，使复杂逻辑变得透明。',
                     learnMore: '深入了解',
                     learnMoreDesc: '探索文档以学习如何编写NormCode计划：',
                     principlesTitle: '核心原则',
@@ -417,7 +454,9 @@
                     efficiency: '3. 高效执行',
                     efficiencyDesc: '许多步骤只是数据路由——不需要LLM。只有"思考"步骤需要消耗token。依赖驱动的调度确保最佳性能。',
                     semiFormal: '4. 半形式化平衡',
-                    semiFormalDesc: '结构化程度足以可靠执行，可读性足以供人工审查。AI可以生成NormCode，非程序员可以验证逻辑。'
+                    semiFormalDesc: '结构化程度足以可靠执行，可读性足以供人工审查。AI可以生成NormCode，非程序员可以验证逻辑。',
+                    progressive: '5. 渐进式形式化',
+                    progressiveDesc: '从粗略草稿开始，逐步完善。编译器将自然语言转化为明确结构——每个阶段回答特定问题，同时保留意图。'
                 },
                 when: {
                     scenario: '场景',
