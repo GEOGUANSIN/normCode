@@ -341,6 +341,58 @@
             object-fit: contain;
         }
 
+        /* Office Locations */
+        .office-locations {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .office-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .office-item svg {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            margin-top: 3px;
+            color: var(--accent);
+        }
+
+        .office-image {
+            margin-top: 1.25rem;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .office-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+        }
+
+        .office-image img:hover {
+            opacity: 1;
+        }
+
+        .office-image-caption {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-page);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
         /* Contact Section */
         .contact-section {
             background: var(--bg-white);
@@ -517,9 +569,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -588,6 +640,30 @@
                     广州心镜智科技工作室 (Guangzhou Psylens Technology Studio)
                 </p>
             </div>
+
+            <div class="info-card">
+                <h3 data-i18n="team.officesTitle">Office Locations</h3>
+                <div class="office-locations">
+                    <div class="office-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span data-i18n="team.office1">广州市南沙区南沙街香江国际金融中心4-2126</span>
+                    </div>
+                    <div class="office-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span data-i18n="team.office2">广州市南沙区黄阁镇海滨路创享湾4栋TIMETABLE粤港澳青创基地</span>
+                    </div>
+                </div>
+                <div class="office-image">
+                    <img src="timetable.jpg" alt="TIMETABLE Office" data-i18n-alt="team.officeImageAlt">
+                    <div class="office-image-caption" data-i18n="team.officeImageCaption">TIMETABLE 粤港澳青创基地</div>
+                </div>
+            </div>
         </section>
 
         <section class="contact-section">
@@ -637,7 +713,12 @@
                     visionTitle: 'Our Vision',
                     vision: 'Auditable AI for transparent, controllable development. We believe human values should be clearly expressed, recorded, and executed—then transformed into sustainable technical assets that can be owned, verified, and inherited.',
                     companyTitle: 'Company',
-                    company: 'Guangzhou Psylens Technology Studio (广州心镜智科技工作室)'
+                    company: 'Guangzhou Psylens Technology Studio (广州心镜智科技工作室)',
+                    officesTitle: 'Office Locations',
+                    office1: 'Xiangjiang International Financial Center 4-2126, Nansha District, Guangzhou',
+                    office2: 'TIMETABLE GBA Youth Innovation Base, Building 4, Chuangxiangwan, Haibinlu, Huangge Town, Nansha District, Guangzhou',
+                    officeImageAlt: 'TIMETABLE Office',
+                    officeImageCaption: 'TIMETABLE GBA Youth Innovation Base'
                 },
                 contact: {
                     title: 'Get in Touch'
@@ -679,7 +760,12 @@
                     visionTitle: '我们的愿景',
                     vision: '构建透明、可控的可审计AI。我们相信人类的价值理念应当被清晰地表达、记录与执行，并逐步转化为可被拥有、验证和继承的可持续技术资产。',
                     companyTitle: '公司',
-                    company: '广州心镜智科技工作室'
+                    company: '广州心镜智科技工作室',
+                    officesTitle: '办公地址',
+                    office1: '广州市南沙区南沙街香江国际金融中心4-2126',
+                    office2: '广州市南沙区黄阁镇海滨路创享湾4栋TIMETABLE粤港澳青创基地',
+                    officeImageAlt: 'TIMETABLE 办公室',
+                    officeImageCaption: 'TIMETABLE 粤港澳青创基地'
                 },
                 contact: {
                     title: '联系我们'

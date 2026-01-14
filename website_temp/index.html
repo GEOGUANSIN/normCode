@@ -265,21 +265,154 @@
         }
 
         .hero-video {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto 1.5rem;
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--border);
             background: #0a0a0a;
             position: relative;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 2560 / 1176;
         }
 
         .hero-video video {
             width: 100%;
-            height: 100%;
+            height: calc(100% + 1px);
             display: block;
             object-fit: cover;
+            margin-top: -1px;
+            margin-bottom: -4px;
+            cursor: pointer;
+        }
+
+        .video-fullscreen-hint {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .hero-video:hover .video-fullscreen-hint {
+            opacity: 1;
+        }
+
+        .fullscreen-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .fullscreen-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #111;
+        }
+
+        .video-fullscreen-hint span {
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-speed-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 15;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+        }
+
+        .video-speed-control label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .video-speed-control select {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .video-speed-control select:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .video-speed-control select option {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        /* Fullscreen styles - for container fullscreen */
+        .hero-video:fullscreen,
+        .hero-video:-webkit-full-screen {
+            background: #000;
+        }
+
+        .hero-video:fullscreen video,
+        .hero-video:-webkit-full-screen video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            margin-top: 0;
+        }
+
+        .hero-video:fullscreen .video-speed-control,
+        .hero-video:-webkit-full-screen .video-speed-control {
+            display: flex;
+            top: 20px;
+            right: 20px;
+        }
+
+        .hero-video:fullscreen .video-fullscreen-hint,
+        .hero-video:-webkit-full-screen .video-fullscreen-hint {
+            display: none;
+        }
+
+        /* Fullscreen styles - for video element fullscreen (native controls) */
+        video:fullscreen,
+        video:-webkit-full-screen {
+            object-fit: contain !important;
+            margin-top: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        #demo-video:fullscreen,
+        #demo-video:-webkit-full-screen {
+            object-fit: contain !important;
+            margin-top: 0 !important;
         }
 
         /* Video loading overlay */
@@ -790,9 +923,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -811,6 +944,18 @@
             <h1 data-i18n="hero.title">NormCode 规范码 — Structured AI Planning That You Can Audit</h1>
             
             <div class="hero-video">
+                <!-- Speed control -->
+                <div class="video-speed-control">
+                    <label for="speed-select">Speed:</label>
+                    <select id="speed-select">
+                        <option value="1">1x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="1.75" selected>1.75x</option>
+                        <option value="2">2x</option>
+                        <option value="2.5">2.5x</option>
+                    </select>
+                </div>
                 <!-- Loading overlay -->
                 <div class="video-loading-overlay" id="video-loading">
                     <div class="video-loading-spinner"></div>
@@ -825,6 +970,18 @@
                     <div class="video-error-text" data-i18n="video.error">Video couldn't load. This may be due to a slow connection.</div>
                     <button class="video-retry-btn" onclick="retryVideo()" data-i18n="video.retry">Retry</button>
                 </div>
+                <!-- Fullscreen button overlay -->
+                <div class="video-fullscreen-hint" id="fullscreen-hint">
+                    <div class="fullscreen-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <polyline points="9 21 3 21 3 15"></polyline>
+                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                    </div>
+                    <span>Click to watch fullscreen</span>
+                </div>
                 <!-- Video element -->
                 <video id="demo-video" autoplay muted loop playsinline preload="auto">
                     <source src="normcode_canvas_demo_combined.mp4" type="video/mp4">
@@ -832,13 +989,13 @@
             </div>
             
             <div class="hero-actions">
-                <a href="NormCodeCanvasSetup-1.0.0.exe" class="btn-primary" download title="~22 MB download">
+                <a href="NormCodeCanvasSetup-1.0.0-alpha.exe" class="btn-primary" download title="Alpha Demo ~22 MB download">
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <span data-i18n="hero.downloadBtn">Download for Windows</span>
+                    <span data-i18n="hero.downloadBtn">Download Winidows Alpha Demo</span>
                     <span class="download-size" data-i18n="hero.downloadSize">(~22 MB)</span>
                 </a>
                 <a href="https://github.com/GEOGUANSIN/normCode" class="btn-secondary" target="_blank" rel="noopener noreferrer">
@@ -937,6 +1094,10 @@
         <p style="margin-top: 0.5rem;">
             <span data-i18n="footer.contact">Contact:</span> <a href="mailto:xin.guan@psylensai.com">xin.guan@psylensai.com</a>
         </p>
+        <p style="margin-top: 0.75rem; font-size: 0.8rem; opacity: 0.8;">
+            <span data-i18n="footer.offices">Offices:</span><br>
+            <span data-i18n="footer.office2">广州市南沙区黄阁镇海滨路创享湾4栋TIMETABLE粤港澳青创基地</span>
+        </p>
     </footer>
 
     <script>
@@ -956,7 +1117,7 @@
                 },
                 hero: {
                     title: 'NormCode 规范码 — Structured AI Planning That You Can Audit',
-                    downloadBtn: 'Download for Windows',
+                    downloadBtn: 'Download Alpha Demo',
                     downloadSize: '(~22 MB)',
                     githubBtn: 'GitHub',
                     paperBtn: 'Paper'
@@ -1006,7 +1167,9 @@
                 footer: {
                     tagline: 'Structured AI Planning That You Can Audit',
                     researchPaper: 'Research Paper',
-                    contact: 'Contact:'
+                    contact: 'Contact:',
+                    offices: 'Offices:',
+                    office2: 'TIMETABLE GBA Youth Innovation Base, Chuangxiangwan, Nansha, Guangzhou'
                 },
                 video: {
                     loading: 'Loading demo video...',
@@ -1028,7 +1191,7 @@
                 },
                 hero: {
                     title: 'NormCode 规范码 — 可审计的结构化AI规划',
-                    downloadBtn: 'Windows 下载',
+                    downloadBtn: '下载 Windows Alpha 演示版',
                     downloadSize: '(~22 MB)',
                     githubBtn: 'GitHub',
                     paperBtn: '论文'
@@ -1078,7 +1241,9 @@
                 footer: {
                     tagline: '可审计的结构化AI规划',
                     researchPaper: '研究论文',
-                    contact: '联系方式：'
+                    contact: '联系方式：',
+                    offices: '办公地址：',
+                    office2: '广州市南沙区黄阁镇海滨路创享湾4栋TIMETABLE粤港澳青创基地'
                 },
                 video: {
                     loading: '正在加载演示视频...',
@@ -1262,15 +1427,73 @@
             
             xhr.send();
             
+            // Speed control
+            const speedSelect = document.getElementById('speed-select');
+            const defaultSpeed = 1.75;
+            const heroVideo = document.querySelector('.hero-video');
+            const fullscreenHint = document.getElementById('fullscreen-hint');
+            
+            function setVideoSpeed(speed) {
+                if (video) {
+                    video.playbackRate = speed;
+                }
+            }
+            
+            if (speedSelect) {
+                speedSelect.addEventListener('change', (e) => {
+                    setVideoSpeed(parseFloat(e.target.value));
+                });
+            }
+            
+            // Fullscreen handling - click video to enter fullscreen
+            function enterFullscreen() {
+                if (heroVideo.requestFullscreen) {
+                    heroVideo.requestFullscreen();
+                } else if (heroVideo.webkitRequestFullscreen) {
+                    heroVideo.webkitRequestFullscreen();
+                } else if (heroVideo.msRequestFullscreen) {
+                    heroVideo.msRequestFullscreen();
+                } else if (video.webkitEnterFullscreen) {
+                    // iOS fallback
+                    video.webkitEnterFullscreen();
+                }
+            }
+            
+            // Click on video or container to enter fullscreen
+            video.addEventListener('click', enterFullscreen);
+            if (fullscreenHint) {
+                fullscreenHint.style.pointerEvents = 'auto';
+                fullscreenHint.addEventListener('click', enterFullscreen);
+            }
+            
+            // Toggle controls based on fullscreen state
+            function handleFullscreenChange() {
+                const isFullscreen = document.fullscreenElement || 
+                                    document.webkitFullscreenElement || 
+                                    document.msFullscreenElement;
+                
+                if (isFullscreen) {
+                    video.controls = true;
+                    if (fullscreenHint) fullscreenHint.style.display = 'none';
+                } else {
+                    video.controls = false;
+                    if (fullscreenHint) fullscreenHint.style.display = '';
+                }
+            }
+            
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('msfullscreenchange', handleFullscreenChange);
+            
             // Native video events as fallback/backup
             video.addEventListener('loadedmetadata', () => {
-                video.playbackRate = 1.2;
+                setVideoSpeed(defaultSpeed);
             });
             
             video.addEventListener('canplaythrough', () => {
                 clearTimeout(videoLoadTimeout);
                 hideLoadingOverlay();
-                video.playbackRate = 1.2;
+                setVideoSpeed(defaultSpeed);
             });
             
             video.addEventListener('playing', () => {
@@ -1285,7 +1508,7 @@
             
             // If video is already ready (cached)
             if (video.readyState >= 3) {
-                video.playbackRate = 1.2;
+                setVideoSpeed(defaultSpeed);
                 hideLoadingOverlay();
             }
         }
