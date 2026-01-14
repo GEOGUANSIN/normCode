@@ -37,9 +37,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="compilation.html" class="active" data-i18n="nav.compilation">Compilation</a>
+                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
             <div class="pipeline-diagram">
                 <div class="pipeline-step">
                     <div class="pipeline-step-label input">
-                        Natural Language Instruction
+                        Instruction → <em>WHAT</em> and <em>WHY</em>
                     </div>
                 </div>
                 
@@ -82,7 +82,7 @@
                     <div class="pipeline-step-label phase">
                         Phase 1: Derivation
                     </div>
-                    <div class="pipeline-step-comment" data-i18n="pipeline.derivationComment">Extract structure and hierarchy</div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.derivationComment">Determine execution order</div>
                 </div>
                 
                 <div class="pipeline-step">
@@ -95,7 +95,7 @@
                     <div class="pipeline-step-label phase">
                         Phase 2: Formalization
                     </div>
-                    <div class="pipeline-step-comment" data-i18n="pipeline.formalizationComment">Add flow indices and sequence types</div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.formalizationComment">Grammar consistency check</div>
                 </div>
                 
                 <div class="pipeline-step">
@@ -108,7 +108,7 @@
                     <div class="pipeline-step-label phase">
                         Phase 3: Post-Formalization
                     </div>
-                    <div class="pipeline-step-comment" data-i18n="pipeline.postFormalizationComment">Enrich with annotations and resources</div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.postFormalizationComment">Contextualization + resource demand</div>
                 </div>
                 
                 <div class="pipeline-step">
@@ -121,7 +121,7 @@
                     <div class="pipeline-step-label phase">
                         Phase 4: Activation
                     </div>
-                    <div class="pipeline-step-comment" data-i18n="pipeline.activationComment">Generate executable repositories</div>
+                    <div class="pipeline-step-comment" data-i18n="pipeline.activationComment">Resolve actual resources + executables</div>
                 </div>
                 
                 <div class="pipeline-step">
@@ -154,26 +154,32 @@
                     </thead>
                     <tbody>
                         <tr>
+                            <td><strong>Instruction</strong></td>
+                            <td data-i18n="phase.instructionQ"><em>What</em> and <em>why</em>?</td>
+                            <td data-i18n="phase.instructionIn">User intent</td>
+                            <td data-i18n="phase.instructionOut">Natural language</td>
+                        </tr>
+                        <tr>
                             <td><strong data-i18n="phase.derivation">Derivation</strong></td>
-                            <td data-i18n="phase.derivationQ"><em>What</em> are we trying to do?</td>
+                            <td data-i18n="phase.derivationQ"><em>In what order</em>?</td>
                             <td data-i18n="phase.derivationIn">Natural language</td>
                             <td><code class="inline-code">.ncds</code></td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="phase.formalization">Formalization</strong></td>
-                            <td data-i18n="phase.formalizationQ"><em>In what order</em> and <em>which sequence</em>?</td>
+                            <td data-i18n="phase.formalizationQ">Grammar consistency check</td>
                             <td><code class="inline-code">.ncds</code></td>
                             <td><code class="inline-code">.ncd</code></td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="phase.postFormalization">Post-Formalization</strong></td>
-                            <td data-i18n="phase.postFormalizationQ"><em>How</em> and <em>with what resources</em>?</td>
+                            <td data-i18n="phase.postFormalizationQ">Contextualization + resource demand</td>
                             <td><code class="inline-code">.ncd</code></td>
                             <td><code class="inline-code">.ncd</code> <span data-i18n="phase.enriched">(enriched)</span></td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="phase.activation">Activation</strong></td>
-                            <td data-i18n="phase.activationQ"><em>What</em> does the Orchestrator need?</td>
+                            <td data-i18n="phase.activationQ">Actual resources + executables</td>
                             <td><code class="inline-code">.ncd</code> <span data-i18n="phase.enriched">(enriched)</span></td>
                             <td data-i18n="phase.activationOut">JSON repositories</td>
                         </tr>
@@ -185,7 +191,7 @@
         <!-- Phase 1: Derivation -->
         <section>
             <h2 data-i18n="section.derivation">Phase 1: Derivation</h2>
-            <p data-i18n="section.derivationDesc">Transform unstructured natural language into hierarchical inference structure.</p>
+            <p data-i18n="section.derivationDesc">Determine execution order by transforming the instruction into a hierarchical inference structure.</p>
             
             <h3 data-i18n="section.derivationWhat">What It Does</h3>
             <ul>
@@ -222,7 +228,7 @@
         <!-- Phase 2: Formalization -->
         <section>
             <h2 data-i18n="section.formalization">Phase 2: Formalization</h2>
-            <p data-i18n="section.formalizationDesc">Add structural rigor to make the plan unambiguous and executable.</p>
+            <p data-i18n="section.formalizationDesc">Grammar consistency check—add structural rigor to ensure the plan conforms to NormCode grammar.</p>
             
             <h3 data-i18n="section.formalizationWhat">What It Adds</h3>
             <ul>
@@ -252,7 +258,7 @@
         <!-- Phase 3: Post-Formalization -->
         <section>
             <h2 data-i18n="section.postFormalization">Phase 3: Post-Formalization</h2>
-            <p data-i18n="section.postFormalizationDesc">Prepare the plan for execution by enriching it with configuration and grounding.</p>
+            <p data-i18n="section.postFormalizationDesc">Contextualization and resource demand—declare what resources are needed and where to find them.</p>
             
             <h3 data-i18n="section.postFormThree">Three Sub-Phases</h3>
             
@@ -313,7 +319,7 @@
         <!-- Phase 4: Activation -->
         <section>
             <h2 data-i18n="section.activation">Phase 4: Activation</h2>
-            <p data-i18n="section.activationDesc">Transform the annotated .ncd into executable JSON repositories that the Orchestrator can load and run.</p>
+            <p data-i18n="section.activationDesc">Resolve actual resources and executables—validate, load, and include concrete resources in JSON repositories.</p>
             
             <h3 data-i18n="section.activationWhat">What It Produces</h3>
             
@@ -503,15 +509,15 @@
                 <a href="execution.html" class="card-link">
                     <div class="card">
                         <span class="card-icon">⚙️</span>
-                        <h3 data-i18n="nav.execution">Execution Model</h3>
-                        <p data-i18n="next.executionDesc">How compiled plans run at runtime.</p>
+                        <h3 data-i18n="prev.execution">Previous: Execution Model</h3>
+                        <p data-i18n="prev.executionDesc">How plans run at runtime.</p>
                     </div>
                 </a>
-                <a href="examples.html" class="card-link">
+                <a href="syntax.html" class="card-link">
                     <div class="card">
-                        <span class="card-icon">💡</span>
-                        <h3 data-i18n="nav.examples">Examples</h3>
-                        <p data-i18n="next.examplesDesc">Real-world patterns and code samples.</p>
+                        <span class="card-icon">📝</span>
+                        <h3 data-i18n="next.syntax">Next: Syntax Reference</h3>
+                        <p data-i18n="next.syntaxDesc">Learn the markers, concept types, and operators.</p>
                     </div>
                 </a>
             </div>
@@ -551,22 +557,22 @@
                 },
                 section: {
                     pipeline: 'The 4-Phase Pipeline',
-                    pipelineDesc: 'NormCode progressively formalizes intent into structure. Each phase answers a specific question while preserving semantic intent.',
+                    pipelineDesc: 'NormCode progressively formalizes intent into structure. The instruction defines WHAT and WHY, then each phase adds structure while preserving semantic intent.',
                     phases: 'What Each Phase Does',
                     derivation: 'Phase 1: Derivation',
-                    derivationDesc: 'Transform unstructured natural language into hierarchical inference structure.',
+                    derivationDesc: 'Determine execution order by transforming the instruction into a hierarchical inference structure.',
                     derivationWhat: 'What It Does',
                     derivationExample: 'Example',
                     formalization: 'Phase 2: Formalization',
-                    formalizationDesc: 'Add structural rigor to make the plan unambiguous and executable.',
+                    formalizationDesc: 'Grammar consistency check—add structural rigor to ensure the plan conforms to NormCode grammar.',
                     formalizationWhat: 'What It Adds',
                     formalizationExample: 'Example',
                     postFormalization: 'Phase 3: Post-Formalization',
-                    postFormalizationDesc: 'Prepare the plan for execution by enriching it with configuration and grounding.',
+                    postFormalizationDesc: 'Contextualization and resource demand—declare what resources are needed and where to find them.',
                     postFormThree: 'Three Sub-Phases',
                     annotationsAdded: 'Annotations Added',
                     activation: 'Phase 4: Activation',
-                    activationDesc: 'Transform the annotated .ncd into executable JSON repositories that the Orchestrator can load and run.',
+                    activationDesc: 'Resolve actual resources and executables—validate, load, and include concrete resources in JSON repositories.',
                     activationWhat: 'What It Produces',
                     sampleOutput: 'Sample Output Structure',
                     formats: 'Format Ecosystem',
@@ -575,10 +581,10 @@
                     guarantees: 'Compilation Guarantees'
                 },
                 pipeline: {
-                    derivationComment: 'Extract structure and hierarchy',
-                    formalizationComment: 'Add flow indices and sequence types',
-                    postFormalizationComment: 'Enrich with annotations and resources',
-                    activationComment: 'Generate executable repositories'
+                    derivationComment: 'Determine execution order',
+                    formalizationComment: 'Grammar consistency check',
+                    postFormalizationComment: 'Contextualization + resource demand',
+                    activationComment: 'Resolve actual resources + executables'
                 },
                 table: {
                     phase: 'Phase',
@@ -595,16 +601,19 @@
                     llm: 'LLM?'
                 },
                 phase: {
+                    instructionQ: 'What and why?',
+                    instructionIn: 'User intent',
+                    instructionOut: 'Natural language',
                     derivation: 'Derivation',
-                    derivationQ: 'What are we trying to do?',
+                    derivationQ: 'In what order?',
                     derivationIn: 'Natural language',
                     formalization: 'Formalization',
-                    formalizationQ: 'In what order and which sequence?',
+                    formalizationQ: 'Grammar consistency check',
                     postFormalization: 'Post-Formalization',
-                    postFormalizationQ: 'How and with what resources?',
+                    postFormalizationQ: 'Contextualization + resource demand',
                     enriched: '(enriched)',
                     activation: 'Activation',
-                    activationQ: 'What does the Orchestrator need?',
+                    activationQ: 'Actual resources + executables',
                     activationOut: 'JSON repositories'
                 },
                 label: {
@@ -692,9 +701,13 @@
                     formOutput: ':<span class="variable">:{document summary}</span> | <span class="comment">?{flow_index}: 1</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(summarize this text)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{clean text}</span> | <span class="comment">?{flow_index}: 1.2</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(extract main content)</span> | <span class="comment">?{flow_index}: 1.2.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{raw document}</span> | <span class="comment">?{flow_index}: 1.2.1.1</span>',
                     flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Functional concept (operation)</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (first input)</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1</span>&nbsp;<span class="comment"># Nested functional concept</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1.1</span>&nbsp;<span class="comment"># Nested value concept</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (second input)</span>'
                 },
+                prev: {
+                    execution: 'Previous: Execution Model',
+                    executionDesc: 'How plans run at runtime.'
+                },
                 next: {
-                    executionDesc: 'How compiled plans run at runtime.',
-                    examplesDesc: 'Real-world patterns and code samples.'
+                    syntax: 'Next: Syntax Reference',
+                    syntaxDesc: 'Learn the markers, concept types, and operators.'
                 },
                 footer: {
                     paper: 'Paper'
@@ -719,22 +732,22 @@
                 },
                 section: {
                     pipeline: '4阶段流水线',
-                    pipelineDesc: 'NormCode逐步将意图形式化为结构。每个阶段回答一个特定问题，同时保留语义意图。',
+                    pipelineDesc: 'NormCode逐步将意图形式化为结构。指令定义做什么和为什么，然后每个阶段在保留语义意图的同时增加结构。',
                     phases: '每个阶段的作用',
                     derivation: '阶段1：推导',
-                    derivationDesc: '将非结构化自然语言转换为层次化推理结构。',
+                    derivationDesc: '通过将指令转换为层次化推理结构来确定执行顺序。',
                     derivationWhat: '它做什么',
                     derivationExample: '示例',
                     formalization: '阶段2：形式化',
-                    formalizationDesc: '添加结构严谨性，使计划明确且可执行。',
+                    formalizationDesc: '语法一致性检查——添加结构严谨性以确保计划符合NormCode语法。',
                     formalizationWhat: '它添加什么',
                     formalizationExample: '示例',
                     postFormalization: '阶段3：后形式化',
-                    postFormalizationDesc: '通过丰富配置和基础为执行准备计划。',
+                    postFormalizationDesc: '上下文化和资源需求——声明需要什么资源以及在哪里找到它们。',
                     postFormThree: '三个子阶段',
                     annotationsAdded: '添加的注释',
                     activation: '阶段4：激活',
-                    activationDesc: '将注释的.ncd转换为编排器可以加载和运行的可执行JSON存储库。',
+                    activationDesc: '解析实际资源和可执行文件——验证、加载并在JSON存储库中包含具体资源。',
                     activationWhat: '它产生什么',
                     sampleOutput: '示例输出结构',
                     formats: '格式生态系统',
@@ -743,10 +756,10 @@
                     guarantees: '编译保证'
                 },
                 pipeline: {
-                    derivationComment: '提取结构和层次',
-                    formalizationComment: '添加流程索引和序列类型',
-                    postFormalizationComment: '丰富注释和资源',
-                    activationComment: '生成可执行存储库'
+                    derivationComment: '确定执行顺序',
+                    formalizationComment: '语法一致性检查',
+                    postFormalizationComment: '上下文化 + 资源需求',
+                    activationComment: '解析实际资源 + 可执行文件'
                 },
                 table: {
                     phase: '阶段',
@@ -763,16 +776,19 @@
                     llm: 'LLM？'
                 },
                 phase: {
+                    instructionQ: '做什么和为什么？',
+                    instructionIn: '用户意图',
+                    instructionOut: '自然语言',
                     derivation: '推导',
-                    derivationQ: '我们想做什么？',
+                    derivationQ: '什么顺序？',
                     derivationIn: '自然语言',
                     formalization: '形式化',
-                    formalizationQ: '以什么顺序和哪种序列？',
+                    formalizationQ: '语法一致性检查',
                     postFormalization: '后形式化',
-                    postFormalizationQ: '如何以及用什么资源？',
+                    postFormalizationQ: '上下文化 + 资源需求',
                     enriched: '（丰富的）',
                     activation: '激活',
-                    activationQ: '编排器需要什么？',
+                    activationQ: '实际资源 + 可执行文件',
                     activationOut: 'JSON存储库'
                 },
                 label: {
@@ -860,9 +876,13 @@
                     formOutput: ':<span class="variable">:{文档摘要}</span> | <span class="comment">?{flow_index}: 1</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(总结此文本)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{清理后的文本}</span> | <span class="comment">?{flow_index}: 1.2</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(提取主要内容)</span> | <span class="comment">?{flow_index}: 1.2.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{原始文档}</span> | <span class="comment">?{flow_index}: 1.2.1.1</span>',
                     flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 根概念</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 功能概念（操作）</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 值概念（第一个输入）</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1</span>&nbsp;<span class="comment"># 嵌套功能概念</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1.1</span>&nbsp;<span class="comment"># 嵌套值概念</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 值概念（第二个输入）</span>'
                 },
+                prev: {
+                    execution: '上一步：执行模型',
+                    executionDesc: '计划如何在运行时执行。'
+                },
                 next: {
-                    executionDesc: '编译后的计划如何在运行时执行。',
-                    examplesDesc: '真实世界的模式和代码示例。'
+                    syntax: '下一步：语法参考',
+                    syntaxDesc: '学习标记、概念类型和操作符。'
                 },
                 footer: {
                     paper: '论文'

@@ -37,9 +37,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="how-it-works.html" class="active" data-i18n="nav.overview">Overview</a>
-                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
         <!-- Semantic vs Syntactic -->
         <section>
             <h2 data-i18n="section.stepsTitle">Semantic vs. Syntactic Steps</h2>
-            <p data-i18n="section.stepsDesc">NormCode distinguishes between two types of operations. Only semantic steps call an LLM—syntactic steps are free, instant, and deterministic.</p>
+            <p data-i18n="section.stepsDesc">NormCode distinguishes between two types of operations. Semantic steps <em>may</em> call an LLM, but many can be optimized to use scripts instead—syntactic steps are always free, instant, and deterministic.</p>
             
             <div class="table-wrapper">
                 <table>
@@ -116,10 +116,10 @@
                     <tbody>
                         <tr>
                             <td><strong data-i18n="table.semantic">Semantic</strong></td>
-                            <td data-i18n="table.yes">✅ Yes</td>
-                            <td data-i18n="table.tokens">Tokens</td>
-                            <td data-i18n="table.nonDeterministic">Non-deterministic</td>
-                            <td data-i18n="table.semanticExamples">Reasoning, generating, analyzing</td>
+                            <td data-i18n="table.maybe">⚡ Maybe</td>
+                            <td data-i18n="table.tokens">Tokens or Free</td>
+                            <td data-i18n="table.nonDeterministic">Varies</td>
+                            <td data-i18n="table.semanticExamples">Reasoning, generating, analyzing (LLM or script)</td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="table.syntactic">Syntactic</strong></td>
@@ -132,7 +132,7 @@
                 </table>
             </div>
 
-            <p data-i18n="section.costNote">A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.</p>
+            <p data-i18n="section.costNote">A typical 20-step plan might only call an LLM 8 times. Some semantic steps can be optimized to scripts for speed and cost. Syntactic operations are always free: grouping data, selecting values, controlling flow, and iterating.</p>
         </section>
 
         <!-- Progressive Formalization -->
@@ -142,22 +142,22 @@
             
             <div class="code-example" style="text-align: center; font-family: 'IBM Plex Mono', monospace;">
                 <code data-i18n-html="code.progressivePipeline">
-Natural Language Instruction<br>
+Natural Language Instruction → <em>WHAT</em> and <em>WHY</em><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<strong>Phase 1:</strong> Derivation → <em>WHAT</em> to do<br>
+<strong>Phase 1:</strong> Derivation → <em>IN WHAT ORDER</em><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<strong>Phase 2:</strong> Formalization → <em>IN WHAT ORDER</em><br>
+<strong>Phase 2:</strong> Formalization → Grammar consistency check<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<strong>Phase 3:</strong> Post-Formalization → <em>HOW</em> and <em>WITH WHAT</em><br>
+<strong>Phase 3:</strong> Post-Formalization → Contextualization + Resource Demand<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<strong>Phase 4:</strong> Activation → Executable Repositories<br>
+<strong>Phase 4:</strong> Activation → Actual Resources + Executables<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
 Orchestrator Executes
                 </code>
             </div>
             
             <div class="info-box">
-                <p data-i18n="section.progressiveBenefit"><strong>Why this matters:</strong> AI can generate rough plans from natural language. The compiler then makes every decision explicit—what data flows where, what order things run, what resources are needed. Each stage can be reviewed, so complex logic becomes transparent.</p>
+                <p data-i18n="section.progressiveBenefit"><strong>Why this matters:</strong> The instruction defines intent (what and why). Derivation determines execution order. Formalization ensures grammar consistency. Post-formalization adds context and declares resource needs. Activation resolves actual resources and executables. Each stage can be reviewed, so complex logic becomes transparent.</p>
             </div>
         </section>
 
@@ -300,11 +300,11 @@ Orchestrator Executes
                     exampleDesc: 'NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.',
                     readingNote: '<strong>Reading bottom-up:</strong> The extraction step sees only <code class="inline-code">raw document</code>. The mismatch check sees <code class="inline-code">extracted figures</code> + <code class="inline-code">database results</code>. The summary step sees only <code class="inline-code">discrepancy flags</code>—never the full document.',
                     stepsTitle: 'Semantic vs. Syntactic Steps',
-                    stepsDesc: 'NormCode distinguishes between two types of operations. Only semantic steps call an LLM—syntactic steps are free, instant, and deterministic.',
-                    costNote: 'A typical 20-step plan might only call an LLM 8 times. The rest are free syntactic operations: grouping data, selecting values, controlling flow, and iterating.',
+                    stepsDesc: 'NormCode distinguishes between two types of operations. Semantic steps <em>may</em> call an LLM, but many can be optimized to use scripts instead—syntactic steps are always free, instant, and deterministic.',
+                    costNote: 'A typical 20-step plan might only call an LLM 8 times. Some semantic steps can be optimized to scripts for speed and cost. Syntactic operations are always free: grouping data, selecting values, controlling flow, and iterating.',
                     progressiveTitle: 'Progressive Formalization',
                     progressiveDesc: 'NormCode uses a compilation pipeline that progressively transforms rough ideas into executable plans. Each phase adds structure while preserving intent—making complex logic explicit and auditable.',
-                    progressiveBenefit: '<strong>Why this matters:</strong> AI can generate rough plans from natural language. The compiler then makes every decision explicit—what data flows where, what order things run, what resources are needed. Each stage can be reviewed, so complex logic becomes transparent.',
+                    progressiveBenefit: '<strong>Why this matters:</strong> The instruction defines intent (what and why). Derivation determines execution order. Formalization ensures grammar consistency. Post-formalization adds context and declares resource needs. Activation resolves actual resources and executables. Each stage can be reviewed, so complex logic becomes transparent.',
                     learnMore: 'Dive Deeper',
                     learnMoreDesc: 'Explore the documentation to learn how to write NormCode plans:',
                     principlesTitle: 'Core Principles',
@@ -312,7 +312,7 @@ Orchestrator Executes
                 },
                 code: {
                     documentPipeline: '&lt;- executive summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check for mismatches<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- extracted figures<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract financial data<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- database results',
-                    progressivePipeline: 'Natural Language Instruction<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 1:</strong> Derivation → <em>WHAT</em> to do<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 2:</strong> Formalization → <em>IN WHAT ORDER</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 3:</strong> Post-Formalization → <em>HOW</em> and <em>WITH WHAT</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 4:</strong> Activation → Executable Repositories<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>Orchestrator Executes'
+                    progressivePipeline: 'Natural Language Instruction → <em>WHAT</em> and <em>WHY</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 1:</strong> Derivation → <em>IN WHAT ORDER</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 2:</strong> Formalization → Grammar consistency check<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 3:</strong> Post-Formalization → Contextualization + Resource Demand<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 4:</strong> Activation → Actual Resources + Executables<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>Orchestrator Executes'
                 },
                 table: {
                     type: 'Type',
@@ -321,14 +321,15 @@ Orchestrator Executes
                     determinism: 'Determinism',
                     examples: 'Examples',
                     yes: '✅ Yes',
+                    maybe: '⚡ Maybe',
                     no: '❌ No',
-                    tokens: 'Tokens',
+                    tokens: 'Tokens or Free',
                     free: 'Free',
                     semantic: 'Semantic',
                     syntactic: 'Syntactic',
-                    nonDeterministic: 'Non-deterministic',
+                    nonDeterministic: 'Varies',
                     deterministic: '100% Deterministic',
-                    semanticExamples: 'Reasoning, generating, analyzing',
+                    semanticExamples: 'Reasoning, generating, analyzing (LLM or script)',
                     syntacticExamples: 'Collecting, selecting, routing, looping'
                 },
                 cards: {
@@ -405,11 +406,11 @@ Orchestrator Executes
                     exampleDesc: 'NormCode使用缩进来显示数据依赖关系。每个步骤只接收显式传递给它的内容。',
                     readingNote: '<strong>自下而上阅读：</strong>提取步骤只能看到<code class="inline-code">原始文档</code>。不匹配检查看到<code class="inline-code">提取的数值</code> + <code class="inline-code">数据库结果</code>。摘要步骤只能看到<code class="inline-code">差异标志</code>——永远看不到完整文档。',
                     stepsTitle: '语义步骤 vs. 语法步骤',
-                    stepsDesc: 'NormCode区分两种类型的操作。只有语义步骤调用LLM——语法步骤是免费的、即时的和确定性的。',
-                    costNote: '一个典型的20步计划可能只调用LLM 8次。其余是免费的语法操作：分组数据、选择值、控制流程和迭代。',
+                    stepsDesc: 'NormCode区分两种类型的操作。语义步骤<em>可能</em>调用LLM，但许多可以优化为使用脚本——语法步骤始终是免费的、即时的和确定性的。',
+                    costNote: '一个典型的20步计划可能只调用LLM 8次。一些语义步骤可以优化为脚本以提高速度和降低成本。语法操作始终免费：分组数据、选择值、控制流程和迭代。',
                     progressiveTitle: '渐进式形式化',
                     progressiveDesc: 'NormCode使用编译流水线，将粗略的想法逐步转化为可执行的计划。每个阶段都在保留意图的同时增加结构——使复杂逻辑变得清晰可审计。',
-                    progressiveBenefit: '<strong>为什么重要：</strong>AI可以从自然语言生成粗略计划。然后编译器使每个决策变得明确——数据流向哪里、运行顺序、需要什么资源。每个阶段都可以审查，使复杂逻辑变得透明。',
+                    progressiveBenefit: '<strong>为什么重要：</strong>指令定义意图（做什么和为什么）。推导确定执行顺序。形式化确保语法一致性。后形式化添加上下文并声明资源需求。激活解析实际资源和可执行文件。每个阶段都可以审查，使复杂逻辑变得透明。',
                     learnMore: '深入了解',
                     learnMoreDesc: '探索文档以学习如何编写NormCode计划：',
                     principlesTitle: '核心原则',
@@ -422,19 +423,20 @@ Orchestrator Executes
                     determinism: '确定性',
                     examples: '示例',
                     yes: '✅ 是',
+                    maybe: '⚡ 可能',
                     no: '❌ 否',
-                    tokens: 'Token',
+                    tokens: 'Token或免费',
                     free: '免费',
                     semantic: '语义',
                     syntactic: '语法',
-                    nonDeterministic: '非确定性',
+                    nonDeterministic: '可变',
                     deterministic: '100% 确定性',
-                    semanticExamples: '推理、生成、分析',
+                    semanticExamples: '推理、生成、分析（LLM或脚本）',
                     syntacticExamples: '收集、选择、路由、循环'
                 },
                 code: {
                     documentPipeline: '&lt;- 执行摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据标记项生成摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 差异标记<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查不匹配项<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 提取的数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取财务数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 数据库结果',
-                    progressivePipeline: '自然语言指令<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段1：</strong>推导 → 做<em>什么</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段2：</strong>形式化 → <em>什么顺序</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段3：</strong>后形式化 → <em>如何</em>以及<em>用什么</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段4：</strong>激活 → 可执行存储库<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>编排器执行'
+                    progressivePipeline: '自然语言指令 → <em>做什么</em>和<em>为什么</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段1：</strong>推导 → <em>什么顺序</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段2：</strong>形式化 → 语法一致性检查<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段3：</strong>后形式化 → 上下文化 + 资源需求<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段4：</strong>激活 → 实际资源 + 可执行文件<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>编排器执行'
                 },
                 cards: {
                     syntax: {

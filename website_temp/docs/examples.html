@@ -37,9 +37,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="examples.html" class="active" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -158,7 +158,7 @@
             
             <h3 data-i18n="ex.sentiment">Sentiment Analysis with Context</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.sentiment">
 &lt;- user sentiment<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine sentiment level based on user experience<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- support ticket<br>
@@ -169,7 +169,7 @@
 
             <h3 data-i18n="ex.quarterlyReport">Quarterly Report Generation</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.quarterlyReport">
 &lt;- quarterly report<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= compile findings into executive summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- analyzed data<br>
@@ -188,7 +188,7 @@
             
             <h3 data-i18n="ex.batchSummary">Batch Document Summarization</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.batchSummary">
 &lt;- all summaries<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>
@@ -210,7 +210,7 @@
 
             <h3 data-i18n="ex.researchSynthesis">Research Paper Synthesis</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.researchSynthesis">
 &lt;- final synthesis<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= synthesize insights across all themes<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- major themes<br>
@@ -235,7 +235,7 @@
             
             <h3 data-i18n="ex.reviewWorkflow">Review Workflow</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.reviewWorkflow">
 &lt;- final output<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>
@@ -253,7 +253,7 @@
 
             <h3 data-i18n="ex.errorRecovery">Error Recovery with Fallback</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.errorRecovery">
 &lt;- final answer<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= select the first valid result<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- complex reasoning failed?<br>
@@ -279,7 +279,7 @@
             
             <h3 data-i18n="ex.simpleCollect">Simple Collection (Free)</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.simpleCollect">
 &lt;- all inputs<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= collect these items together as one group<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- user query<br>
@@ -291,7 +291,7 @@
 
             <h3 data-i18n="ex.parallelAnalysis">Parallel Analysis Collection</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.parallelAnalysis">
 &lt;- analysis results<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= gather results from all analyses as one info unit<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- sentiment analysis<br>
@@ -319,7 +319,7 @@
             
             <h3 data-i18n="ex.emailTriage">Email Triage System</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.emailTriage">
 &lt;- triage decision<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= assign priority and route to appropriate team<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- email metadata<br>
@@ -338,7 +338,7 @@
 
             <h3 data-i18n="ex.codeReview">Code Review Assistant</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.codeReview">
 &lt;- review summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate comprehensive review report<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- code issues<br>
@@ -395,18 +395,18 @@
         <!-- Navigation -->
         <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
             <div class="card-grid">
-                <a href="execution.html" class="card-link">
-                    <div class="card">
-                        <span class="card-icon">⚙️</span>
-                        <h3 data-i18n="prev.execution">Previous: Execution Model</h3>
-                        <p data-i18n="prev.executionDesc">How plans run at runtime.</p>
-                    </div>
-                </a>
                 <a href="syntax.html" class="card-link">
                     <div class="card">
                         <span class="card-icon">📝</span>
-                        <h3 data-i18n="nav.syntax">Syntax Reference</h3>
-                        <p data-i18n="prev.syntaxDesc">Complete syntax guide.</p>
+                        <h3 data-i18n="prev.syntax">Previous: Syntax Reference</h3>
+                        <p data-i18n="prev.syntaxDesc">Learn the markers, concept types, and operators.</p>
+                    </div>
+                </a>
+                <a href="execution.html" class="card-link">
+                    <div class="card">
+                        <span class="card-icon">⚙️</span>
+                        <h3 data-i18n="nav.execution">Back to Start</h3>
+                        <p data-i18n="prev.executionDesc">How plans run at runtime.</p>
                     </div>
                 </a>
             </div>
@@ -518,12 +518,22 @@
                 },
                 code: {
                     docSummary: '&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document',
-                    riskAssessment: '&lt;- risk assessment<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= evaluate legal exposure based on the extracted clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- relevant clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract clauses related to liability and indemnification<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- classified sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify and classify document sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- full contract'
+                    riskAssessment: '&lt;- risk assessment<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= evaluate legal exposure based on the extracted clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- relevant clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract clauses related to liability and indemnification<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- classified sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify and classify document sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- full contract',
+                    sentiment: '&lt;- user sentiment<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine sentiment level based on user experience<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- support ticket<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- conversation history',
+                    quarterlyReport: '&lt;- quarterly report<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= compile findings into executive summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- analyzed data<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify trends and anomalies<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw metrics<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- previous quarter report',
+                    batchSummary: '&lt;- all summaries<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document to process now<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- documents<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* document to process now',
+                    researchSynthesis: '&lt;- final synthesis<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= synthesize insights across all themes<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- major themes<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify common themes<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- all findings<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every paper return the key findings<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select key findings<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- key findings<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main findings<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- current paper<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- research papers<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* current paper',
+                    reviewWorkflow: '&lt;- final output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check if draft requires review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- reviewed output<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= perform human review and corrections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= if draft needs review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output',
+                    errorRecovery: '&lt;- final answer<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select the first valid result<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- complex reasoning failed?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check if primary answer is valid<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- primary answer<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- fallback answer<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= use simple approach as fallback<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= if complex reasoning failed<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* complex reasoning failed?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input data<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- primary answer<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= attempt complex reasoning<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input data',
+                    simpleCollect: '&lt;- all inputs<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= collect these items together as one group<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- user query<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- system context<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- retrieved documents',
+                    parallelAnalysis: '&lt;- analysis results<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= gather results from all analyses as one info unit<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- sentiment analysis<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= analyze sentiment<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- text<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- entity extraction<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract entities<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- text<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- topic classification<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= classify topics<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- text',
+                    emailTriage: '&lt;- triage decision<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= assign priority and route to appropriate team<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- email metadata<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract sender, subject, keywords<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw email<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- urgency assessment<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine urgency level<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- email content<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract body text<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw email<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- historical context<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= look up previous conversations<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- sender info',
+                    codeReview: '&lt;- review summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate comprehensive review report<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- code issues<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify bugs and anti-patterns<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- code diff<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- security concerns<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check for security vulnerabilities<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- code diff<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- style suggestions<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= evaluate code style and readability<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- code diff'
                 },
                 prev: {
-                    execution: 'Previous: Execution Model',
-                    executionDesc: 'How plans run at runtime.',
-                    syntaxDesc: 'Complete syntax guide.'
+                    syntax: 'Previous: Syntax Reference',
+                    syntaxDesc: 'Learn the markers, concept types, and operators.',
+                    executionDesc: 'How plans run at runtime.'
                 },
                 footer: {
                     paper: 'Paper'
@@ -582,7 +592,7 @@
                     iterationDesc: '处理集合中的每个项目并汇总结果。',
                     batchSummary: '批量文档摘要',
                     batchCalls: 'N次（每个文档一次）',
-                    iterationNote: '<strong>关键组件：</strong><br>• <code class="inline-code">&lt;- documents</code> — 基础集合（值概念）<br>• <code class="inline-code">&lt;* document to process now</code> — 当前元素标记（上下文概念）<br>• <code class="inline-code">&lt;= select document summary to return</code> — 选择每次迭代的输出',
+                    iterationNote: '<strong>关键组件：</strong><br>• <code class="inline-code">&lt;- 文档列表</code> — 基础集合（值概念）<br>• <code class="inline-code">&lt;* 当前处理的文档</code> — 当前元素标记（上下文概念）<br>• <code class="inline-code">&lt;= 选择要返回的文档摘要</code> — 选择每次迭代的输出',
                     researchSynthesis: '研究论文综合',
                     synthesisCalls: 'N + 2次（N篇论文 + 主题识别 + 综合）',
                     conditionalTitle: '条件执行',
@@ -620,12 +630,22 @@
                 },
                 code: {
                     docSummary: '&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 清理后的文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取主要内容，移除标题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档',
-                    riskAssessment: '&lt;- 风险评估<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据提取的条款评估法律风险<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 相关条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取与责任和赔偿相关的条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 分类章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别并分类文档章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 完整合同'
+                    riskAssessment: '&lt;- 风险评估<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据提取的条款评估法律风险<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 相关条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取与责任和赔偿相关的条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 分类章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别并分类文档章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 完整合同',
+                    sentiment: '&lt;- 用户情绪<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据用户体验判断情绪水平<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 工单<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 对话历史',
+                    quarterlyReport: '&lt;- 季度报告<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 将发现编译成执行摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 分析数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别趋势和异常<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始指标<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 上季度报告',
+                    batchSummary: '&lt;- 所有摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 对列表中的每个文档返回文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 选择要返回的文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 当前处理的文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档列表<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 当前处理的文档',
+                    researchSynthesis: '&lt;- 最终综合<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 综合所有主题的见解<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 主要主题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别共同主题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 所有发现<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 对每篇论文返回关键发现<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 选择关键发现<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 关键发现<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取主要发现<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 当前论文<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 研究论文<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 当前论文',
+                    reviewWorkflow: '&lt;- 最终输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果有审核输出则选择审核输出，否则使用草稿<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查草稿是否需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 审核后的输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 执行人工审核和修正<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果草稿需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出',
+                    errorRecovery: '&lt;- 最终答案<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 选择第一个有效结果<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 复杂推理失败？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查主要答案是否有效<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 主要答案<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 回退答案<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 使用简单方法作为回退<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果复杂推理失败<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 复杂推理失败？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 主要答案<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 尝试复杂推理<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入数据',
+                    simpleCollect: '&lt;- 所有输入<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 将这些项目作为一组收集在一起<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 用户查询<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 系统上下文<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 检索到的文档',
+                    parallelAnalysis: '&lt;- 分析结果<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 将所有分析结果作为一个信息单元收集<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 情感分析<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 分析情感<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 实体提取<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取实体<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 主题分类<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 分类主题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文本',
+                    emailTriage: '&lt;- 分类决策<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 分配优先级并路由到适当的团队<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 邮件元数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取发件人、主题、关键词<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始邮件<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 紧急程度评估<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 确定紧急程度<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 邮件内容<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取正文<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始邮件<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 历史上下文<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 查找之前的对话<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 发件人信息',
+                    codeReview: '&lt;- 审查摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 生成综合审查报告<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 代码问题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别错误和反模式<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 代码差异<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 安全问题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查安全漏洞<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 代码差异<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 风格建议<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 评估代码风格和可读性<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 代码差异'
                 },
                 prev: {
-                    execution: '上一篇：执行模型',
-                    executionDesc: '计划如何在运行时执行。',
-                    syntaxDesc: '完整语法指南。'
+                    syntax: '上一步：语法参考',
+                    syntaxDesc: '学习标记、概念类型和操作符。',
+                    executionDesc: '计划如何在运行时执行。'
                 },
                 footer: {
                     paper: '论文'

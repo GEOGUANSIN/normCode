@@ -37,9 +37,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="syntax.html" class="active" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="execution.html" data-i18n="nav.execution">Execution Model</a>
                         <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="syntax.html" class="active" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
         <!-- Core Syntax -->
         <section>
             <h2 data-i18n="section.coreMarkers">Core Markers</h2>
-            <p data-i18n="section.coreMarkersDesc">NormCode uses just two primary symbols. Everything else is natural language.</p>
+            <p data-i18n="section.coreMarkersDesc">In <code class="inline-code">.ncds</code> draft format, NormCode uses three primary symbols. Everything else is natural language.</p>
             
             <div class="table-wrapper">
                 <table>
@@ -86,19 +86,19 @@
                             <td><code class="inline-code">&lt;-</code></td>
                             <td data-i18n="markers.value">Value Concept</td>
                             <td data-i18n="markers.valueDesc">"This is data" (nouns)</td>
-                            <td><code class="inline-code">&lt;- document summary</code></td>
+                            <td data-i18n="markers.valueEx"><code class="inline-code">&lt;- document summary</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">&lt;=</code></td>
                             <td data-i18n="markers.function">Functional Concept</td>
                             <td data-i18n="markers.functionDesc">"This is an action" (verbs)</td>
-                            <td><code class="inline-code">&lt;= summarize this text</code></td>
+                            <td data-i18n="markers.functionEx"><code class="inline-code">&lt;= summarize this text</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">&lt;*</code></td>
                             <td data-i18n="markers.context">Context Concept</td>
                             <td data-i18n="markers.contextDesc">Loop/timing state</td>
-                            <td><code class="inline-code">&lt;* current item</code></td>
+                            <td data-i18n="markers.contextEx"><code class="inline-code">&lt;* current item</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -108,7 +108,7 @@
         <!-- Basic Structure -->
         <section>
             <h2 data-i18n="section.structure">Basic Structure</h2>
-            <p data-i18n="section.structureDesc">Plans execute <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
+            <p data-i18n="section.structureDesc">Plans execute <strong>inside-out</strong> (innermost first) and <strong>top-to-bottom</strong> (sibling order).</p>
             
             <div class="code-example">
                 <code data-i18n-html="code.basicStructure">
@@ -149,19 +149,19 @@
                             <td><code class="inline-code">{}</code></td>
                             <td data-i18n="types.object">Object</td>
                             <td data-i18n="types.objectDesc">Generic entity/data</td>
-                            <td><code class="inline-code">{document}</code></td>
+                            <td data-i18n="types.objectEx"><code class="inline-code">{document}</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">&lt;&gt;</code></td>
                             <td data-i18n="types.proposition">Proposition</td>
                             <td data-i18n="types.propositionDesc">State/condition (boolean)</td>
-                            <td><code class="inline-code">&lt;validation passed&gt;</code></td>
+                            <td data-i18n="types.propositionEx"><code class="inline-code">&lt;validation passed&gt;</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">[]</code></td>
                             <td data-i18n="types.relation">Relation</td>
                             <td data-i18n="types.relationDesc">Collection (list/dict)</td>
-                            <td><code class="inline-code">[documents]</code></td>
+                            <td data-i18n="types.relationEx"><code class="inline-code">[documents]</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -183,13 +183,13 @@
                             <td><code class="inline-code">::()</code></td>
                             <td data-i18n="types.imperative">Imperative</td>
                             <td data-i18n="types.imperativeDesc">Command/action</td>
-                            <td><code class="inline-code">::(calculate sum)</code></td>
+                            <td data-i18n="types.imperativeEx"><code class="inline-code">::(calculate sum)</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">::()&lt;&gt;</code></td>
                             <td data-i18n="types.judgement">Judgement</td>
                             <td data-i18n="types.judgementDesc">Evaluation (true/false)</td>
-                            <td><code class="inline-code">::(is valid)&lt;ALL True&gt;</code></td>
+                            <td data-i18n="types.judgementEx"><code class="inline-code">::(is valid)&lt;ALL True&gt;</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -423,17 +423,17 @@
         <!-- Navigation -->
         <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
             <div class="card-grid">
-                <a href="execution.html" class="card-link">
+                <a href="compilation.html" class="card-link">
                     <div class="card">
-                        <span class="card-icon">⚙️</span>
-                        <h3 data-i18n="next.execution">Next: Execution Model</h3>
-                        <p data-i18n="next.executionDesc">Learn how NormCode plans are executed step by step.</p>
+                        <span class="card-icon">🔄</span>
+                        <h3 data-i18n="prev.compilation">Previous: Compilation</h3>
+                        <p data-i18n="prev.compilationDesc">The 4-phase pipeline from draft to executable.</p>
                     </div>
                 </a>
                 <a href="examples.html" class="card-link">
                     <div class="card">
                         <span class="card-icon">💡</span>
-                        <h3 data-i18n="next.examples">See Examples</h3>
+                        <h3 data-i18n="next.examples">Next: Examples</h3>
                         <p data-i18n="next.examplesDesc">Real-world patterns and complete code samples.</p>
                     </div>
                 </a>
@@ -474,9 +474,9 @@
                 },
                 section: {
                     coreMarkers: 'Core Markers',
-                    coreMarkersDesc: 'NormCode uses just two primary symbols. Everything else is natural language.',
+                    coreMarkersDesc: 'In <code class="inline-code">.ncds</code> draft format, NormCode uses three primary symbols. Everything else is natural language.',
                     structure: 'Basic Structure',
-                    structureDesc: 'Plans execute <strong>bottom-up</strong>: child inferences complete before their parents can run.',
+                    structureDesc: 'Plans execute <strong>inside-out</strong> (innermost first) and <strong>top-to-bottom</strong> (sibling order).',
                     goldenRule: '<strong>The Golden Rule:</strong> Each inference has exactly ONE action (<code class="inline-code">&lt;=</code>). If you need multiple steps, nest them.',
                     conceptTypes: 'Concept Types',
                     conceptTypesDesc: 'In formal <code class="inline-code">.ncd</code> syntax, concepts have explicit type markers:',
@@ -514,22 +514,30 @@
                 markers: {
                     value: 'Value Concept',
                     valueDesc: '"This is data" (nouns)',
+                    valueEx: '<code class="inline-code">&lt;- document summary</code>',
                     function: 'Functional Concept',
                     functionDesc: '"This is an action" (verbs)',
+                    functionEx: '<code class="inline-code">&lt;= summarize this text</code>',
                     context: 'Context Concept',
-                    contextDesc: 'Loop/timing state'
+                    contextDesc: 'Loop/timing state',
+                    contextEx: '<code class="inline-code">&lt;* current item</code>'
                 },
                 types: {
                     object: 'Object',
                     objectDesc: 'Generic entity/data',
+                    objectEx: '<code class="inline-code">{document}</code>',
                     proposition: 'Proposition',
                     propositionDesc: 'State/condition (boolean)',
+                    propositionEx: '<code class="inline-code">&lt;validation passed&gt;</code>',
                     relation: 'Relation',
                     relationDesc: 'Collection (list/dict)',
+                    relationEx: '<code class="inline-code">[documents]</code>',
                     imperative: 'Imperative',
                     imperativeDesc: 'Command/action',
+                    imperativeEx: '<code class="inline-code">::(calculate sum)</code>',
                     judgement: 'Judgement',
-                    judgementDesc: 'Evaluation (true/false)'
+                    judgementDesc: 'Evaluation (true/false)',
+                    judgementEx: '<code class="inline-code">::(is valid)&lt;ALL True&gt;</code>'
                 },
                 ops: {
                     specification: 'Specification',
@@ -569,10 +577,12 @@
                     iteration: '&lt;- all summaries<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document to process now<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- documents<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* document to process now',
                     conditional: '&lt;- final output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check if draft requires review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- reviewed output<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= perform human review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= if draft needs review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output'
                 },
+                prev: {
+                    compilation: 'Previous: Compilation',
+                    compilationDesc: 'The 4-phase pipeline from draft to executable.'
+                },
                 next: {
-                    execution: 'Next: Execution Model',
-                    executionDesc: 'Learn how NormCode plans are executed step by step.',
-                    examples: 'See Examples',
+                    examples: 'Next: Examples',
                     examplesDesc: 'Real-world patterns and complete code samples.'
                 },
                 footer: {
@@ -598,9 +608,9 @@
                 },
                 section: {
                     coreMarkers: '核心标记',
-                    coreMarkersDesc: 'NormCode只使用两个主要符号。其他都是自然语言。',
+                    coreMarkersDesc: '在<code class="inline-code">.ncds</code>草稿格式中，NormCode使用三个主要符号。其他都是自然语言。',
                     structure: '基本结构',
-                    structureDesc: '计划<strong>自下而上</strong>执行：子推理在父推理运行之前完成。',
+                    structureDesc: '计划<strong>由内向外</strong>（最内层优先）和<strong>自上而下</strong>（同级顺序）执行。',
                     goldenRule: '<strong>黄金法则：</strong>每个推理只有一个动作（<code class="inline-code">&lt;=</code>）。如果需要多个步骤，请嵌套它们。',
                     conceptTypes: '概念类型',
                     conceptTypesDesc: '在正式的<code class="inline-code">.ncd</code>语法中，概念有明确的类型标记：',
@@ -614,13 +624,13 @@
                     looping: '循环操作符 (*)',
                     multiInput: '多输入操作',
                     multiInputDesc: '动作可以有多个输入。它们看到所有列出的输入——但仅此而已。',
-                    multiInputNote: '动作同时看到<code class="inline-code">support ticket</code>和<code class="inline-code">conversation history</code>——但看不到工作流中的其他内容。',
+                    multiInputNote: '动作同时看到<code class="inline-code">工单</code>和<code class="inline-code">对话历史</code>——但看不到工作流中的其他内容。',
                     iteration: '迭代模式',
                     iterationDesc: '使用迭代模式遍历集合：',
-                    iterationNote: '<strong>关键组件：</strong><code class="inline-code">&lt;- documents</code>是基础集合。<code class="inline-code">&lt;* document to process now</code>标记每次迭代中的当前元素。',
+                    iterationNote: '<strong>关键组件：</strong><code class="inline-code">&lt;- 文档列表</code>是基础集合。<code class="inline-code">&lt;* 当前处理的文档</code>标记每次迭代中的当前元素。',
                     conditional: '条件执行',
                     conditionalDesc: '仅在满足条件时执行步骤：',
-                    conditionalNote: '审查步骤仅在<code class="inline-code">draft needs review?</code>评估为true时运行。',
+                    conditionalNote: '审核步骤仅在<code class="inline-code">草稿需要审核？</code>评估为true时运行。',
                     formats: '文件格式',
                     formatsDesc: 'NormCode有多种格式用于不同阶段：',
                     formatNote: '<strong>典型工作流：</strong>编写<code class="inline-code">.ncds</code> → 编译器转换为<code class="inline-code">.ncd</code> → 激活产生<code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> → 编排器执行。'
@@ -638,25 +648,33 @@
                 markers: {
                     value: '值概念',
                     valueDesc: '"这是数据"（名词）',
+                    valueEx: '<code class="inline-code">&lt;- 文档摘要</code>',
                     function: '功能概念',
                     functionDesc: '"这是动作"（动词）',
+                    functionEx: '<code class="inline-code">&lt;= 总结此文本</code>',
                     context: '上下文概念',
-                    contextDesc: '循环/时序状态'
+                    contextDesc: '循环/时序状态',
+                    contextEx: '<code class="inline-code">&lt;* 当前项目</code>'
                 },
                 types: {
                     object: '对象',
                     objectDesc: '通用实体/数据',
+                    objectEx: '<code class="inline-code">{文档}</code>',
                     proposition: '命题',
                     propositionDesc: '状态/条件（布尔值）',
+                    propositionEx: '<code class="inline-code">&lt;验证通过&gt;</code>',
                     relation: '关系',
                     relationDesc: '集合（列表/字典）',
+                    relationEx: '<code class="inline-code">[文档列表]</code>',
                     imperative: '祈使式',
                     imperativeDesc: '命令/动作',
+                    imperativeEx: '<code class="inline-code">::(计算总和)</code>',
                     judgement: '判断',
-                    judgementDesc: '评估（真/假）'
+                    judgementDesc: '评估（真/假）',
+                    judgementEx: '<code class="inline-code">::(是否有效)&lt;ALL True&gt;</code>'
                 },
                 ops: {
-                    specification: '规范',
+                    specification: '标定',
                     specificationDesc: '从候选项中选择第一个有效值',
                     continuation: '继续',
                     continuationDesc: '沿轴追加（累积）',
@@ -693,10 +711,12 @@
                     iteration: '&lt;- 所有摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 对列表中的每个文档返回文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 选择要返回的文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 当前处理的文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档列表<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 当前处理的文档',
                     conditional: '&lt;- 最终输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果有审核输出则选择审核输出，否则使用草稿<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查草稿是否需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 审核后的输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 执行人工审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果草稿需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出'
                 },
+                prev: {
+                    compilation: '上一步：编译流程',
+                    compilationDesc: '从草稿到可执行文件的4阶段流水线。'
+                },
                 next: {
-                    execution: '下一步：执行模型',
-                    executionDesc: '了解NormCode计划如何逐步执行。',
-                    examples: '查看示例',
+                    examples: '下一步：示例',
                     examplesDesc: '真实世界的模式和完整代码示例。'
                 },
                 footer: {

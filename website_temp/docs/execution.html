@@ -37,9 +37,9 @@
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="execution.html" class="active" data-i18n="nav.execution">Execution Model</a>
                         <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
+                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
                         <a href="examples.html" data-i18n="nav.examples">Examples</a>
                     </div>
                 </div>
@@ -69,29 +69,33 @@
         <!-- Pipeline -->
         <section>
             <h2 data-i18n="section.pipeline">The Compilation Pipeline</h2>
-            <p data-i18n="section.pipelineDesc">NormCode plans go through a compilation process from draft to execution:</p>
+            <p data-i18n="section.pipelineDesc">NormCode plans go through a compilation process from intent to execution:</p>
             
             <div class="code-example">
                 <code data-i18n-html="code.pipeline">
-<span class="string">1. Author</span> (.ncds draft format)<br>
+<span class="string">Instruction</span> (natural language) or <span class="string">.ncds</span> (draft)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<span class="string">2. Formalization</span> (Add types and operators → .ncd)<br>
+<span class="string">Derivation</span> → .ncds<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
-<span class="string">3. Activation</span> (Generate executable repositories)<br>
+<span class="string">Formalization</span> (Grammar check → .ncd)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="string">Post-Formalization</span> (Context + resource demand)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="string">Activation</span> (Resolve resources → JSON repos)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
 <span class="keyword">&nbsp;&nbsp;Orchestrator Executes</span>
                 </code>
             </div>
 
             <div class="info-box">
-                <p data-i18n="section.pipelineNote"><strong>For most users:</strong> You write <code class="inline-code">.ncds</code>, run the compiler, and get <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution. The intermediate steps are automatic.</p>
+                <p data-i18n="section.pipelineNote"><strong>For most users:</strong> You can start with natural language instruction or write <code class="inline-code">.ncds</code> directly. The compiler produces <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution.</p>
             </div>
         </section>
 
         <!-- Dependency Resolution -->
         <section>
-            <h2 data-i18n="section.dependency">Bottom-Up Dependency Resolution</h2>
-            <p data-i18n="section.dependencyDesc">NormCode executes <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
+            <h2 data-i18n="section.dependency">Inside-Out, Top-to-Bottom Execution</h2>
+            <p data-i18n="section.dependencyDesc">NormCode executes <strong>inside-out</strong> (innermost first) and <strong>top-to-bottom</strong> (sibling order): nested inferences complete before their parents, and siblings execute in declaration order.</p>
             
             <div class="code-example">
                 <code data-i18n-html="code.dependency">
@@ -130,8 +134,8 @@
         <section>
             <h2 data-i18n="section.twoTypes">The Two Types of Execution</h2>
             
-            <h3 data-i18n="section.semantic">Semantic Sequences (LLM Calls)</h3>
-            <p data-i18n="section.semanticDesc">Create information through reasoning, generation, or evaluation.</p>
+            <h3 data-i18n="section.semantic">Semantic Sequences</h3>
+            <p data-i18n="section.semanticDesc">Create information through reasoning, generation, or evaluation. <em>May</em> use LLM, but can also be optimized to scripts.</p>
             
             <div class="table-wrapper">
                 <table>
@@ -146,14 +150,14 @@
                     <tbody>
                         <tr>
                             <td><strong data-i18n="seq.imperative">Imperative</strong></td>
-                            <td>✅</td>
-                            <td data-i18n="table.tokens">Tokens</td>
+                            <td>⚡ <span data-i18n="table.maybe">Maybe</span></td>
+                            <td data-i18n="table.tokensOrFree">Tokens or Free</td>
                             <td data-i18n="seq.imperativeEx">Extract, generate, transform, analyze</td>
                         </tr>
                         <tr>
                             <td><strong data-i18n="seq.judgement">Judgement</strong></td>
-                            <td>✅</td>
-                            <td data-i18n="table.tokens">Tokens</td>
+                            <td>⚡ <span data-i18n="table.maybe">Maybe</span></td>
+                            <td data-i18n="table.tokensOrFree">Tokens or Free</td>
                             <td data-i18n="seq.judgementEx">Evaluate, validate, decide, check</td>
                         </tr>
                     </tbody>
@@ -379,8 +383,8 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td data-i18n="mech.bottomUp">Bottom-up execution</td>
-                            <td data-i18n="mech.bottomUpHow">Can't run until inputs ready</td>
+                            <td data-i18n="mech.insideOut">Inside-out execution</td>
+                            <td data-i18n="mech.insideOutHow">Can't run until inputs ready</td>
                         </tr>
                         <tr>
                             <td data-i18n="mech.refIsolation">Reference isolation</td>
@@ -402,17 +406,17 @@
         <!-- Navigation -->
         <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
             <div class="card-grid">
-                <a href="syntax.html" class="card-link">
+                <a href="compilation.html" class="card-link">
                     <div class="card">
-                        <span class="card-icon">📝</span>
-                        <h3 data-i18n="prev.syntax">Previous: Syntax Reference</h3>
-                        <p data-i18n="prev.syntaxDesc">Learn the markers, concept types, and operators.</p>
+                        <span class="card-icon">🔄</span>
+                        <h3 data-i18n="next.compilation">Next: Compilation</h3>
+                        <p data-i18n="next.compilationDesc">The 4-phase pipeline from draft to executable.</p>
                     </div>
                 </a>
                 <a href="examples.html" class="card-link">
                     <div class="card">
                         <span class="card-icon">💡</span>
-                        <h3 data-i18n="next.examples">Next: Examples</h3>
+                        <h3 data-i18n="nav.examples">See Examples</h3>
                         <p data-i18n="next.examplesDesc">Real-world patterns and complete code samples.</p>
                     </div>
                 </a>
@@ -453,19 +457,19 @@
                 },
                 section: {
                     pipeline: 'The Compilation Pipeline',
-                    pipelineDesc: 'NormCode plans go through a compilation process from draft to execution:',
-                    pipelineNote: '<strong>For most users:</strong> You write <code class="inline-code">.ncds</code>, run the compiler, and get <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution. The intermediate steps are automatic.',
-                    dependency: 'Bottom-Up Dependency Resolution',
-                    dependencyDesc: 'NormCode executes <strong>bottom-up</strong>: child inferences complete before their parents can run.',
+                    pipelineDesc: 'NormCode plans go through a compilation process from intent to execution:',
+                    pipelineNote: '<strong>For most users:</strong> You can start with natural language instruction or write <code class="inline-code">.ncds</code> directly. The compiler produces <code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code> for execution.',
+                    dependency: 'Inside-Out, Top-to-Bottom Execution',
+                    dependencyDesc: 'NormCode executes <strong>inside-out</strong> (innermost first) and <strong>top-to-bottom</strong> (sibling order): nested inferences complete before their parents, and siblings execute in declaration order.',
                     executionOrder: 'Execution Order',
                     readiness: 'Readiness Criteria',
                     readinessDesc: 'An inference becomes ready to execute when:',
                     twoTypes: 'The Two Types of Execution',
-                    semantic: 'Semantic Sequences (LLM Calls)',
-                    semanticDesc: 'Create information through reasoning, generation, or evaluation.',
+                    semantic: 'Semantic Sequences',
+                    semanticDesc: 'Create information through reasoning, generation, or evaluation. <em>May</em> use LLM, but can also be optimized to scripts.',
                     syntactic: 'Syntactic Sequences (Data Manipulation)',
                     syntacticDesc: 'Reshape information through deterministic operations. No LLM involved.',
-                    loopNote: '* The loop structure is free; semantic operations inside the loop cost tokens.',
+                    loopNote: '* The loop structure is free; semantic operations inside the loop may cost tokens if using LLM.',
                     orchestrator: 'The Orchestrator',
                     orchestratorDesc: 'The Orchestrator runs in cycles, managing execution flow:',
                     stateManagement: 'State Management',
@@ -498,6 +502,8 @@
                     cost: 'Cost',
                     examples: 'Examples',
                     tokens: 'Tokens',
+                    tokensOrFree: 'Tokens or Free',
+                    maybe: 'Maybe',
                     free: 'Free',
                     component: 'Component',
                     purpose: 'Purpose',
@@ -567,8 +573,8 @@
                     checkBase: 'Check loop base reference: Is it empty or has skip values?'
                 },
                 mech: {
-                    bottomUp: 'Bottom-up execution',
-                    bottomUpHow: 'Can\'t run until inputs ready',
+                    insideOut: 'Inside-out execution',
+                    insideOutHow: 'Can\'t run until inputs ready',
                     refIsolation: 'Reference isolation',
                     refIsolationHow: 'Each concept has its own Reference',
                     explicitRetrieval: 'Explicit retrieval',
@@ -577,18 +583,14 @@
                     noGlobalHow: 'No hidden context bleeding'
                 },
                 prev: {
-                    syntax: 'Previous: Syntax Reference',
-                    syntaxDesc: 'Learn the markers, concept types, and operators.'
+                    examples: 'Previous: Examples',
+                    examplesDesc: 'Real-world patterns and complete code samples.'
                 },
                 code: {
-                    pipeline: '<span class="string">1. Author</span> (.ncds draft format)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">2. Formalization</span> (Add types and operators → .ncd)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">3. Activation</span> (Generate executable repositories)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;Orchestrator Executes</span>',
+                    pipeline: '<span class="string">Instruction</span> (natural language) or <span class="string">.ncds</span> (draft)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">Derivation</span> → .ncds<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">Formalization</span> (Grammar check → .ncd)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">Post-Formalization</span> (Context + resource demand)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">Activation</span> (Resolve resources → JSON repos)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;Orchestrator Executes</span>',
                     dependency: '<span class="comment">/: Step 3 - Runs last (needs both inputs)</span><br>&lt;- result<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= calculate<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1a - Can run immediately</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw A<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1b - Can run in parallel with 1a</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw B',
                     orchestrator: '<span class="keyword">FOR EACH CYCLE:</span><br>&nbsp;&nbsp;1. <span class="function">CHECK</span>&nbsp;&nbsp;&nbsp;→ Scan waitlist for ready inferences<br>&nbsp;&nbsp;2. <span class="function">EXECUTE</span> → Run ready inferences (via AgentFrames)<br>&nbsp;&nbsp;3. <span class="function">UPDATE</span>&nbsp;&nbsp;→ Mark completed, store results<br>&nbsp;&nbsp;4. <span class="function">REPEAT</span>&nbsp;&nbsp;→ Until all inferences complete',
                     flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept (output)</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Function concept</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># First value input</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Second value input</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.1</span>&nbsp;&nbsp;<span class="comment"># Sub-inference function</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.2</span>&nbsp;&nbsp;<span class="comment"># Sub-inference value</span>'
-                },
-                next: {
-                    examples: 'Next: Examples',
-                    examplesDesc: 'Real-world patterns and complete code samples.'
                 },
                 footer: {
                     paper: 'Paper'
@@ -613,19 +615,19 @@
                 },
                 section: {
                     pipeline: '编译流水线',
-                    pipelineDesc: 'NormCode计划经历从草稿到执行的编译过程：',
-                    pipelineNote: '<strong>对于大多数用户：</strong>您编写<code class="inline-code">.ncds</code>，运行编译器，获得<code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code>用于执行。中间步骤是自动的。',
-                    dependency: '自下而上的依赖解析',
-                    dependencyDesc: 'NormCode<strong>自下而上</strong>执行：子推理在父推理运行之前完成。',
+                    pipelineDesc: 'NormCode计划经历从意图到执行的编译过程：',
+                    pipelineNote: '<strong>对于大多数用户：</strong>您可以从自然语言指令开始，或直接编写<code class="inline-code">.ncds</code>。编译器生成<code class="inline-code">.concept.json</code> + <code class="inline-code">.inference.json</code>用于执行。',
+                    dependency: '由内向外、自上而下执行',
+                    dependencyDesc: 'NormCode<strong>由内向外</strong>（最内层优先）和<strong>自上而下</strong>（同级顺序）执行：嵌套推理在父推理之前完成，同级按声明顺序执行。',
                     executionOrder: '执行顺序',
                     readiness: '就绪条件',
                     readinessDesc: '推理在以下情况下准备好执行：',
                     twoTypes: '两种执行类型',
-                    semantic: '语义序列（LLM调用）',
-                    semanticDesc: '通过推理、生成或评估创建信息。',
+                    semantic: '语义序列',
+                    semanticDesc: '通过推理、生成或评估创建信息。<em>可能</em>使用LLM，但也可以优化为脚本。',
                     syntactic: '语法序列（数据操作）',
                     syntacticDesc: '通过确定性操作重塑信息。不涉及LLM。',
-                    loopNote: '* 循环结构是免费的；循环内的语义操作消耗token。',
+                    loopNote: '* 循环结构是免费的；循环内的语义操作如果使用LLM可能消耗token。',
                     orchestrator: '编排器',
                     orchestratorDesc: '编排器以周期运行，管理执行流程：',
                     stateManagement: '状态管理',
@@ -658,6 +660,8 @@
                     cost: '成本',
                     examples: '示例',
                     tokens: 'Token',
+                    tokensOrFree: 'Token或免费',
+                    maybe: '可能',
                     free: '免费',
                     component: '组件',
                     purpose: '用途',
@@ -727,8 +731,8 @@
                     checkBase: '检查循环基础引用：是否为空或有跳过值？'
                 },
                 mech: {
-                    bottomUp: '自下而上执行',
-                    bottomUpHow: '输入准备好后才能运行',
+                    insideOut: '由内向外执行',
+                    insideOutHow: '输入准备好后才能运行',
                     refIsolation: '引用隔离',
                     refIsolationHow: '每个概念都有自己的引用',
                     explicitRetrieval: '显式检索',
@@ -737,18 +741,14 @@
                     noGlobalHow: '无隐藏上下文泄漏'
                 },
                 prev: {
-                    syntax: '上一篇：语法参考',
-                    syntaxDesc: '学习标记、概念类型和操作符。'
+                    examples: '上一步：示例',
+                    examplesDesc: '真实世界的模式和完整代码示例。'
                 },
                 code: {
-                    pipeline: '<span class="string">1. 编写</span>（.ncds 草稿格式）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">2. 形式化</span>（添加类型和操作符 → .ncd）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">3. 激活</span>（生成可执行存储库）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;编排器执行</span>',
+                    pipeline: '<span class="string">指令</span>（自然语言）或 <span class="string">.ncds</span>（草稿）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">推导</span> → .ncds<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">形式化</span>（语法检查 → .ncd）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">后形式化</span>（上下文 + 资源需求）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">激活</span>（解析资源 → JSON存储库）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;编排器执行</span>',
                     dependency: '<span class="comment">/: 步骤3 - 最后运行（需要两个输入）</span><br>&lt;- 结果<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 计算<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 步骤1a - 可以立即运行</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 处理A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始A<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 步骤1b - 可以与1a并行运行</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 处理B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始B',
                     orchestrator: '<span class="keyword">每个周期：</span><br>&nbsp;&nbsp;1. <span class="function">检查</span>&nbsp;&nbsp;&nbsp;→ 扫描等待列表中就绪的推理<br>&nbsp;&nbsp;2. <span class="function">执行</span>&nbsp;&nbsp;&nbsp;→ 运行就绪的推理（通过AgentFrames）<br>&nbsp;&nbsp;3. <span class="function">更新</span>&nbsp;&nbsp;&nbsp;→ 标记完成，存储结果<br>&nbsp;&nbsp;4. <span class="function">重复</span>&nbsp;&nbsp;&nbsp;→ 直到所有推理完成',
                     flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 根概念（输出）</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 功能概念</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 第一个值输入</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 第二个值输入</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.1</span>&nbsp;&nbsp;<span class="comment"># 子推理功能</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.2</span>&nbsp;&nbsp;<span class="comment"># 子推理值</span>'
-                },
-                next: {
-                    examples: '下一篇：示例',
-                    examplesDesc: '真实世界的模式和完整代码示例。'
                 },
                 footer: {
                     paper: '论文'
