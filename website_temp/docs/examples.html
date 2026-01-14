@@ -122,7 +122,7 @@
             
             <h3 data-i18n="ex.docSummary">Document Summarization</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.docSummary">
 &lt;- document summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>
@@ -134,7 +134,7 @@
 
             <h3 data-i18n="ex.riskAssessment">Legal Risk Assessment</h3>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.riskAssessment">
 &lt;- risk assessment<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= evaluate legal exposure based on the extracted clauses<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- relevant clauses<br>
@@ -516,6 +516,10 @@
                     testIncremental: 'Test Incrementally',
                     testIncrementalDesc: 'Use breakpoints to test each step before adding more.'
                 },
+                code: {
+                    docSummary: '&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document',
+                    riskAssessment: '&lt;- risk assessment<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= evaluate legal exposure based on the extracted clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- relevant clauses<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract clauses related to liability and indemnification<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- classified sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= identify and classify document sections<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- full contract'
+                },
                 prev: {
                     execution: 'Previous: Execution Model',
                     executionDesc: 'How plans run at runtime.',
@@ -608,11 +612,15 @@
                     explicitDeps: '显式依赖',
                     explicitDepsDesc: '使数据流程明显。显示每个步骤接收的内容。',
                     descriptive: '描述性名称',
-                    descriptiveDesc: '使用清晰的名称如"risk assessment"而不是"result"。',
+                    descriptiveDesc: '使用清晰的名称如"风险评估"而不是"结果"。',
                     isolateExpensive: '隔离昂贵操作',
                     isolateExpensiveDesc: '分组免费的语法操作，隔离昂贵的LLM调用。',
                     testIncremental: '增量测试',
                     testIncrementalDesc: '使用断点测试每个步骤，然后再添加更多。'
+                },
+                code: {
+                    docSummary: '&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 清理后的文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取主要内容，移除标题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档',
+                    riskAssessment: '&lt;- 风险评估<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据提取的条款评估法律风险<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 相关条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取与责任和赔偿相关的条款<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 分类章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 识别并分类文档章节<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 完整合同'
                 },
                 prev: {
                     execution: '上一篇：执行模型',
@@ -647,6 +655,21 @@
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 

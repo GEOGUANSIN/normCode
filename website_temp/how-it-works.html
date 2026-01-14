@@ -76,7 +76,7 @@
             <p data-i18n="section.exampleDesc">NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.documentPipeline">
 &lt;- executive summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>
@@ -310,6 +310,9 @@ Orchestrator Executes
                     principlesTitle: 'Core Principles',
                     whenTitle: 'When to Use NormCode'
                 },
+                code: {
+                    documentPipeline: '&lt;- executive summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check for mismatches<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- extracted figures<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract financial data<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- database results'
+                },
                 table: {
                     type: 'Type',
                     llm: 'LLM?',
@@ -428,6 +431,9 @@ Orchestrator Executes
                     semanticExamples: '推理、生成、分析',
                     syntacticExamples: '收集、选择、路由、循环'
                 },
+                code: {
+                    documentPipeline: '&lt;- 执行摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据标记项生成摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 差异标记<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查不匹配项<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 提取的数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取财务数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 数据库结果'
+                },
                 cards: {
                     syntax: {
                         title: '语法参考',
@@ -501,6 +507,21 @@ Orchestrator Executes
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 

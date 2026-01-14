@@ -111,7 +111,7 @@
             <p data-i18n="section.structureDesc">Plans execute <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.basicStructure">
 <span class="comment">/: Final output (produced last)</span><br>
 &lt;- document summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Action to produce the output</span><br>
@@ -318,7 +318,7 @@
             <p data-i18n="section.multiInputDesc">Actions can have multiple inputs. They see all listed inputs—but nothing else.</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.multiInput">
 &lt;- user sentiment<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine if the user is satisfied<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- support ticket<br>
@@ -335,7 +335,7 @@
             <p data-i18n="section.iterationDesc">Loop over collections with the iteration pattern:</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.iteration">
 &lt;- all summaries<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>
@@ -358,7 +358,7 @@
             <p data-i18n="section.conditionalDesc">Execute steps only when conditions are met:</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.conditional">
 &lt;- final output<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>
@@ -563,6 +563,12 @@
                     executable: 'Executable',
                     executableDesc: 'Loaded by orchestrator at runtime'
                 },
+                code: {
+                    basicStructure: '<span class="comment">/: Final output (produced last)</span><br>&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Action to produce the output</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Input for the action (produced first)</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document',
+                    multiInput: '&lt;- user sentiment<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= determine if the user is satisfied<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- support ticket<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- conversation history',
+                    iteration: '&lt;- all summaries<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= for every document in the list return the document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select document summary to return<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- document to process now<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- documents<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* document to process now',
+                    conditional: '&lt;- final output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= select reviewed output if available otherwise use draft<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check if draft requires review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- reviewed output<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= perform human review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= if draft needs review<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* draft needs review?<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- draft output'
+                },
                 next: {
                     execution: 'Next: Execution Model',
                     executionDesc: 'Learn how NormCode plans are executed step by step.',
@@ -681,6 +687,12 @@
                     executable: '可执行',
                     executableDesc: '运行时由编排器加载'
                 },
+                code: {
+                    basicStructure: '<span class="comment">/: 最终输出（最后产生）</span><br>&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 产生输出的动作</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文本<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 动作的输入（首先产生）</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 清理后的文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取主要内容，移除标题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档',
+                    multiInput: '&lt;- 用户情绪<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 判断用户是否满意<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 工单<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 对话历史',
+                    iteration: '&lt;- 所有摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 对列表中的每个文档返回文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 选择要返回的文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 当前处理的文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 文档列表<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 当前处理的文档',
+                    conditional: '&lt;- 最终输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果有审核输出则选择审核输出，否则使用草稿<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查草稿是否需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 审核后的输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 执行人工审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 如果草稿需要审核<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;* 草稿需要审核？<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 草稿输出'
+                },
                 next: {
                     execution: '下一步：执行模型',
                     executionDesc: '了解NormCode计划如何逐步执行。',
@@ -715,6 +727,21 @@
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 

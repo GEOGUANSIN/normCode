@@ -72,7 +72,7 @@
             <p data-i18n="section.pipelineDesc">NormCode plans go through a compilation process from draft to execution:</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.pipeline">
 <span class="string">1. Author</span> (.ncds draft format)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
 <span class="string">2. Formalization</span> (Add types and operators → .ncd)<br>
@@ -94,7 +94,7 @@
             <p data-i18n="section.dependencyDesc">NormCode executes <strong>bottom-up</strong>: child inferences complete before their parents can run.</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.dependency">
 <span class="comment">/: Step 3 - Runs last (needs both inputs)</span><br>
 &lt;- result<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= calculate<br>
@@ -211,7 +211,7 @@
             <p data-i18n="section.orchestratorDesc">The Orchestrator runs in cycles, managing execution flow:</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.orchestrator">
 <span class="keyword">FOR EACH CYCLE:</span><br>
 &nbsp;&nbsp;1. <span class="function">CHECK</span>&nbsp;&nbsp;&nbsp;→ Scan waitlist for ready inferences<br>
 &nbsp;&nbsp;2. <span class="function">EXECUTE</span> → Run ready inferences (via AgentFrames)<br>
@@ -290,7 +290,7 @@
             <p data-i18n="section.flowIndexDesc">Every node has a unique flow index that identifies its position in the execution DAG:</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.flowIndex">
 <span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept (output)</span><br>
 ├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Function concept</span><br>
 ├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># First value input</span><br>
@@ -580,6 +580,12 @@
                     syntax: 'Previous: Syntax Reference',
                     syntaxDesc: 'Learn the markers, concept types, and operators.'
                 },
+                code: {
+                    pipeline: '<span class="string">1. Author</span> (.ncds draft format)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">2. Formalization</span> (Add types and operators → .ncd)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">3. Activation</span> (Generate executable repositories)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;Orchestrator Executes</span>',
+                    dependency: '<span class="comment">/: Step 3 - Runs last (needs both inputs)</span><br>&lt;- result<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= calculate<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1a - Can run immediately</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw A<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: Step 1b - Can run in parallel with 1a</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- input B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= process B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw B',
+                    orchestrator: '<span class="keyword">FOR EACH CYCLE:</span><br>&nbsp;&nbsp;1. <span class="function">CHECK</span>&nbsp;&nbsp;&nbsp;→ Scan waitlist for ready inferences<br>&nbsp;&nbsp;2. <span class="function">EXECUTE</span> → Run ready inferences (via AgentFrames)<br>&nbsp;&nbsp;3. <span class="function">UPDATE</span>&nbsp;&nbsp;→ Mark completed, store results<br>&nbsp;&nbsp;4. <span class="function">REPEAT</span>&nbsp;&nbsp;→ Until all inferences complete',
+                    flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept (output)</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Function concept</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># First value input</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Second value input</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.1</span>&nbsp;&nbsp;<span class="comment"># Sub-inference function</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.2</span>&nbsp;&nbsp;<span class="comment"># Sub-inference value</span>'
+                },
                 next: {
                     examples: 'Next: Examples',
                     examplesDesc: 'Real-world patterns and complete code samples.'
@@ -734,6 +740,12 @@
                     syntax: '上一篇：语法参考',
                     syntaxDesc: '学习标记、概念类型和操作符。'
                 },
+                code: {
+                    pipeline: '<span class="string">1. 编写</span>（.ncds 草稿格式）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">2. 形式化</span>（添加类型和操作符 → .ncd）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="string">3. 激活</span>（生成可执行存储库）<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><span class="keyword">&nbsp;&nbsp;编排器执行</span>',
+                    dependency: '<span class="comment">/: 步骤3 - 最后运行（需要两个输入）</span><br>&lt;- 结果<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 计算<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 步骤1a - 可以立即运行</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 处理A<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始A<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">/: 步骤1b - 可以与1a并行运行</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 输入B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 处理B<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始B',
+                    orchestrator: '<span class="keyword">每个周期：</span><br>&nbsp;&nbsp;1. <span class="function">检查</span>&nbsp;&nbsp;&nbsp;→ 扫描等待列表中就绪的推理<br>&nbsp;&nbsp;2. <span class="function">执行</span>&nbsp;&nbsp;&nbsp;→ 运行就绪的推理（通过AgentFrames）<br>&nbsp;&nbsp;3. <span class="function">更新</span>&nbsp;&nbsp;&nbsp;→ 标记完成，存储结果<br>&nbsp;&nbsp;4. <span class="function">重复</span>&nbsp;&nbsp;&nbsp;→ 直到所有推理完成',
+                    flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 根概念（输出）</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 功能概念</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 第一个值输入</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 第二个值输入</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.1</span>&nbsp;&nbsp;<span class="comment"># 子推理功能</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.3.2</span>&nbsp;&nbsp;<span class="comment"># 子推理值</span>'
+                },
                 next: {
                     examples: '下一篇：示例',
                     examplesDesc: '真实世界的模式和完整代码示例。'
@@ -766,6 +778,21 @@
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 
