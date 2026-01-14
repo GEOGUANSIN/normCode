@@ -76,7 +76,7 @@
             <p data-i18n="section.exampleDesc">NormCode uses indentation to show data dependencies. Each step only receives what is explicitly passed to it.</p>
             
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.documentPipeline">
 &lt;- executive summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>
@@ -141,7 +141,7 @@
             <p data-i18n="section.progressiveDesc">NormCode uses a compilation pipeline that progressively transforms rough ideas into executable plans. Each phase adds structure while preserving intent—making complex logic explicit and auditable.</p>
             
             <div class="code-example" style="text-align: center; font-family: 'IBM Plex Mono', monospace;">
-                <code>
+                <code data-i18n-html="code.progressivePipeline">
 Natural Language Instruction<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
 <strong>Phase 1:</strong> Derivation → <em>WHAT</em> to do<br>
@@ -310,6 +310,10 @@ Orchestrator Executes
                     principlesTitle: 'Core Principles',
                     whenTitle: 'When to Use NormCode'
                 },
+                code: {
+                    documentPipeline: '&lt;- executive summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= generate summary from flagged items<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- discrepancy flags<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= check for mismatches<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- extracted figures<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract financial data<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- database results',
+                    progressivePipeline: 'Natural Language Instruction<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 1:</strong> Derivation → <em>WHAT</em> to do<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 2:</strong> Formalization → <em>IN WHAT ORDER</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 3:</strong> Post-Formalization → <em>HOW</em> and <em>WITH WHAT</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>Phase 4:</strong> Activation → Executable Repositories<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>Orchestrator Executes'
+                },
                 table: {
                     type: 'Type',
                     llm: 'LLM?',
@@ -428,6 +432,10 @@ Orchestrator Executes
                     semanticExamples: '推理、生成、分析',
                     syntacticExamples: '收集、选择、路由、循环'
                 },
+                code: {
+                    documentPipeline: '&lt;- 执行摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 根据标记项生成摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 差异标记<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 检查不匹配项<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 提取的数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取财务数据<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 数据库结果',
+                    progressivePipeline: '自然语言指令<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段1：</strong>推导 → 做<em>什么</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段2：</strong>形式化 → <em>什么顺序</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段3：</strong>后形式化 → <em>如何</em>以及<em>用什么</em><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br><strong>阶段4：</strong>激活 → 可执行存储库<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>编排器执行'
+                },
                 cards: {
                     syntax: {
                         title: '语法参考',
@@ -501,6 +509,21 @@ Orchestrator Executes
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 

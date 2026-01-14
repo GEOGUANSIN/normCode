@@ -198,14 +198,14 @@
             <h3 data-i18n="section.derivationExample">Example</h3>
             <p class="code-label" data-i18n="label.input">Input (Natural Language)</p>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.derivInput">
 "Summarize this document by first cleaning it and then extracting key points."
                 </code>
             </div>
 
             <p class="code-label" data-i18n="label.output">Output (.ncds)</p>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.derivOutput">
 &lt;- document summary<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>
@@ -235,7 +235,7 @@
             <h3 data-i18n="section.formalizationExample">Example</h3>
             <p class="code-label" data-i18n="label.output">Output (.ncd)</p>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.formOutput">
 :<span class="variable">:{document summary}</span> | <span class="comment">?{flow_index}: 1</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(summarize this text)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{clean text}</span> | <span class="comment">?{flow_index}: 1.2</span><br>
@@ -427,7 +427,7 @@
             <h3 data-i18n="key.flowIdx">Flow Indices</h3>
             <p data-i18n="key.flowIdxDesc">Hierarchical addresses for every step in the plan. Format: <code class="inline-code">1.2.3</code> where each number is a level in the tree.</p>
             <div class="code-example">
-                <code>
+                <code data-i18n-html="code.flowIndex">
 <span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept</span><br>
 ├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Functional concept (operation)</span><br>
 ├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (first input)</span><br>
@@ -686,6 +686,12 @@
                     notOptimal: 'Optimal performance',
                     note: '<strong>Key insight:</strong> Compilation validates <em>structure</em>, not <em>intent</em>. The plan might be syntactically perfect but semantically wrong.'
                 },
+                code: {
+                    derivInput: '"Summarize this document by first cleaning it and then extracting key points."',
+                    derivOutput: '&lt;- document summary<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= summarize this text<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- clean text<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= extract main content, removing headers<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- raw document',
+                    formOutput: ':<span class="variable">:{document summary}</span> | <span class="comment">?{flow_index}: 1</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(summarize this text)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{clean text}</span> | <span class="comment">?{flow_index}: 1.2</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(extract main content)</span> | <span class="comment">?{flow_index}: 1.2.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{raw document}</span> | <span class="comment">?{flow_index}: 1.2.1.1</span>',
+                    flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Root concept</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Functional concept (operation)</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (first input)</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1</span>&nbsp;<span class="comment"># Nested functional concept</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1.1</span>&nbsp;<span class="comment"># Nested value concept</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Value concept (second input)</span>'
+                },
                 next: {
                     executionDesc: 'How compiled plans run at runtime.',
                     examplesDesc: 'Real-world patterns and code samples.'
@@ -848,6 +854,12 @@
                     notOptimal: '最佳性能',
                     note: '<strong>关键见解：</strong>编译验证<em>结构</em>，而非<em>意图</em>。计划可能在语法上完美，但在语义上是错误的。'
                 },
+                code: {
+                    derivInput: '"通过首先清理文档然后提取关键点来总结这篇文档。"',
+                    derivOutput: '&lt;- 文档摘要<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 总结此文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 清理后的文本<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= 提取主要内容，移除标题<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- 原始文档',
+                    formOutput: ':<span class="variable">:{文档摘要}</span> | <span class="comment">?{flow_index}: 1</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(总结此文本)</span> | <span class="comment">?{flow_index}: 1.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{清理后的文本}</span> | <span class="comment">?{flow_index}: 1.2</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;= <span class="function">::(提取主要内容)</span> | <span class="comment">?{flow_index}: 1.2.1 | ?{sequence}: imperative</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;- <span class="variable">{原始文档}</span> | <span class="comment">?{flow_index}: 1.2.1.1</span>',
+                    flowIndex: '<span class="string">1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 根概念</span><br>├── <span class="string">1.1</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 功能概念（操作）</span><br>├── <span class="string">1.2</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 值概念（第一个输入）</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1</span>&nbsp;<span class="comment"># 嵌套功能概念</span><br>│&nbsp;&nbsp;&nbsp;├── <span class="string">1.2.1.1</span>&nbsp;<span class="comment"># 嵌套值概念</span><br>├── <span class="string">1.3</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 值概念（第二个输入）</span>'
+                },
                 next: {
                     executionDesc: '编译后的计划如何在运行时执行。',
                     examplesDesc: '真实世界的模式和代码示例。'
@@ -880,6 +892,21 @@
                     } else {
                         el.textContent = value;
                     }
+                }
+            });
+
+            // Handle HTML translations (for code examples)
+            document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                const key = el.getAttribute('data-i18n-html');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.innerHTML = value;
                 }
             });
 

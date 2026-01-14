@@ -306,6 +306,41 @@
             margin-bottom: 0;
         }
 
+        /* School Logos */
+        .school-logos {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .school-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            opacity: 0.75;
+            filter: grayscale(30%);
+            transition: all 0.2s ease;
+        }
+
+        .school-logo:hover {
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+        }
+
+        .school-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
         /* Contact Section */
         .contact-section {
             background: var(--bg-white);
@@ -440,6 +475,15 @@
             main {
                 padding: 2rem 1.5rem;
             }
+
+            .school-logos {
+                gap: 1rem;
+            }
+
+            .school-logo {
+                width: 44px;
+                height: 44px;
+            }
         }
 
         html {
@@ -500,14 +544,41 @@
             <div class="info-card">
                 <h3 data-i18n="team.credentialsTitle">Background</h3>
                 <p data-i18n="team.credentials">
-                    Talent from Oxford, UCL, CMU, the Chinese Academy of Sciences, and Shenzhen University. 100% holding master's degrees or higher.
+                    Interdisciplinary team spanning AI, computer science, mathematics, law, and ethics. Core R&D members hold master's and doctoral degrees from leading institutions worldwide, with experience in AI governance research and enterprise AI safety.
+                </p>
+                <div class="school-logos">
+                    <div class="school-logo" data-i18n-title="schools.oxford">
+                        <img src="school_logo/Oxford-University-Circlet.svg.png" alt="Oxford University">
+                    </div>
+                    <div class="school-logo" data-i18n-title="schools.ucl">
+                        <img src="school_logo/University_College_London_logo.svg.png" alt="UCL">
+                    </div>
+                    <div class="school-logo" data-i18n-title="schools.cmu">
+                        <img src="school_logo/seal-4c-600x600-min.jpg" alt="CMU">
+                    </div>
+                    <div class="school-logo" data-i18n-title="schools.ucsd">
+                        <img src="school_logo/Seal_of_the_University_of_California,_San_Diego.svg.png" alt="UCSD">
+                    </div>
+                    <div class="school-logo" data-i18n-title="schools.cas">
+                        <img src="school_logo/Seal_of_the_Chinese_Academy_of_Sciences.png" alt="Chinese Academy of Sciences">
+                    </div>
+                    <div class="school-logo" data-i18n-title="schools.szu">
+                        <img src="school_logo/150px-Shenzhen_University_Logo.svg_-5.png" alt="Shenzhen University">
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3 data-i18n="team.focusTitle">What We Do</h3>
+                <p data-i18n="team.focus">
+                    NormCode transforms AI reasoning from black-box dialogue into structured, auditable execution chains. We solve the controllability, explainability, and reproducibility challenges in complex AI applications—targeting high-compliance domains like financial risk, legal review, and enterprise decision systems.
                 </p>
             </div>
 
             <div class="info-card">
                 <h3 data-i18n="team.visionTitle">Our Vision</h3>
                 <p data-i18n="team.vision">
-                    We're building auditable AI so people can invest their values, own their contributions, and turn them into tangible benefits.
+                    Auditable AI for transparent, controllable development. We believe human values should be clearly expressed, recorded, and executed—then transformed into sustainable technical assets that can be owned, verified, and inherited.
                 </p>
             </div>
 
@@ -560,14 +631,24 @@
                 },
                 team: {
                     credentialsTitle: 'Background',
-                    credentials: 'Talent from Oxford, UCL, CMU, the Chinese Academy of Sciences, and Shenzhen University. 100% holding master\'s degrees or higher.',
+                    credentials: 'Interdisciplinary team spanning AI, computer science, mathematics, law, and ethics. Core R&D members hold master\'s and doctoral degrees from leading institutions worldwide, with experience in AI governance research and enterprise AI safety.',
+                    focusTitle: 'What We Do',
+                    focus: 'NormCode transforms AI reasoning from black-box dialogue into structured, auditable execution chains. We solve the controllability, explainability, and reproducibility challenges in complex AI applications—targeting high-compliance domains like financial risk, legal review, and enterprise decision systems.',
                     visionTitle: 'Our Vision',
-                    vision: 'We\'re building auditable AI so people can invest their values, own their contributions, and turn them into tangible benefits.',
+                    vision: 'Auditable AI for transparent, controllable development. We believe human values should be clearly expressed, recorded, and executed—then transformed into sustainable technical assets that can be owned, verified, and inherited.',
                     companyTitle: 'Company',
                     company: 'Guangzhou Psylens Technology Studio (广州心镜智科技工作室)'
                 },
                 contact: {
                     title: 'Get in Touch'
+                },
+                schools: {
+                    oxford: 'University of Oxford',
+                    ucl: 'University College London',
+                    cmu: 'Carnegie Mellon University',
+                    ucsd: 'University of California, San Diego',
+                    cas: 'Chinese Academy of Sciences',
+                    szu: 'Shenzhen University'
                 },
                 footer: {
                     paper: 'Paper'
@@ -592,14 +673,24 @@
                 },
                 team: {
                     credentialsTitle: '背景',
-                    credentials: '汇集了来自牛津大学、伦敦大学学院、卡内基梅隆大学、中国科学院和深圳大学的人才。100%拥有硕士及以上学历。',
+                    credentials: '跨学科团队，涵盖人工智能、计算机科学、数学、法律和伦理等方向。核心研发人员均具备硕士及博士学历，来自全球顶尖院校，拥有AI治理研究和企业级AI安全实践经验。',
+                    focusTitle: '我们做什么',
+                    focus: 'NormCode将AI推理从"黑箱对话"转变为结构化、可审计的执行链路。我们解决复杂AI应用中的可控性、可解释性和可复现性问题——面向金融合规风控、法律审查和企业级智能决策等高合规性场景。',
                     visionTitle: '我们的愿景',
-                    vision: '我们正在构建可审计的AI，让人们可以投入自己的价值观，拥有自己的贡献，并将其转化为切实的收益。',
+                    vision: '构建透明、可控的可审计AI。我们相信人类的价值理念应当被清晰地表达、记录与执行，并逐步转化为可被拥有、验证和继承的可持续技术资产。',
                     companyTitle: '公司',
                     company: '广州心镜智科技工作室'
                 },
                 contact: {
                     title: '联系我们'
+                },
+                schools: {
+                    oxford: '牛津大学',
+                    ucl: '伦敦大学学院',
+                    cmu: '卡内基梅隆大学',
+                    ucsd: '加州大学圣地亚哥分校',
+                    cas: '中国科学院',
+                    szu: '深圳大学'
                 },
                 footer: {
                     paper: '论文'
@@ -625,6 +716,21 @@
                 
                 if (value !== undefined) {
                     el.textContent = value;
+                }
+            });
+
+            // Handle title translations for tooltips
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                const keys = key.split('.');
+                let value = translations[lang];
+                
+                for (const k of keys) {
+                    value = value?.[k];
+                }
+                
+                if (value !== undefined) {
+                    el.title = value;
                 }
             });
 
