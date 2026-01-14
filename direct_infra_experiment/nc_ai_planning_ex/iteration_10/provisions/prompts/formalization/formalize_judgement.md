@@ -54,12 +54,11 @@ Same as imperative, but paradigm should output boolean:
 
 ## Output
 
-Return the formalized line(s) as a JSON object:
+Return JSON with thinking and result:
 
 ```json
 {
-  "formalized_line": "The complete formalized line with all paradigm annotations",
-  "annotations_added": ["list of annotation keys added"]
+  "thinking": "Explain what paradigm and annotations were chosen and why",
+  "result": "The complete formalized line with all paradigm annotations"
 }
 ```
-

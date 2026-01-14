@@ -53,12 +53,11 @@ Assigning operators handle variable binding and selection.
 
 ## Output
 
-Return the formalized line(s) as a JSON object:
+Return JSON with thinking and result:
 
 ```json
 {
-  "formalized_line": "The complete formalized line with sequence annotation",
-  "annotations_added": ["sequence"]
+  "thinking": "Explain what operator marker was identified and why",
+  "result": "The complete formalized line with sequence annotation"
 }
 ```
-

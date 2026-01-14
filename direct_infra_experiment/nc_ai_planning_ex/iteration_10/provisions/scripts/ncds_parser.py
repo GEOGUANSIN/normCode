@@ -5,8 +5,47 @@ Converts NormCode Draft Straightforward text into a list of dictionaries,
 each representing a line with flow_index, content, depth, and type info.
 """
 
+import json
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
+
+
+def extract_content(input_value: Any) -> str:
+    """
+    Extract the actual file content from potentially wrapped input.
+    
+    Handles:
+    - Plain string (file content directly)
+    - Dict with 'content' key (from file read result)
+    - JSON string of dict with 'content' key (from literal wrapping)
+    """
+    if input_value is None:
+        return ""
+    
+    # If it's a string, try to parse as JSON first
+    if isinstance(input_value, str):
+        # Try to parse as JSON (might be wrapped dict)
+        try:
+            parsed = json.loads(input_value)
+            if isinstance(parsed, dict):
+                # Extract content from dict
+                return str(parsed.get('content', parsed.get('data', input_value)))
+            elif isinstance(parsed, str):
+                # It was a JSON-encoded string
+                return parsed
+            else:
+                # Some other JSON value, convert to string
+                return str(parsed)
+        except (json.JSONDecodeError, TypeError):
+            # Not JSON, use as-is (this is the actual file content)
+            return input_value
+    
+    # If it's a dict, extract content
+    if isinstance(input_value, dict):
+        return str(input_value.get('content', input_value.get('data', str(input_value))))
+    
+    # Fallback: convert to string
+    return str(input_value)
 
 
 def calculate_depth(line: str) -> int:
@@ -87,12 +126,14 @@ def detect_concept_type(content: str) -> Dict[str, Any]:
     return result
 
 
-def parse_ncds(input_1: str, body=None) -> List[Dict[str, Any]]:
+def parse_ncds(input_1: Union[str, dict], body=None) -> List[Dict[str, Any]]:
     """
     Parse NCDS content into a list of structured line dictionaries.
     
     Args:
         input_1: The .ncds file content as a string
+                 (may be wrapped in dict with 'content' key from file read,
+                  or JSON string of such dict from literal wrapping)
         body: Optional Body instance (not used)
         
     Returns:
@@ -105,7 +146,19 @@ def parse_ncds(input_1: str, body=None) -> List[Dict[str, Any]]:
         - concept_type: str or None
         - concept_name: str or None
     """
-    lines = input_1.splitlines()
+    # Extract actual file content from potentially wrapped input
+    file_content = extract_content(input_1)
+    
+    # Debug: if content looks like it might still be wrapped, try one more extraction
+    if file_content.startswith('{') and '"content"' in file_content:
+        try:
+            parsed = json.loads(file_content)
+            if isinstance(parsed, dict) and 'content' in parsed:
+                file_content = str(parsed['content'])
+        except (json.JSONDecodeError, TypeError):
+            pass
+    
+    lines = file_content.splitlines()
     parsed_lines = []
     indices = []
     
@@ -159,7 +212,7 @@ def parse_ncds(input_1: str, body=None) -> List[Dict[str, Any]]:
 
 
 # Alias for paradigm compatibility
-def main(input_1: str, body=None) -> List[Dict[str, Any]]:
+def main(input_1: Union[str, dict], body=None) -> List[Dict[str, Any]]:
     """Alias for paradigm compatibility."""
     return parse_ncds(input_1, body)
 

@@ -1,3 +1,21 @@
+/: ========================================
+/: NormCode Formalization Process (v2)
+/: ========================================
+/:
+/: GOAL: Convert .ncds plan text to formal .ncd format
+/:
+/: FORMALIZATION with INCREMENTAL SAVE:
+/:   1. Parse .ncds into structured lines, filter comments
+/:   2. For each concept line:
+/:      - Read current .ncd output file
+/:      - Judge type and formalize the line
+/:      - Append formalized line to content
+/:      - Write updated .ncd file (checkpoint)
+/:   3. Return completed .ncd file
+/:
+/: INPUT:  .ncds file (source plan), .ncd output path
+/: OUTPUT: .ncd file (built line-by-line with checkpoints)
+/:
 
 :<:{.ncd file complete}
     <= return the completed .ncd output
@@ -81,6 +99,37 @@
                     <= check if concept type equals object
                     <- {concept type}
 
+                <- <is relation type>
+                    <= check if concept type equals relation
+                    <- {concept type}
+
+                <- <is proposition type>
+                    <= check if concept type equals proposition
+                    <- {concept type}
+
+                <- <is imperative type>
+                    <= check if concept type equals imperative
+                    <- {concept type}
+
+                <- <is judgement type>
+                    <= check if concept type equals judgement
+                    <- {concept type}
+
+                <- <is assigning type>
+                    <= check if concept type equals assigning
+                    <- {concept type}
+
+                <- <is grouping type>
+                    <= check if concept type equals grouping
+                    <- {concept type}
+
+                <- <is timing type>
+                    <= check if concept type equals timing
+                    <- {concept type}
+
+                <- <is looping type>
+                    <= check if concept type equals looping
+                    <- {concept type}
 
                 /: STEP 2b-iii: APPLY FORMALIZATION (executed third, timing-gated)
                 /: Only the matching type's formalization will execute
@@ -91,6 +140,59 @@
                         <* <is object type>
                     <- {concept line}
 
+                <- {relation formalized}
+                    <= formalize according to [relation] syntax
+                        <= when condition holds
+                        <* <is relation type>
+                    <- {concept line}
+
+                <- {proposition formalized}
+                    <= formalize according to <proposition> syntax
+                        <= when condition holds
+                        <* <is proposition type>
+                    <- {concept line}
+
+                <- {imperative formalized}
+                    <= formalize according to ::() imperative syntax
+                    /: Add annotation: | ?{sequence}: imperative
+                        <= when condition holds
+                        <* <is imperative type>
+                    <- {concept line}
+
+                <- {judgement formalized}
+                    <= formalize according to ::<> judgement syntax
+                    /: Add annotation: | ?{sequence}: judgement
+                        <= when condition holds
+                        <* <is judgement type>
+                    <- {concept line}
+
+                <- {assigning formalized}
+                    <= formalize according to $ assigning syntax
+                    /: Add annotation: | ?{sequence}: assigning
+                        <= when condition holds
+                        <* <is assigning type>
+                    <- {concept line}
+
+                <- {grouping formalized}
+                    <= formalize according to & grouping syntax
+                    /: Add annotation: | ?{sequence}: grouping
+                        <= when condition holds
+                        <* <is grouping type>
+                    <- {concept line}
+
+                <- {timing formalized}
+                    <= formalize according to @ timing syntax
+                    /: Add annotation: | ?{sequence}: timing
+                        <= when condition holds
+                        <* <is timing type>
+                    <- {concept line}
+
+                <- {looping formalized}
+                    <= formalize according to * looping syntax
+                    /: Add annotation: | ?{sequence}: looping
+                        <= when condition holds
+                        <* <is looping type>
+                    <- {concept line}
 
             /: ----------------------------------------
             /: STEP 2c: APPEND TO CURRENT CONTENT
@@ -115,4 +217,24 @@
         <- [concept lines]
         <* {concept line}
             /: Loop context: the current concept line being processed
+
+/: ========================================
+/: SUMMARY: Incremental Save Pattern
+/: ========================================
+/:
+/: DATA FLOW PER ITERATION:
+/:   {concept line}
+/:     → judge type → {concept type}
+/:     → check conditions → <is X type>
+/:     → apply matching syntax (timing-gated) → {formalized line}
+/:     → read current file → {current .ncd content}
+/:     → append → {updated .ncd content}
+/:     → write to file → {.ncd file written}
+/:     → next line
+/:
+/: BENEFITS:
+/:   - Crash recovery: partial output preserved
+/:   - Visibility: watch .ncd grow line-by-line in real-time
+/:   - Resume capability: can skip already-processed lines
+/:   - Pattern consistency: matches derivation.pf.ncd checkpoint pattern
 

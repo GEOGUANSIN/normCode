@@ -54,12 +54,11 @@ marked with `<*` as the context concept for the timing gate.
 
 ## Output
 
-Return the formalized line(s) as a JSON object:
+Return JSON with thinking and result:
 
 ```json
 {
-  "formalized_line": "The complete formalized line with sequence annotation",
-  "annotations_added": ["sequence"]
+  "thinking": "Explain what timing pattern was identified and why",
+  "result": "The complete formalized line with sequence annotation"
 }
 ```
-

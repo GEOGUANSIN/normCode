@@ -46,12 +46,11 @@ If this is a ground concept (external input), add:
 
 ## Output
 
-Return the formalized line(s) as a JSON object:
+Return JSON with thinking and result:
 
 ```json
 {
-  "formalized_line": "The complete formalized line with proper indentation and annotations",
-  "annotations_added": ["list of annotation keys added"]
+  "thinking": "Explain what annotations were added and why",
+  "result": "The complete formalized line with proper indentation and annotations"
 }
 ```
-

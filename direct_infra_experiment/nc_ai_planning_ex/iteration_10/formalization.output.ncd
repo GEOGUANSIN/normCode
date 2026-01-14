@@ -1,0 +1,5 @@
+<- .ncd file complete
+    | %{ref_axes}: [_none_axis]
+    | %{ref_shape}: (1,)
+    | %{ref_element}: dict
+/: Ground: Complete .ncd file input containing structured data

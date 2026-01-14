@@ -39,12 +39,11 @@ Analyze the content and determine which type it is:
 
 ## Output
 
-Return JSON with the determined type:
+Return JSON with thinking and result:
 
 ```json
 {
-  "concept_type": "object|relation|proposition|imperative|judgement|assigning|grouping|timing|looping",
-  "reasoning": "Brief explanation of why this type was chosen"
+  "thinking": "Brief explanation of why this type was chosen based on the content",
+  "result": "object|relation|proposition|imperative|judgement|assigning|grouping|timing|looping"
 }
 ```
-
