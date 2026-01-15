@@ -1,29 +1,19 @@
-<- <ncd file complete> | ?{flow_index}: 1
-:<: <.ncd file complete> | ?{flow_index}: 1
-<- <ncd file complete> | ?{flow_index}: 1
-:<: {.ncd file complete} | ?{flow_index}: 1
 <- <.ncd file complete> | ?{flow_index}: 1
-:<: <.ncd file complete> | ?{flow_index}: 1
-<- <.ncd file complete> | ?{flow_index}: 1
-:<: <.ncd file complete> | ?{flow_index}: 1
-<- <.ncd file complete> | ?{flow_index}: 1
-<- <.ncd file complete> | ?{flow_index}: 1
-:<: {.ncd file complete} | ?{flow_index}: 1
-<= $= %>({completed .ncd output}) | ?{flow_index}: 1.1 | ?{sequence}: assigning
-<- {.ncds file} | ?{flow_index}: 1.2
-<- {.ncd output path} | ?{flow_index}: 1.3
-<- [parsed lines] | ?{flow_index}: 1.4
-<= ::(parse .ncds file into JSON list of lines) | ?{flow_index}: 1.4.1 | ?{sequence}: imperative
-<- {.ncds file} | ?{flow_index}: 1.4.2
-<- [concept lines] | ?{flow_index}: 1.5
-<= ::(filter out comment lines from parsed lines) | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
-<- [parsed lines] | ?{flow_index}: 1.5.2
-<- {final .ncd file written} | ?{flow_index}: 1.6
-<= *. %>([concept lines]) %<({processed}) %:({concept line}) %@(1) | ?{flow_index}: 1.6.1 | ?{sequence}: looping
-<= $. %>({.ncd file status}) | ?{flow_index}: 1.6.1.1 | ?{sequence}: assigning
-<- {current .ncd content} | ?{flow_index}: 1.6.1.2
-<= ::(read current .ncd file if exists) | ?{flow_index}: 1.6.1.2.1 | ?{sequence}: imperative
-<- {.ncd output path} | ?{flow_index}: 1.6.1.2.2
-<- {formalized line} | ?{flow_index}: 1.6.1.3
-<= $. %>({formalization result}) | ?{flow_index}: 1.6.1.3.1 | ?{sequence}: assigning
-<- {concept type} | ?{flow_index}: 1.6.1.3.2
+    <= $= %>({completed .ncd output}) | ?{flow_index}: 1.1 | ?{sequence}: assigning
+    <- {.ncds file} | ?{flow_index}: 1.2
+    <- {.ncd output path} | ?{flow_index}: 1.3
+    <- [parsed lines] | ?{flow_index}: 1.4
+        <= ::(parse .ncds file into JSON list of lines) | ?{flow_index}: 1.4.1 | ?{sequence}: imperative
+        <- {.ncds file} | ?{flow_index}: 1.4.2
+    <- [concept lines] | ?{flow_index}: 1.5
+        <= ::(filter out comment lines from parsed lines) | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
+        <- [parsed lines] | ?{flow_index}: 1.5.2
+    <- {final .ncd file written} | ?{flow_index}: 1.6
+        <= *. %>([concept lines]) %<({processed}) %:({concept line}) %@(1) | ?{flow_index}: 1.6.1 | ?{sequence}: looping
+            <= $. %>({.ncd file status}) | ?{flow_index}: 1.6.1.1 | ?{sequence}: assigning
+            <- {current .ncd content} | ?{flow_index}: 1.6.1.2
+                <= ::(read current .ncd file if exists) | ?{flow_index}: 1.6.1.2.1 | ?{sequence}: imperative
+                <- {.ncd output path} | ?{flow_index}: 1.6.1.2.2
+            <- {formalized line} | ?{flow_index}: 1.6.1.3
+                <= $. %>({formalization result}) | ?{flow_index}: 1.6.1.3.1 | ?{sequence}: assigning
+                <- {concept type} | ?{flow_index}: 1.6.1.3.2

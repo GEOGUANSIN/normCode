@@ -13,11 +13,9 @@ $input_1
 The input includes:
 - `flow_index`: The hierarchical address for this step (e.g., "1.2")
 - `content`: The full line including marker (e.g., `"<- current .ncd content"`)
-- `depth`: Indentation level
+- `depth`: Indentation level (0 = root, 1 = first child, etc.)
 - `type`: Line type (usually "main" for concepts)
 - `inference_marker`: The marker found (`<-` for value concepts, `<*` for context)
-- `concept_type`: May be null (you're adding it)
-- `concept_name`: May be null
 
 ## What Formalization Does
 
@@ -26,120 +24,115 @@ The input includes:
 1. **Extract the concept name** - Strip the `<-` or `<*` marker from content
 2. **Wrap in `{}` syntax** - Mark as object (singular entity)
 3. **Keep the original marker** - `<-` for value, `<*` for context
-4. **Add flow index** - Use the `flow_index` from input
+4. **Add flow index annotation** - Use the `flow_index` from input
+5. **Calculate indentation** - Use `depth × 4 spaces`
 
-**Transformation**:
-```
-Input content:  "<- current .ncd content"
-                 ↓ strip "<- "
-Name:           "current .ncd content"
-                 ↓ wrap in {}
-Object:         "{current .ncd content}"
-                 ↓ add marker and flow index
-Output:         "<- {current .ncd content} | ?{flow_index}: 1.2"
-```
+## Indentation Rule
 
-**Note**: Reference axes, shapes, and element types are added later in Post-Formalization (Phase 3.3). Do NOT add those here.
+The formalized line MUST include proper indentation based on the `depth` field:
+
+- **Indentation = depth × 4 spaces**
+- `depth: 0` → No indentation (root level)
+- `depth: 1` → 4 spaces
+- `depth: 2` → 8 spaces
+- `depth: 3` → 12 spaces
 
 ## Object Syntax
 
 ### Format
 ```
-<- {concept name} | ?{flow_index}: X.X.X
+[INDENTATION]<- {concept name} | ?{flow_index}: X.X.X
 ```
 
 Or for context concepts:
 ```
-<* {concept name} | ?{flow_index}: X.X.X
+[INDENTATION]<* {concept name} | ?{flow_index}: X.X.X
 ```
 
 ### Components
 
 | Component | Purpose | Example |
 |-----------|---------|---------|
+| Indentation | Hierarchy level | 4 spaces per depth |
 | `<-` or `<*` | Value/context marker | Keep from input |
 | `{...}` | Object wrapper | `{document}` |
 | `?{flow_index}:` | Step address | `?{flow_index}: 1.2` |
 
 ## Examples
 
-**Input (value concept):**
+**Input (value concept, depth 2):**
 ```json
 {
   "flow_index": "1.2",
   "content": "<- current .ncd content",
   "depth": 2,
   "type": "main",
-  "inference_marker": "<-",
-  "concept_type": null,
-  "concept_name": null
+  "inference_marker": "<-"
 }
 ```
 
 **Output:**
 ```
-<- {current .ncd content} | ?{flow_index}: 1.2
+        <- {current .ncd content} | ?{flow_index}: 1.2
 ```
+(8 spaces indentation for depth 2)
 
 ---
 
-**Input:**
+**Input (depth 1):**
 ```json
 {
   "flow_index": "2.1.1",
   "content": "<- .ncds file",
   "depth": 1,
   "type": "main",
-  "inference_marker": "<-",
-  "concept_type": null,
-  "concept_name": null
+  "inference_marker": "<-"
 }
 ```
 
 **Output:**
 ```
-<- {.ncds file} | ?{flow_index}: 2.1.1
+    <- {.ncds file} | ?{flow_index}: 2.1.1
 ```
+(4 spaces indentation for depth 1)
 
 ---
 
-**Input:**
+**Input (depth 3):**
 ```json
 {
   "flow_index": "1.3.2",
   "content": "<- formalized line",
   "depth": 3,
   "type": "main",
-  "inference_marker": "<-",
-  "concept_type": null,
-  "concept_name": null
+  "inference_marker": "<-"
 }
 ```
 
 **Output:**
 ```
-<- {formalized line} | ?{flow_index}: 1.3.2
+            <- {formalized line} | ?{flow_index}: 1.3.2
 ```
+(12 spaces indentation for depth 3)
 
 ---
 
-**Input (context concept):**
+**Input (context concept, depth 2):**
 ```json
 {
   "flow_index": "1.4",
   "content": "<* concept line",
   "depth": 2,
   "type": "main",
-  "inference_marker": "<*",
-  "concept_type": null,
-  "concept_name": null
+  "inference_marker": "<*"
 }
 ```
 
 **Output:**
 ```
-<* {concept line} | ?{flow_index}: 1.4
+        <* {concept line} | ?{flow_index}: 1.4
 ```
+(8 spaces indentation for depth 2)
 
 ## Output
 
@@ -147,9 +140,12 @@ Return JSON with your reasoning and the formalized line:
 
 ```json
 {
-  "thinking": "Explain: 1) what concept name was extracted, 2) the marker used (<- or <*)",
-  "result": "<- {concept name} | ?{flow_index}: X.X.X"
+  "thinking": "Explain: 1) what concept name was extracted, 2) the marker used (<- or <*), 3) the indentation calculated",
+  "result": "[INDENTATION]<- {concept name} | ?{flow_index}: X.X.X"
 }
 ```
 
-**Important**: The `result` must be the complete formalized line as a single string, ready to be written to the `.ncd` file.
+**Important**: 
+- The `result` must be the complete formalized line as a single string
+- Include the correct indentation (depth × 4 spaces) at the START of the line
+- Include the flow_index annotation at the END of the line
