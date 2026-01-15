@@ -1,74 +1,137 @@
 # Formalize Looping Operator
 
-Apply looping `*` formalization syntax to this operator concept.
+Transform a natural language iteration into formal looping `*` syntax.
 
 ## Input
 
-The concept line to formalize:
+You are given a parsed concept line from an `.ncds` file that has been judged as **looping** type:
+
 ```json
 $input_1
 ```
 
-## Looping Syntax Rules
+The input includes:
+- `flow_index`: The hierarchical address for this step (e.g., "1.1")
+- `content`: The full line including marker (e.g., `"<= for each concept line in concept lines"`)
+- `depth`: Indentation level
+- `type`: Line type (usually "main" for concepts)
+- `inference_marker`: The marker found (`<=` for functional concepts)
+- `concept_type`: May be null (you're adding it)
+- `concept_name`: May be null
 
-Looping operators iterate over collections.
+## What Formalization Does
 
-### Operator Markers
+**Formalization (Phase 2)** adds structural annotations to natural language. For looping:
 
-| Marker | Meaning |
-|--------|---------|
-| `*.` | Iterate (for each) |
+1. **Extract the iteration pattern** - Strip the `<=` marker and parse
+2. **Identify collection and item** - What to iterate over, what each element is called
+3. **Construct loop syntax** - With source, target, axis, and index
+4. **Add flow index** - Use the `flow_index` from input
+5. **Add sequence type** - `?{sequence}: looping`
+
+## Looping Syntax
 
 ### Format
 ```
-<= *. %>([collection]) %<({result}) %:({current_item}) %@(loop_index)
-    | %{sequence}: looping
-<- [collection]
-<* {current_item}<$([collection])*>
+<= *. %>([collection]) %<({result}) %:({item}) %@(1) | ?{flow_index}: X.X.X | ?{sequence}: looping
 ```
 
-### Syntax Components
+### Components
 
-| Component | Meaning |
-|-----------|---------|
-| `%>([collection])` | The collection to iterate over |
-| `%<({result})` | What each iteration produces |
-| `%:({current_item})` | The loop variable name |
-| `%@(1)` | Loop index (usually 1) |
+| Component | Meaning | Example |
+|-----------|---------|---------|
+| `*.` | Iterate operator | Always `*.` |
+| `%>([collection])` | Source collection | `%>([concept lines])` |
+| `%<({result})` | What each iteration produces | `%<({processed line})` |
+| `%:({item})` | Loop variable (current element) | `%:({concept line})` |
+| `%@(1)` | Loop index (1 for outermost) | `%@(1)` |
 
-### Key Annotations
+### Pattern Recognition
 
-1. **`%{sequence}: looping`** - Required sequence type marker
+| Natural Language | Collection | Item |
+|-----------------|------------|------|
+| "for each X in Y" | Y | X |
+| "iterate over X" | X | (singular of X) |
+| "loop through X" | X | (singular of X) |
 
-### Context Concept
-The current loop item must be marked with `<*` and include
-the source annotation `<$([collection])*>`:
+## Examples
 
+**Input:**
+```json
+{
+  "flow_index": "1.1",
+  "content": "<= for each concept line in concept lines",
+  "depth": 1,
+  "type": "main",
+  "inference_marker": "<=",
+  "concept_type": null,
+  "concept_name": null
+}
 ```
-<* {current_item}<$([collection])*>
-    | %{ref_axes}: [_none_axis]
-    | %{ref_element}: element_type
+
+**Output:**
+```
+<= *. %>([concept lines]) %<({processed}) %:({concept line}) %@(1) | ?{flow_index}: 1.1 | ?{sequence}: looping
 ```
 
-### Example
-```
-<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)
-    /: Loop processes lines sequentially
-    | %{sequence}: looping
+**Explanation**: 
+- Collection: `[concept lines]`
+- Item: `{concept line}`
+- Result: `{processed}` (generic, refined by child inferences)
 
-<- [concept lines]
-<* {concept line}<$([concept lines])*>
-    | %{ref_axes}: [_none_axis]
-    | %{ref_element}: dict
+---
+
+**Input:**
+```json
+{
+  "flow_index": "2.1",
+  "content": "<= iterate over parsed lines",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<=",
+  "concept_type": null,
+  "concept_name": null
+}
+```
+
+**Output:**
+```
+<= *. %>([parsed lines]) %<({result}) %:({parsed line}) %@(1) | ?{flow_index}: 2.1 | ?{sequence}: looping
+```
+
+**Explanation**:
+- Collection: `[parsed lines]`
+- Item: `{parsed line}` (singular of collection)
+
+---
+
+**Input:**
+```json
+{
+  "flow_index": "1.2.1",
+  "content": "<= loop through documents",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<=",
+  "concept_type": null,
+  "concept_name": null
+}
+```
+
+**Output:**
+```
+<= *. %>([documents]) %<({result}) %:({document}) %@(1) | ?{flow_index}: 1.2.1 | ?{sequence}: looping
 ```
 
 ## Output
 
-Return JSON with thinking and result:
+Return JSON with your reasoning and the formalized line:
 
 ```json
 {
-  "thinking": "Explain what looping pattern was identified and why",
-  "result": "The complete formalized line with sequence annotation"
+  "thinking": "Explain: 1) what collection was identified, 2) what the loop item name is",
+  "result": "<= *. %>([collection]) %<({result}) %:({item}) %@(1) | ?{flow_index}: X.X.X | ?{sequence}: looping"
 }
 ```
+
+**Important**: The `result` must be the complete formalized line as a single string, ready to be written to the `.ncd` file.
