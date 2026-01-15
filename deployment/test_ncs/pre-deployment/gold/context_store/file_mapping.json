@@ -1,0 +1,4 @@
+{
+  "gold/raw.md": "./gold/context_store/raw--prompt.md",
+  "context_store/test_context.md": "./gold/context_store/raw--test_context.md"
+}

@@ -1,0 +1,193 @@
+# Gold Investment Decision - Formal NormCode Draft (Composition Mode)
+# ════════════════════════════════════════════════════════════════════════════
+# PERCEPTION NORMS (conservative set from PerceptionRouter):
+#   {file_location}     → Body.file_system.read()
+#   {prompt_location}   → Body.prompt_tool.read() → template
+#   {script_location}   → Body.python_interpreter (deferred)
+#   {save_path}         → Body.file_system.write() target
+#   {memorized_parameter} → Body.file_system.read_memorized_value()
+#
+# PARADIGM RESOLUTION (during IWI):
+#   norm_input → specifies WHICH paradigm to load (from working_interpretation)
+#   This is CONFIGURATION, resolved BEFORE MFP
+#
+# ANNOTATION CONVENTION:
+#   %{norm_input}    = paradigm selection (IWI) — which paradigm JSON to load
+#   %{v_input_norm}  = prompt/script location (MFP) — where to find the prompt/script
+#   %{h_input_norm}  = perception norms on value concepts (MVP) — how data is perceived
+#   %{body_faculty}  = which Body tools get invoked (documentation)
+#   %{o_shape}       = output structure (what form the result takes)
+# ════════════════════════════════════════════════════════════════════════════
+
+:<:({investment decision}) | ?{flow_index}: 1 | ?{sequence}: assigning
+    <= $. %>({investment decision})
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 1: DATA COLLECTION (External Sources → Internal References)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- [price data] | ?{flow_index}: 1.1 | ?{sequence}: imperative
+        | %{ref_axes}: [_none_axis]          
+        | %{ref_shape}: (1,)
+        | %{ref_element}: dict             
+
+        <= :%(composition):{paradigm}(retrieve price data from market sources)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct (a data loading paradigm)
+           | %{h_input_norm}: {file_location} on value concept → file_system.read()
+           | %{o_shape}: list/dict in memory
+        <- {simulated data: price data}
+           | %{file_location}: provision/data/price_data.json
+            | %{ref_axes}: [_none_axis]          
+            | %{ref_shape}: (1,)
+            | %{ref_element}: dict               
+
+    <- [news data] | ?{flow_index}: 1.2 | ?{sequence}: imperative
+        <= :%(composition):{paradigm}(retrieve news data from text sources)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct
+           | %{h_input_norm}: {file_location} on value concept → file_system.read()
+           | %{o_shape}: list of articles/headlines
+        <- {simulated data: news data}
+           | %{file_location}: provision/data/news_data.json
+
+    <- {theoretical framework} | ?{flow_index}: 1.3 | ?{sequence}: imperative
+        <= :%(composition):{paradigm}(obtain theoretical framework from domain experts)
+           | %{norm_input}: h_FileData-c_LoadParse-o_Struct
+           | %{h_input_norm}: {file_location} on value concept → file_system.read()
+           | %{o_shape}: structured theory (dict/JSON)
+        <- {simulated data: theoretical framework}
+           | %{file_location}: provision/data/theoretical_framework.json
+
+    <- {investor risk profile} | ?{flow_index}: 1.4 | ?{sequence}: imperative
+        <= :%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)
+           | %{norm_input}: h_FileData-c_LoadValidate-o_Struct
+           | %{h_input_norm}: {file_location} on value concept → file_system.read()
+           | %{o_shape}: risk profile (dict with: risk_tolerance, max_position_size, ...)
+        <- {simulated data: investor risk profile}
+           | %{file_location}: provision/data/investor_risk_profile.json
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 2: SIGNAL GENERATION (Raw Data → Actionable Signals)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- {validated signal bundle} | ?{flow_index}: 1.5 | ?{sequence}: grouping
+        <= &[{}] %>[{quantitative signals}, {narrative signals}, {theoretical framework}]
+
+        <- {quantitative signals} | ?{flow_index}: 1.5.1 | ?{sequence}: imperative
+                        | %{ref_axes}: [_none_axis]          
+            | %{ref_shape}: (1,)
+            | %{ref_element}: dict
+
+
+        <- [price data] | ?{flow_index}: 1.5.1.1 | ?{sequence}: imperative
+            <= :%(composition):(compute price-based indicators from {1}<$([price data])%>)
+               | %{norm_input}: v_Script-h_Data-c_Execute-o_Struct (script execution paradigm)
+               | %{v_input_norm}: {script_location}
+               | %{v_input_provision}: provision/scripts/technical_analysis.py
+               | %{h_input_norm}: in-memory data (no perception needed, already resolved)
+               | %{body_faculty}: python_interpreter
+               | %{o_shape}: indicators (dict: {ma_20, rsi, macd, ...})
+            <- [price data]<:{1}>
+            <- {theoretical framework}
+
+        <- {narrative signals} | ?{flow_index}: 1.5.2 | ?{sequence}: imperative
+            <= :%(composition):(extract sentiment and themes from {1}<$([news data])%>)
+               | %{norm_input}: v_Prompt-h_Data-c_LLMGenerate-o_JSON (LLM analysis paradigm)
+               | %{v_input_norm}: {prompt_location}
+               | %{v_input_provision}: provision/prompts/sentiment_extraction.md
+               | %{h_input_norm}: in-memory data (no perception needed, already resolved)
+               | %{body_faculty}: llm
+               | %{o_shape}: sentiment (dict: {score, themes, summary})
+            <- [news data]<:{1}>
+            <- {theoretical framework}
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 3: SIGNAL EVALUATION (Signals vs Theory → Boolean Judgements)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- <signals surpass theoretical expectations> | ?{flow_index}: 1.6 | ?{sequence}: judgement
+        <= :%(composition):({1}<$({validated signal bundle})%> exceeds predictions of {2}<$({theoretical framework})%>) <ALL True>
+           | %{norm_input}: v_Prompt-h_Data-c_LLMEvaluate-o_Bool (LLM judgement paradigm)
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/bullish_evaluation.md
+           | %{h_input_norm}: in-memory data (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: boolean (before TIA assertion)
+        <- {validated signal bundle}<:{1}>
+        <- {theoretical framework}<:{2}>
+
+    <- <signals deviate from theoretical expectations> | ?{flow_index}: 1.7 | ?{sequence}: judgement
+        <= :%(composition):({1}<$({validated signal bundle})%> falls below predictions of {2}<$({theoretical framework})%>) <ALL True>
+           | %{norm_input}: v_Prompt-h_Data-c_LLMEvaluate-o_Bool
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/bearish_evaluation.md
+           | %{h_input_norm}: in-memory data (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: boolean (before TIA assertion)
+        <- {validated signal bundle}<:{1}>
+        <- {theoretical framework}<:{2}>
+
+    <- <signals are neutral> | ?{flow_index}: 1.8 | ?{sequence}: judgement
+        <= :%(composition):({1}<$(<signal status>)%>) <ALL False>
+           | %{norm_input}: (none — pure assertion, no paradigm needed)
+           | %{h_input_norm}: boolean list from syntactic grouping
+           | %{body_faculty}: (none — TIA handles assertion directly)
+           | %{o_shape}: boolean (result of <ALL False> assertion)
+        <- <signal status><:{1}> | ?{flow_index}: 1.8.1 | ?{sequence}: assigning
+            <= $- %>([<signal status>]) %^(<$*#>) %:(<signal status>)
+            <- [<signal status>] | ?{flow_index}: 1.8.1.1 | ?{sequence}: grouping
+                <= &[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>]
+                <- <signals surpass theoretical expectations>
+                <- <signals deviate from theoretical expectations>
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 4: DECISION SYNTHESIS (Conditional Recommendations → Final Decision)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    <- {investment decision} | ?{flow_index}: 1.9 | ?{sequence}: imperative
+        <= :%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)
+           | %{norm_input}: v_Prompt-h_Data-c_LLMSynthesize-o_JSON (synthesis paradigm)
+           | %{v_input_norm}: {prompt_location}
+           | %{v_input_provision}: provision/prompts/final_synthesis.md
+           | %{h_input_norm}: in-memory data (already resolved)
+           | %{body_faculty}: llm
+           | %{o_shape}: decision (dict: {action, rationale, confidence, constraints_applied})
+        <- {investor risk profile}<:{2}>
+        <- [all recommendations]<:{1}> | ?{flow_index}: 1.9.1 | ?{sequence}: grouping
+            <= &[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}]
+
+            <- {bullish recommendation} | ?{flow_index}: 1.9.1.1 | ?{sequence}: imperative
+                <= :%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal bundle})%> and {2}<$({investor risk profile})%>) | ?{flow_index}: 1.9.1.1.1 | ?{sequence}: timing
+                    <= @:' (<signals surpass theoretical expectations>)
+                   | %{norm_input}: v_Prompt_Script-h_Data-c_LLMReason_Compute-o_JSON
+                   | %{v_input_norm}: {prompt_location}, {script_location}
+                   | %{v_input_provision}: provision/prompts/buy_recommendation.md
+                   |                       provision/scripts/position_sizing.py
+                   | %{h_input_norm}: in-memory data (already resolved)
+                   | %{body_faculty}: llm, python_interpreter
+                   | %{o_shape}: recommendation (dict: {action: "BUY", size, rationale})
+                <- {validated signal bundle}<:{1}>
+                <- {investor risk profile}<:{2}>
+
+            <- {bearish recommendation} | ?{flow_index}: 1.9.1.2 | ?{sequence}: imperative
+                <= :%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal bundle})%> and {2}<$({investor risk profile})%>) | ?{flow_index}: 1.9.1.2.1 | ?{sequence}: timing
+                    <= @:' (<signals deviate from theoretical expectations>)
+                   | %{norm_input}: v_Prompt_Script-h_Data-c_LLMReason_Compute-o_JSON
+                   | %{v_input_norm}: {prompt_location}, {script_location}
+                   | %{v_input_provision}: provision/prompts/sell_recommendation.md
+                   |                       provision/scripts/position_sizing.py
+                   | %{h_input_norm}: in-memory data (already resolved)
+                   | %{body_faculty}: llm, python_interpreter
+                   | %{o_shape}: recommendation (dict: {action: "SELL", size, rationale})
+                <- {validated signal bundle}<:{1}>
+                <- {investor risk profile}<:{2}>
+
+            <- {neutral recommendation} | ?{flow_index}: 1.9.1.3 | ?{sequence}: imperative
+                <= :%(composition):(generate hold recommendation from {1}<$({validated signal bundle})%>) | ?{flow_index}: 1.9.1.3.1 | ?{sequence}: timing
+                    <= @:' (<signals are neutral>)
+                   | %{norm_input}: v_Prompt-h_Data-c_LLMGenerate-o_JSON
+                   | %{v_input_norm}: {prompt_location}
+                   | %{v_input_provision}: provision/prompts/hold_recommendation.md
+                   | %{h_input_norm}: in-memory data (already resolved)
+                   | %{body_faculty}: llm
+                   | %{o_shape}: recommendation (dict: {action: "HOLD", rationale})
+                <- {validated signal bundle}<:{1}>
