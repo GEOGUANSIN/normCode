@@ -1,0 +1,58 @@
+# NormCode Agent Configuration
+# This file is copied to /data/config/agents.yaml on first run
+# API keys are read from environment variables
+
+agents:
+  # Alibaba Qwen Models (via DashScope)
+  qwen-plus:
+    provider: dashscope
+    model: qwen-plus
+    api_key_env: DASHSCOPE_API_KEY
+    description: "Qwen Plus - balanced performance and cost"
+    
+  qwen-turbo:
+    provider: dashscope
+    model: qwen-turbo-latest
+    api_key_env: DASHSCOPE_API_KEY
+    description: "Qwen Turbo - fast and economical"
+    
+  qwen-max:
+    provider: dashscope
+    model: qwen-max
+    api_key_env: DASHSCOPE_API_KEY
+    description: "Qwen Max - highest capability"
+
+  # OpenAI Models
+  gpt-4o:
+    provider: openai
+    model: gpt-4o
+    api_key_env: OPENAI_API_KEY
+    description: "GPT-4o - multimodal flagship"
+    
+  gpt-4o-mini:
+    provider: openai
+    model: gpt-4o-mini
+    api_key_env: OPENAI_API_KEY
+    description: "GPT-4o Mini - fast and affordable"
+
+  # Anthropic Models
+  claude-sonnet:
+    provider: anthropic
+    model: claude-3-sonnet-20240229
+    api_key_env: ANTHROPIC_API_KEY
+    description: "Claude 3 Sonnet - balanced"
+    
+  claude-opus:
+    provider: anthropic
+    model: claude-3-opus-20240229
+    api_key_env: ANTHROPIC_API_KEY
+    description: "Claude 3 Opus - highest capability"
+
+  # Mock/Demo Mode (no API calls)
+  demo:
+    provider: mock
+    description: "Mock LLM for testing - returns placeholder responses"
+
+# Default agent used when not specified
+default_agent: qwen-plus
+
