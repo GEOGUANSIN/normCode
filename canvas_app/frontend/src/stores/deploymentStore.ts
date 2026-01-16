@@ -8,6 +8,7 @@ import type {
   RemotePlan, 
   DeployResult,
   RemoteRunStatus,
+  BuildServerResponse,
 } from '../types/deployment';
 import { deploymentApi } from '../services/api';
 import { useNotificationStore } from './notificationStore';
@@ -29,10 +30,12 @@ interface DeploymentState {
   // UI state
   isLoading: boolean;
   isDeploying: boolean;
+  isBuilding: boolean;
   isPanelOpen: boolean;
-  activeTab: 'servers' | 'deploy' | 'runs';
+  activeTab: 'servers' | 'deploy' | 'runs' | 'build';
   error: string | null;
   lastDeployResult: DeployResult | null;
+  lastBuildResult: BuildServerResponse | null;
   
   // Actions
   setServers: (servers: DeploymentServer[]) => void;
@@ -54,6 +57,7 @@ interface DeploymentState {
   fetchRemotePlans: (serverId: string) => Promise<void>;
   startRemoteRun: (serverId: string, planId: string, llmModel?: string) => Promise<RemoteRunStatus | null>;
   refreshRunStatus: (serverId: string, runId: string) => Promise<void>;
+  buildServer: (options?: { outputDir?: string; includeTestPlans?: boolean; createZip?: boolean }) => Promise<BuildServerResponse | null>;
   
   // Reset
   reset: () => void;
@@ -68,10 +72,12 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   activeRuns: [],
   isLoading: false,
   isDeploying: false,
+  isBuilding: false,
   isPanelOpen: false,
   activeTab: 'servers',
   error: null,
   lastDeployResult: null,
+  lastBuildResult: null,
   
   // Simple setters
   setServers: (servers) => set({ servers }),
@@ -265,14 +271,49 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
     }
   },
   
+  // Build a deployment server
+  buildServer: async (options = {}) => {
+    set({ isBuilding: true, error: null, lastBuildResult: null });
+    try {
+      const result = await deploymentApi.buildServer({
+        output_dir: options.outputDir,
+        include_test_plans: options.includeTestPlans,
+        create_zip: options.createZip,
+      });
+      set({ isBuilding: false, lastBuildResult: result });
+      
+      if (result.success) {
+        useNotificationStore.getState().showSuccess(
+          'Server Built',
+          `Deployment server created at ${result.output_dir}`,
+          5000
+        );
+      } else {
+        useNotificationStore.getState().showError(
+          'Build Failed',
+          result.message
+        );
+      }
+      
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Build failed';
+      set({ isBuilding: false, error: message });
+      useNotificationStore.getState().showError('Build Failed', message);
+      return null;
+    }
+  },
+  
   // Reset store
   reset: () => set({
     remotePlans: [],
     activeRuns: [],
     isLoading: false,
     isDeploying: false,
+    isBuilding: false,
     error: null,
     lastDeployResult: null,
+    lastBuildResult: null,
   }),
 }));
 

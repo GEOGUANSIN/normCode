@@ -24,10 +24,15 @@ import {
   Upload,
   Link,
   Star,
+  Wrench,
+  Package,
+  FolderOpen,
+  FileArchive,
+  Copy,
 } from 'lucide-react';
 import { useDeploymentStore } from '../../stores/deploymentStore';
 import { useProjectStore } from '../../stores/projectStore';
-import type { DeploymentServer, ServerHealth, RemotePlan } from '../../types/deployment';
+import type { DeploymentServer, ServerHealth, RemotePlan, BuildServerResponse } from '../../types/deployment';
 
 interface DeploymentPanelProps {
   isOpen: boolean;
@@ -43,9 +48,11 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
     activeRuns,
     isLoading,
     isDeploying,
+    isBuilding,
     error,
     activeTab,
     lastDeployResult,
+    lastBuildResult,
     fetchServers,
     addServer,
     removeServer,
@@ -56,6 +63,7 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
     fetchRemotePlans,
     startRemoteRun,
     refreshRunStatus,
+    buildServer,
     setSelectedServerId,
     setActiveTab,
     setError,
@@ -181,6 +189,17 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('build')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'build'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 bg-white'
+                : 'text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5 inline mr-1.5" />
+            Build Server
+          </button>
         </div>
 
         {/* Error display */}
@@ -251,6 +270,14 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
               onFetchPlans={fetchRemotePlans}
               onStartRun={startRemoteRun}
               onRefreshStatus={refreshRunStatus}
+            />
+          )}
+          
+          {activeTab === 'build' && (
+            <BuildTab
+              isBuilding={isBuilding}
+              lastBuildResult={lastBuildResult}
+              onBuildServer={buildServer}
             />
           )}
         </div>
@@ -860,6 +887,230 @@ function RunsTab({
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Build Tab
+// ============================================================================
+
+interface BuildTabProps {
+  isBuilding: boolean;
+  lastBuildResult: BuildServerResponse | null;
+  onBuildServer: (options?: { outputDir?: string; includeTestPlans?: boolean; createZip?: boolean }) => Promise<BuildServerResponse | null>;
+}
+
+function BuildTab({
+  isBuilding,
+  lastBuildResult,
+  onBuildServer,
+}: BuildTabProps) {
+  const [includeTestPlans, setIncludeTestPlans] = useState(false);
+  const [createZip, setCreateZip] = useState(true);
+  const [customOutputDir, setCustomOutputDir] = useState('');
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+
+  const handleBuild = async () => {
+    await onBuildServer({
+      outputDir: customOutputDir.trim() || undefined,
+      includeTestPlans,
+      createZip,
+    });
+  };
+
+  const handleCopyPath = (path: string) => {
+    navigator.clipboard.writeText(path);
+    setCopiedPath(path);
+    setTimeout(() => setCopiedPath(null), 2000);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Description */}
+      <div className="p-4 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-lg border border-violet-100">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Package className="w-5 h-5 text-violet-600" />
+          </div>
+          <div>
+            <h3 className="font-medium text-slate-800">Build Deployment Server</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              Create a self-contained server package that can run NormCode plans independently.
+              The built server includes all necessary components and can be deployed anywhere.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Build Options */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-slate-700">Build Options</h3>
+        
+        {/* Output Directory */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1.5">
+            Output Directory (optional)
+          </label>
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={customOutputDir}
+              onChange={(e) => setCustomOutputDir(e.target.value)}
+              placeholder="Default: deployment/dist/normcode-server"
+              className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            />
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Leave empty to use the default location.
+          </p>
+        </div>
+
+        {/* Checkboxes */}
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={createZip}
+              onChange={(e) => setCreateZip(e.target.checked)}
+              className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
+            />
+            <FileArchive className="w-4 h-4 text-slate-500" />
+            <span className="text-sm text-slate-700">Create ZIP archive</span>
+          </label>
+          <p className="text-xs text-slate-500 ml-6">
+            Creates a portable zip file for easy distribution.
+          </p>
+          
+          <label className="flex items-center gap-2 cursor-pointer mt-3">
+            <input
+              type="checkbox"
+              checked={includeTestPlans}
+              onChange={(e) => setIncludeTestPlans(e.target.checked)}
+              className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
+            />
+            <Rocket className="w-4 h-4 text-slate-500" />
+            <span className="text-sm text-slate-700">Include test plans</span>
+          </label>
+          <p className="text-xs text-slate-500 ml-6">
+            Include pre-deployment test plans for testing the server.
+          </p>
+        </div>
+      </div>
+
+      {/* Build Button */}
+      <div className="pt-4 border-t border-slate-200">
+        <button
+          onClick={handleBuild}
+          disabled={isBuilding}
+          className="w-full px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 font-medium"
+        >
+          {isBuilding ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Building Server...
+            </>
+          ) : (
+            <>
+              <Wrench className="w-4 h-4" />
+              Build Deployment Server
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Build Result */}
+      {lastBuildResult && (
+        <div className={`p-4 rounded-lg border ${
+          lastBuildResult.success
+            ? 'bg-green-50 border-green-200'
+            : 'bg-red-50 border-red-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {lastBuildResult.success ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <XCircle className="w-5 h-5 text-red-600" />
+            )}
+            <span className={`font-medium ${lastBuildResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              {lastBuildResult.success ? 'Build Successful' : 'Build Failed'}
+            </span>
+          </div>
+          
+          <p className={`mt-1 text-sm ${lastBuildResult.success ? 'text-green-700' : 'text-red-700'}`}>
+            {lastBuildResult.message}
+          </p>
+          
+          {lastBuildResult.success && (
+            <div className="mt-3 space-y-2">
+              {/* Output Directory */}
+              <div className="flex items-center justify-between p-2 bg-white rounded border border-green-200">
+                <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
+                  <FolderOpen className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <span className="truncate">{lastBuildResult.output_dir}</span>
+                </div>
+                <button
+                  onClick={() => handleCopyPath(lastBuildResult.output_dir)}
+                  className="p-1 text-slate-400 hover:text-slate-600 flex-shrink-0"
+                  title="Copy path"
+                >
+                  {copiedPath === lastBuildResult.output_dir ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              
+              {/* ZIP Path */}
+              {lastBuildResult.zip_path && (
+                <div className="flex items-center justify-between p-2 bg-white rounded border border-green-200">
+                  <div className="flex items-center gap-2 text-sm text-slate-700 min-w-0">
+                    <FileArchive className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                    <span className="truncate">{lastBuildResult.zip_path}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyPath(lastBuildResult.zip_path!)}
+                    className="p-1 text-slate-400 hover:text-slate-600 flex-shrink-0"
+                    title="Copy path"
+                  >
+                    {copiedPath === lastBuildResult.zip_path ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              )}
+              
+              {/* Files included */}
+              {lastBuildResult.files_included.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs font-medium text-slate-600 mb-1">Files included:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {lastBuildResult.files_included.map((file, idx) => (
+                      <span key={idx} className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">
+                        {file}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Next Steps */}
+              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
+                <p className="font-medium mb-1">Next Steps:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Navigate to the output directory</li>
+                  <li>Run: <code className="px-1 py-0.5 bg-emerald-100 rounded">pip install -r requirements.txt</code></li>
+                  <li>Start: <code className="px-1 py-0.5 bg-emerald-100 rounded">python start_server.py</code></li>
+                </ol>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

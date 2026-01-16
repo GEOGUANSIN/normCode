@@ -215,3 +215,36 @@ async def get_remote_run_result(server_id: str, run_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# =============================================================================
+# Server Building
+# =============================================================================
+
+@router.post("/build-server", response_model=BuildServerResponse)
+async def build_server(request: BuildServerRequest):
+    """
+    Build a self-contained deployment server package.
+    
+    Creates a standalone server that can run anywhere to execute NormCode plans.
+    The built server includes all necessary components: runner, tools, infra library,
+    and test clients.
+    
+    After building, you can:
+    1. Navigate to the output directory
+    2. Install dependencies: pip install -r requirements.txt
+    3. Start the server: python start_server.py
+    """
+    from pathlib import Path
+    
+    try:
+        output_dir = Path(request.output_dir) if request.output_dir else None
+        result = deployment_service.build_server(
+            output_dir=output_dir,
+            include_test_plans=request.include_test_plans,
+            create_zip=request.create_zip,
+        )
+        return result
+    except Exception as e:
+        logger.exception(f"Failed to build server: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

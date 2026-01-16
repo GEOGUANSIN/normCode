@@ -23,18 +23,30 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-# Ensure project root is in path (normCode root)
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Runner directory (where this file is located)
+RUNNER_DIR = Path(__file__).resolve().parent
 
-# Ensure deployment directory is in path for tools imports
-DEPLOYMENT_ROOT = Path(__file__).resolve().parents[1]  # deployment/
-if str(DEPLOYMENT_ROOT) not in sys.path:
-    sys.path.insert(0, str(DEPLOYMENT_ROOT))
+# Detect if running from built package or source
+# Built package: runner.py is in root with infra/ and tools/ subdirs
+# Source: runner.py is in deployment/deploy_operators/
+IS_BUILT_PACKAGE = (RUNNER_DIR / "infra").exists() and (RUNNER_DIR / "tools").exists()
 
-# Deployment tools directory (deploy_operators/)
-DEPLOYMENT_DIR = Path(__file__).resolve().parent
+if IS_BUILT_PACKAGE:
+    # Running from built package - add runner dir to path
+    if str(RUNNER_DIR) not in sys.path:
+        sys.path.insert(0, str(RUNNER_DIR))
+    PROJECT_ROOT = RUNNER_DIR
+    DEPLOYMENT_ROOT = RUNNER_DIR
+    DEPLOYMENT_DIR = RUNNER_DIR
+else:
+    # Running from source - use traditional paths
+    PROJECT_ROOT = RUNNER_DIR.parents[1]  # Go up to normCode root
+    DEPLOYMENT_ROOT = RUNNER_DIR.parent   # deployment/
+    DEPLOYMENT_DIR = RUNNER_DIR           # deploy_operators/
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    if str(DEPLOYMENT_ROOT) not in sys.path:
+        sys.path.insert(0, str(DEPLOYMENT_ROOT))
 
 
 class PlanConfig:
@@ -96,6 +108,10 @@ class PlanConfig:
     
     def _load_manifest_format(self):
         """Load from manifest.json (deployment package) format"""
+        import logging
+        logging.info(f"[PlanConfig] Loading manifest format from: {self.config_path}")
+        logging.info(f"[PlanConfig] project_dir: {self.project_dir}")
+        
         self.id = self.raw.get('name', str(uuid.uuid4())[:8])
         self.name = self.raw.get('name', 'unnamed')
         self.description = self.raw.get('description')
@@ -111,6 +127,7 @@ class PlanConfig:
         
         # Load provisions paths from manifest
         provisions = self.raw.get('provisions', {})
+        logging.info(f"[PlanConfig] provisions from manifest: {provisions}")
         
         # Paradigm directory
         if provisions.get('paradigms'):
@@ -135,6 +152,12 @@ class PlanConfig:
             self.data_dir = self._resolve_path(provisions['data'])
         else:
             self.data_dir = self.project_dir / 'provisions' / 'data'
+        
+        logging.info(f"[PlanConfig] base_dir: {self.base_dir}")
+        logging.info(f"[PlanConfig] paradigm_dir: {self.paradigm_dir} (exists: {self.paradigm_dir.exists() if self.paradigm_dir else 'N/A'})")
+        logging.info(f"[PlanConfig] prompts_dir: {self.prompts_dir} (exists: {self.prompts_dir.exists() if self.prompts_dir else 'N/A'})")
+        logging.info(f"[PlanConfig] scripts_dir: {self.scripts_dir} (exists: {self.scripts_dir.exists() if self.scripts_dir else 'N/A'})")
+        logging.info(f"[PlanConfig] data_dir: {self.data_dir} (exists: {self.data_dir.exists() if self.data_dir else 'N/A'})")
         
         self.breakpoints = []
     
@@ -287,22 +310,27 @@ def create_body_with_deployment_tools(config: PlanConfig, llm_name: str, paradig
     from tools.composition_tool import DeploymentCompositionTool
     from tools.user_input_tool import DeploymentUserInputTool
     
-    # Settings path for LLM - check deploy_operators/settings.yaml first, then deployment/tools/settings.yaml
-    settings_path = DEPLOYMENT_DIR / "settings.yaml"
-    if not settings_path.exists():
-        # Check deployment/tools/settings.yaml
-        deployment_root = DEPLOYMENT_DIR.parent
-        settings_path = deployment_root / "tools" / "settings.yaml"
+    # Settings path for LLM - check multiple locations
+    settings_path = None
+    for candidate in [
+        DEPLOYMENT_DIR / "data" / "config" / "settings.yaml",  # Built package
+        DEPLOYMENT_DIR / "settings.yaml",                       # Same directory
+        DEPLOYMENT_ROOT / "tools" / "settings.yaml",            # Source location
+    ]:
+        if candidate.exists():
+            settings_path = candidate
+            break
     
     logging.info(f"  LLM settings: {settings_path}")
     
     # Create deployment tools
     llm = DeploymentLLMTool(
         model_name=llm_name,
-        settings_path=str(settings_path) if settings_path.exists() else None,
+        settings_path=str(settings_path) if settings_path else None,
     )
     
     # File system tool - use base_dir but also configure data path
+    logging.info(f"[Runner] Creating FileSystemTool with base_dir: {config.base_dir}")
     file_system = DeploymentFileSystemTool(
         base_dir=str(config.base_dir),
     )
@@ -312,11 +340,19 @@ def create_body_with_deployment_tools(config: PlanConfig, llm_name: str, paradig
         # Find the provisions root directory
         provisions_root = None
         
+        logging.info(f"[Runner] config.data_dir = {getattr(config, 'data_dir', 'NOT SET')}")
+        logging.info(f"[Runner] config.scripts_dir = {getattr(config, 'scripts_dir', 'NOT SET')}")
+        logging.info(f"[Runner] config.prompts_dir = {getattr(config, 'prompts_dir', 'NOT SET')}")
+        logging.info(f"[Runner] config.paradigm_dir = {getattr(config, 'paradigm_dir', 'NOT SET')}")
+        logging.info(f"[Runner] config.project_dir = {getattr(config, 'project_dir', 'NOT SET')}")
+        
         # Register individual provision directories
         if hasattr(config, 'data_dir') and config.data_dir and config.data_dir.exists():
             file_system.register_path('data', str(config.data_dir))
-            logging.info(f"  Data dir: {config.data_dir}")
+            logging.info(f"[Runner] Registered 'data' path: {config.data_dir}")
             provisions_root = config.data_dir.parent
+        else:
+            logging.warning(f"[Runner] data_dir not registered! data_dir={getattr(config, 'data_dir', None)}, exists={config.data_dir.exists() if hasattr(config, 'data_dir') and config.data_dir else 'N/A'}")
             
         if hasattr(config, 'scripts_dir') and config.scripts_dir and config.scripts_dir.exists():
             file_system.register_path('scripts', str(config.scripts_dir))

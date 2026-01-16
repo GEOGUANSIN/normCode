@@ -214,6 +214,30 @@ def discover_plans(plans_dir: Path) -> Dict[str, PlanConfig]:
 # Execution
 # ============================================================================
 
+def setup_run_logging(run_dir: Path, run_id: str) -> logging.FileHandler:
+    """
+    Set up file logging for a specific run.
+    Returns the file handler so it can be removed after the run.
+    """
+    run_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = run_dir / f"run_{run_id[:8]}_{timestamp}.log"
+    
+    # Create file handler with DEBUG level to capture all details
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s | %(levelname)s | %(name)s | %(message)s'
+    ))
+    
+    # Add to root logger
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
+    
+    logging.info(f"Run logging initialized: {log_file}")
+    return file_handler
+
+
 async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycles_override: Optional[int]):
     """Execute a run in the background."""
     from infra._orchest._orchestrator import Orchestrator
@@ -221,7 +245,19 @@ async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycl
     run_state.status = "running"
     run_state.started_at = datetime.now()
     
+    # Setup run-specific logging
+    cfg = get_config()
+    run_dir = cfg.runs_dir / run_state.run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    run_log_handler = setup_run_logging(run_dir, run_state.run_id)
+    
     try:
+        logging.info(f"=" * 60)
+        logging.info(f"Starting Run: {run_state.run_id}")
+        logging.info(f"Plan: {run_state.plan_id}")
+        logging.info(f"Config path: {run_state.config.config_path}")
+        logging.info(f"=" * 60)
+        
         # Load repositories
         concept_repo, inference_repo = load_repositories(run_state.config)
         
@@ -232,10 +268,7 @@ async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycl
         logging.info(f"Run {run_state.run_id}: Using LLM '{llm_override or run_state.config.llm_model}'")
         
         # Create orchestrator
-        cfg = get_config()
         max_cycles = max_cycles_override or run_state.config.max_cycles
-        run_dir = cfg.runs_dir / run_state.run_id
-        run_dir.mkdir(parents=True, exist_ok=True)
         
         orchestrator = Orchestrator(
             concept_repo=concept_repo,
@@ -294,6 +327,12 @@ async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycl
             "run_id": run_state.run_id,
             "error": str(e)
         })
+    finally:
+        # Clean up run-specific logging handler
+        if run_log_handler:
+            logging.info(f"Run {run_state.run_id} log file saved to: {run_dir}")
+            run_log_handler.close()
+            logging.getLogger().removeHandler(run_log_handler)
 
 
 async def broadcast_event(run_id: str, event: Dict[str, Any]):

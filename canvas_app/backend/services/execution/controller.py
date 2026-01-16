@@ -8,6 +8,7 @@ debugging support, including stepping, breakpoints, and real-time status updates
 import asyncio
 import logging
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, Set, List
 from dataclasses import dataclass, field
@@ -15,6 +16,55 @@ from dataclasses import dataclass, field
 from schemas.execution_schemas import ExecutionStatus, NodeStatus, RunMode
 
 logger = logging.getLogger(__name__)
+
+
+def setup_file_logging(db_path: str, run_id: str) -> Optional[logging.FileHandler]:
+    """
+    Set up file logging for a run, saved alongside the database file.
+    
+    Args:
+        db_path: Path to the database file
+        run_id: The run ID for naming the log file
+        
+    Returns:
+        FileHandler if successful, None otherwise
+    """
+    try:
+        db_path_obj = Path(db_path)
+        log_dir = db_path_obj.parent
+        log_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_id_short = run_id[:8] if run_id else "unknown"
+        log_file = log_dir / f"run_{run_id_short}_{timestamp}.log"
+        
+        # Create file handler with DEBUG level to capture all details
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s | %(levelname)s | %(name)s | %(message)s'
+        ))
+        
+        # Add to root logger to capture all logs
+        root_logger = logging.getLogger()
+        root_logger.addHandler(file_handler)
+        
+        logger.info(f"Run file logging initialized: {log_file}")
+        return file_handler
+    except Exception as e:
+        logger.warning(f"Failed to set up file logging: {e}")
+        return None
+
+
+def cleanup_file_logging(file_handler: Optional[logging.FileHandler], run_id: str = ""):
+    """Clean up file logging handler."""
+    if file_handler:
+        try:
+            logger.info(f"Closing run log file for {run_id}")
+            file_handler.close()
+            logging.getLogger().removeHandler(file_handler)
+        except Exception as e:
+            logger.warning(f"Error cleaning up file logging: {e}")
 
 
 @dataclass
@@ -70,10 +120,12 @@ class ExecutionController:
     _retries: List[Any] = field(default_factory=list)
     _run_to_target: Optional[str] = None
     _log_handler: Optional[Any] = None
+    _file_log_handler: Optional[logging.FileHandler] = None
     _attached_loggers: List[str] = field(default_factory=list)
     _inference_metadata: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     _load_config: Optional[Dict[str, Any]] = None
     _main_loop: Optional[asyncio.AbstractEventLoop] = None
+    _db_path: Optional[str] = None
     
     # Canvas tools
     user_input_tool: Optional[Any] = None
@@ -444,6 +496,9 @@ class ExecutionController:
 
         logger.info(f"Creating orchestrator with max_cycles={max_cycles}, db_path={db_path}")
         
+        # Store db_path for reference
+        self._db_path = db_path
+        
         # Create orchestrator
         self.orchestrator = await asyncio.to_thread(
             Orchestrator,
@@ -453,6 +508,10 @@ class ExecutionController:
             max_cycles=max_cycles,
             db_path=db_path
         )
+        
+        # Set up file logging alongside the database
+        run_id = getattr(self.orchestrator, 'run_id', 'unknown')
+        self._file_log_handler = setup_file_logging(db_path, run_id)
         
         # Initialize iteration history service and set callback for loop snapshot saving
         from .iteration_history_service import iteration_history_service
@@ -616,6 +675,11 @@ class ExecutionController:
                 pass
 
         self._detach_infra_log_handlers()
+        
+        # Clean up file logging
+        run_id = getattr(self.orchestrator, 'run_id', '') if self.orchestrator else ''
+        cleanup_file_logging(self._file_log_handler, run_id)
+        self._file_log_handler = None
 
         self.status = ExecutionStatus.IDLE
         self._sync_status_to_registry()
@@ -771,6 +835,12 @@ class ExecutionController:
                 self._sync_status_to_registry()
                 self._sync_progress_to_registry()
                 self._detach_infra_log_handlers()
+                
+                # Clean up file logging on completion
+                run_id = getattr(self.orchestrator, 'run_id', '') if self.orchestrator else ''
+                cleanup_file_logging(self._file_log_handler, run_id)
+                self._file_log_handler = None
+                
                 await self._emit("execution:completed", {
                     "completed_count": self.completed_count,
                     "total_count": self.total_count
@@ -780,10 +850,20 @@ class ExecutionController:
         except asyncio.CancelledError:
             logger.info("Execution cancelled")
             self._detach_infra_log_handlers()
+            # Clean up file logging on cancel
+            run_id = getattr(self.orchestrator, 'run_id', '') if self.orchestrator else ''
+            cleanup_file_logging(self._file_log_handler, run_id)
+            self._file_log_handler = None
         except Exception as e:
             self.status = ExecutionStatus.FAILED
             self._sync_status_to_registry()
             self._detach_infra_log_handlers()
+            
+            # Clean up file logging on failure
+            run_id = getattr(self.orchestrator, 'run_id', '') if self.orchestrator else ''
+            cleanup_file_logging(self._file_log_handler, run_id)
+            self._file_log_handler = None
+            
             await self._emit("execution:error", {"error": str(e)})
             self._add_log("error", "", f"Execution failed: {str(e)}")
             logger.exception("Execution failed")
@@ -1441,6 +1521,10 @@ class ExecutionController:
             mode=mode
         )
         
+        # Store db_path and set up file logging
+        self._db_path = db_path
+        self._file_log_handler = setup_file_logging(db_path, run_id)
+        
         self._sync_node_statuses_from_orchestrator()
         # Also sync ground/input concept statuses (for concepts with initial data)
         self._sync_ground_concept_statuses()
@@ -1531,6 +1615,10 @@ class ExecutionController:
             cycle=cycle,
             mode=mode
         )
+        
+        # Store db_path and set up file logging
+        self._db_path = db_path
+        self._file_log_handler = setup_file_logging(db_path, new_run_id)
         
         self._sync_node_statuses_from_orchestrator()
         # Also sync ground/input concept statuses (for concepts with initial data)

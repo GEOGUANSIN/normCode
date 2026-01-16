@@ -110,3 +110,19 @@ export interface StartRemoteRunRequest {
   ground_inputs?: Record<string, unknown>;
 }
 
+// Server building types
+export interface BuildServerRequest {
+  output_dir?: string;
+  include_test_plans?: boolean;
+  create_zip?: boolean;
+}
+
+export interface BuildServerResponse {
+  success: boolean;
+  output_dir: string;
+  zip_path?: string;
+  message: string;
+  server_name: string;
+  files_included: string[];
+}
+

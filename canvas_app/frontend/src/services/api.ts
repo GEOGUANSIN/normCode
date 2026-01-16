@@ -1065,6 +1065,8 @@ import type {
   UpdateServerRequest,
   DeployProjectRequest,
   StartRemoteRunRequest,
+  BuildServerRequest,
+  BuildServerResponse,
 } from '../types/deployment';
 
 export const deploymentApi = {
@@ -1124,6 +1126,13 @@ export const deploymentApi = {
   
   getRemoteRunResult: (serverId: string, runId: string): Promise<unknown> =>
     fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/result`),
+  
+  // Server building
+  buildServer: (request: BuildServerRequest = {}): Promise<BuildServerResponse> =>
+    fetchJson(`${API_BASE}/deployment/build-server`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
 };
 
 export { ApiError };

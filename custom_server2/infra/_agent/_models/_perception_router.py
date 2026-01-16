@@ -142,10 +142,34 @@ class PerceptionRouter:
 
         # Norm: File Location -> Faculty: FileSystem
         if norm == "file_location":
+            logger.info(f"[PerceptionRouter] file_location norm: content='{content}'")
+            logger.info(f"[PerceptionRouter] body.file_system = {body.file_system}")
+            logger.info(f"[PerceptionRouter] file_system type = {type(body.file_system)}")
+            
             if not hasattr(body, "file_system") or not body.file_system:
+                logger.error(f"[PerceptionRouter] Body lacks file_system!")
                 return f"ERROR: Body lacks faculty 'file_system' required for norm '{norm}'"
-            result = body.file_system.read(content)
-            return result.get("content", "") if result.get("status") == "success" else result.get("message")
+            try:
+                logger.info(f"[PerceptionRouter] Calling body.file_system.read('{content}')")
+                result = body.file_system.read(content)
+                logger.info(f"[PerceptionRouter] read() returned: type={type(result)}, value={str(result)[:200]}")
+                
+                # Handle both dict and string return types
+                if isinstance(result, dict):
+                    if result.get("status") == "success":
+                        content_preview = result.get("content", "")[:100] if result.get("content") else ""
+                        logger.info(f"[PerceptionRouter] SUCCESS! Content preview: {content_preview}...")
+                        return result.get("content", "")
+                    else:
+                        logger.warning(f"[PerceptionRouter] File read FAILED for '{content}': {result.get('message')}")
+                        return result.get("message", f"ERROR: Failed to read {content}")
+                elif isinstance(result, str):
+                    logger.info(f"[PerceptionRouter] Got string result, length={len(result)}")
+                    return result
+                return str(result)
+            except Exception as e:
+                logger.error(f"[PerceptionRouter] Exception reading file '{content}': {e}", exc_info=True)
+                return f"ERROR: Failed to read file {content}: {e}"
 
         # Norm: Prompt Location -> Faculty: PromptTool
         elif norm == "prompt_location":
@@ -161,11 +185,20 @@ class PerceptionRouter:
         # Norm: Prompt Template (Direct) -> Faculty: FileSystem (if content is path) or Direct
         elif norm == "prompt":
             # If content looks like a path, we might need FileSystem, otherwise it's raw text
-            # Legacy logic supported reading file content here:
             if hasattr(body, "file_system") and body.file_system:
-                 check = body.file_system.exists(content)
-                 if check.get("exists"):
-                     content = body.file_system.read(content).get("content", content)
+                try:
+                    file_exists = body.file_system.exists(content)
+                    # Handle both bool and dict return types for compatibility
+                    if isinstance(file_exists, dict):
+                        file_exists = file_exists.get("exists", False)
+                    if file_exists:
+                        result = body.file_system.read(content)
+                        if isinstance(result, dict):
+                            content = result.get("content", content)
+                        elif isinstance(result, str):
+                            content = result
+                except Exception as e:
+                    logger.debug(f"Could not read prompt file '{content}': {e}")
             return f"{{%{{prompt_template}}: {content}}}"
 
         # Norm: Memorized Parameter -> Faculty: FileSystem (Memory Storage)

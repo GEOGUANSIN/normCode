@@ -103,30 +103,42 @@ class DeploymentFileSystemTool:
         - Registered path prefixes like 'data:filename.json'
         - Provision paths like 'provision/scripts/file.py' or 'provisions/scripts/file.py'
         """
+        logger.debug(f"[FileSystemTool] _resolve_path called with: '{path}'")
+        logger.debug(f"[FileSystemTool]   base_dir: {self.base_dir}")
+        logger.debug(f"[FileSystemTool]   registered_paths: {self._registered_paths}")
+        
         # Check for registered path prefix (e.g., 'data:filename.json')
         if ':' in path and not Path(path).is_absolute():
             prefix, rest = path.split(':', 1)
             if prefix in self._registered_paths:
-                return Path(self._registered_paths[prefix]) / rest
+                resolved = Path(self._registered_paths[prefix]) / rest
+                logger.debug(f"[FileSystemTool]   -> Resolved via prefix '{prefix}': {resolved}")
+                return resolved
         
         p = Path(path)
         if not p.is_absolute():
             # Handle provision paths like 'provision/scripts/file.py' or 'provisions/scripts/file.py'
             # These need to be mapped to registered paths
             path_parts = p.parts
+            logger.debug(f"[FileSystemTool]   path_parts: {path_parts}")
+            
             if len(path_parts) >= 2 and path_parts[0] in ('provision', 'provisions'):
                 # Extract provision type (data, scripts, prompts, etc.) and remaining path
                 provision_type = path_parts[1]  # e.g., 'scripts', 'data', 'prompts'
                 remaining = '/'.join(path_parts[2:]) if len(path_parts) > 2 else ''
+                logger.debug(f"[FileSystemTool]   Detected provision path: type='{provision_type}', remaining='{remaining}'")
                 
                 # Check if we have a registered path for this provision type
                 if provision_type in self._registered_paths:
                     resolved = Path(self._registered_paths[provision_type])
                     if remaining:
                         resolved = resolved / remaining
+                    logger.debug(f"[FileSystemTool]   Checking registered path: {resolved}, exists={resolved.exists()}")
                     if resolved.exists():
-                        logger.debug(f"Resolved provision path '{path}' -> '{resolved}'")
+                        logger.debug(f"[FileSystemTool]   -> Resolved provision path '{path}' -> '{resolved}'")
                         return resolved.resolve()
+                else:
+                    logger.debug(f"[FileSystemTool]   provision_type '{provision_type}' NOT in registered_paths")
                 
                 # Try with variants (e.g., scripts_chinese for scripts)
                 for name, reg_path in self._registered_paths.items():
@@ -140,28 +152,32 @@ class DeploymentFileSystemTool:
                 
                 # Also check provisions base if we have one
                 provisions_base = self.get_provisions_base()
+                logger.debug(f"[FileSystemTool]   provisions_base: {provisions_base}")
                 if provisions_base:
                     # The provisions_base is the directory containing 'data', 'scripts', etc.
                     # So we just need to append the provision_type and remaining path
                     possible = Path(provisions_base) / provision_type
                     if remaining:
                         possible = possible / remaining
+                    logger.debug(f"[FileSystemTool]   Checking provisions_base path: {possible}, exists={possible.exists()}")
                     if possible.exists():
-                        logger.debug(f"Resolved provision path '{path}' -> '{possible}' via provisions_base")
+                        logger.debug(f"[FileSystemTool]   -> Resolved provision path '{path}' -> '{possible}' via provisions_base")
                         return possible.resolve()
                 
                 # Try resolving directly relative to base_dir since path starts with provision/
                 # This handles cases where base_dir is the project root and provision/ exists there
                 direct_path = Path(self.base_dir) / path
+                logger.debug(f"[FileSystemTool]   Checking direct path: {direct_path}, exists={direct_path.exists()}")
                 if direct_path.exists():
-                    logger.debug(f"Resolved provision path '{path}' -> '{direct_path}' via base_dir")
+                    logger.debug(f"[FileSystemTool]   -> Resolved provision path '{path}' -> '{direct_path}' via base_dir")
                     return direct_path.resolve()
                 
                 # Try the alternative plural/singular form (provision vs provisions)
                 alt_prefix = 'provisions' if path_parts[0] == 'provision' else 'provision'
                 alt_path = Path(self.base_dir) / alt_prefix / '/'.join(path_parts[1:])
+                logger.debug(f"[FileSystemTool]   Checking alt path: {alt_path}, exists={alt_path.exists()}")
                 if alt_path.exists():
-                    logger.debug(f"Resolved provision path '{path}' -> '{alt_path}' via alt prefix")
+                    logger.debug(f"[FileSystemTool]   -> Resolved provision path '{path}' -> '{alt_path}' via alt prefix")
                     return alt_path.resolve()
             
             # Try to resolve against registered paths
@@ -172,6 +188,7 @@ class DeploymentFileSystemTool:
             
             # Fall back to base_dir
             p = Path(self.base_dir) / path
+            logger.debug(f"[FileSystemTool]   Fallback to base_dir path: {p}, exists={p.exists()}")
             
             # If base_dir path doesn't exist, try looking for provisions directory variations
             if not p.exists() and len(path_parts) >= 2:
@@ -179,12 +196,15 @@ class DeploymentFileSystemTool:
                 possible_type = path_parts[0]
                 if possible_type in self._registered_paths:
                     alt = Path(self._registered_paths[possible_type]) / '/'.join(path_parts[1:])
+                    logger.debug(f"[FileSystemTool]   Checking alt type path: {alt}, exists={alt.exists()}")
                     if alt.exists():
+                        logger.debug(f"[FileSystemTool]   -> Resolved via type '{possible_type}': {alt}")
                         return alt.resolve()
         
+        logger.debug(f"[FileSystemTool]   -> Final resolved path: {p.resolve()}")
         return p.resolve()
     
-    def read(self, path: str = None, location: str = None) -> str:
+    def read(self, path: str = None, location: str = None) -> Dict[str, Any]:
         """
         Read content from a file.
         
@@ -193,15 +213,19 @@ class DeploymentFileSystemTool:
             location: Alias for path (for compatibility with infra tool)
             
         Returns:
-            File content as string
+            Dict with status and content (matches infra FileSystemTool interface)
         """
         # Support both 'path' and 'location' parameter names
         filepath = path or location
+        logger.info(f"[FileSystemTool] read() called with path='{path}', location='{location}'")
+        
         if not filepath:
-            raise ValueError("Either 'path' or 'location' must be provided")
+            logger.error("[FileSystemTool] read() called without path or location!")
+            return {"status": "error", "message": "Either 'path' or 'location' must be provided"}
         
         self._operation_count += 1
         resolved = self._resolve_path(filepath)
+        logger.info(f"[FileSystemTool] Resolved path: {resolved}")
         
         self._log("file:read", {
             "path": str(resolved),
@@ -209,6 +233,10 @@ class DeploymentFileSystemTool:
         })
         
         try:
+            if not resolved.exists():
+                logger.warning(f"File not found at {resolved}")
+                return {"status": "error", "message": f"File not found at {resolved}"}
+            
             with open(resolved, "r", encoding="utf-8") as f:
                 content = f.read()
             
@@ -218,7 +246,7 @@ class DeploymentFileSystemTool:
                 "size": len(content),
             })
             
-            return content
+            return {"status": "success", "content": content}
             
         except Exception as e:
             self._log("file:read", {
@@ -226,7 +254,7 @@ class DeploymentFileSystemTool:
                 "status": "failed",
                 "error": str(e),
             })
-            raise
+            return {"status": "error", "message": str(e)}
     
     def write(self, path: str, content: str) -> Dict[str, Any]:
         """
