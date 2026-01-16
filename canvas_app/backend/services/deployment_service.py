@@ -21,6 +21,7 @@ from schemas.deployment_schemas import (
     DeploymentServer,
     RemotePlan,
     RemoteRunStatus,
+    RunProgress,
     ServerHealthResponse,
     BuildServerResponse,
 )
@@ -255,6 +256,8 @@ class DeploymentService:
                 status="healthy",
                 plans_count=info.get('plans_count'),
                 active_runs=info.get('active_runs'),
+                completed_runs=info.get('completed_runs'),
+                total_runs=info.get('total_runs'),
                 available_models=info.get('llm_models'),
             )
         except requests.exceptions.ConnectionError:
@@ -613,12 +616,24 @@ class DeploymentService:
         
         if response.status_code == 200:
             data = response.json()
+            
+            # Parse progress if available
+            progress = None
+            if data.get('progress'):
+                progress = RunProgress(
+                    completed_count=data['progress'].get('completed_count', 0),
+                    total_count=data['progress'].get('total_count', 0),
+                    cycle_count=data['progress'].get('cycle_count', 0),
+                    current_inference=data['progress'].get('current_inference'),
+                )
+            
             return RemoteRunStatus(
                 run_id=data['run_id'],
                 plan_id=data['plan_id'],
                 server_id=server_id,
                 status=data['status'],
                 started_at=data.get('started_at'),
+                progress=progress,
             )
         else:
             raise RuntimeError(f"Failed to start run: {response.text}")
@@ -636,6 +651,17 @@ class DeploymentService:
         
         if response.status_code == 200:
             data = response.json()
+            
+            # Parse progress if available
+            progress = None
+            if data.get('progress'):
+                progress = RunProgress(
+                    completed_count=data['progress'].get('completed_count', 0),
+                    total_count=data['progress'].get('total_count', 0),
+                    cycle_count=data['progress'].get('cycle_count', 0),
+                    current_inference=data['progress'].get('current_inference'),
+                )
+            
             return RemoteRunStatus(
                 run_id=data['run_id'],
                 plan_id=data['plan_id'],
@@ -643,6 +669,7 @@ class DeploymentService:
                 status=data['status'],
                 started_at=data.get('started_at'),
                 completed_at=data.get('completed_at'),
+                progress=progress,
                 error=data.get('error'),
             )
         else:

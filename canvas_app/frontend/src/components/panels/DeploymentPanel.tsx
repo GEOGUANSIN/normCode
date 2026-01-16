@@ -2,7 +2,7 @@
  * DeploymentPanel - Deploy projects to remote NormCode servers
  */
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Server,
   Plus,
@@ -32,7 +32,8 @@ import {
 } from 'lucide-react';
 import { useDeploymentStore } from '../../stores/deploymentStore';
 import { useProjectStore } from '../../stores/projectStore';
-import type { DeploymentServer, ServerHealth, RemotePlan, BuildServerResponse } from '../../types/deployment';
+import type { DeploymentServer, ServerHealth, RemotePlan, BuildServerResponse, RemoteRunStatus, RemoteRunResult } from '../../types/deployment';
+import { TensorInspector } from './TensorInspector';
 
 interface DeploymentPanelProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
     serverHealth,
     remotePlans,
     activeRuns,
+    runResults,
     isLoading,
     isDeploying,
     isBuilding,
@@ -63,6 +65,9 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
     fetchRemotePlans,
     startRemoteRun,
     refreshRunStatus,
+    fetchRunResult,
+    startPolling,
+    stopPolling,
     buildServer,
     setSelectedServerId,
     setActiveTab,
@@ -264,12 +269,16 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
               selectedServerId={selectedServerId}
               remotePlans={remotePlans}
               activeRuns={activeRuns}
+              runResults={runResults}
               serverHealth={serverHealth}
               isLoading={isLoading}
               onSelectServer={setSelectedServerId}
               onFetchPlans={fetchRemotePlans}
               onStartRun={startRemoteRun}
               onRefreshStatus={refreshRunStatus}
+              onFetchResult={fetchRunResult}
+              onStartPolling={startPolling}
+              onStopPolling={stopPolling}
             />
           )}
           
@@ -552,7 +561,13 @@ function ServerCard({ server, health, isSelected, onSelect, onRefresh, onRemove,
         <div className="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
           {health.is_healthy ? (
             <span className="text-green-600">
-              {health.plans_count || 0} plans · {health.active_runs || 0} active runs
+              {health.plans_count || 0} plans
+              {(health.active_runs || 0) > 0 && (
+                <> · <span className="text-blue-600">{health.active_runs} running</span></>
+              )}
+              {(health.completed_runs || 0) > 0 && (
+                <> · {health.completed_runs} completed</>
+              )}
               {health.available_models && health.available_models.length > 0 && (
                 <> · {health.available_models.filter(m => !m.is_mock).length} LLM models</>
               )}
@@ -735,13 +750,17 @@ interface RunsTabProps {
   servers: DeploymentServer[];
   selectedServerId: string | null;
   remotePlans: RemotePlan[];
-  activeRuns: import('../../types/deployment').RemoteRunStatus[];
+  activeRuns: RemoteRunStatus[];
+  runResults: Record<string, RemoteRunResult>;
   serverHealth: Record<string, ServerHealth>;
   isLoading: boolean;
   onSelectServer: (id: string | null) => void;
   onFetchPlans: (serverId: string) => Promise<void>;
-  onStartRun: (serverId: string, planId: string, llmModel?: string) => Promise<import('../../types/deployment').RemoteRunStatus | null>;
+  onStartRun: (serverId: string, planId: string, llmModel?: string) => Promise<RemoteRunStatus | null>;
   onRefreshStatus: (serverId: string, runId: string) => Promise<void>;
+  onFetchResult: (serverId: string, runId: string) => Promise<RemoteRunResult | null>;
+  onStartPolling: () => void;
+  onStopPolling: () => void;
 }
 
 function RunsTab({
@@ -749,15 +768,20 @@ function RunsTab({
   selectedServerId,
   remotePlans,
   activeRuns,
+  runResults,
   serverHealth,
   isLoading,
   onSelectServer,
   onFetchPlans,
   onStartRun,
   onRefreshStatus,
+  onFetchResult,
+  onStartPolling,
+  onStopPolling,
 }: RunsTabProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedLlmModel, setSelectedLlmModel] = useState<string>('demo');
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedServerId) {
@@ -765,8 +789,37 @@ function RunsTab({
     }
   }, [selectedServerId, onFetchPlans]);
 
+  // Start/stop polling based on running runs
+  useEffect(() => {
+    const hasRunningRuns = activeRuns.some(r => r.status === 'running' || r.status === 'pending');
+    if (hasRunningRuns) {
+      onStartPolling();
+    } else {
+      onStopPolling();
+    }
+    return () => onStopPolling();
+  }, [activeRuns, onStartPolling, onStopPolling]);
+
   const selectedHealth = selectedServerId ? serverHealth[selectedServerId] : null;
   const availableModels = selectedHealth?.available_models || [];
+
+  const handleStartRun = async () => {
+    if (selectedServerId && selectedPlanId) {
+      await onStartRun(selectedServerId, selectedPlanId, selectedLlmModel);
+    }
+  };
+
+  const toggleRunDetails = async (run: RemoteRunStatus) => {
+    if (expandedRunId === run.run_id) {
+      setExpandedRunId(null);
+    } else {
+      setExpandedRunId(run.run_id);
+      // Fetch result if completed and not already cached
+      if (run.status === 'completed' && !runResults[run.run_id]) {
+        await onFetchResult(run.server_id, run.run_id);
+      }
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -804,7 +857,7 @@ function RunsTab({
               <p className="text-sm">No plans deployed on this server.</p>
             </div>
           ) : (
-            <div className="space-y-1 max-h-40 overflow-y-auto">
+            <div className="space-y-1 max-h-32 overflow-y-auto">
               {remotePlans.map(plan => (
                 <div
                   key={plan.id}
@@ -847,7 +900,7 @@ function RunsTab({
       {/* Start Run Button */}
       {selectedServerId && selectedPlanId && (
         <button
-          onClick={() => onStartRun(selectedServerId, selectedPlanId, selectedLlmModel)}
+          onClick={handleStartRun}
           className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
         >
           <Play className="w-4 h-4" />
@@ -855,38 +908,313 @@ function RunsTab({
         </button>
       )}
 
-      {/* Active Runs */}
+      {/* Runs List */}
       {activeRuns.length > 0 && (
         <div>
-          <h3 className="text-xs font-medium text-slate-600 mb-1.5">Active Runs</h3>
+          <h3 className="text-xs font-medium text-slate-600 mb-2">Runs</h3>
           <div className="space-y-2">
             {activeRuns.map(run => (
-              <div key={run.run_id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-medium text-slate-800">{run.plan_id}</span>
-                    <p className="text-xs text-slate-500">{run.run_id.substring(0, 8)}...</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      run.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      run.status === 'running' ? 'bg-blue-100 text-blue-700' :
-                      run.status === 'failed' ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {run.status}
-                    </span>
-                    <button
-                      onClick={() => onRefreshStatus(run.server_id, run.run_id)}
-                      className="p-1 text-slate-400 hover:text-slate-600"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <RunCard
+                key={run.run_id}
+                run={run}
+                result={runResults[run.run_id]}
+                isExpanded={expandedRunId === run.run_id}
+                onToggle={() => toggleRunDetails(run)}
+                onRefresh={() => onRefreshStatus(run.server_id, run.run_id)}
+              />
             ))}
           </div>
+        </div>
+      )}
+      
+      {activeRuns.length === 0 && selectedServerId && (
+        <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+          <Play className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No runs yet.</p>
+          <p className="text-xs">Select a plan and click Start Run to begin.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Run Card Component
+// ============================================================================
+
+interface RunCardProps {
+  run: RemoteRunStatus;
+  result?: RemoteRunResult;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onRefresh: () => void;
+}
+
+function RunCard({ run, result, isExpanded, onToggle, onRefresh }: RunCardProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRefreshing(true);
+    await onRefresh();
+    setIsRefreshing(false);
+  };
+  
+  const progress = run.progress;
+  const progressPercent = progress && progress.total_count > 0
+    ? Math.round((progress.completed_count / progress.total_count) * 100)
+    : 0;
+  
+  const statusColors: Record<string, string> = {
+    completed: 'bg-green-100 text-green-700 border-green-200',
+    running: 'bg-blue-100 text-blue-700 border-blue-200',
+    pending: 'bg-amber-100 text-amber-700 border-amber-200',
+    failed: 'bg-red-100 text-red-700 border-red-200',
+    stopped: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+  
+  const statusColor = statusColors[run.status] || statusColors.pending;
+
+  return (
+    <div className={`border rounded-lg overflow-hidden transition-all ${
+      run.status === 'running' ? 'border-blue-300 bg-blue-50/30' : 'border-slate-200 bg-white'
+    }`}>
+      {/* Header */}
+      <div
+        onClick={onToggle}
+        className="p-3 cursor-pointer hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            )}
+            <div>
+              <span className="text-sm font-medium text-slate-800">{run.plan_id}</span>
+              <p className="text-xs text-slate-500 font-mono">{run.run_id.substring(0, 8)}...</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 text-xs rounded-full border ${statusColor}`}>
+              {run.status}
+            </span>
+            <button
+              onClick={handleRefresh}
+              className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
+              title="Refresh status"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing || run.status === 'running' ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+        
+        {/* Progress Bar */}
+        {(run.status === 'running' || run.status === 'pending') && progress && (
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+              <span>
+                {progress.completed_count} / {progress.total_count} inferences
+              </span>
+              <span>{progressPercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            {progress.current_inference && (
+              <p className="text-xs text-slate-500 mt-1 truncate">
+                Current: {progress.current_inference}
+              </p>
+            )}
+          </div>
+        )}
+        
+        {/* Completed Progress Summary */}
+        {run.status === 'completed' && progress && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-green-600">
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span>
+              Completed {progress.completed_count} inferences in {progress.cycle_count} cycles
+            </span>
+          </div>
+        )}
+        
+        {/* Failed Status */}
+        {run.status === 'failed' && run.error && (
+          <div className="mt-2 flex items-start gap-2 text-xs text-red-600">
+            <XCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            <span className="break-words">{run.error}</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="border-t border-slate-200 p-3 bg-slate-50">
+          {/* Timing Info */}
+          <div className="text-xs text-slate-600 space-y-1 mb-3">
+            {run.started_at && (
+              <p className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3" />
+                Started: {new Date(run.started_at).toLocaleString()}
+              </p>
+            )}
+            {run.completed_at && (
+              <p className="flex items-center gap-1.5">
+                <CheckCircle className="w-3 h-3" />
+                Completed: {new Date(run.completed_at).toLocaleString()}
+              </p>
+            )}
+          </div>
+          
+          {/* Result */}
+          {run.status === 'completed' && result && (
+            <div>
+              <h4 className="text-xs font-medium text-slate-700 mb-2">Final Concepts</h4>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {result.final_concepts.map((fc, idx) => (
+                  <FinalConceptCard key={idx} concept={fc} />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {run.status === 'completed' && !result && (
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Loading result...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Final Concept Card Component
+// ============================================================================
+
+interface FinalConceptCardProps {
+  concept: {
+    name: string;
+    has_value: boolean;
+    shape?: number[];
+    value?: string;
+  };
+}
+
+// Simple Error Boundary for catching render errors
+class TensorErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="text-xs text-red-600 p-2 bg-red-50 rounded border border-red-200">
+          <div className="font-medium">Error displaying data</div>
+          <div className="text-red-500 mt-1">{this.state.error?.message || 'Unknown error'}</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function FinalConceptCard({ concept }: FinalConceptCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Parse the value - it might be a JSON string or a raw string
+  const { parsedValue, parseError } = useMemo(() => {
+    if (!concept.value) return { parsedValue: null, parseError: null };
+    
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(concept.value);
+      return { parsedValue: parsed, parseError: null };
+    } catch {
+      // If it's not JSON, it might be a string representation
+      // Try to extract JSON from the string if it looks like an array or object
+      const trimmed = concept.value.trim();
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try {
+          // Replace single quotes with double quotes for Python-style strings
+          const normalized = trimmed.replace(/'/g, '"');
+          const parsed = JSON.parse(normalized);
+          return { parsedValue: parsed, parseError: null };
+        } catch {
+          // Return as-is if parsing fails
+          return { parsedValue: concept.value, parseError: null };
+        }
+      }
+      return { parsedValue: concept.value, parseError: null };
+    }
+  }, [concept.value]);
+  
+  return (
+    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+      {/* Header */}
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+          )}
+          <span className="font-medium text-sm text-slate-800">{concept.name}</span>
+          {concept.shape && (
+            <span className="text-xs text-slate-500 font-mono">
+              [{concept.shape.join(', ')}]
+            </span>
+          )}
+        </div>
+        {concept.has_value ? (
+          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px]">
+            Has Value
+          </span>
+        ) : (
+          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">
+            No Value
+          </span>
+        )}
+      </div>
+      
+      {/* Content */}
+      {isExpanded && concept.has_value && (
+        <div className="border-t border-slate-200 p-2">
+          {parseError ? (
+            <div className="text-xs text-red-600 p-2">{parseError}</div>
+          ) : parsedValue !== null ? (
+            <TensorErrorBoundary>
+              <TensorInspector
+                data={parsedValue}
+                shape={concept.shape}
+                conceptName={concept.name}
+                isCompact={false}
+              />
+            </TensorErrorBoundary>
+          ) : (
+            <pre className="text-xs font-mono text-slate-700 p-2 bg-slate-50 rounded overflow-x-auto whitespace-pre-wrap break-words max-h-48">
+              {concept.value || 'No value'}
+            </pre>
+          )}
         </div>
       )}
     </div>

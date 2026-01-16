@@ -17,7 +17,9 @@ export interface ServerHealth {
   is_healthy: boolean;
   status: 'healthy' | 'unhealthy' | 'unreachable' | 'timeout' | 'error';
   plans_count?: number;
-  active_runs?: number;
+  active_runs?: number;      // Currently running/pending
+  completed_runs?: number;   // Completed runs
+  total_runs?: number;       // All runs in memory
   available_models?: LLMModel[];
   error?: string;
 }
@@ -58,20 +60,28 @@ export interface DeployResult {
   deployed_at?: string;
 }
 
+export interface RunProgress {
+  completed_count: number;
+  total_count: number;
+  cycle_count: number;
+  current_inference?: string;
+}
+
 export interface RemoteRunStatus {
   run_id: string;
   plan_id: string;
   server_id: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'stopped';
   started_at?: string;
   completed_at?: string;
+  progress?: RunProgress;
   error?: string;
 }
 
 export interface RemoteRunResult {
   run_id: string;
   plan_id: string;
-  server_id: string;
+  server_id?: string;
   status: string;
   final_concepts: RemoteFinalConcept[];
 }

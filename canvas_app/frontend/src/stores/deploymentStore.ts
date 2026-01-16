@@ -8,6 +8,7 @@ import type {
   RemotePlan, 
   DeployResult,
   RemoteRunStatus,
+  RemoteRunResult,
   BuildServerResponse,
 } from '../types/deployment';
 import { deploymentApi } from '../services/api';
@@ -26,6 +27,12 @@ interface DeploymentState {
   
   // Active remote runs
   activeRuns: RemoteRunStatus[];
+  
+  // Run results cache (run_id -> result)
+  runResults: Record<string, RemoteRunResult>;
+  
+  // Polling interval ID
+  _pollingIntervalId: ReturnType<typeof setInterval> | null;
   
   // UI state
   isLoading: boolean;
@@ -57,6 +64,10 @@ interface DeploymentState {
   fetchRemotePlans: (serverId: string) => Promise<void>;
   startRemoteRun: (serverId: string, planId: string, llmModel?: string) => Promise<RemoteRunStatus | null>;
   refreshRunStatus: (serverId: string, runId: string) => Promise<void>;
+  refreshAllActiveRuns: () => Promise<void>;
+  fetchRunResult: (serverId: string, runId: string) => Promise<RemoteRunResult | null>;
+  startPolling: () => void;
+  stopPolling: () => void;
   buildServer: (options?: { outputDir?: string; includeTestPlans?: boolean; createZip?: boolean }) => Promise<BuildServerResponse | null>;
   
   // Reset
@@ -70,6 +81,8 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   serverHealth: {},
   remotePlans: [],
   activeRuns: [],
+  runResults: {},
+  _pollingIntervalId: null,
   isLoading: false,
   isDeploying: false,
   isBuilding: false,
@@ -266,8 +279,58 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
           r.run_id === runId ? status : r
         ),
       }));
+      
+      // If completed, fetch result
+      if (status.status === 'completed') {
+        get().fetchRunResult(serverId, runId);
+      }
     } catch (err) {
       console.error('Failed to refresh run status:', err);
+    }
+  },
+  
+  // Refresh all active runs
+  refreshAllActiveRuns: async () => {
+    const { activeRuns } = get();
+    const runningRuns = activeRuns.filter(r => r.status === 'running' || r.status === 'pending');
+    
+    for (const run of runningRuns) {
+      await get().refreshRunStatus(run.server_id, run.run_id);
+    }
+  },
+  
+  // Fetch result of a completed run
+  fetchRunResult: async (serverId, runId) => {
+    try {
+      const result = await deploymentApi.getRemoteRunResult(serverId, runId) as RemoteRunResult;
+      set((state) => ({
+        runResults: { ...state.runResults, [runId]: result },
+      }));
+      return result;
+    } catch (err) {
+      console.error('Failed to fetch run result:', err);
+      return null;
+    }
+  },
+  
+  // Start polling for run status updates
+  startPolling: () => {
+    const { _pollingIntervalId } = get();
+    if (_pollingIntervalId) return; // Already polling
+    
+    const intervalId = setInterval(() => {
+      get().refreshAllActiveRuns();
+    }, 3000); // Poll every 3 seconds
+    
+    set({ _pollingIntervalId: intervalId });
+  },
+  
+  // Stop polling
+  stopPolling: () => {
+    const { _pollingIntervalId } = get();
+    if (_pollingIntervalId) {
+      clearInterval(_pollingIntervalId);
+      set({ _pollingIntervalId: null });
     }
   },
   
@@ -305,15 +368,19 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   },
   
   // Reset store
-  reset: () => set({
-    remotePlans: [],
-    activeRuns: [],
-    isLoading: false,
-    isDeploying: false,
-    isBuilding: false,
-    error: null,
-    lastDeployResult: null,
-    lastBuildResult: null,
-  }),
+  reset: () => {
+    get().stopPolling();
+    set({
+      remotePlans: [],
+      activeRuns: [],
+      runResults: {},
+      isLoading: false,
+      isDeploying: false,
+      isBuilding: false,
+      error: null,
+      lastDeployResult: null,
+      lastBuildResult: null,
+    });
+  },
 }));
 

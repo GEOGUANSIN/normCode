@@ -42,7 +42,9 @@ class ServerHealthResponse(BaseModel):
     is_healthy: bool
     status: str
     plans_count: Optional[int] = None
-    active_runs: Optional[int] = None
+    active_runs: Optional[int] = None      # Currently running/pending
+    completed_runs: Optional[int] = None   # Completed runs
+    total_runs: Optional[int] = None       # All runs in memory
     available_models: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
 
@@ -88,14 +90,23 @@ class StartRemoteRunRequest(BaseModel):
     ground_inputs: Optional[Dict[str, Any]] = Field(None, description="Input values for ground concepts")
 
 
+class RunProgress(BaseModel):
+    """Progress info for a remote run."""
+    completed_count: int = 0
+    total_count: int = 0
+    cycle_count: int = 0
+    current_inference: Optional[str] = None
+
+
 class RemoteRunStatus(BaseModel):
     """Status of a remote run."""
     run_id: str
     plan_id: str
     server_id: str
-    status: str  # pending, running, completed, failed
+    status: str  # pending, running, completed, failed, stopped
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
+    progress: Optional[RunProgress] = None
     error: Optional[str] = None
 
 

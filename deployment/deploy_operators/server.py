@@ -168,13 +168,44 @@ class RunState:
         self._task: Optional[asyncio.Task] = None
     
     def to_status(self) -> RunStatus:
+        # Extract progress from orchestrator if available
+        progress = None
+        if self.orchestrator:
+            try:
+                bb = self.orchestrator.blackboard
+                tracker = getattr(self.orchestrator, 'tracker', None)
+                
+                # Count completed vs total inferences
+                completed = 0
+                total = 0
+                current_inference = None
+                
+                for item in self.orchestrator.waitlist.items:
+                    flow_index = item.inference_entry.flow_info.get('flow_index', '')
+                    if flow_index:
+                        total += 1
+                        status = bb.get_item_status(flow_index)
+                        if status == 'completed':
+                            completed += 1
+                        elif status == 'in_progress':
+                            current_inference = flow_index
+                
+                progress = {
+                    "completed_count": completed,
+                    "total_count": total,
+                    "cycle_count": tracker.cycle_count if tracker else 0,
+                    "current_inference": current_inference,
+                }
+            except Exception as e:
+                logging.debug(f"Could not extract progress: {e}")
+        
         return RunStatus(
             run_id=self.run_id,
             plan_id=self.plan_id,
             status=self.status,
             started_at=self.started_at.isoformat() if self.started_at else None,
             completed_at=self.completed_at.isoformat() if self.completed_at else None,
-            progress=None,  # TODO: extract from orchestrator
+            progress=progress,
             error=self.error
         )
 
@@ -300,9 +331,15 @@ async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycl
             if fc and fc.concept and fc.concept.reference:
                 concept_result["has_value"] = True
                 concept_result["shape"] = list(fc.concept.reference.shape)
-                data_str = str(fc.concept.reference.tensor)
-                if len(data_str) > 500:
-                    data_str = data_str[:497] + "..."
+                # Use JSON serialization for proper frontend parsing
+                try:
+                    import json
+                    data_str = json.dumps(fc.concept.reference.tensor)
+                except (TypeError, ValueError):
+                    # Fallback to string representation for non-JSON-serializable data
+                    data_str = str(fc.concept.reference.tensor)
+                if len(data_str) > 5000:  # Increased limit for full data visibility
+                    data_str = data_str[:4997] + "..."
                 concept_result["value"] = data_str
             run_state.result["final_concepts"].append(concept_result)
         
@@ -440,10 +477,17 @@ async def info():
     cfg = get_config()
     plans = discover_plans(cfg.plans_dir)
     llm_models = get_available_llm_models()
+    
+    # Count only actually running/pending runs as "active"
+    running_count = sum(1 for r in active_runs.values() if r.status in ('running', 'pending'))
+    completed_count = sum(1 for r in active_runs.values() if r.status == 'completed')
+    
     return {
         "version": "0.1.0",
         "plans_count": len(plans),
-        "active_runs": len(active_runs),
+        "active_runs": running_count,
+        "completed_runs": completed_count,
+        "total_runs": len(active_runs),
         "plans_dir": str(cfg.plans_dir),
         "runs_dir": str(cfg.runs_dir),
         "llm_models": llm_models,
