@@ -895,21 +895,35 @@ demo:
         Returns:
             BuildServerResponse with build details
         """
-        # Find the deployment directory
+        # Find the deployment server source directory
         # We're in canvas_app/backend/services/deployment_service.py
-        # deployment dir is at ../../deployment from canvas_app
+        # The deployment server source is at custom_server2/ from project root
         canvas_app_dir = Path(__file__).resolve().parents[2]
         project_root = canvas_app_dir.parent
-        deployment_dir = project_root / "deployment"
         
-        deploy_operators_dir = deployment_dir / "deploy_operators"
-        tools_dir = deployment_dir / "tools"
+        # Use custom_server2 as the primary source (the actual working deployment server)
+        custom_server_dir = project_root / "custom_server2"
+        
+        # Fallback to direct_infra_experiment/deployment for legacy support
+        legacy_deployment_dir = project_root / "direct_infra_experiment" / "deployment"
+        
+        # Determine which source to use
+        if custom_server_dir.exists():
+            server_source_dir = custom_server_dir
+            tools_dir = custom_server_dir / "tools"
+            mock_users_dir = custom_server_dir / "mock_users"
+        elif legacy_deployment_dir.exists():
+            server_source_dir = legacy_deployment_dir / "deploy_operators"
+            tools_dir = legacy_deployment_dir / "tools"
+            mock_users_dir = legacy_deployment_dir / "mock_users"
+        else:
+            raise FileNotFoundError("No deployment server source found (custom_server2 or deployment)")
+        
         infra_dir = project_root / "infra"
-        mock_users_dir = deployment_dir / "mock_users"
         
         # Set default output directory
         if output_dir is None:
-            output_dir = deployment_dir / "dist" / "normcode-server"
+            output_dir = project_root / "deployment_builds" / "normcode-server"
         else:
             output_dir = Path(output_dir).resolve()
         

@@ -65,22 +65,41 @@ python mock_users/client_gui.py
 ### Plans
 - `GET /api/plans` - List deployed plans
 - `GET /api/plans/{plan_id}` - Get plan details
+- `GET /api/plans/{plan_id}/graph` - **Get full graph data (concepts + inferences)** ✨
+- `GET /api/plans/{plan_id}/files/{path}` - **Get plan files (prompts, paradigms)** ✨
 - `POST /api/plans/deploy-file` - Deploy a plan (zip upload)
 - `DELETE /api/plans/{plan_id}` - Remove a plan
 - `DELETE /api/plans` - Remove ALL plans
 
 ### Runs
 - `POST /api/runs` - Start a new run
-- `GET /api/runs` - List all runs
-- `GET /api/runs/{run_id}` - Get run status
-- `GET /api/runs/{run_id}/result` - Get run result
+- `GET /api/runs` - List all runs (includes historical runs from disk) ✨
+- `GET /api/runs/{run_id}` - Get run status (active or historical)
+- `GET /api/runs/{run_id}/result` - Get run result (active or from checkpoint)
+- `POST /api/runs/{run_id}/resume` - **Resume run from checkpoint** ✨
+- `POST /api/runs/{run_id}/stop` - Stop a running execution
 - `DELETE /api/runs` - Remove ALL runs
+
+### Run Database Inspector ✨
+These endpoints allow remote inspection of run databases for debugging and analysis:
+
+- `GET /api/runs/{run_id}/db/overview` - Database structure and statistics
+- `GET /api/runs/{run_id}/db/executions` - Execution history (with optional logs)
+- `GET /api/runs/{run_id}/db/executions/{id}/logs` - Detailed logs for an execution
+- `GET /api/runs/{run_id}/db/statistics` - Run statistics (status counts, cycles)
+- `GET /api/runs/{run_id}/db/checkpoints` - List available checkpoints
+- `GET /api/runs/{run_id}/db/checkpoints/{cycle}` - Get checkpoint state data
+- `GET /api/runs/{run_id}/db/blackboard` - Blackboard summary (concept/item statuses)
+- `GET /api/runs/{run_id}/db/concepts` - Completed concepts with data previews
 
 ### Server
 - `GET /health` - Health check
 - `GET /info` - Server information
 - `GET /api/models` - Available LLM models
 - `POST /api/server/reset` - Full server reset
+
+### WebSocket
+- `WS /ws/runs/{run_id}` - Real-time run events
 
 ## Deploying Plans
 
@@ -119,6 +138,48 @@ gpt-4o:
   model: gpt-4o
   api_key: your-openai-key
   base_url: https://api.openai.com/v1
+```
+
+## Canvas App Integration
+
+This server is designed to work with the NormCode Canvas App for remote project loading and debugging.
+
+### Loading Remote Projects
+
+The Canvas App can connect to this server and load projects remotely:
+
+```bash
+# Get the full graph data for a plan (concepts + inferences)
+curl http://localhost:8080/api/plans/my-plan/graph
+```
+
+This returns the complete repository data needed to render the graph in Canvas.
+
+### Inspecting Remote Runs
+
+The DB Inspector endpoints allow Canvas to inspect run execution remotely:
+
+```bash
+# List all checkpoints for a run
+curl http://localhost:8080/api/runs/{run_id}/db/checkpoints
+
+# Get blackboard state
+curl http://localhost:8080/api/runs/{run_id}/db/blackboard
+
+# Get execution history with logs
+curl "http://localhost:8080/api/runs/{run_id}/db/executions?include_logs=true"
+```
+
+### Resuming from Checkpoints
+
+Resume a run from any checkpoint:
+
+```bash
+# Resume from latest checkpoint
+curl -X POST http://localhost:8080/api/runs/{run_id}/resume
+
+# Resume from specific cycle (creates a fork)
+curl -X POST "http://localhost:8080/api/runs/{run_id}/resume?cycle=5&fork=true"
 ```
 
 ## License

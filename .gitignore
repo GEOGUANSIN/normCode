@@ -4,7 +4,7 @@ local_phil/
 editor_app/data/
 editor_app/editor_app_data/
 c_contracts/
-custom_server/
+
 
 # Python
 __pycache__/
