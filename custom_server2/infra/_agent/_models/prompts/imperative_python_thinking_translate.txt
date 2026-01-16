@@ -1,0 +1,91 @@
+Your task is to translate an imperative NormCode instruction into a detailed, standard instruction for a programmer to write a Python script. The generated instruction should ask the programmer to provide both their thinking process and the final code in a structured JSON format. The script should be focused on a single, direct computation.
+
+The script will receive its inputs as string representations of data in variables named 'input_1', 'input_2', etc., corresponding to the `{1}`, `{2}` placeholders in the NormCode. The generated instruction must explicitly state that these string inputs need to be converted to their appropriate data types (e.g., numbers, lists) before use.
+
+The final output of the script MUST be converted to a string and assigned to a variable named `result`.
+
+The instruction you generate must be clear, specific, and provide all the context needed for a language model to write the code, including the necessary data type conversions for both inputs and outputs.
+
+---
+**Example 1: Simple Addition**
+
+**NormCode:** `::(sum {1}<$({number})%> and {2}<$({number})%>)`
+
+**Generated Instruction:**
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of numbers provided by the execution environment. Do not declare or hardcode them.
+2. Convert both `input_1` and `input_2` to numbers (e.g., integers or floats).
+3. Sum the two numbers.
+4. Assign the string representation of the final sum to a variable named `result`. The `result` variable MUST be a string.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+
+Respond with a single JSON object containing two keys: "thinking" and "code".
+- "thinking": Explain your plan for generating the script step-by-step.
+- "code": The full Python script as a string.
+
+Example of the required JSON output format:
+```json
+{
+  "thinking": "A step-by-step explanation of the plan to generate the code goes here.",
+  "code": "The complete Python script to be executed goes here as a string."
+}
+```"
+
+---
+**Example 2: Matrix Transposition**
+
+**NormCode:** `::({1}<$({matrix})%_> transpose)`
+
+**Generated Instruction:**
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive one input variable, `input_1`, which will be a string representation of a list of lists (a matrix), provided by the execution environment. Do not declare or hardcode it.
+2. Convert the `input_1` string into a Python list of lists. The `ast.literal_eval()` function is recommended for safe evaluation.
+3. Transpose the matrix.
+4. Assign the string representation of the transposed matrix to a variable named `result`. The `result` variable MUST be a string.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+
+Respond with a single JSON object containing two keys: "thinking" and "code".
+- "thinking": Explain your plan for generating the script step-by-step.
+- "code": The full Python script as a string.
+
+Example of the required JSON output format:
+```json
+{
+  "thinking": "A step-by-step explanation of the plan to generate the code goes here.",
+  "code": "The complete Python script to be executed goes here as a string."
+}
+```"
+
+---
+**Example 3: Vector Dot Product**
+
+**NormCode:** `::(calculate the dot product of {1}<$({vector_a})%_> and {2}<$({vector_b})%_>)`
+
+**Generated Instruction:**
+"You are a Python coding assistant. Your task is to write a Python script that will:
+1. Receive two input variables, `input_1` and `input_2`, which will be string representations of lists of numbers (vectors), provided by the execution environment. Do not declare or hardcode them.
+2. Convert both `input_1` and `input_2` strings into Python lists of numbers. The `ast.literal_eval()` function is recommended for safe evaluation.
+3. Calculate the dot product of the two vectors.
+4. Assign the string representation of the final scalar result to a variable named `result`. The `result` variable MUST be a string.
+
+Do not define a function; the script should be directly executable. Do not hardcode the input variables in the script, which will be provided by the execution environment.
+
+Respond with a single JSON object containing two keys: "thinking" and "code".
+- "thinking": Explain your plan for generating the script step-by-step.
+- "code": The full Python script as a string.
+
+Example of the required JSON output format:
+```json
+{
+  "thinking": "A step-by-step explanation of the plan to generate the code goes here.",
+  "code": "The complete Python script to be executed goes here as a string."
+}
+```"
+
+---
+
+Now, generate the instruction for the following request.
+
+**NormCode:** `$input_normcode`

@@ -1,0 +1,20 @@
+Instruction: $input
+
+Execute the instruction. Your final output must be a single JSON object.
+
+First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key.
+
+The value of the "answer" key should contain the actual output specified in the instruction.
+
+Example of the final JSON output:
+```json
+{
+  "analysis": "Step-by-step reasoning about how to approach and solve the problem...",
+  "answer": "The actual output as specified in the instruction"
+}
+```
+
+Execute the instruction and return only the JSON object. 
+
+Instruction: $input

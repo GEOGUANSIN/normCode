@@ -1,0 +1,45 @@
+Instruction: $input
+
+You are an expert at information extraction. Your task is to execute the instruction and extract the required information. Your final output must be a single JSON object.
+
+First, think step-by-step about how to solve the problem. Place your reasoning in the "analysis" key of the JSON object.
+Then, provide the final answer in the "answer" key.
+
+The value of the "answer" key must be a Python list of dictionaries. Each dictionary represents one complete relationship instance.
+The keys of the dictionary must be the names of the output variables specified in the instruction (e.g., the concepts marked with `?` in NormCode).
+
+---
+**Example 1**
+
+**Task Instruction:**
+From the text 'The new SuperWidget costs $99.99.', extract the product name and its price. The output variables are 'product_name' and 'price'.
+
+**Expected JSON Output:**
+```json
+{
+  "analysis": "The user wants to extract a product name and its price from the text. The text is 'The new SuperWidget costs $99.99.'. The product name is 'SuperWidget' and the price is '$99.99'. I will create a single dictionary for this relationship and place it inside the 'answer' list.",
+  "answer": [
+    {"product_name": "SuperWidget", "price": "$99.99"}
+  ]
+}
+```
+---
+**Example 2**
+
+**Task Instruction:**
+From the text 'TechCorp is based in San Francisco, and Innovate Inc. is in New York.', extract all companies and their headquarters. The output variables are 'company' and 'location'.
+
+**Expected JSON Output:**
+```json
+{
+  "analysis": "The user wants to extract company names and their locations. The sentence mentions two companies: TechCorp in San Francisco, and Innovate Inc. in New York. This requires creating two separate dictionaries, one for each company, and putting them in the 'answer' list.",
+  "answer": [
+    {"company": "TechCorp", "location": "San Francisco"},
+    {"company": "Innovate Inc.", "location": "New York"}
+  ]
+}
+```
+---
+
+Now, execute the following instruction.
+Instruction: $input

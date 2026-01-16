@@ -29,7 +29,7 @@ for fp in possible_frontend_paths:
         _frontend_dist = fp
         break
 
-from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router
+from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router, deployment_router
 from core.config import settings
 
 # Configure logging
@@ -116,6 +116,13 @@ app.include_router(
     db_inspector_router.router,
     prefix="/api/db-inspector",
     tags=["db-inspector"]
+)
+
+# Include deployment router
+app.include_router(
+    deployment_router.router,
+    prefix="/api/deployment",
+    tags=["deployment"]
 )
 
 # Mount frontend static files if available (production mode)

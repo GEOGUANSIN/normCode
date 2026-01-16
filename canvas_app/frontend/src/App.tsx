@@ -22,6 +22,7 @@ import {
   Save,
   Sparkles,
   Workflow,
+  Rocket,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -37,6 +38,7 @@ import { WorkersPanel } from './components/panels/WorkersPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
 import { ProjectTabs } from './components/panels/ProjectTabs';
 import { ChatPanel } from './components/panels/ChatPanel';
+import { DeploymentPanel } from './components/panels/DeploymentPanel';
 import { ToastContainer } from './components/common/ToastNotification';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
@@ -171,6 +173,7 @@ function App() {
   const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
   const [showAgentPanel, setShowAgentPanel] = useState(false);
   const [showWorkersPanel, setShowWorkersPanel] = useState(false);
+  const [showDeploymentPanel, setShowDeploymentPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   const [showRepoPathsModal, setShowRepoPathsModal] = useState(false);
@@ -428,6 +431,15 @@ function App() {
             <Settings size={18} />
           </button>
           
+          {/* Deploy */}
+          <button
+            onClick={() => setShowDeploymentPanel(true)}
+            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            title="Deploy Project"
+          >
+            <Rocket size={18} />
+          </button>
+          
           {/* Project settings */}
           <button
             onClick={() => setProjectPanelOpen(true)}
@@ -609,6 +621,12 @@ function App() {
 
       {/* User Input Modal (human-in-the-loop) */}
       <UserInputModal />
+
+      {/* Deployment Panel */}
+      <DeploymentPanel
+        isOpen={showDeploymentPanel}
+        onClose={() => setShowDeploymentPanel(false)}
+      />
 
       {/* Toast Notifications - prominent alerts for errors/warnings */}
       <ToastContainer />

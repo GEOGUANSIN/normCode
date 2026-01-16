@@ -4,6 +4,7 @@ local_phil/
 editor_app/data/
 editor_app/editor_app_data/
 c_contracts/
+custom_server/
 
 # Python
 __pycache__/
@@ -138,6 +139,9 @@ app/.env
 # Ignore all log files in this directory
 orchestrator_log_*.txt
 *.log
+
+# Exported execution logs directories
+logs_run_*/
 
 # Keep the directory structure
 !.gitignore 

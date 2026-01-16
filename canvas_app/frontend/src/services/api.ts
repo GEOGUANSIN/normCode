@@ -958,6 +958,27 @@ export const dbInspectorApi = {
     fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/executions/${executionId}/logs?db_path=${encodeURIComponent(dbPath)}`),
 
   /**
+   * Export execution logs to a directory as text files.
+   * If executionIds is empty, exports all executions for the run.
+   */
+  exportLogs: (
+    runId: string,
+    dbPath: string,
+    outputDir: string,
+    executionIds: number[] = []
+  ): Promise<{ exported_count: number; output_dir: string; files: string[] }> =>
+    fetchJson(`${API_BASE}/db-inspector/runs/${encodeURIComponent(runId)}/export-logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        execution_ids: executionIds,
+        output_dir: outputDir,
+        db_path: dbPath,
+        run_id: runId,
+      }),
+    }),
+
+  /**
    * Get statistics for a run.
    */
   getRunStatistics: (runId: string, dbPath: string): Promise<RunStatistics> =>
@@ -1028,6 +1049,81 @@ export const dbInspectorApi = {
     }
     return fetchJson(`${API_BASE}/db-inspector/query?${params}`);
   },
+};
+
+// ============================================================================
+// Deployment API - Deploy projects to remote servers
+// ============================================================================
+
+import type {
+  DeploymentServer,
+  ServerHealth,
+  RemotePlan,
+  DeployResult,
+  RemoteRunStatus,
+  AddServerRequest,
+  UpdateServerRequest,
+  DeployProjectRequest,
+  StartRemoteRunRequest,
+} from '../types/deployment';
+
+export const deploymentApi = {
+  // Server management
+  listServers: (): Promise<{ servers: DeploymentServer[] }> =>
+    fetchJson(`${API_BASE}/deployment/servers`),
+  
+  getServer: (serverId: string): Promise<DeploymentServer> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}`),
+  
+  addServer: (request: AddServerRequest): Promise<DeploymentServer> =>
+    fetchJson(`${API_BASE}/deployment/servers`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  updateServer: (serverId: string, request: UpdateServerRequest): Promise<DeploymentServer> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    }),
+  
+  removeServer: (serverId: string): Promise<{ status: string; server_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}`, {
+      method: 'DELETE',
+    }),
+  
+  // Server health
+  checkHealth: (serverId: string): Promise<ServerHealth> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/health`),
+  
+  testConnection: (url: string): Promise<ServerHealth> =>
+    fetchJson(`${API_BASE}/deployment/servers/test-connection?url=${encodeURIComponent(url)}`, {
+      method: 'POST',
+    }),
+  
+  // Deployment
+  deployProject: (request: DeployProjectRequest): Promise<DeployResult> =>
+    fetchJson(`${API_BASE}/deployment/deploy`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  // Remote plans
+  listRemotePlans: (serverId: string): Promise<{ server_id: string; server_name: string; plans: RemotePlan[] }> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/plans`),
+  
+  // Remote runs
+  startRemoteRun: (request: StartRemoteRunRequest): Promise<RemoteRunStatus> =>
+    fetchJson(`${API_BASE}/deployment/runs`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  getRemoteRunStatus: (serverId: string, runId: string): Promise<RemoteRunStatus> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}`),
+  
+  getRemoteRunResult: (serverId: string, runId: string): Promise<unknown> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/result`),
 };
 
 export { ApiError };

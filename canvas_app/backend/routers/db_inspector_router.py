@@ -121,6 +121,52 @@ async def _run_in_thread(func, *args, **kwargs):
     return await asyncio.to_thread(func, *args, **kwargs)
 
 
+def _clean_log_content(raw_content: str) -> str:
+    """
+    Clean up log content by removing repetitive metadata.
+    
+    Transforms lines like:
+    '2026-01-16 12:19:32,116 - [run_id:xxx] [exec_id:1] - infra.module - INFO - actual message'
+    
+    Into:
+    '[INFO] actual message'
+    """
+    import re
+    
+    if not raw_content or raw_content == '(No logs recorded)':
+        return raw_content
+    
+    cleaned_lines = []
+    
+    # Pattern to match the verbose log format:
+    # timestamp - [run_id:...] [exec_id:...] - logger_name - LEVEL - message
+    log_pattern = re.compile(
+        r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}'  # timestamp
+        r' - '
+        r'\[run_id:[^\]]+\]'  # run_id tag
+        r' \[exec_id:\d+\]'   # exec_id tag  
+        r' - '
+        r'[\w._]+'            # logger name (e.g., infra._agent._sequences)
+        r' - '
+        r'(\w+)'              # log level (INFO, WARNING, etc.)
+        r' - '
+        r'(.*)$'              # actual message
+    )
+    
+    for line in raw_content.split('\n'):
+        match = log_pattern.match(line)
+        if match:
+            level = match.group(1)
+            message = match.group(2)
+            # Format as simplified output
+            cleaned_lines.append(f'[{level}] {message}')
+        else:
+            # Keep lines that don't match the pattern as-is (like continuation lines)
+            cleaned_lines.append(line)
+    
+    return '\n'.join(cleaned_lines)
+
+
 # ============================================================================
 # Endpoints
 # ============================================================================
@@ -629,3 +675,129 @@ async def run_custom_query(
         logger.exception(f"Failed to run query: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+class ExportLogsRequest(BaseModel):
+    """Request to export execution logs."""
+    execution_ids: List[int]  # Empty list means export all
+    output_dir: str
+    db_path: str
+    run_id: str
+
+
+class ExportLogsResponse(BaseModel):
+    """Response from exporting logs."""
+    exported_count: int
+    output_dir: str
+    files: List[str]
+
+
+@router.post("/runs/{run_id}/export-logs", response_model=ExportLogsResponse)
+async def export_execution_logs(
+    run_id: str,
+    request: ExportLogsRequest
+):
+    """
+    Export execution logs to a directory as text files.
+    
+    Each execution's logs are saved to a separate file named:
+    `execution_{id}_cycle{cycle}_{flow_index}.txt`
+    
+    If execution_ids is empty, exports all executions for the run.
+    """
+    if not os.path.exists(request.db_path):
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    # Create output directory if it doesn't exist
+    output_dir = os.path.abspath(request.output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    def _export_logs():
+        import sqlite3
+        
+        conn = sqlite3.connect(request.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get executions to export
+        if request.execution_ids:
+            placeholders = ','.join('?' * len(request.execution_ids))
+            cursor.execute(f'''
+                SELECT e.id, e.cycle, e.flow_index, e.inference_type, e.status, 
+                       e.concept_inferred, e.timestamp, l.log_content
+                FROM executions e
+                LEFT JOIN logs l ON e.id = l.execution_id
+                WHERE e.run_id = ? AND e.id IN ({placeholders})
+                ORDER BY e.id
+            ''', [run_id] + request.execution_ids)
+        else:
+            # Export all executions for this run
+            cursor.execute('''
+                SELECT e.id, e.cycle, e.flow_index, e.inference_type, e.status,
+                       e.concept_inferred, e.timestamp, l.log_content
+                FROM executions e
+                LEFT JOIN logs l ON e.id = l.execution_id
+                WHERE e.run_id = ?
+                ORDER BY e.id
+            ''', (run_id,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        exported_files = []
+        
+        for row in rows:
+            exec_id = row['id']
+            cycle = row['cycle']
+            flow_index = row['flow_index'] or 'unknown'
+            inference_type = row['inference_type'] or 'unknown'
+            status = row['status'] or 'unknown'
+            concept = row['concept_inferred'] or ''
+            timestamp = row['timestamp'] or ''
+            raw_log_content = row['log_content'] or '(No logs recorded)'
+            
+            # Clean up log content: remove repetitive timestamps and run_id/exec_id tags
+            log_content = _clean_log_content(raw_log_content)
+            
+            # Sanitize flow_index for filename (replace special chars)
+            safe_flow_index = flow_index.replace(':', '_').replace('/', '_').replace('\\', '_')
+            safe_flow_index = safe_flow_index.replace('<', '').replace('>', '').replace('|', '_')
+            safe_flow_index = safe_flow_index[:50]  # Limit length
+            
+            filename = f"execution_{exec_id:04d}_cycle{cycle}_{safe_flow_index}.txt"
+            filepath = os.path.join(output_dir, filename)
+            
+            # Build file content with metadata header
+            content_lines = [
+                "=" * 70,
+                f"Execution ID: {exec_id}",
+                f"Cycle: {cycle}",
+                f"Flow Index: {flow_index}",
+                f"Inference Type: {inference_type}",
+                f"Status: {status}",
+                f"Concept Inferred: {concept}",
+                f"Timestamp: {timestamp}",
+                "=" * 70,
+                "",
+                "LOGS:",
+                "-" * 70,
+                log_content,
+                "",
+            ]
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(content_lines))
+            
+            exported_files.append(filename)
+        
+        return {
+            "exported_count": len(exported_files),
+            "output_dir": output_dir,
+            "files": exported_files
+        }
+    
+    try:
+        result = await _run_in_thread(_export_logs)
+        return ExportLogsResponse(**result)
+    except Exception as e:
+        logger.exception(f"Failed to export logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

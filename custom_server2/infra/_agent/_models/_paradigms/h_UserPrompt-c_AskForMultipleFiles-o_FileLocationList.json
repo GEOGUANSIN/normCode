@@ -1,0 +1,128 @@
+
+{
+  "metadata": {
+    "description": "Opens a file selection dialog allowing the user to select multiple files. Returns a list of FileLocations.",
+    "inputs": {
+      "vertical": {
+        "initial_directory": "The starting directory for the file picker (defaults to agent base_dir)."
+      },
+      "horizontal": {
+        "prompt_template": "The prompt to display in the dialog."
+      }
+    },
+    "outputs": {
+      "type": "FileLocationList",
+      "description": "A list of selected file paths."
+    }
+  },
+  "env_spec": {
+    "tools": [
+        {
+          "tool_name": "composition_tool",
+          "affordances": [
+            {
+              "affordance_name": "compose",
+              "call_code": "result = tool.compose(plan=params['plan'], return_key=params.get('return_key'))"
+            }
+          ]
+        },
+        {
+          "tool_name": "formatter_tool",
+          "affordances": [
+            {
+              "affordance_name": "get",
+              "call_code": "result = tool.get"
+            },
+            {
+              "affordance_name": "wrap_list",
+              "call_code": "result = tool.wrap_list"
+            }
+          ]
+        },
+        {
+          "tool_name": "user_input",
+          "affordances": [
+            {
+              "affordance_name": "create_interaction",
+              "call_code": "result = tool.create_interaction(**params)"
+            }
+          ]
+        }
+      ]
+    },
+    "sequence_spec": {
+      "steps": [
+        {
+          "step_index": 1,
+          "affordance": "formatter_tool.get",
+          "params": {},
+          "result_key": "dict_get_fn"
+        },
+        {
+          "step_index": 2,
+          "affordance": "user_input.create_interaction",
+          "params": {
+            "interaction_type": "multi_file_input",
+            "initial_directory": {
+              "__type__": "MetaValue",
+              "key": "states.body.base_dir"
+            }
+          },
+          "result_key": "user_files_fn"
+        },
+        {
+          "step_index": 3,
+          "affordance": "formatter_tool.wrap_list",
+          "params": {},
+          "result_key": "wrap_list_fn"
+        },
+        {
+          "step_index": 4,
+          "affordance": "composition_tool.compose",
+          "params": {
+            "plan": [
+              {
+                "output_key": "prompt_from_vars",
+                "function": {
+                  "__type__": "MetaValue",
+                  "key": "dict_get_fn"
+                },
+                "params": {
+                  "dictionary": "__initial_input__"
+                },
+                "literal_params": {
+                  "key": "prompt_template"
+                }
+              },
+              {
+                "output_key": "user_file_list",
+                "function": {
+                  "__type__": "MetaValue",
+                  "key": "user_files_fn"
+                },
+                "params": {
+                  "prompt_text": "prompt_from_vars"
+                }
+              },
+              {
+                "output_key": "wrapped_file_list",
+                "function": {
+                  "__type__": "MetaValue",
+                  "key": "wrap_list_fn"
+                },
+                "params": {
+                  "data_list": "user_file_list"
+                },
+                "literal_params": {
+                  "type": "file_location"
+                }
+              }
+            ],
+            "return_key": "wrapped_file_list"
+          },
+          "result_key": "instruction_fn"
+        }
+      ]
+    }
+  }
+  
