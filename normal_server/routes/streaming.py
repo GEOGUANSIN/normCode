@@ -80,29 +80,48 @@ async def stream_run_events(run_id: str):
     run_state = active_runs[run_id]
     
     async def event_generator():
-        """Generate SSE events."""
+        """Generate SSE events.
+        
+        IMPORTANT: This stream stays open for paused/stepping runs too!
+        The RemoteProxyExecutor needs continuous event streaming even when
+        execution is paused to relay state changes to the canvas_app frontend.
+        """
         queue = asyncio.Queue()
         run_state.add_event_subscriber(queue)
         
         try:
+            # Sync progress from orchestrator before sending initial event
+            run_state.sync_progress_from_orchestrator()
+            
             # Send initial connection event with current state
             initial_event = {
                 "event": "connected",
                 "run_id": run_id,
                 "status": run_state.status,
                 "node_statuses": run_state._node_statuses,
+                "breakpoints": list(run_state.breakpoints) if hasattr(run_state, 'breakpoints') else [],
+                "progress": {
+                    "completed_count": run_state.completed_count,
+                    "total_count": run_state.total_count,
+                    "cycle_count": run_state.cycle_count,
+                    "current_inference": run_state.current_inference,
+                },
             }
             yield f"data: {json.dumps(initial_event)}\n\n"
             
-            # Stream events until run completes
-            while run_state.status in ("pending", "running"):
+            # Stream events until run completes or fails
+            # ENHANCED: Continue streaming even when paused/stepping!
+            # This is critical for RemoteProxyExecutor to relay all state changes.
+            active_statuses = ("pending", "running", "paused", "stepping")
+            
+            while run_state.status in active_statuses:
                 try:
                     # Wait for next event with timeout
                     event = await asyncio.wait_for(queue.get(), timeout=30.0)
                     yield f"data: {json.dumps(event)}\n\n"
                     
-                    # Stop streaming after completion or failure
-                    if event.get("event") in ("run:completed", "run:failed"):
+                    # Stop streaming after completion, failure, or explicit stop
+                    if event.get("event") in ("run:completed", "run:failed", "execution:stopped"):
                         break
                         
                 except asyncio.TimeoutError:
@@ -122,6 +141,12 @@ async def stream_run_events(run_id: str):
                     "event": "run:failed",
                     "run_id": run_id,
                     "error": run_state.error,
+                }
+                yield f"data: {json.dumps(final_event)}\n\n"
+            elif run_state.status == "stopped":
+                final_event = {
+                    "event": "execution:stopped",
+                    "run_id": run_id,
                 }
                 yield f"data: {json.dumps(final_event)}\n\n"
                 

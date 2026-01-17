@@ -202,7 +202,6 @@ function App() {
     openTabs,
     activeTabId,
     remoteProjectTabs,
-    activeRemoteTabId,
     fetchCurrentProject,
     fetchRecentProjects,
     fetchOpenTabs,
@@ -213,8 +212,10 @@ function App() {
   } = useProjectStore();
   
   // Check if current project is read-only (compiler project)
+  // Remote projects are "read-only" in terms of editing, but can still be executed
   const activeTab = openTabs.find(tab => tab.id === activeTabId);
   const isReadOnlyProject = activeTab?.is_read_only ?? false;
+  const isRemoteProject = activeTab?.is_remote ?? false;
 
   // Fetch project state on startup
   useEffect(() => {
@@ -504,16 +505,16 @@ function App() {
           {(openTabs.length > 1 || remoteProjectTabs.length > 0) && (
             <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
           )}
-          {/* Control Panel - show in canvas mode when graph is loaded, hide for read-only projects
-              For remote tabs: only show if it's a bound run (has run_id for live control) */}
-          {graphData && viewMode === 'canvas' && !isReadOnlyProject && (
-            // Show for local tabs OR remote tabs with bound run_id
-            (!activeRemoteTabId || remoteProjectTabs.find(t => t.id === activeRemoteTabId)?.run_id) && (
-              <ControlPanel 
-                onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
-                checkpointPanelOpen={showCheckpointPanel}
-              />
-            )
+          {/* Control Panel - show in canvas mode when graph is loaded
+              Read-only projects hide the control panel UNLESS they are remote projects
+              (remote projects are read-only for editing but can still be executed)
+              Remote execution is handled through the unified worker system - remote proxy workers
+              show up in WorkersPanel and ControlPanel uses the bound worker's API */}
+          {graphData && viewMode === 'canvas' && (!isReadOnlyProject || isRemoteProject) && (
+            <ControlPanel 
+              onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
+              checkpointPanelOpen={showCheckpointPanel}
+            />
           )}
 
           {/* Checkpoint Panel - dropdown below control panel */}

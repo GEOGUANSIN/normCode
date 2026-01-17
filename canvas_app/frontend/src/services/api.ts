@@ -220,6 +220,138 @@ export const executionApi = {
     fetchJson(`${API_BASE}/execution/user-input/${encodeURIComponent(requestId)}/cancel`, {
       method: 'POST',
     }),
+  
+  // ==========================================================================
+  // Remote Proxy (Unified relay architecture)
+  // ==========================================================================
+  // These endpoints manage the remote proxy executor which provides transparent
+  // relay between the frontend and a remote normal_server. Once activated,
+  // the standard execution commands (start, stop, etc.) automatically route
+  // to the remote server, and events come through the same WebSocket.
+  
+  activateRemoteProxy: (request: { server_url: string; run_id: string; project_id?: string }): Promise<{ success: boolean; message: string; server_url: string; run_id: string; status: string }> =>
+    fetchJson(`${API_BASE}/execution/remote-proxy/activate`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  deactivateRemoteProxy: (): Promise<{ success: boolean; message: string }> =>
+    fetchJson(`${API_BASE}/execution/remote-proxy/deactivate`, {
+      method: 'POST',
+    }),
+  
+  getRemoteProxyStatus: (): Promise<{ active: boolean; connected: boolean; server_url?: string; run_id?: string; status?: string }> =>
+    fetchJson(`${API_BASE}/execution/remote-proxy/status`),
+};
+
+// =============================================================================
+// Worker Registry API (Unified worker management)
+// =============================================================================
+
+export interface WorkerState {
+  worker_id: string;
+  category: string;  // 'project' | 'assistant' | 'background' | 'ephemeral' | 'remote'
+  status: string;    // 'idle' | 'loading' | 'ready' | 'running' | 'paused' | 'stepping' | 'completed' | 'failed' | 'stopped'
+  visibility: string;
+  name: string;
+  project_id: string | null;
+  project_path: string | null;
+  current_inference: string | null;
+  completed_count: number;
+  total_count: number;
+  cycle_count: number;
+  run_id: string | null;
+  created_at: string | null;
+  started_at: string | null;
+  last_activity: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface RemoteConnectRequest {
+  server_url: string;
+  run_id: string;
+  panel_id?: string;
+  panel_type?: string;
+}
+
+export interface RemoteConnectResponse {
+  success: boolean;
+  worker_id: string;
+  server_url: string;
+  run_id: string;
+  state: WorkerState;
+}
+
+export const workerApi = {
+  // List all workers
+  listWorkers: (): Promise<{ workers: Record<string, { state: WorkerState; bindings: string[] }>; panel_bindings: Record<string, { panel_type: string; worker_id: string }> }> =>
+    fetchJson(`${API_BASE}/execution/workers`),
+  
+  // Get a specific worker
+  getWorker: (workerId: string): Promise<{ state: WorkerState; bindings: string[] }> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}`),
+  
+  // Get worker state
+  getWorkerState: (workerId: string): Promise<WorkerState> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/state`),
+  
+  // Bind a panel to a worker
+  bindPanel: (panelId: string, workerId: string, panelType: string = 'main'): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/execution/panels/${encodeURIComponent(panelId)}/bind`, {
+      method: 'POST',
+      body: JSON.stringify({ worker_id: workerId, panel_type: panelType }),
+    }),
+  
+  // Unbind a panel
+  unbindPanel: (panelId: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/execution/panels/${encodeURIComponent(panelId)}/unbind`, {
+      method: 'POST',
+    }),
+  
+  // Switch panel to a different worker
+  switchPanelWorker: (panelId: string, newWorkerId: string): Promise<{ success: boolean }> =>
+    fetchJson(`${API_BASE}/execution/panels/${encodeURIComponent(panelId)}/switch`, {
+      method: 'POST',
+      body: JSON.stringify({ new_worker_id: newWorkerId }),
+    }),
+  
+  // Get panel binding info
+  getPanelBinding: (panelId: string): Promise<{ panel_id: string; worker_id: string | null; panel_type: string | null }> =>
+    fetchJson(`${API_BASE}/execution/panels/${encodeURIComponent(panelId)}`),
+  
+  // Remote worker management
+  connectRemote: (request: RemoteConnectRequest): Promise<RemoteConnectResponse> =>
+    fetchJson(`${API_BASE}/execution/remote/connect`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  disconnectRemote: (workerId: string): Promise<{ success: boolean; worker_id: string; message: string }> =>
+    fetchJson(`${API_BASE}/execution/remote/disconnect/${encodeURIComponent(workerId)}`, {
+      method: 'POST',
+    }),
+  
+  listRemoteWorkers: (): Promise<{ workers: Array<{ worker_id: string; server_url: string; run_id: string; status: string; connected: boolean; bindings: string[] }>; count: number }> =>
+    fetchJson(`${API_BASE}/execution/remote/workers`),
+  
+  getRemoteWorkerState: (workerId: string): Promise<WorkerState> =>
+    fetchJson(`${API_BASE}/execution/remote/${encodeURIComponent(workerId)}/state`),
+  
+  // Worker-specific execution control
+  workerStart: (workerId: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/start`, { method: 'POST' }),
+  
+  workerPause: (workerId: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/pause`, { method: 'POST' }),
+  
+  workerResume: (workerId: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/resume`, { method: 'POST' }),
+  
+  workerStep: (workerId: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/step`, { method: 'POST' }),
+  
+  workerStop: (workerId: string): Promise<CommandResponse> =>
+    fetchJson(`${API_BASE}/execution/workers/${encodeURIComponent(workerId)}/stop`, { method: 'POST' }),
 };
 
 // Step progress response type
@@ -422,7 +554,37 @@ export const projectApi = {
   
   getActiveTab: (): Promise<OpenProjectInstance | null> =>
     fetchJson(`${API_BASE}/project/tabs/active`),
+  
+  // Remote project support
+  openRemote: (request: OpenRemoteProjectRequest): Promise<RemoteProjectInstance> =>
+    fetchJson(`${API_BASE}/project/open-remote`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
 };
+
+// Remote project types
+export interface OpenRemoteProjectRequest {
+  server_id: string;
+  plan_id: string;
+  make_active?: boolean;
+}
+
+export interface RemoteProjectInstance {
+  id: string;
+  name: string;
+  description?: string;
+  server_id: string;
+  server_name: string;
+  server_url: string;
+  plan_id: string;
+  config: ProjectConfig;
+  is_loaded: boolean;
+  is_active: boolean;
+  is_remote: boolean;
+  run_id?: string;
+  worker_id?: string;
+}
 
 // Agent endpoints
 export interface AgentConfigApi {

@@ -99,7 +99,15 @@ These endpoints allow remote inspection of run databases for debugging and analy
 - `GET /health` - Health check
 - `GET /info` - Server information
 - `GET /api/models` - Available LLM models
+- `GET /api/connect` - **Connection info for remote proxy** ✨
 - `POST /api/server/reset` - Full server reset
+
+### Remote Execution Support ✨
+These endpoints facilitate the RemoteProxyExecutor connection from canvas_app:
+
+- `GET /api/connect` - Verify connectivity and get server capabilities
+- `GET /api/plans/{plan_id}/manifest` - Get project manifest for tab integration
+- `GET /api/runs/{run_id}/stream` - SSE stream (stays open for paused runs!)
 
 ### WebSocket
 - `WS /ws/runs/{run_id}` - Real-time run events
@@ -184,6 +192,82 @@ curl -X POST http://localhost:8080/api/runs/{run_id}/resume
 # Resume from specific cycle (creates a fork)
 curl -X POST "http://localhost:8080/api/runs/{run_id}/resume?cycle=5&fork=true"
 ```
+
+## RemoteProxyExecutor Integration
+
+The server supports the canvas_app's unified remote execution architecture via the `RemoteProxyExecutor`. This allows the canvas_app to control remote runs as if they were local.
+
+### How It Works
+
+```
+┌─────────────────┐     HTTP/SSE      ┌──────────────────┐
+│   canvas_app    │◄─────────────────►│  normal_server   │
+│                 │                    │                  │
+│ RemoteProxy     │  POST /api/runs/X/continue  │  RunState        │
+│ Executor        │────────────────────────────►│                  │
+│                 │                    │                  │
+│                 │  GET /api/runs/X/stream     │  (SSE events)    │
+│                 │◄────────────────────────────│                  │
+└─────────────────┘                    └──────────────────┘
+```
+
+### Connecting from canvas_app
+
+1. **Verify connectivity:**
+   ```bash
+   curl http://localhost:8080/api/connect
+   ```
+
+2. **Get plan manifest (for tab integration):**
+   ```bash
+   curl http://localhost:8080/api/plans/my-plan/manifest
+   ```
+
+3. **Start a run:**
+   ```bash
+   curl -X POST http://localhost:8080/api/runs \
+     -H "Content-Type: application/json" \
+     -d '{"plan_id": "my-plan", "llm_model": "qwen-plus"}'
+   ```
+
+4. **Subscribe to SSE events:**
+   ```bash
+   curl http://localhost:8080/api/runs/{run_id}/stream
+   ```
+
+5. **Control execution:**
+   ```bash
+   # Pause
+   curl -X POST http://localhost:8080/api/runs/{run_id}/pause
+   
+   # Resume
+   curl -X POST http://localhost:8080/api/runs/{run_id}/continue
+   
+   # Step
+   curl -X POST http://localhost:8080/api/runs/{run_id}/step
+   
+   # Stop
+   curl -X POST http://localhost:8080/api/runs/{run_id}/stop
+   ```
+
+### SSE Event Types
+
+The `/api/runs/{run_id}/stream` endpoint sends these events:
+
+| Event | Description |
+|-------|-------------|
+| `connected` | Initial connection with full state |
+| `node:statuses` | Batch node status update |
+| `inference:started` | Inference execution began |
+| `inference:completed` | Inference finished successfully |
+| `inference:failed` | Inference failed |
+| `execution:progress` | Progress update |
+| `execution:paused` | Execution paused |
+| `execution:resumed` | Execution resumed |
+| `execution:stopped` | Execution stopped |
+| `breakpoint:hit` | Breakpoint reached |
+| `run:completed` | Run finished |
+| `run:failed` | Run failed |
 
 ## License
 

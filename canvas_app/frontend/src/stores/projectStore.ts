@@ -567,6 +567,55 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         configStore.setDbPath(exec.db_path);
         configStore.setBaseDir(exec.base_dir || '');
         configStore.setParadigmDir(exec.paradigm_dir || '');
+        
+        // If the active tab was previously loaded, try to restore the graph
+        // This ensures the ControlPanel shows correctly on page refresh
+        if (activeTab.is_loaded) {
+          console.log(`[fetchOpenTabs] Active tab ${activeTab.id} is loaded, attempting to restore graph...`);
+          
+          try {
+            const graphData = await graphApi.get();
+            
+            if (graphData && graphData.nodes && graphData.nodes.length > 0) {
+              console.log(`[fetchOpenTabs] Restored graph with ${graphData.nodes.length} nodes`);
+              useGraphStore.getState().setGraphData(graphData);
+              
+              // Also sync execution state
+              const executionStore = useExecutionStore.getState();
+              executionStore.setProgress(0, graphData.nodes.filter(n => n.flow_index).length);
+              
+              // Fetch and sync breakpoints from backend
+              try {
+                const breakpointsResponse = await executionApi.getBreakpoints();
+                breakpointsResponse.breakpoints.forEach(bp => executionStore.addBreakpoint(bp));
+                console.log(`[fetchOpenTabs] Synced ${breakpointsResponse.breakpoints.length} breakpoints`);
+              } catch (bpErr) {
+                console.warn('[fetchOpenTabs] Failed to fetch breakpoints:', bpErr);
+              }
+              
+              // Fetch initial execution state
+              try {
+                const execState = await executionApi.getState();
+                executionStore.setStatus(execState.status);
+                if (execState.node_statuses) {
+                  executionStore.setNodeStatuses(execState.node_statuses);
+                }
+              } catch (stateErr) {
+                console.warn('[fetchOpenTabs] Failed to sync execution state:', stateErr);
+              }
+            } else {
+              console.log(`[fetchOpenTabs] No cached graph available`);
+              useGraphStore.getState().reset();
+              // Mark as not loaded since graph isn't available
+              set({ isLoaded: false });
+            }
+          } catch (graphErr) {
+            console.warn(`[fetchOpenTabs] Failed to restore graph:`, graphErr);
+            useGraphStore.getState().reset();
+            // Mark as not loaded since graph isn't available
+            set({ isLoaded: false });
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch open tabs:', err);

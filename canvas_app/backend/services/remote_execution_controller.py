@@ -147,8 +147,8 @@ class RemoteExecutionController:
         if not self._session:
             return
         
-        # Fetch run status
-        async with self._session.get(f"{self.server_url}/runs/{self.run_id}") as resp:
+        # Fetch run status (normal_server uses /api/runs endpoint)
+        async with self._session.get(f"{self.server_url}/api/runs/{self.run_id}") as resp:
             if resp.status != 200:
                 raise RuntimeError(f"Failed to get run status: {await resp.text()}")
             data = await resp.json()
@@ -164,7 +164,7 @@ class RemoteExecutionController:
                 self.current_inference = data["progress"].get("current_inference")
         
         # Fetch node statuses
-        async with self._session.get(f"{self.server_url}/runs/{self.run_id}/node-statuses") as resp:
+        async with self._session.get(f"{self.server_url}/api/runs/{self.run_id}/node-statuses") as resp:
             if resp.status == 200:
                 data = await resp.json()
                 self.node_statuses = {}
@@ -180,7 +180,7 @@ class RemoteExecutionController:
             return
         
         try:
-            async with self._session.get(f"{self.server_url}/runs/{self.run_id}/graph") as resp:
+            async with self._session.get(f"{self.server_url}/api/runs/{self.run_id}/graph") as resp:
                 if resp.status == 200:
                     self.graph_data = await resp.json()
                     logger.info(f"Fetched graph data: {len(self.graph_data.get('nodes', []))} nodes")
@@ -341,37 +341,37 @@ class RemoteExecutionController:
     
     async def start(self):
         """Start/resume execution on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/continue")
+        result = await self._post(f"/api/runs/{self.run_id}/continue")
         self.status = ExecutionStatus.RUNNING
         return result
     
     async def pause(self):
         """Pause execution on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/pause")
+        result = await self._post(f"/api/runs/{self.run_id}/pause")
         self.status = ExecutionStatus.PAUSED
         return result
     
     async def resume(self):
         """Resume execution on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/continue")
+        result = await self._post(f"/api/runs/{self.run_id}/continue")
         self.status = ExecutionStatus.RUNNING
         return result
     
     async def step(self):
         """Step one inference on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/step")
+        result = await self._post(f"/api/runs/{self.run_id}/step")
         self.status = ExecutionStatus.STEPPING
         return result
     
     async def stop(self):
         """Stop execution on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/stop")
+        result = await self._post(f"/api/runs/{self.run_id}/stop")
         self.status = ExecutionStatus.IDLE
         return result
     
     async def run_to(self, flow_index: str):
         """Run until specific node on remote server."""
-        result = await self._post(f"/runs/{self.run_id}/run-to/{flow_index}")
+        result = await self._post(f"/api/runs/{self.run_id}/run-to/{flow_index}")
         self.status = ExecutionStatus.RUNNING
         return result
     
@@ -382,7 +382,7 @@ class RemoteExecutionController:
     async def set_breakpoint(self, flow_index: str):
         """Set breakpoint on remote server."""
         result = await self._post(
-            f"/runs/{self.run_id}/breakpoints",
+            f"/api/runs/{self.run_id}/breakpoints",
             {"flow_index": flow_index, "enabled": True}
         )
         self.breakpoints.add(flow_index)
@@ -390,13 +390,13 @@ class RemoteExecutionController:
     
     async def clear_breakpoint(self, flow_index: str):
         """Clear breakpoint on remote server."""
-        result = await self._delete(f"/runs/{self.run_id}/breakpoints/{flow_index}")
+        result = await self._delete(f"/api/runs/{self.run_id}/breakpoints/{flow_index}")
         self.breakpoints.discard(flow_index)
         return result
     
     async def clear_all_breakpoints(self):
         """Clear all breakpoints on remote server."""
-        result = await self._delete(f"/runs/{self.run_id}/breakpoints")
+        result = await self._delete(f"/api/runs/{self.run_id}/breakpoints")
         self.breakpoints.clear()
         return result
     
@@ -407,14 +407,14 @@ class RemoteExecutionController:
     async def get_reference_data(self, concept_name: str) -> Optional[Dict[str, Any]]:
         """Fetch concept value from remote server."""
         try:
-            return await self._get(f"/runs/{self.run_id}/reference/{concept_name}")
+            return await self._get(f"/api/runs/{self.run_id}/reference/{concept_name}")
         except Exception:
             return None
     
     async def get_all_reference_data(self) -> Dict[str, Dict[str, Any]]:
         """Fetch all concept values from remote server."""
         try:
-            return await self._get(f"/runs/{self.run_id}/references")
+            return await self._get(f"/api/runs/{self.run_id}/references")
         except Exception:
             return {}
     
@@ -426,9 +426,19 @@ class RemoteExecutionController:
     ) -> Dict[str, Any]:
         """Override value on remote server."""
         return await self._post(
-            f"/runs/{self.run_id}/override/{concept_name}",
+            f"/api/runs/{self.run_id}/override/{concept_name}",
             {"new_value": new_value, "rerun_dependents": rerun_dependents}
         )
+    
+    async def get_concept_statuses(self) -> Dict[str, str]:
+        """Fetch concept statuses from remote server."""
+        try:
+            result = await self._get(f"/api/runs/{self.run_id}/concept-statuses")
+            if isinstance(result, dict):
+                return result.get("concept_statuses", result)
+            return {}
+        except Exception:
+            return {}
     
     # =========================================================================
     # Logs (fetch from remote)
@@ -440,7 +450,7 @@ class RemoteExecutionController:
             params = f"?limit={limit}"
             if flow_index:
                 params += f"&flow_index={flow_index}"
-            result = await self._get(f"/runs/{self.run_id}/logs{params}")
+            result = await self._get(f"/api/runs/{self.run_id}/logs{params}")
             return result.get("logs", [])
         except Exception:
             return []

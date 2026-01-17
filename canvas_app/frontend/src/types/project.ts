@@ -134,6 +134,13 @@ export interface OpenProjectInstance {
   repositories_exist: boolean;
   is_active: boolean;  // Whether this is the currently focused tab
   is_read_only: boolean;  // Read-only projects can be viewed and executed, but not modified
+  
+  // Remote project support
+  is_remote?: boolean;  // Whether this is a remote project
+  server_id?: string;  // Remote server ID (if is_remote)
+  server_name?: string;  // Remote server name (if is_remote)
+  server_url?: string;  // Remote server URL (if is_remote)
+  plan_id?: string;  // Remote plan ID (if is_remote)
 }
 
 export interface OpenProjectsResponse {
@@ -179,4 +186,6 @@ export interface RemoteProjectTab {
   // Optional: bound to a running execution for live updates
   run_id?: string;
   is_bound?: boolean;  // true if receiving live updates via binding
+  // Worker ID in the backend WorkerRegistry (for unified state management)
+  worker_id?: string;
 }

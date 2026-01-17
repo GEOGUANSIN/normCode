@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { X, Loader2, Plus, Lock, Sparkles, Globe } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useDeploymentStore } from '../../stores/deploymentStore';
-import type { OpenProjectInstance, RemoteProjectTab } from '../../types/project';
+import type { OpenProjectInstance } from '../../types/project';
 
 interface ProjectTabProps {
   tab: OpenProjectInstance;
@@ -19,23 +19,39 @@ interface ProjectTabProps {
 
 function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
   // Read-only tabs (compiler) get purple styling
-  const isCompiler = tab.is_read_only;
+  // Remote tabs get cyan styling (unified with local tabs now)
+  const isCompiler = tab.is_read_only && !tab.is_remote;
+  const isRemote = tab.is_remote;
+  
+  // Choose styling based on tab type
+  const getTabClasses = () => {
+    if (isRemote) {
+      // Remote project - cyan theme
+      return isActive
+        ? 'bg-cyan-50 border-cyan-500 text-slate-800 shadow-sm'
+        : 'bg-cyan-100/50 border-transparent text-slate-700 hover:bg-cyan-100 hover:text-slate-800';
+    } else if (isCompiler) {
+      // Compiler (read-only local) - purple theme
+      return isActive
+        ? 'bg-purple-50 border-purple-500 text-slate-800 shadow-sm'
+        : 'bg-purple-100/50 border-transparent text-slate-700 hover:bg-purple-100 hover:text-slate-800';
+    } else {
+      // Regular local project - blue theme
+      return isActive
+        ? 'bg-white border-blue-500 text-slate-800 shadow-sm'
+        : 'bg-slate-100 border-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800';
+    }
+  };
   
   return (
     <div
-      className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-all border-b-2 ${
-        isCompiler
-          ? isActive
-            ? 'bg-purple-50 border-purple-500 text-slate-800 shadow-sm'
-            : 'bg-purple-100/50 border-transparent text-slate-700 hover:bg-purple-100 hover:text-slate-800'
-          : isActive
-            ? 'bg-white border-blue-500 text-slate-800 shadow-sm'
-            : 'bg-slate-100 border-transparent text-slate-600 hover:bg-slate-200 hover:text-slate-800'
-      }`}
+      className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-all border-b-2 ${getTabClasses()}`}
       onClick={() => onSwitch(tab.id)}
     >
-      {/* Compiler icon for read-only tabs, status indicator for others */}
-      {isCompiler ? (
+      {/* Icon based on tab type */}
+      {isRemote ? (
+        <Globe size={14} className="text-cyan-500" title={`Remote: ${tab.server_name || 'Unknown Server'}`} />
+      ) : isCompiler ? (
         <Sparkles size={14} className="text-purple-500" />
       ) : (
         <div className="flex items-center gap-1.5">
@@ -50,7 +66,7 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
       )}
       
       {/* Tab name */}
-      <span className="text-sm font-medium truncate max-w-[120px]" title={tab.name}>
+      <span className="text-sm font-medium truncate max-w-[120px]" title={isRemote ? `${tab.name} (${tab.server_name})` : tab.name}>
         {tab.name}
       </span>
       
@@ -61,67 +77,13 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
           onClose(tab.id);
         }}
         className={`p-0.5 rounded transition-colors ${
-          isCompiler
-            ? 'hover:bg-purple-200/50'
-            : 'hover:bg-slate-300/50'
+          isRemote
+            ? 'hover:bg-cyan-200/50'
+            : isCompiler
+              ? 'hover:bg-purple-200/50'
+              : 'hover:bg-slate-300/50'
         } ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         title="Close tab"
-      >
-        <X size={14} />
-      </button>
-    </div>
-  );
-}
-
-// Remote project tab component (for plans loaded from deployment servers)
-interface RemoteProjectTabProps {
-  tab: RemoteProjectTab;
-  isActive: boolean;
-  onSwitch: (tabId: string) => void;
-  onClose: (tabId: string) => void;
-}
-
-function RemoteTab({ tab, isActive, onSwitch, onClose }: RemoteProjectTabProps) {
-  // Bound tabs (with live updates) get cyan styling, others get violet
-  const isBound = tab.is_bound && tab.run_id;
-  
-  return (
-    <div
-      className={`group flex items-center gap-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-all border-b-2 ${
-        isBound
-          ? isActive
-            ? 'bg-cyan-50 border-cyan-500 text-slate-800 shadow-sm'
-            : 'bg-cyan-100/50 border-transparent text-slate-700 hover:bg-cyan-100 hover:text-slate-800'
-          : isActive
-            ? 'bg-violet-50 border-violet-500 text-slate-800 shadow-sm'
-            : 'bg-violet-100/50 border-transparent text-slate-700 hover:bg-violet-100 hover:text-slate-800'
-      }`}
-      onClick={() => onSwitch(tab.id)}
-    >
-      {/* Icon: Radio for live/bound, Globe for static remote */}
-      {isBound ? (
-        <div className="relative">
-          <Globe size={14} className="text-cyan-600" />
-          {/* Live indicator dot */}
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Live" />
-        </div>
-      ) : (
-        <Globe size={14} className="text-violet-500" />
-      )}
-      
-      {/* Tab name with server indicator */}
-      <span className="text-sm font-medium truncate max-w-[120px]" title={`${tab.plan_name} (${tab.server_name})${isBound ? ' - Live' : ''}`}>
-        {tab.name}
-      </span>
-      
-      {/* Close button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose(tab.id);
-        }}
-        className={`p-0.5 rounded transition-colors ${isBound ? 'hover:bg-cyan-200/50' : 'hover:bg-violet-200/50'} ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-        title="Close remote tab"
       >
         <X size={14} />
       </button>
@@ -137,85 +99,63 @@ export function ProjectTabs({ onOpenProjectPanel }: ProjectTabsProps) {
   const {
     openTabs,
     activeTabId,
-    remoteProjectTabs,
-    activeRemoteTabId,
     isLoading,
     fetchOpenTabs,
-    switchToLocalTab,
-    switchToRemoteTab,
+    switchTab,
     closeTab,
-    closeRemoteTab,
   } = useProjectStore();
   
-  const { clearLoadedRemoteGraph, loadedRemoteGraph } = useDeploymentStore();
+  const { loadedRemoteGraph } = useDeploymentStore();
 
   // Fetch open tabs on mount
   useEffect(() => {
     fetchOpenTabs();
   }, [fetchOpenTabs]);
 
-  // Total tab count (local + remote)
-  const totalTabs = openTabs.length + remoteProjectTabs.length;
+  // Total tab count (unified - includes both local and remote)
+  const totalTabs = openTabs.length;
   
-  // Don't show if no tabs or only one local tab with no remote tabs
-  if (totalTabs === 0) {
-    return null;
-  }
-  if (totalTabs === 1 && remoteProjectTabs.length === 0) {
+  // Don't show if no tabs or only one tab
+  if (totalTabs <= 1) {
     return null;
   }
 
-  // Sort local tabs: read-only (pinned) tabs first
-  const sortedLocalTabs = [...openTabs].sort((a, b) => {
+  // Sort tabs: remote first, then read-only (pinned), then regular
+  const sortedTabs = [...openTabs].sort((a, b) => {
+    // Remote tabs first
+    if (a.is_remote && !b.is_remote) return -1;
+    if (!a.is_remote && b.is_remote) return 1;
+    // Then read-only tabs
     if (a.is_read_only && !b.is_read_only) return -1;
     if (!a.is_read_only && b.is_read_only) return 1;
     return 0;
   });
   
-  // Handle switching to local tab
-  const handleSwitchToLocal = (tabId: string) => {
-    // Clear the remote graph if we're switching away from a remote tab
-    if (loadedRemoteGraph) {
-      useDeploymentStore.getState().set({ loadedRemoteGraph: null });
-    }
-    switchToLocalTab(tabId);
+  // Handle switching tabs
+  const handleSwitch = async (tabId: string) => {
+    await switchTab(tabId);
   };
   
-  // Handle closing remote tab
-  const handleCloseRemote = (tabId: string) => {
-    closeRemoteTab(tabId);
-    // If this was the loaded graph, clear it
-    if (loadedRemoteGraph && `remote:${loadedRemoteGraph.server_id}:${loadedRemoteGraph.plan_id}` === tabId) {
+  // Handle closing tab
+  const handleClose = async (tabId: string) => {
+    // If this is a remote tab and its graph is loaded, clear it
+    const tab = openTabs.find(t => t.id === tabId);
+    if (tab?.is_remote && loadedRemoteGraph) {
       useDeploymentStore.getState().set({ loadedRemoteGraph: null });
     }
+    await closeTab(tabId);
   };
 
   return (
     <div className="bg-slate-200 border-b border-slate-300 px-2 flex items-end gap-0.5">
-      {/* Local project tabs */}
-      {sortedLocalTabs.map((tab) => (
+      {/* All project tabs (unified local + remote) */}
+      {sortedTabs.map((tab) => (
         <ProjectTab
           key={tab.id}
           tab={tab}
-          isActive={tab.id === activeTabId && !activeRemoteTabId}
-          onSwitch={handleSwitchToLocal}
-          onClose={closeTab}
-        />
-      ))}
-      
-      {/* Separator between local and remote tabs */}
-      {openTabs.length > 0 && remoteProjectTabs.length > 0 && (
-        <div className="w-px h-5 bg-slate-400 mx-1 self-center" />
-      )}
-      
-      {/* Remote project tabs */}
-      {remoteProjectTabs.map((tab) => (
-        <RemoteTab
-          key={tab.id}
-          tab={tab}
-          isActive={tab.id === activeRemoteTabId}
-          onSwitch={switchToRemoteTab}
-          onClose={handleCloseRemote}
+          isActive={tab.id === activeTabId}
+          onSwitch={handleSwitch}
+          onClose={handleClose}
         />
       ))}
       

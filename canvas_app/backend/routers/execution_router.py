@@ -1,7 +1,9 @@
 """Execution control endpoints."""
+import asyncio
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, Union
+import logging
 
 from services.execution_service import (
     execution_controller, execution_controller_registry, get_execution_controller,
@@ -15,6 +17,66 @@ from schemas.execution_schemas import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Unified Execution Routing
+# =============================================================================
+# These helpers route execution commands to the appropriate controller based on
+# the active project type (local vs remote). This enables the frontend to use
+# the same API endpoints regardless of whether execution is local or remote.
+
+def _get_active_executor():
+    """
+    Get the appropriate executor for the active project.
+    
+    Returns:
+        Tuple of (executor, is_remote) where executor is either:
+        - The local ExecutionController for local projects
+        - The RemoteProxyExecutor for remote projects
+    """
+    from services.execution.remote_proxy_executor import get_active_remote_proxy
+    
+    # Check if there's an active remote proxy
+    remote_proxy = get_active_remote_proxy()
+    if remote_proxy and remote_proxy.is_connected:
+        return remote_proxy, True
+    
+    # Check if active project is remote (by ID pattern)
+    active_project = project_service.get_active_project()
+    if active_project and active_project.is_remote:
+        # Remote project but no proxy connected - return None
+        logger.warning(f"Remote project {active_project.id} active but no proxy connected")
+        return None, True
+    
+    # Default to local execution controller
+    return execution_controller, False
+
+
+async def _execute_command(command: str, *args, **kwargs):
+    """
+    Execute a command on the appropriate executor (local or remote).
+    
+    This is the unified routing function that enables the frontend to use
+    the same API endpoints for both local and remote execution.
+    """
+    executor, is_remote = _get_active_executor()
+    
+    if executor is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No active executor. For remote projects, connect a proxy first."
+        )
+    
+    method = getattr(executor, command, None)
+    if method is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Executor does not support command: {command}"
+        )
+    
+    return await method(*args, **kwargs)
 
 
 class CommandResponse(BaseModel):
@@ -32,42 +94,126 @@ async def get_execution_state():
 
 @router.post("/start", response_model=CommandResponse)
 async def start_execution():
-    """Start or resume plan execution."""
+    """Start or resume plan execution.
+    
+    This endpoint is unified - it routes to either local or remote
+    execution based on the active project type.
+    
+    For remote projects that haven't started a run yet, this endpoint will:
+    1. Start a run on the remote server (which auto-starts execution)
+    2. Activate the remote proxy to stream events
+    
+    Note: The normal_server's POST /api/runs already starts execution in the
+    background, so we don't need to call start() again - just connect the proxy.
+    """
+    from services.execution.remote_proxy_executor import get_active_remote_proxy, activate_remote_proxy
+    
     try:
-        await execution_controller.start()
+        # Check if we have a remote project without an active proxy
+        active_project = project_service.get_active_project()
+        remote_proxy = get_active_remote_proxy()
+        
+        if active_project and active_project.is_remote and (not remote_proxy or not remote_proxy.is_connected):
+            # Remote project without active proxy - need to start a run first
+            logger.info(f"Starting run for remote project: {active_project.id}")
+            
+            # Get server info from project
+            server_url = active_project.server_url
+            plan_id = active_project.plan_id
+            
+            if not server_url or not plan_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Remote project missing server_url or plan_id"
+                )
+            
+            # Start a run on the remote server
+            # NOTE: normal_server's POST /api/runs automatically starts execution
+            # in the background, so the run will already be running when we connect
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{server_url}/api/runs",
+                    json={"plan_id": plan_id}
+                ) as resp:
+                    if resp.status != 200:
+                        error = await resp.text()
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Failed to start remote run: {error}"
+                        )
+                    run_data = await resp.json()
+                    run_id = run_data.get("run_id")
+            
+            logger.info(f"Remote run started: {run_id}")
+            
+            # Activate the remote proxy to stream events
+            # Don't call start() again - the run is already running!
+            await activate_remote_proxy(
+                server_url=server_url,
+                run_id=run_id,
+                project_id=active_project.id,
+            )
+            
+            logger.info(f"Remote proxy activated for run: {run_id}")
+            
+            # The run is already executing on the remote server
+            # The proxy is now streaming events to the frontend
+            return CommandResponse(success=True, message="Remote execution started")
+        
+        # Normal case: use the unified routing
+        await _execute_command("start")
         return CommandResponse(success=True, message="Execution started")
+    except HTTPException:
+        raise
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.exception(f"Failed to start execution: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/pause", response_model=CommandResponse)
 async def pause_execution():
-    """Pause execution after current inference."""
+    """Pause execution after current inference.
+    
+    This endpoint is unified - works for both local and remote.
+    """
     try:
-        await execution_controller.pause()
+        await _execute_command("pause")
         return CommandResponse(success=True, message="Execution paused")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/resume", response_model=CommandResponse)
 async def resume_execution():
-    """Resume from paused state."""
+    """Resume from paused state.
+    
+    This endpoint is unified - works for both local and remote.
+    """
     try:
-        await execution_controller.resume()
+        await _execute_command("resume")
         return CommandResponse(success=True, message="Execution resumed")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/step", response_model=CommandResponse)
 async def step_execution():
-    """Execute single inference then pause."""
+    """Execute single inference then pause.
+    
+    This endpoint is unified - works for both local and remote.
+    """
     try:
-        await execution_controller.step()
+        await _execute_command("step")
         return CommandResponse(success=True, message="Stepping to next inference")
+    except HTTPException:
+        raise
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -76,10 +222,15 @@ async def step_execution():
 
 @router.post("/stop", response_model=CommandResponse)
 async def stop_execution():
-    """Stop execution."""
+    """Stop execution.
+    
+    This endpoint is unified - works for both local and remote.
+    """
     try:
-        await execution_controller.stop()
+        await _execute_command("stop")
         return CommandResponse(success=True, message="Execution stopped")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -89,10 +240,13 @@ async def restart_execution():
     """Restart execution from the beginning.
     
     Resets all node statuses and allows re-running the plan.
+    This endpoint is unified - works for both local and remote.
     """
     try:
-        await execution_controller.restart()
+        await _execute_command("restart")
         return CommandResponse(success=True, message="Execution reset - ready to run")
+    except HTTPException:
+        raise
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -168,11 +322,32 @@ async def get_logs(
     limit: int = Query(default=100, ge=1, le=1000),
     flow_index: Optional[str] = Query(default=None)
 ):
-    """Get execution logs, optionally filtered by flow_index."""
-    logs = execution_controller.get_logs(limit=limit, flow_index=flow_index)
+    """Get execution logs, optionally filtered by flow_index.
+    
+    Routes to either local or remote executor based on active project.
+    """
+    executor, is_remote = _get_active_executor()
+    
+    if executor is None:
+        return LogsResponse(logs=[], total_count=0)
+    
+    # Get logs - handle both sync and async methods
+    if hasattr(executor, 'get_logs'):
+        if asyncio.iscoroutinefunction(executor.get_logs):
+            logs = await executor.get_logs(limit=limit, flow_index=flow_index)
+        else:
+            logs = executor.get_logs(limit=limit, flow_index=flow_index)
+    else:
+        logs = []
+    
+    # Get total count
+    total_count = len(logs)
+    if hasattr(executor, 'logs') and not is_remote:
+        total_count = len(executor.logs)
+    
     return LogsResponse(
-        logs=[LogEntry(**log) for log in logs],
-        total_count=len(execution_controller.logs)
+        logs=[LogEntry(**log) if isinstance(log, dict) else log for log in logs],
+        total_count=total_count
     )
 
 
@@ -208,6 +383,8 @@ async def get_config():
 async def get_reference_data(concept_name: str):
     """Get reference data for a concept.
     
+    Routes to either local or remote executor based on active project.
+    
     Returns the current tensor data for a concept including:
     - data: The tensor data
     - axes: Axis names
@@ -215,16 +392,30 @@ async def get_reference_data(concept_name: str):
     
     Returns empty response if concept not found or has no reference.
     """
-    ref_data = execution_controller.get_reference_data(concept_name)
+    executor, is_remote = _get_active_executor()
+    
+    empty_response = {
+        "concept_name": concept_name,
+        "has_reference": False,
+        "data": None,
+        "axes": [],
+        "shape": []
+    }
+    
+    if executor is None:
+        return empty_response
+    
+    # Get reference data - handle both sync and async methods
+    if hasattr(executor, 'get_reference_data'):
+        if asyncio.iscoroutinefunction(executor.get_reference_data):
+            ref_data = await executor.get_reference_data(concept_name)
+        else:
+            ref_data = executor.get_reference_data(concept_name)
+    else:
+        ref_data = None
+    
     if ref_data is None:
-        # Return empty response instead of 404 to avoid console noise
-        return {
-            "concept_name": concept_name,
-            "has_reference": False,
-            "data": None,
-            "axes": [],
-            "shape": []
-        }
+        return empty_response
     return ref_data
 
 
@@ -232,15 +423,30 @@ async def get_reference_data(concept_name: str):
 async def get_all_references():
     """Get reference data for all concepts that have references.
     
+    Routes to either local or remote executor based on active project.
+    
     Returns a dict mapping concept_name -> reference_data.
     Useful for batch fetching all computed values.
     """
-    return execution_controller.get_all_reference_data()
+    executor, is_remote = _get_active_executor()
+    
+    if executor is None:
+        return {}
+    
+    # Get all references - handle both sync and async methods
+    if hasattr(executor, 'get_all_reference_data'):
+        if asyncio.iscoroutinefunction(executor.get_all_reference_data):
+            return await executor.get_all_reference_data()
+        else:
+            return executor.get_all_reference_data()
+    return {}
 
 
 @router.get("/concept-statuses")
 async def get_concept_statuses():
     """Get concept statuses directly from the blackboard.
+    
+    Routes to either local or remote executor based on active project.
     
     Returns a dict mapping concept_name -> status ('complete' | 'empty' | etc.)
     This queries the infra layer directly, making it the source of truth
@@ -249,7 +455,18 @@ async def get_concept_statuses():
     This is useful for the frontend to determine if a concept has data
     without needing to maintain parallel state in the canvas app.
     """
-    return execution_controller.get_concept_statuses()
+    executor, is_remote = _get_active_executor()
+    
+    if executor is None:
+        return {}
+    
+    # Get concept statuses - handle both sync and async methods
+    if hasattr(executor, 'get_concept_statuses'):
+        if asyncio.iscoroutinefunction(executor.get_concept_statuses):
+            return await executor.get_concept_statuses()
+        else:
+            return executor.get_concept_statuses()
+    return {}
 
 
 @router.get("/reference/{concept_name}/history")
@@ -433,6 +650,8 @@ class ValueOverrideResponse(BaseModel):
 async def override_value(concept_name: str, request: ValueOverrideRequest):
     """Override a concept's reference value.
     
+    Routes to either local or remote executor based on active project.
+    
     This allows injecting or modifying values at any ground or computed node.
     Optionally triggers re-execution of dependent nodes.
     
@@ -441,12 +660,33 @@ async def override_value(concept_name: str, request: ValueOverrideRequest):
         request.new_value: The new value to set
         request.rerun_dependents: If True, mark dependents as stale and start execution
     """
-    try:
-        result = await execution_controller.override_value(
-            concept_name=concept_name,
-            new_value=request.new_value,
-            rerun_dependents=request.rerun_dependents
+    executor, is_remote = _get_active_executor()
+    
+    if executor is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No active executor. For remote projects, connect a proxy first."
         )
+    
+    if not hasattr(executor, 'override_value'):
+        raise HTTPException(
+            status_code=400,
+            detail="Executor does not support value override"
+        )
+    
+    try:
+        if asyncio.iscoroutinefunction(executor.override_value):
+            result = await executor.override_value(
+                concept_name=concept_name,
+                new_value=request.new_value,
+                rerun_dependents=request.rerun_dependents
+            )
+        else:
+            result = executor.override_value(
+                concept_name=concept_name,
+                new_value=request.new_value,
+                rerun_dependents=request.rerun_dependents
+            )
         return ValueOverrideResponse(**result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -1149,6 +1389,98 @@ async def get_panel_worker_state(panel_id: str):
 
 
 # =============================================================================
+# Worker Control API (Unified control for local and remote workers)
+# =============================================================================
+
+@router.post("/workers/{worker_id}/start")
+async def worker_start(worker_id: str):
+    """Start/resume execution for a worker (local or remote)."""
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    # Check if it's a remote controller
+    if hasattr(controller, 'resume') and callable(controller.resume):
+        await controller.resume()
+    elif hasattr(controller, 'start') and callable(controller.start):
+        await controller.start()
+    else:
+        raise HTTPException(status_code=400, detail=f"Worker {worker_id} does not support start")
+    
+    return {"success": True, "worker_id": worker_id, "action": "start"}
+
+
+@router.post("/workers/{worker_id}/pause")
+async def worker_pause(worker_id: str):
+    """Pause execution for a worker."""
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if hasattr(controller, 'pause') and callable(controller.pause):
+        await controller.pause()
+    else:
+        raise HTTPException(status_code=400, detail=f"Worker {worker_id} does not support pause")
+    
+    return {"success": True, "worker_id": worker_id, "action": "pause"}
+
+
+@router.post("/workers/{worker_id}/resume")
+async def worker_resume(worker_id: str):
+    """Resume execution for a worker."""
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if hasattr(controller, 'resume') and callable(controller.resume):
+        await controller.resume()
+    else:
+        raise HTTPException(status_code=400, detail=f"Worker {worker_id} does not support resume")
+    
+    return {"success": True, "worker_id": worker_id, "action": "resume"}
+
+
+@router.post("/workers/{worker_id}/step")
+async def worker_step(worker_id: str):
+    """Execute one step/inference for a worker."""
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if hasattr(controller, 'step') and callable(controller.step):
+        await controller.step()
+    else:
+        raise HTTPException(status_code=400, detail=f"Worker {worker_id} does not support step")
+    
+    return {"success": True, "worker_id": worker_id, "action": "step"}
+
+
+@router.post("/workers/{worker_id}/stop")
+async def worker_stop(worker_id: str):
+    """Stop execution for a worker."""
+    registry = get_worker_registry()
+    controller = registry.get_controller(worker_id)
+    
+    if not controller:
+        raise HTTPException(status_code=404, detail=f"Worker not found: {worker_id}")
+    
+    if hasattr(controller, 'stop') and callable(controller.stop):
+        await controller.stop()
+    else:
+        raise HTTPException(status_code=400, detail=f"Worker {worker_id} does not support stop")
+    
+    return {"success": True, "worker_id": worker_id, "action": "stop"}
+
+
+# =============================================================================
 # Remote Execution (connect to normal_server)
 # =============================================================================
 
@@ -1318,3 +1650,108 @@ async def get_remote_worker_graph(worker_id: str):
         status_code=404,
         detail="Graph data not available for this remote worker"
     )
+
+
+# =============================================================================
+# Unified Remote Proxy (NEW - Relay Architecture)
+# =============================================================================
+# These endpoints manage the RemoteProxyExecutor which provides a transparent
+# relay between the frontend and a remote normal_server. The frontend uses the
+# same execution API endpoints (start, stop, etc.) and receives events through
+# the same WebSocket - it doesn't need to know if execution is local or remote.
+
+class ActivateRemoteProxyRequest(BaseModel):
+    """Request to activate a remote proxy for unified execution."""
+    server_url: str
+    run_id: str
+    project_id: Optional[str] = None  # Remote project tab ID
+
+
+class RemoteProxyStatusResponse(BaseModel):
+    """Response for remote proxy status."""
+    active: bool
+    connected: bool
+    server_url: Optional[str] = None
+    run_id: Optional[str] = None
+    status: Optional[str] = None
+
+
+@router.post("/remote-proxy/activate")
+async def activate_remote_proxy(request: ActivateRemoteProxyRequest):
+    """
+    Activate the remote proxy executor for unified remote execution.
+    
+    This connects to a remote normal_server run and starts relaying:
+    - Commands: start/stop/pause/step → remote server
+    - Events: SSE from remote → WebSocket to frontend
+    
+    After activation, the standard execution endpoints (POST /start, /stop, etc.)
+    will automatically route to the remote server. The frontend uses the same
+    API and receives events through the same WebSocket.
+    
+    Args:
+        server_url: Base URL of the normal_server
+        run_id: The run ID to connect to
+        project_id: Optional project tab ID for event routing
+    """
+    from services.execution.remote_proxy_executor import activate_remote_proxy
+    
+    try:
+        proxy = await activate_remote_proxy(
+            server_url=request.server_url,
+            run_id=request.run_id,
+            project_id=request.project_id,
+        )
+        
+        return {
+            "success": True,
+            "message": "Remote proxy activated",
+            "server_url": proxy.server_url,
+            "run_id": proxy.run_id,
+            "status": proxy.status.value,
+        }
+        
+    except Exception as e:
+        logger.exception(f"Failed to activate remote proxy: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/remote-proxy/deactivate")
+async def deactivate_remote_proxy_endpoint():
+    """
+    Deactivate the remote proxy executor.
+    
+    Disconnects from the remote server and switches back to local execution.
+    """
+    from services.execution.remote_proxy_executor import deactivate_remote_proxy
+    
+    try:
+        await deactivate_remote_proxy()
+        return {"success": True, "message": "Remote proxy deactivated"}
+    except Exception as e:
+        logger.exception(f"Failed to deactivate remote proxy: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/remote-proxy/status", response_model=RemoteProxyStatusResponse)
+async def get_remote_proxy_status():
+    """
+    Get the current status of the remote proxy executor.
+    """
+    from services.execution.remote_proxy_executor import get_active_remote_proxy
+    
+    proxy = get_active_remote_proxy()
+    
+    if proxy and proxy.is_connected:
+        return RemoteProxyStatusResponse(
+            active=True,
+            connected=True,
+            server_url=proxy.server_url,
+            run_id=proxy.run_id,
+            status=proxy.status.value,
+        )
+    else:
+        return RemoteProxyStatusResponse(
+            active=False,
+            connected=False,
+        )

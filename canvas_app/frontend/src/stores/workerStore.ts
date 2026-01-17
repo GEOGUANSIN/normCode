@@ -10,7 +10,7 @@ import { create } from 'zustand';
 export type WorkerVisibility = 'visible' | 'hidden' | 'minimized';
 
 // Worker categories
-export type WorkerCategory = 'project' | 'assistant' | 'background' | 'ephemeral';
+export type WorkerCategory = 'project' | 'assistant' | 'background' | 'ephemeral' | 'remote';
 
 // Worker execution status
 export type WorkerStatus = 'idle' | 'loading' | 'ready' | 'running' | 'paused' | 'stepping' | 'completed' | 'failed' | 'stopped';

@@ -32,6 +32,7 @@ else:
 
 try:
     from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
 except ImportError:
     print("FastAPI not installed. Run: pip install fastapi uvicorn", file=sys.stderr)
@@ -88,6 +89,16 @@ app = FastAPI(
     description="Execute NormCode plans via REST API",
     version="0.1.0",
     lifespan=lifespan
+)
+
+# CORS middleware - allows canvas_app to connect from different origin
+# This is essential for RemoteProxyExecutor to communicate with this server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include all route modules

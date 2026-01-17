@@ -227,6 +227,14 @@ class OpenProjectInstance(BaseModel):
     repositories_exist: bool = False
     is_active: bool = False  # Whether this is the currently focused tab
     is_read_only: bool = False  # Read-only projects can be viewed and executed, but not modified
+    
+    # Remote project support
+    is_remote: bool = False  # Whether this is a remote project
+    server_id: Optional[str] = None  # Remote server ID (if is_remote)
+    server_name: Optional[str] = None  # Remote server name (if is_remote)
+    server_url: Optional[str] = None  # Remote server URL (if is_remote)
+    plan_id: Optional[str] = None  # Remote plan ID (if is_remote)
+    remote_llm_model: Optional[str] = None  # LLM model for remote execution
 
 
 class OpenProjectsResponse(BaseModel):
@@ -252,3 +260,35 @@ class OpenProjectInTabRequest(BaseModel):
     config_file: Optional[str] = None  # Specific config file
     make_active: bool = True  # Whether to switch to this tab
     is_read_only: bool = False  # Read-only projects can be viewed and executed, but not modified
+
+
+# =============================================================================
+# Remote Project Support
+# =============================================================================
+
+class OpenRemoteProjectRequest(BaseModel):
+    """Request to open a remote project from a deployment server."""
+    server_id: str  # Deployment server ID
+    plan_id: str  # Plan ID on the remote server
+    make_active: bool = True  # Whether to switch to this tab
+    llm_model: Optional[str] = None  # LLM model to use for remote execution
+
+
+class RemoteProjectInstance(BaseModel):
+    """
+    Represents a remote project instance (a tab for a remote plan).
+    Similar to OpenProjectInstance but for remote plans.
+    """
+    id: str  # Unique tab ID (e.g., "remote:{server_id}:{plan_id}")
+    name: str  # Plan name
+    description: Optional[str] = None
+    server_id: str
+    server_name: str
+    server_url: str
+    plan_id: str
+    config: ProjectConfig  # Virtual config created from remote plan info
+    is_loaded: bool = False  # Whether the graph is loaded
+    is_active: bool = False
+    is_remote: bool = True  # Always true for remote projects
+    run_id: Optional[str] = None  # Associated run ID if started
+    worker_id: Optional[str] = None  # Remote proxy worker ID

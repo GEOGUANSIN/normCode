@@ -180,7 +180,12 @@ async def execute_run_with_events(run_state: RunState, orchestrator, total_infer
             # Emit status changes after each inference
             await emit_status_changes()
             
-            # Emit progress update
+            # Update and emit progress
+            run_state.update_progress(
+                completed=completed_count,
+                total=total_inferences,
+                cycle=cycle_count
+            )
             await run_state.emit_event("execution:progress", {
                 "completed_count": completed_count,
                 "total_count": total_inferences,
@@ -278,6 +283,9 @@ async def execute_run(run_state: RunState, llm_override: Optional[str], max_cycl
         
         # Get total inference count for progress tracking
         total_inferences = len(list(orchestrator.waitlist.items))
+        
+        # Initialize progress on run_state
+        run_state.update_progress(completed=0, total=total_inferences, cycle=0)
         
         # Emit initial node statuses (all pending)
         initial_statuses = {}

@@ -23,12 +23,11 @@ import type {
   RemoteResumeResult,
   BoundRemoteRun,
 } from '../types/deployment';
-import { deploymentApi } from '../services/api';
+import { deploymentApi, workerApi } from '../services/api';
 import { useNotificationStore } from './notificationStore';
 import { useGraphStore } from './graphStore';
 import { useProjectStore } from './projectStore';
 import type { GraphData, GraphNode, GraphEdge } from '../types/graph';
-import type { RemoteProjectTab } from '../types/project';
 
 interface DeploymentState {
   // Server management
@@ -496,14 +495,49 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   },
   
   loadRemotePlanOnCanvas: async (serverId, planId) => {
+    /**
+     * Load a remote plan on canvas WITHOUT starting a run.
+     * 
+     * This opens the remote plan as a project tab and displays the graph,
+     * but does NOT start execution. The user can then click "Start" in the
+     * ControlPanel when ready.
+     * 
+     * Flow:
+     * 1. Open remote project as a tab
+     * 2. Fetch and display the graph
+     * 3. Store remote project metadata (server_url, plan_id) for later execution
+     * 
+     * When the user clicks "Start" in ControlPanel, the unified execution
+     * system will detect it's a remote project and handle accordingly.
+     */
     const { addNotification } = useNotificationStore.getState();
     const { setGraphData } = useGraphStore.getState();
     const { servers } = get();
-    const projectStore = useProjectStore.getState();
     set({ isLoading: true, error: null });
     
     try {
-      // Fetch canvas-ready graph (nodes + edges) from remote server
+      const server = servers.find(s => s.id === serverId);
+      if (!server) {
+        throw new Error(`Server not found: ${serverId}`);
+      }
+      
+      // STEP 1: Open the remote project as a regular tab (unified with local projects)
+      console.log(`[Remote] Opening remote project: ${planId} on ${server.name}`);
+      const { projectApi } = await import('../services/api');
+      
+      const remoteProject = await projectApi.openRemote({
+        server_id: serverId,
+        plan_id: planId,
+        make_active: true,
+      });
+      
+      console.log(`[Remote] Opened remote project as tab: ${remoteProject.name} (id: ${remoteProject.id})`);
+      
+      // STEP 2: Sync tabs from backend to get the updated tab list
+      await useProjectStore.getState().fetchOpenTabs();
+      
+      // STEP 3: Fetch canvas-ready graph (nodes + edges) from remote server
+      // This is just for display - no run is started yet
       const canvasGraph = await deploymentApi.getRemoteCanvasGraph(serverId, planId);
       
       // Convert remote graph format to GraphData format for the canvas
@@ -522,36 +556,21 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
       // Set the graph in graphStore for canvas rendering
       setGraphData(graphData);
       
-      // Store the loaded remote graph metadata and cache it
-      const tabId = `remote:${serverId}:${planId}`;
+      // STEP 4: Store the remote project info for later use
+      // When user clicks "Start", the execution system will use this info
+      // to start a run and activate the remote proxy
+      const cacheKey = `remote:${serverId}:${planId}`;
       set((state) => ({ 
         loadedRemoteGraph: canvasGraph, 
-        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [tabId]: canvasGraph },
+        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [cacheKey]: canvasGraph },
+        // Don't set activeBoundRunId - no run is started yet
         isLoading: false,
       }));
       
-      // Create a remote project tab
-      const server = servers.find(s => s.id === serverId);
-      const remoteTab: RemoteProjectTab = {
-        id: `remote:${serverId}:${planId}`,
-        name: canvasGraph.plan_name,
-        server_id: serverId,
-        server_name: server?.name || 'Unknown Server',
-        plan_id: planId,
-        plan_name: canvasGraph.plan_name,
-        is_active: true,
-        is_loaded: true,
-        node_count: canvasGraph.nodes.length,
-        edge_count: canvasGraph.edges.length,
-      };
-      
-      // Add the remote tab to project store
-      projectStore.addRemoteTab(remoteTab);
-      
       addNotification({
         type: 'success',
-        title: 'Remote Plan Loaded',
-        message: `Loaded "${canvasGraph.plan_name}" from ${server?.name || 'remote server'}`,
+        title: 'Remote Project Loaded',
+        message: `Opened "${canvasGraph.plan_name}" from ${server.name}. Click Start to run.`,
         duration: 4000,
       });
       
@@ -575,14 +594,18 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   loadRemoteRunOnCanvas: async (serverId, runId, planId, planName, runStatus) => {
     const { addNotification } = useNotificationStore.getState();
     const { setGraphData } = useGraphStore.getState();
-    const { servers, bindRemoteRun, fetchBoundRuns, activeRuns } = get();
-    const projectStore = useProjectStore.getState();
+    const { servers, activeRuns } = get();
     set({ isLoading: true, error: null });
     
     // Check if run is active (can be bound for live updates)
     const isActiveRun = runStatus === 'running' || runStatus === 'paused' || runStatus === 'pending';
     
     try {
+      const server = servers.find(s => s.id === serverId);
+      if (!server) {
+        throw new Error(`Server not found: ${serverId}`);
+      }
+      
       // 1. Fetch canvas-ready graph (nodes + edges) from remote server
       const canvasGraph = await deploymentApi.getRemoteCanvasGraph(serverId, planId);
       
@@ -602,82 +625,56 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
       // Set the graph in graphStore for canvas rendering
       setGraphData(graphData);
       
-      // 2. Only bind for live event streaming if run is active
+      // 2. UNIFIED APPROACH: Register remote worker via WorkerRegistry
+      // This creates a RemoteExecutionController that handles all remote communication
+      // The worker will show up in WorkersPanel and ControlPanel works automatically
+      let workerId: string | null = null;
       let bindSuccess = false;
+      
       if (isActiveRun) {
-        bindSuccess = await bindRemoteRun(serverId, runId, planId, planName);
+        try {
+          // Register the remote worker with the backend's WorkerRegistry
+          const result = await workerApi.connectRemote({
+            server_url: server.url,
+            run_id: runId,
+            panel_id: 'main',  // Bind to main panel
+            panel_type: 'main',
+          });
+          
+          workerId = result.worker_id;
+          bindSuccess = result.success;
+          
+          console.log(`[Remote] Registered worker: ${workerId}`);
+        } catch (err) {
+          console.warn('[Remote] Failed to register remote worker:', err);
+          bindSuccess = false;
+        }
       }
       
       // 3. Store the loaded remote graph metadata and cache it
-      const tabId = `remote:${serverId}:${planId}:${runId}`;
+      const cacheKey = `remote:${serverId}:${planId}:${runId}`;
+      
       set((state) => ({ 
         loadedRemoteGraph: canvasGraph, 
-        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [tabId]: canvasGraph },
+        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [cacheKey]: canvasGraph },
         activeBoundRunId: runId,
         isLoading: false,
       }));
       
-      // 4. Create a remote project tab with run binding
-      const server = servers.find(s => s.id === serverId);
-      const remoteTab: RemoteProjectTab = {
-        id: tabId,
-        name: planName || canvasGraph.plan_name,
-        server_id: serverId,
-        server_name: server?.name || 'Unknown Server',
-        plan_id: planId,
-        plan_name: canvasGraph.plan_name,
-        is_active: true,
-        is_loaded: true,
-        node_count: canvasGraph.nodes.length,
-        edge_count: canvasGraph.edges.length,
-        run_id: runId,
-        is_bound: bindSuccess,
-      };
-      
-      // Add the remote tab to project store
-      projectStore.addRemoteTab(remoteTab);
-      
-      // Sync initial execution state to executionStore
-      const { useExecutionStore } = await import('./executionStore');
-      const execStore = useExecutionStore.getState();
-      
-      if (isActiveRun && bindSuccess) {
-        // Refresh bound runs list for active runs
-        await fetchBoundRuns();
-        
-        // Sync from bound run
-        const { boundRemoteRuns } = get();
-        const boundRun = boundRemoteRuns.find(r => r.run_id === runId);
-        if (boundRun) {
-          const statusMap: Record<string, string> = {
-            'connecting': 'idle',
-            'connected': 'running',
-            'running': 'running',
-            'paused': 'paused',
-            'stepping': 'stepping',
-            'completed': 'completed',
-            'failed': 'failed',
-            'stopped': 'idle',
-            'cancelled': 'idle',
-            'error': 'failed',
-          };
-          const execStatus = statusMap[boundRun.status] || 'idle';
-          execStore.setStatus(execStatus as any);
-          execStore.setProgress(
-            boundRun.completed_count,
-            boundRun.total_count,
-            boundRun.cycle_count
-          );
-        }
-        
+      // 4. Notify success - NO SPECIAL REMOTE TAB NEEDED
+      // The remote proxy worker shows in WorkersPanel, ControlPanel uses worker API
+      if (isActiveRun && bindSuccess && workerId) {
         addNotification({
           type: 'success',
-          title: 'Remote Run Loaded',
-          message: `Loaded "${planName}" with live updates from ${server?.name || 'remote server'}`,
+          title: 'Remote Run Connected',
+          message: `Connected to "${planName}" on ${server.name} - live control via remote proxy worker`,
           duration: 4000,
         });
-      } else {
-        // For completed/failed runs, sync from activeRuns list
+      } else if (!isActiveRun) {
+        // For completed/failed runs, sync from activeRuns list to executionStore
+        const { useExecutionStore } = await import('./executionStore');
+        const execStore = useExecutionStore.getState();
+        
         const run = activeRuns.find(r => r.run_id === runId);
         if (run) {
           const statusMap: Record<string, string> = {
@@ -696,7 +693,6 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
             run.progress?.cycle_count || 0
           );
         } else if (runStatus) {
-          // Fallback: use the passed runStatus
           const statusMap: Record<string, string> = {
             'running': 'running',
             'paused': 'paused',

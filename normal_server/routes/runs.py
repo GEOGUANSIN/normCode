@@ -11,7 +11,7 @@ import logging
 import sqlite3
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 
@@ -618,36 +618,227 @@ async def get_node_statuses(run_id: str):
     )
 
 
+@router.get("/{run_id}/concept-statuses")
+async def get_concept_statuses(run_id: str):
+    """
+    Get status for all concepts (complete, pending, stale).
+    
+    Returns a mapping of concept_name -> status, useful for
+    showing which concepts have values vs waiting for execution.
+    
+    This queries the orchestrator's blackboard for the source of truth.
+    """
+    if run_id not in active_runs:
+        raise HTTPException(404, f"Run not found: {run_id}")
+    
+    run = active_runs[run_id]
+    
+    if not run.orchestrator or not run.orchestrator.blackboard:
+        raise HTTPException(400, "Orchestrator not initialized")
+    
+    # Get concept statuses from blackboard
+    concept_statuses = {}
+    blackboard = run.orchestrator.blackboard
+    concept_repo = run.orchestrator.concept_repo if run.orchestrator else None
+    
+    # Get all concepts from concept repo
+    all_concepts = set()
+    if concept_repo and hasattr(concept_repo, 'concepts'):
+        for concept_name in concept_repo.concepts.keys():
+            all_concepts.add(concept_name)
+    
+    # Check blackboard for each concept
+    for concept_name in all_concepts:
+        # Check if concept has reference data
+        has_reference = False
+        if concept_repo and hasattr(concept_repo, 'has_reference'):
+            has_reference = concept_repo.has_reference(concept_name)
+        
+        # Check item statuses for this concept from blackboard
+        item_statuses = []
+        if hasattr(blackboard, 'items'):
+            for item in blackboard.items.values():
+                if hasattr(item, 'concept_name') and item.concept_name == concept_name:
+                    if hasattr(item, 'status'):
+                        item_statuses.append(item.status)
+        
+        # Determine overall status
+        if has_reference:
+            concept_statuses[concept_name] = "complete"
+        elif any(s == "complete" for s in item_statuses):
+            concept_statuses[concept_name] = "complete"
+        elif any(s == "stale" for s in item_statuses):
+            concept_statuses[concept_name] = "stale"
+        else:
+            concept_statuses[concept_name] = "pending"
+    
+    complete_count = sum(1 for s in concept_statuses.values() if s == "complete")
+    pending_count = sum(1 for s in concept_statuses.values() if s == "pending")
+    
+    return {
+        "run_id": run_id,
+        "concept_statuses": concept_statuses,
+        "total_complete": complete_count,
+        "total_pending": pending_count,
+        "total_stale": len(concept_statuses) - complete_count - pending_count,
+    }
+
+
+def _get_historical_reference_data(run_id: str, concept_name: str) -> Optional[Dict[str, Any]]:
+    """Get reference data for a concept from a historical run's checkpoint."""
+    cfg = get_config()
+    db_path = cfg.runs_dir / run_id / "run.db"
+    
+    if not db_path.exists():
+        return None
+    
+    try:
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get the latest checkpoint
+        cursor.execute("""
+            SELECT state_json FROM checkpoints 
+            WHERE run_id = ?
+            ORDER BY cycle DESC, inference_count DESC
+            LIMIT 1
+        """, (run_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return None
+        
+        state = json.loads(row["state_json"])
+        completed_concepts = state.get("completed_concepts", {})
+        
+        if concept_name not in completed_concepts:
+            return {"concept_name": concept_name, "has_reference": False}
+        
+        data = completed_concepts[concept_name]
+        if isinstance(data, dict):
+            return {
+                "concept_name": concept_name,
+                "has_reference": True,
+                "data": data.get("tensor"),
+                "shape": data.get("shape", []),
+                "axes": data.get("axes", []),
+            }
+        else:
+            return {
+                "concept_name": concept_name,
+                "has_reference": True,
+                "data": data,
+                "shape": [],
+                "axes": [],
+            }
+    except Exception as e:
+        logging.warning(f"Failed to get historical reference for {concept_name}: {e}")
+        return None
+
+
+def _get_all_historical_references(run_id: str) -> Dict[str, Dict[str, Any]]:
+    """Get all reference data from a historical run's checkpoint."""
+    cfg = get_config()
+    db_path = cfg.runs_dir / run_id / "run.db"
+    
+    if not db_path.exists():
+        return {}
+    
+    try:
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get the latest checkpoint
+        cursor.execute("""
+            SELECT state_json FROM checkpoints 
+            WHERE run_id = ?
+            ORDER BY cycle DESC, inference_count DESC
+            LIMIT 1
+        """, (run_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return {}
+        
+        state = json.loads(row["state_json"])
+        completed_concepts = state.get("completed_concepts", {})
+        
+        result = {}
+        for name, data in completed_concepts.items():
+            if isinstance(data, dict):
+                result[name] = {
+                    "has_reference": True,
+                    "data": data.get("tensor"),
+                    "shape": data.get("shape", []),
+                    "axes": data.get("axes", []),
+                }
+            else:
+                result[name] = {
+                    "has_reference": True,
+                    "data": data,
+                    "shape": [],
+                    "axes": [],
+                }
+        
+        return result
+    except Exception as e:
+        logging.warning(f"Failed to get all historical references: {e}")
+        return {}
+
+
 @router.get("/{run_id}/reference/{concept_name}")
 async def get_reference_data(run_id: str, concept_name: str):
     """
     Get reference data for a specific concept.
     
     Returns the current computed value including data, shape, and axes.
+    Supports both active runs (from orchestrator) and historical runs (from database).
     """
-    if run_id not in active_runs:
-        raise HTTPException(404, f"Run not found: {run_id}")
+    # Check active runs first
+    if run_id in active_runs:
+        run = active_runs[run_id]
+        ref_data = run.get_reference_data(concept_name)
+        
+        if ref_data is None:
+            return ReferenceDataResponse(
+                concept_name=concept_name,
+                has_reference=False
+            )
+        
+        return ReferenceDataResponse(**ref_data)
     
-    run = active_runs[run_id]
-    ref_data = run.get_reference_data(concept_name)
+    # Try historical run from database
+    ref_data = _get_historical_reference_data(run_id, concept_name)
+    if ref_data:
+        return ReferenceDataResponse(**ref_data)
     
-    if ref_data is None:
-        return ReferenceDataResponse(
-            concept_name=concept_name,
-            has_reference=False
-        )
-    
-    return ReferenceDataResponse(**ref_data)
+    raise HTTPException(404, f"Run not found: {run_id}")
 
 
 @router.get("/{run_id}/references")
 async def get_all_references(run_id: str):
-    """Get reference data for all concepts that have values."""
-    if run_id not in active_runs:
-        raise HTTPException(404, f"Run not found: {run_id}")
+    """Get reference data for all concepts that have values.
     
-    run = active_runs[run_id]
-    return run.get_all_reference_data()
+    Supports both active runs (from orchestrator) and historical runs (from database).
+    """
+    # Check active runs first
+    if run_id in active_runs:
+        run = active_runs[run_id]
+        return run.get_all_reference_data()
+    
+    # Try historical run from database
+    cfg = get_config()
+    db_path = cfg.runs_dir / run_id / "run.db"
+    if db_path.exists():
+        return _get_all_historical_references(run_id)
+    
+    raise HTTPException(404, f"Run not found: {run_id}")
 
 
 @router.post("/{run_id}/override/{concept_name}")

@@ -10,7 +10,7 @@ import {
   Workflow, RefreshCw, ChevronRight, ChevronDown,
   Play, Pause, Square, EyeOff, Link2,
   Loader2, Check, X, Clock, AlertCircle, Zap,
-  Monitor, MessageSquare, Layout, Bug, Layers
+  Monitor, MessageSquare, Layout, Bug, Layers, Globe
 } from 'lucide-react';
 import { 
   useWorkerStore, 
@@ -71,6 +71,8 @@ function getCategoryIcon(category: WorkerCategory) {
       return <Layers size={12} className="text-slate-500" />;
     case 'ephemeral':
       return <Zap size={12} className="text-amber-500" />;
+    case 'remote':
+      return <Globe size={12} className="text-cyan-500" />;
     default:
       return <Workflow size={12} className="text-slate-400" />;
   }
@@ -82,6 +84,7 @@ function getCategoryLabel(category: WorkerCategory): string {
     case 'assistant': return 'Assistant';
     case 'background': return 'Background';
     case 'ephemeral': return 'Ephemeral';
+    case 'remote': return 'Remote';
     default: return category;
   }
 }
@@ -440,6 +443,7 @@ export function WorkersPanel() {
   const assistantWorkers = filteredWorkerList.filter(w => w.state.category === 'assistant');
   const backgroundWorkers = filteredWorkerList.filter(w => w.state.category === 'background');
   const ephemeralWorkers = filteredWorkerList.filter(w => w.state.category === 'ephemeral');
+  const remoteWorkers = filteredWorkerList.filter(w => w.state.category === 'remote');
   
   const runningCount = filteredWorkerList.filter(w => w.state.status === 'running').length;
   // Count hidden workers that are actually meaningful (not filtered out empty shells)
@@ -560,6 +564,17 @@ export function WorkersPanel() {
           <PlansByCategory
             category="ephemeral"
             workers={ephemeralWorkers}
+            selectedWorkerId={selectedWorkerId}
+            onSelectWorker={setSelectedWorkerId}
+            onBindPanel={handleBindPanel}
+          />
+        )}
+        
+        {/* Remote workers - proxy connections to remote servers */}
+        {remoteWorkers.length > 0 && (
+          <PlansByCategory
+            category="remote"
+            workers={remoteWorkers}
             selectedWorkerId={selectedWorkerId}
             onSelectWorker={setSelectedWorkerId}
             onBindPanel={handleBindPanel}

@@ -29,7 +29,13 @@ def discover_plans(plans_dir: Path) -> Dict[str, PlanConfig]:
             logging.warning(f"Failed to load plan config {config_file}: {e}")
     
     # Also check for manifest.json files (unpacked packages)
+    # Skip manifest.json files inside "provisions" folders - those are provision mappings, not plan manifests
     for manifest_file in plans_dir.rglob("manifest.json"):
+        # Skip if this manifest is inside a provisions folder
+        if "provisions" in manifest_file.parts:
+            logging.debug(f"Skipping provisions manifest: {manifest_file}")
+            continue
+        
         try:
             plan_config = PlanConfig(manifest_file)
             plans[plan_config.id] = plan_config

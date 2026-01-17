@@ -48,6 +48,11 @@ class RunState:
         self._run_to_target: Optional[str] = None  # Run until this flow_index
         self.current_inference: Optional[str] = None  # Currently executing inference
         
+        # Progress tracking (cached for easy access)
+        self._completed_count: int = 0
+        self._total_count: int = 0
+        self._cycle_count: int = 0
+        
         # Execution logs for debugging
         self.logs: List[Dict[str, Any]] = []
     
@@ -117,6 +122,61 @@ class RunState:
     def set_node_status(self, flow_index: str, status: str):
         """Update node status and prepare for emission."""
         self._node_statuses[flow_index] = status
+    
+    # =========================================================================
+    # Progress Properties (for SSE streaming)
+    # =========================================================================
+    
+    @property
+    def completed_count(self) -> int:
+        """Get count of completed inferences."""
+        return self._completed_count
+    
+    @property
+    def total_count(self) -> int:
+        """Get total count of inferences."""
+        return self._total_count
+    
+    @property
+    def cycle_count(self) -> int:
+        """Get current cycle count."""
+        return self._cycle_count
+    
+    def update_progress(self, completed: int = None, total: int = None, cycle: int = None):
+        """Update progress counters."""
+        if completed is not None:
+            self._completed_count = completed
+        if total is not None:
+            self._total_count = total
+        if cycle is not None:
+            self._cycle_count = cycle
+    
+    def sync_progress_from_orchestrator(self):
+        """Sync progress from the orchestrator if available."""
+        if not self.orchestrator:
+            return
+        
+        try:
+            bb = self.orchestrator.blackboard
+            tracker = getattr(self.orchestrator, 'tracker', None)
+            
+            # Count completed vs total inferences
+            completed = 0
+            total = 0
+            
+            for item in self.orchestrator.waitlist.items:
+                flow_index = item.inference_entry.flow_info.get('flow_index', '')
+                if flow_index:
+                    total += 1
+                    status = bb.get_item_status(flow_index)
+                    if status == 'completed':
+                        completed += 1
+            
+            self._completed_count = completed
+            self._total_count = total
+            self._cycle_count = tracker.cycle_count if tracker else 0
+        except Exception as e:
+            logger.debug(f"Could not sync progress from orchestrator: {e}")
     
     # =========================================================================
     # Breakpoint Management
@@ -235,33 +295,15 @@ class RunState:
     
     def to_status(self) -> RunStatus:
         """Convert to RunStatus response model."""
-        # Extract progress from orchestrator if available
-        progress = None
-        if self.orchestrator:
-            try:
-                bb = self.orchestrator.blackboard
-                tracker = getattr(self.orchestrator, 'tracker', None)
-                
-                # Count completed vs total inferences
-                completed = 0
-                total = 0
-                
-                for item in self.orchestrator.waitlist.items:
-                    flow_index = item.inference_entry.flow_info.get('flow_index', '')
-                    if flow_index:
-                        total += 1
-                        status = bb.get_item_status(flow_index)
-                        if status == 'completed':
-                            completed += 1
-                
-                progress = {
-                    "completed_count": completed,
-                    "total_count": total,
-                    "cycle_count": tracker.cycle_count if tracker else 0,
-                    "current_inference": self.current_inference,
-                }
-            except Exception as e:
-                logger.debug(f"Could not extract progress: {e}")
+        # Sync progress from orchestrator
+        self.sync_progress_from_orchestrator()
+        
+        progress = {
+            "completed_count": self._completed_count,
+            "total_count": self._total_count,
+            "cycle_count": self._cycle_count,
+            "current_inference": self.current_inference,
+        }
         
         return RunStatus(
             run_id=self.run_id,
