@@ -1067,6 +1067,21 @@ import type {
   StartRemoteRunRequest,
   BuildServerRequest,
   BuildServerResponse,
+  // Remote graph & project loading
+  RemotePlanGraph,
+  RemoteCanvasGraph,
+  RemotePlanFile,
+  // Remote run database inspection
+  RemoteRunDbOverview,
+  RemoteRunExecutions,
+  RemoteExecutionLogs,
+  RemoteRunStatistics,
+  RemoteRunCheckpoints,
+  RemoteCheckpointState,
+  RemoteBlackboardSummary,
+  RemoteCompletedConcepts,
+  RemoteResumeResult,
+  BoundRemoteRun,
 } from '../types/deployment';
 
 export const deploymentApi = {
@@ -1130,6 +1145,238 @@ export const deploymentApi = {
   // Server building
   buildServer: (request: BuildServerRequest = {}): Promise<BuildServerResponse> =>
     fetchJson(`${API_BASE}/deployment/build-server`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  
+  // =========================================================================
+  // Remote Graph & Project Loading
+  // =========================================================================
+  
+  /** Get the full graph data (concepts + inferences) for a remote plan */
+  getRemotePlanGraph: (serverId: string, planId: string): Promise<RemotePlanGraph> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/plans/${encodeURIComponent(planId)}/graph`),
+  
+  /** Get the canvas-ready graph (nodes + edges) for a remote plan */
+  getRemoteCanvasGraph: (serverId: string, planId: string): Promise<RemoteCanvasGraph> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/plans/${encodeURIComponent(planId)}/canvas-graph`),
+  
+  /** Get a specific file from a remote plan's directory */
+  getRemotePlanFile: (serverId: string, planId: string, filePath: string): Promise<RemotePlanFile> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/plans/${encodeURIComponent(planId)}/files/${encodeURIComponent(filePath)}`),
+  
+  /** List all runs on a remote server (active + historical) */
+  listRemoteRuns: (serverId: string, includeHistorical: boolean = true): Promise<RemoteRunStatus[]> =>
+    fetchJson(`${API_BASE}/deployment/servers/${encodeURIComponent(serverId)}/runs?include_historical=${includeHistorical}`),
+  
+  // =========================================================================
+  // Remote Run Database Inspection
+  // =========================================================================
+  
+  /** Get database overview for a remote run */
+  getRemoteRunDbOverview: (serverId: string, runId: string): Promise<RemoteRunDbOverview> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/overview`),
+  
+  /** Get execution history for a remote run */
+  getRemoteRunExecutions: (
+    serverId: string, 
+    runId: string, 
+    options: { includeLogs?: boolean; limit?: number; offset?: number } = {}
+  ): Promise<RemoteRunExecutions> => {
+    const params = new URLSearchParams();
+    if (options.includeLogs) params.append('include_logs', 'true');
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.offset) params.append('offset', options.offset.toString());
+    const queryString = params.toString();
+    return fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/executions${queryString ? '?' + queryString : ''}`);
+  },
+  
+  /** Get logs for a specific execution in a remote run */
+  getRemoteExecutionLogs: (serverId: string, runId: string, executionId: number): Promise<RemoteExecutionLogs> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/executions/${executionId}/logs`),
+  
+  /** Get statistics for a remote run */
+  getRemoteRunStatistics: (serverId: string, runId: string): Promise<RemoteRunStatistics> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/statistics`),
+  
+  /** List checkpoints for a remote run */
+  listRemoteRunCheckpoints: (serverId: string, runId: string): Promise<RemoteRunCheckpoints> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/checkpoints`),
+  
+  /** Get checkpoint state for a remote run */
+  getRemoteCheckpointState: (
+    serverId: string, 
+    runId: string, 
+    cycle: number, 
+    inferenceCount?: number
+  ): Promise<RemoteCheckpointState> => {
+    const params = inferenceCount !== undefined ? `?inference_count=${inferenceCount}` : '';
+    return fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/checkpoints/${cycle}${params}`);
+  },
+  
+  /** Get blackboard summary for a remote run */
+  getRemoteBlackboardSummary: (serverId: string, runId: string, cycle?: number): Promise<RemoteBlackboardSummary> => {
+    const params = cycle !== undefined ? `?cycle=${cycle}` : '';
+    return fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/blackboard${params}`);
+  },
+  
+  /** Get completed concepts for a remote run */
+  getRemoteCompletedConcepts: (serverId: string, runId: string, cycle?: number): Promise<RemoteCompletedConcepts> => {
+    const params = cycle !== undefined ? `?cycle=${cycle}` : '';
+    return fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/db/concepts${params}`);
+  },
+  
+  /** Resume a run from a checkpoint on a remote server */
+  resumeRemoteRun: (
+    serverId: string,
+    runId: string,
+    options: { cycle?: number; inferenceCount?: number; llmModel?: string; fork?: boolean } = {}
+  ): Promise<RemoteResumeResult> => {
+    const params = new URLSearchParams();
+    if (options.cycle !== undefined) params.append('cycle', options.cycle.toString());
+    if (options.inferenceCount !== undefined) params.append('inference_count', options.inferenceCount.toString());
+    if (options.llmModel) params.append('llm_model', options.llmModel);
+    if (options.fork) params.append('fork', 'true');
+    const queryString = params.toString();
+    return fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/resume${queryString ? '?' + queryString : ''}`, {
+      method: 'POST',
+    });
+  },
+  
+  // =========================================================================
+  // Remote Run Binding (Mirror remote execution to local canvas)
+  // =========================================================================
+  
+  /** Bind a remote run to the local canvas for real-time event streaming */
+  bindRemoteRun: (
+    serverId: string,
+    runId: string,
+    planId: string = "",
+    planName: string = ""
+  ): Promise<{ status: string; run_id: string; server_id: string; message: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/bind?plan_id=${encodeURIComponent(planId)}&plan_name=${encodeURIComponent(planName)}`, {
+      method: 'POST',
+    }),
+  
+  /** Unbind a remote run from the local canvas */
+  unbindRemoteRun: (serverId: string, runId: string): Promise<{ status: string; run_id: string; server_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/unbind`, {
+      method: 'POST',
+    }),
+  
+  /** List all remote runs currently bound to the canvas */
+  listBoundRuns: (): Promise<{ bound_runs: BoundRemoteRun[] }> =>
+    fetchJson(`${API_BASE}/deployment/bound-runs`),
+  
+  // =========================================================================
+  // Remote Execution Control
+  // =========================================================================
+  
+  /** Pause a running remote execution */
+  pauseRemoteRun: (serverId: string, runId: string): Promise<{ status: string; run_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/pause`, {
+      method: 'POST',
+    }),
+  
+  /** Resume a paused remote execution */
+  continueRemoteRun: (serverId: string, runId: string): Promise<{ status: string; run_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/continue`, {
+      method: 'POST',
+    }),
+  
+  /** Execute one inference on a remote run then pause */
+  stepRemoteRun: (serverId: string, runId: string): Promise<{ status: string; run_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/step`, {
+      method: 'POST',
+    }),
+  
+  /** Stop a remote execution gracefully */
+  stopRemoteRun: (serverId: string, runId: string): Promise<{ status: string; run_id: string }> =>
+    fetchJson(`${API_BASE}/deployment/runs/${encodeURIComponent(serverId)}/${encodeURIComponent(runId)}/stop`, {
+      method: 'POST',
+    }),
+};
+
+// =============================================================================
+// Portable Project API - Export/Import projects as portable archives
+// =============================================================================
+
+import type {
+  ExportOptions,
+  ImportOptions,
+  ExportResult,
+  ImportResult,
+  PortableProjectInfo,
+  RunInfoForExport,
+  ExportListItem,
+  QuickExportRequest,
+  QuickImportRequest,
+} from '../types/portable';
+
+export const portableApi = {
+  /**
+   * Export a project as a portable archive.
+   * Creates a self-contained archive with project, database, and run history.
+   */
+  exportProject: (projectId?: string, options?: ExportOptions): Promise<ExportResult> =>
+    fetchJson(`${API_BASE}/portable/export`, {
+      method: 'POST',
+      body: JSON.stringify({
+        project_id: projectId,
+        options: options || {},
+      }),
+    }),
+
+  /**
+   * List available runs for selective export.
+   */
+  listRunsForExport: (projectId?: string): Promise<RunInfoForExport[]> =>
+    fetchJson(`${API_BASE}/portable/export/runs`, {
+      method: 'POST',
+      body: JSON.stringify({ project_id: projectId }),
+    }),
+
+  /**
+   * List available exported archives.
+   */
+  listExports: (): Promise<{ exports: ExportListItem[] }> =>
+    fetchJson(`${API_BASE}/portable/exports`),
+
+  /**
+   * Preview a portable project archive before importing.
+   */
+  previewImport: (archivePath: string): Promise<PortableProjectInfo> =>
+    fetchJson(`${API_BASE}/portable/import/preview`, {
+      method: 'POST',
+      body: JSON.stringify({ archive_path: archivePath }),
+    }),
+
+  /**
+   * Import a portable project archive.
+   */
+  importProject: (archivePath: string, options: ImportOptions): Promise<ImportResult> =>
+    fetchJson(`${API_BASE}/portable/import`, {
+      method: 'POST',
+      body: JSON.stringify({
+        archive_path: archivePath,
+        options,
+      }),
+    }),
+
+  /**
+   * Quick export with sensible defaults.
+   */
+  quickExport: (request: QuickExportRequest): Promise<ExportResult> =>
+    fetchJson(`${API_BASE}/portable/quick-export`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+
+  /**
+   * Quick import with sensible defaults.
+   */
+  quickImport: (request: QuickImportRequest): Promise<ImportResult> =>
+    fetchJson(`${API_BASE}/portable/quick-import`, {
       method: 'POST',
       body: JSON.stringify(request),
     }),

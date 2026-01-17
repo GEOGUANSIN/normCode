@@ -29,6 +29,7 @@ import {
   FolderOpen,
   FileArchive,
   Copy,
+  LayoutGrid,
 } from 'lucide-react';
 import { useDeploymentStore } from '../../stores/deploymentStore';
 import { useProjectStore } from '../../stores/projectStore';
@@ -69,6 +70,10 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
     startPolling,
     stopPolling,
     buildServer,
+    loadRemotePlanOnCanvas,
+    loadRemoteRunOnCanvas,
+    bindRemoteRun,
+    boundRemoteRuns,
     setSelectedServerId,
     setActiveTab,
     setError,
@@ -205,6 +210,17 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
             <Wrench className="w-3.5 h-3.5 inline mr-1.5" />
             Build Server
           </button>
+          <button
+            onClick={() => setActiveTab('inspect')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'inspect'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 bg-white'
+                : 'text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5 inline mr-1.5" />
+            Remote Inspect
+          </button>
         </div>
 
         {/* Error display */}
@@ -279,6 +295,11 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
               onFetchResult={fetchRunResult}
               onStartPolling={startPolling}
               onStopPolling={stopPolling}
+              onLoadOnCanvas={loadRemotePlanOnCanvas}
+              onLoadRunOnCanvas={loadRemoteRunOnCanvas}
+              onBindRun={bindRemoteRun}
+              boundRunIds={boundRemoteRuns.map(r => r.run_id)}
+              onClose={onClose}
             />
           )}
           
@@ -287,6 +308,16 @@ export function DeploymentPanel({ isOpen, onClose }: DeploymentPanelProps) {
               isBuilding={isBuilding}
               lastBuildResult={lastBuildResult}
               onBuildServer={buildServer}
+            />
+          )}
+          
+          {activeTab === 'inspect' && (
+            <InspectTab
+              servers={servers}
+              selectedServerId={selectedServerId}
+              serverHealth={serverHealth}
+              isLoading={isLoading}
+              onSelectServer={setSelectedServerId}
             />
           )}
         </div>
@@ -761,6 +792,11 @@ interface RunsTabProps {
   onFetchResult: (serverId: string, runId: string) => Promise<RemoteRunResult | null>;
   onStartPolling: () => void;
   onStopPolling: () => void;
+  onLoadOnCanvas: (serverId: string, planId: string) => Promise<boolean>;
+  onLoadRunOnCanvas: (serverId: string, runId: string, planId: string, planName: string, runStatus?: string) => Promise<boolean>;
+  onBindRun: (serverId: string, runId: string, planId: string, planName: string) => Promise<boolean>;
+  boundRunIds: string[];
+  onClose: () => void;
 }
 
 function RunsTab({
@@ -778,6 +814,11 @@ function RunsTab({
   onFetchResult,
   onStartPolling,
   onStopPolling,
+  onLoadOnCanvas,
+  onLoadRunOnCanvas,
+  onBindRun,
+  boundRunIds,
+  onClose,
 }: RunsTabProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedLlmModel, setSelectedLlmModel] = useState<string>('demo');
@@ -857,7 +898,7 @@ function RunsTab({
               <p className="text-sm">No plans deployed on this server.</p>
             </div>
           ) : (
-            <div className="space-y-1 max-h-32 overflow-y-auto">
+            <div className="space-y-1 max-h-40 overflow-y-auto">
               {remotePlans.map(plan => (
                 <div
                   key={plan.id}
@@ -868,10 +909,30 @@ function RunsTab({
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-sm font-medium text-slate-800">{plan.name}</span>
-                  {plan.description && (
-                    <p className="text-xs text-slate-500">{plan.description}</p>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-slate-800">{plan.name}</span>
+                      {plan.description && (
+                        <p className="text-xs text-slate-500">{plan.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (selectedServerId) {
+                          const success = await onLoadOnCanvas(selectedServerId, plan.id);
+                          if (success) {
+                            onClose();
+                          }
+                        }
+                      }}
+                      className="px-2 py-1 text-xs bg-violet-500 text-white rounded hover:bg-violet-600 transition-colors flex items-center gap-1"
+                      title="Load this plan on the canvas"
+                    >
+                      <LayoutGrid className="w-3 h-3" />
+                      Canvas
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -921,6 +982,12 @@ function RunsTab({
                 isExpanded={expandedRunId === run.run_id}
                 onToggle={() => toggleRunDetails(run)}
                 onRefresh={() => onRefreshStatus(run.server_id, run.run_id)}
+                onBind={() => onBindRun(run.server_id, run.run_id, run.plan_id, run.plan_id)}
+                onLoadOnCanvas={async () => {
+                  const success = await onLoadRunOnCanvas(run.server_id, run.run_id, run.plan_id, run.plan_id, run.status);
+                  if (success) onClose();
+                }}
+                isBound={boundRunIds.includes(run.run_id)}
               />
             ))}
           </div>
@@ -948,16 +1015,30 @@ interface RunCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   onRefresh: () => void;
+  onBind?: () => void;
+  onLoadOnCanvas?: () => Promise<void>;
+  isBound?: boolean;
 }
 
-function RunCard({ run, result, isExpanded, onToggle, onRefresh }: RunCardProps) {
+function RunCard({ run, result, isExpanded, onToggle, onRefresh, onBind, onLoadOnCanvas, isBound }: RunCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isBinding, setIsBinding] = useState(false);
+  const [isLoadingCanvas, setIsLoadingCanvas] = useState(false);
   
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRefreshing(true);
     await onRefresh();
     setIsRefreshing(false);
+  };
+  
+  const handleBind = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onBind) {
+      setIsBinding(true);
+      await onBind();
+      setIsBinding(false);
+    }
   };
   
   const progress = run.progress;
@@ -1000,6 +1081,59 @@ function RunCard({ run, result, isExpanded, onToggle, onRefresh }: RunCardProps)
             <span className={`px-2 py-0.5 text-xs rounded-full border ${statusColor}`}>
               {run.status}
             </span>
+            {/* Canvas button - load graph + bind for live updates (or view for completed) */}
+            {onLoadOnCanvas && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsLoadingCanvas(true);
+                  await onLoadOnCanvas();
+                  setIsLoadingCanvas(false);
+                }}
+                disabled={isLoadingCanvas || isBound}
+                className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
+                  isBound
+                    ? 'bg-cyan-100 text-cyan-700 cursor-default'
+                    : run.status === 'running' || run.status === 'paused'
+                      ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+                      : 'bg-violet-500 text-white hover:bg-violet-600'
+                }`}
+                title={
+                  isBound 
+                    ? 'Already viewing on canvas' 
+                    : run.status === 'running' || run.status === 'paused'
+                      ? 'Open on canvas with live updates'
+                      : 'View run state on canvas'
+                }
+              >
+                {isLoadingCanvas ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <LayoutGrid className="w-3 h-3" />
+                )}
+                {isBound ? 'On Canvas' : 'Canvas'}
+              </button>
+            )}
+            {/* Bind button - legacy, shows when Canvas is not available */}
+            {onBind && !onLoadOnCanvas && run.status === 'running' && (
+              <button
+                onClick={handleBind}
+                disabled={isBinding || isBound}
+                className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
+                  isBound
+                    ? 'bg-violet-100 text-violet-700 cursor-default'
+                    : 'bg-violet-500 text-white hover:bg-violet-600'
+                }`}
+                title={isBound ? 'Run is bound to canvas' : 'Mirror this run on your canvas'}
+              >
+                {isBinding ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Link className="w-3 h-3" />
+                )}
+                {isBound ? 'Bound' : 'Bind'}
+              </button>
+            )}
             <button
               onClick={handleRefresh}
               className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
@@ -1439,6 +1573,311 @@ function BuildTab({
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Remote Inspect Tab
+// ============================================================================
+
+interface InspectTabProps {
+  servers: DeploymentServer[];
+  selectedServerId: string | null;
+  serverHealth: Record<string, ServerHealth>;
+  isLoading: boolean;
+  onSelectServer: (id: string | null) => void;
+}
+
+function InspectTab({
+  servers,
+  selectedServerId,
+  serverHealth,
+  isLoading,
+  onSelectServer,
+}: InspectTabProps) {
+  const {
+    activeRuns,
+    selectedRemoteRunId,
+    remoteRunDbOverview,
+    remoteRunStatistics,
+    remoteRunCheckpoints,
+    remoteBlackboard,
+    remoteCompletedConcepts,
+    setSelectedRemoteRunId,
+    fetchRemoteRuns,
+    fetchRemoteRunDbOverview,
+    fetchRemoteRunStatistics,
+    fetchRemoteRunCheckpoints,
+    fetchRemoteBlackboard,
+    fetchRemoteCompletedConcepts,
+    resumeRemoteRun,
+  } = useDeploymentStore();
+
+  const [selectedCheckpointCycle, setSelectedCheckpointCycle] = useState<number | null>(null);
+
+  // Fetch runs when server changes
+  useEffect(() => {
+    if (selectedServerId) {
+      fetchRemoteRuns(selectedServerId, true);
+    }
+  }, [selectedServerId, fetchRemoteRuns]);
+
+  // Fetch run details when run is selected
+  useEffect(() => {
+    if (selectedServerId && selectedRemoteRunId) {
+      fetchRemoteRunDbOverview(selectedServerId, selectedRemoteRunId);
+      fetchRemoteRunStatistics(selectedServerId, selectedRemoteRunId);
+      fetchRemoteRunCheckpoints(selectedServerId, selectedRemoteRunId);
+      fetchRemoteBlackboard(selectedServerId, selectedRemoteRunId);
+      fetchRemoteCompletedConcepts(selectedServerId, selectedRemoteRunId);
+    }
+  }, [selectedServerId, selectedRemoteRunId, fetchRemoteRunDbOverview, fetchRemoteRunStatistics, fetchRemoteRunCheckpoints, fetchRemoteBlackboard, fetchRemoteCompletedConcepts]);
+
+  const selectedRun = activeRuns.find(r => r.run_id === selectedRemoteRunId);
+  const selectedHealth = selectedServerId ? serverHealth[selectedServerId] : null;
+
+  const handleResumeRun = async (fork: boolean) => {
+    if (!selectedServerId || !selectedRemoteRunId) return;
+    await resumeRemoteRun(selectedServerId, selectedRemoteRunId, {
+      cycle: selectedCheckpointCycle ?? undefined,
+      fork,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Server Selector */}
+      <div className="bg-slate-50 p-3 rounded-lg">
+        <label className="block text-xs font-medium text-slate-600 mb-1">Select Server</label>
+        <select
+          value={selectedServerId || ''}
+          onChange={(e) => {
+            onSelectServer(e.target.value || null);
+            setSelectedRemoteRunId(null);
+          }}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        >
+          <option value="">Choose a server...</option>
+          {servers.map(server => (
+            <option key={server.id} value={server.id}>
+              {server.name} - {server.url}
+            </option>
+          ))}
+        </select>
+        
+        {selectedHealth && (
+          <div className={`mt-2 text-xs ${selectedHealth.is_healthy ? 'text-green-600' : 'text-red-600'}`}>
+            {selectedHealth.is_healthy ? (
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> 
+                Connected • {selectedHealth.plans_count} plans • {selectedHealth.total_runs} runs
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <XCircle className="w-3 h-3" /> {selectedHealth.error || 'Disconnected'}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* No Server Selected */}
+      {!selectedServerId && (
+        <div className="p-6 text-center text-slate-500">
+          <Globe className="w-10 h-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Select a server to browse remote runs</p>
+        </div>
+      )}
+
+      {/* Runs List */}
+      {selectedServerId && (
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left: Runs List */}
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="bg-slate-100 px-3 py-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">Remote Runs</span>
+              <button
+                onClick={() => fetchRemoteRuns(selectedServerId, true)}
+                className="p-1 text-slate-500 hover:text-slate-700"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {activeRuns.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 text-sm">
+                  No runs found on this server
+                </div>
+              ) : (
+                activeRuns.map(run => (
+                  <div
+                    key={run.run_id}
+                    onClick={() => setSelectedRemoteRunId(run.run_id)}
+                    className={`p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 ${
+                      selectedRemoteRunId === run.run_id ? 'bg-emerald-50 border-l-2 border-l-emerald-500' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-700 truncate">
+                        {run.run_id.substring(0, 8)}...
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        run.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        run.status === 'running' ? 'bg-blue-100 text-blue-700' :
+                        run.status === 'failed' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {run.status}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      Plan: {run.plan_id}
+                    </div>
+                    {run.started_at && (
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {new Date(run.started_at).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Right: Run Details */}
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="bg-slate-100 px-3 py-2">
+              <span className="text-sm font-medium text-slate-700">
+                {selectedRun ? `Run: ${selectedRun.run_id.substring(0, 12)}...` : 'Run Details'}
+              </span>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-3">
+              {!selectedRemoteRunId ? (
+                <div className="text-center text-slate-500 text-sm py-4">
+                  Select a run to view details
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Statistics */}
+                  {remoteRunStatistics && (
+                    <div className="bg-slate-50 p-2 rounded">
+                      <div className="text-xs font-medium text-slate-600 mb-1">Statistics</div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="text-center p-1 bg-white rounded">
+                          <div className="font-bold text-emerald-600">{remoteRunStatistics.completed}</div>
+                          <div className="text-slate-500">Completed</div>
+                        </div>
+                        <div className="text-center p-1 bg-white rounded">
+                          <div className="font-bold text-red-600">{remoteRunStatistics.failed}</div>
+                          <div className="text-slate-500">Failed</div>
+                        </div>
+                        <div className="text-center p-1 bg-white rounded">
+                          <div className="font-bold text-slate-600">{remoteRunStatistics.cycles_completed}</div>
+                          <div className="text-slate-500">Cycles</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Checkpoints */}
+                  {remoteRunCheckpoints && remoteRunCheckpoints.checkpoints.length > 0 && (
+                    <div className="bg-slate-50 p-2 rounded">
+                      <div className="text-xs font-medium text-slate-600 mb-1">
+                        Checkpoints ({remoteRunCheckpoints.total_count})
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {remoteRunCheckpoints.checkpoints.slice(0, 10).map(cp => (
+                          <button
+                            key={`${cp.cycle}-${cp.inference_count}`}
+                            onClick={() => setSelectedCheckpointCycle(cp.cycle)}
+                            className={`px-2 py-0.5 text-xs rounded ${
+                              selectedCheckpointCycle === cp.cycle
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-white text-slate-600 hover:bg-emerald-100'
+                            }`}
+                          >
+                            C{cp.cycle}
+                          </button>
+                        ))}
+                        {remoteRunCheckpoints.checkpoints.length > 10 && (
+                          <span className="text-xs text-slate-500">
+                            +{remoteRunCheckpoints.checkpoints.length - 10} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Blackboard Summary */}
+                  {remoteBlackboard && (
+                    <div className="bg-slate-50 p-2 rounded">
+                      <div className="text-xs font-medium text-slate-600 mb-1">Blackboard</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-white p-1 rounded">
+                          <span className="text-slate-500">Concepts:</span>{' '}
+                          <span className="font-medium">{remoteBlackboard.completed_concepts}/{remoteBlackboard.concept_count}</span>
+                        </div>
+                        <div className="bg-white p-1 rounded">
+                          <span className="text-slate-500">Items:</span>{' '}
+                          <span className="font-medium">{remoteBlackboard.completed_items}/{remoteBlackboard.item_count}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completed Concepts Preview */}
+                  {remoteCompletedConcepts && remoteCompletedConcepts.count > 0 && (
+                    <div className="bg-slate-50 p-2 rounded">
+                      <div className="text-xs font-medium text-slate-600 mb-1">
+                        Completed Concepts ({remoteCompletedConcepts.count})
+                      </div>
+                      <div className="max-h-24 overflow-y-auto">
+                        {Object.entries(remoteCompletedConcepts.concepts).slice(0, 5).map(([name, info]) => (
+                          <div key={name} className="flex items-center justify-between py-0.5 text-xs">
+                            <span className="truncate text-slate-700">{name}</span>
+                            {info.shape && (
+                              <span className="text-slate-400">[{info.shape.join('×')}]</span>
+                            )}
+                          </div>
+                        ))}
+                        {Object.keys(remoteCompletedConcepts.concepts).length > 5 && (
+                          <div className="text-xs text-slate-400 mt-1">
+                            +{Object.keys(remoteCompletedConcepts.concepts).length - 5} more concepts
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resume Actions */}
+                  {selectedRemoteRunId && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => handleResumeRun(false)}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium bg-emerald-500 text-white rounded hover:bg-emerald-600 disabled:opacity-50"
+                      >
+                        <Play className="w-3 h-3 inline mr-1" />
+                        Resume
+                      </button>
+                      <button
+                        onClick={() => handleResumeRun(true)}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium bg-slate-500 text-white rounded hover:bg-slate-600 disabled:opacity-50"
+                      >
+                        <Copy className="w-3 h-3 inline mr-1" />
+                        Fork
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

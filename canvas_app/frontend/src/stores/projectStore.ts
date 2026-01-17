@@ -2,7 +2,7 @@
  * Project state management with Zustand
  */
 import { create } from 'zustand';
-import type { ProjectConfig, RegisteredProject, OpenProjectInstance } from '../types/project';
+import type { ProjectConfig, RegisteredProject, OpenProjectInstance, RemoteProjectTab } from '../types/project';
 import { projectApi, graphApi, executionApi } from '../services/api';
 import { useGraphStore } from './graphStore';
 import { useExecutionStore } from './executionStore';
@@ -20,6 +20,10 @@ interface ProjectState {
   // Multi-project (tabs) state
   openTabs: OpenProjectInstance[];  // All open project tabs
   activeTabId: string | null;  // Currently active tab
+  
+  // Remote project tabs (loaded from deployment servers)
+  remoteProjectTabs: RemoteProjectTab[];
+  activeRemoteTabId: string | null;  // Active remote tab (mutually exclusive with activeTabId)
   
   // All registered projects and recent projects
   allProjects: RegisteredProject[];
@@ -45,6 +49,13 @@ interface ProjectState {
   // Multi-project tab actions
   setOpenTabs: (tabs: OpenProjectInstance[]) => void;
   setActiveTabId: (tabId: string | null) => void;
+  
+  // Remote project tab actions
+  addRemoteTab: (tab: RemoteProjectTab) => void;
+  closeRemoteTab: (tabId: string) => void;
+  switchToRemoteTab: (tabId: string) => void;
+  switchToLocalTab: (tabId: string) => Promise<boolean>;
+  clearRemoteTabs: () => void;
   
   // Async actions
   fetchCurrentProject: () => Promise<void>;
@@ -95,6 +106,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   openTabs: [],
   activeTabId: null,
   
+  // Remote project tabs initial state
+  remoteProjectTabs: [],
+  activeRemoteTabId: null,
+  
   allProjects: [],
   recentProjects: [],
   directoryProjects: [],
@@ -120,6 +135,97 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // Multi-project tab setters
   setOpenTabs: (tabs) => set({ openTabs: tabs }),
   setActiveTabId: (tabId) => set({ activeTabId: tabId }),
+  
+  // Remote project tab actions
+  addRemoteTab: (tab) => {
+    const { remoteProjectTabs } = get();
+    // Check if tab already exists
+    const existingIdx = remoteProjectTabs.findIndex(t => t.id === tab.id);
+    if (existingIdx >= 0) {
+      // Update existing tab
+      const updated = [...remoteProjectTabs];
+      updated[existingIdx] = { ...tab, is_active: true };
+      set({ 
+        remoteProjectTabs: updated.map((t, i) => ({ ...t, is_active: i === existingIdx })),
+        activeRemoteTabId: tab.id,
+        activeTabId: null,  // Deactivate local tabs
+      });
+    } else {
+      // Add new tab and activate it
+      set({ 
+        remoteProjectTabs: [...remoteProjectTabs.map(t => ({ ...t, is_active: false })), { ...tab, is_active: true }],
+        activeRemoteTabId: tab.id,
+        activeTabId: null,  // Deactivate local tabs
+      });
+    }
+  },
+  
+  closeRemoteTab: (tabId) => {
+    const { remoteProjectTabs, activeRemoteTabId, openTabs } = get();
+    const updated = remoteProjectTabs.filter(t => t.id !== tabId);
+    
+    // If closing active remote tab, switch to another tab
+    if (activeRemoteTabId === tabId) {
+      if (updated.length > 0) {
+        // Switch to another remote tab
+        const newActive = updated[updated.length - 1];
+        set({ 
+          remoteProjectTabs: updated.map(t => ({ ...t, is_active: t.id === newActive.id })),
+          activeRemoteTabId: newActive.id,
+        });
+      } else if (openTabs.length > 0) {
+        // No more remote tabs, switch to first local tab
+        const firstLocal = openTabs[0];
+        set({ 
+          remoteProjectTabs: updated,
+          activeRemoteTabId: null,
+          activeTabId: firstLocal.id,
+        });
+        // Clear the graph store and reload local project
+        useGraphStore.getState().setGraphData(null);
+      } else {
+        // No tabs at all
+        set({ 
+          remoteProjectTabs: updated,
+          activeRemoteTabId: null,
+        });
+        useGraphStore.getState().setGraphData(null);
+      }
+    } else {
+      set({ remoteProjectTabs: updated });
+    }
+  },
+  
+  switchToRemoteTab: (tabId) => {
+    const { remoteProjectTabs } = get();
+    const tab = remoteProjectTabs.find(t => t.id === tabId);
+    if (!tab) return;
+    
+    set({ 
+      remoteProjectTabs: remoteProjectTabs.map(t => ({ ...t, is_active: t.id === tabId })),
+      activeRemoteTabId: tabId,
+      activeTabId: null,  // Deactivate local tabs
+    });
+    
+    // Load the cached graph for this remote tab
+    // Import dynamically to avoid circular dependencies
+    import('./deploymentStore').then(({ useDeploymentStore }) => {
+      useDeploymentStore.getState().loadCachedRemoteGraph(tabId);
+    });
+  },
+  
+  switchToLocalTab: async (tabId) => {
+    const { switchTab } = get();
+    set({ 
+      activeRemoteTabId: null,  // Deactivate remote tabs
+      remoteProjectTabs: get().remoteProjectTabs.map(t => ({ ...t, is_active: false })),
+    });
+    return switchTab(tabId);
+  },
+  
+  clearRemoteTabs: () => {
+    set({ remoteProjectTabs: [], activeRemoteTabId: null });
+  },
   
   // Fetch current project from backend
   fetchCurrentProject: async () => {

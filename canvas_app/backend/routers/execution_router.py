@@ -1146,3 +1146,175 @@ async def get_panel_worker_state(panel_id: str):
         "bound": True,
         "state": controller.get_state(),
     }
+
+
+# =============================================================================
+# Remote Execution (connect to normal_server)
+# =============================================================================
+
+class RemoteConnectRequest(BaseModel):
+    """Request to connect to a remote normal_server run."""
+    server_url: str
+    run_id: str
+    panel_id: Optional[str] = None
+    panel_type: str = "main"
+
+
+class RemoteConnectResponse(BaseModel):
+    """Response for remote connection."""
+    success: bool
+    worker_id: str
+    server_url: str
+    run_id: str
+    state: dict
+
+
+@router.post("/remote/connect", response_model=RemoteConnectResponse)
+async def connect_to_remote(request: RemoteConnectRequest):
+    """
+    Connect to a run executing on a remote normal_server.
+    
+    This creates a RemoteExecutionController that:
+    - Proxies all execution commands to the remote server
+    - Subscribes to SSE events for real-time updates
+    - Mirrors execution state locally for the canvas UI
+    
+    Args:
+        request.server_url: Base URL of the normal_server (e.g., http://localhost:8080)
+        request.run_id: The run ID to connect to
+        request.panel_id: Optional panel to bind this worker to
+        request.panel_type: Type of panel if binding
+    
+    Returns:
+        Worker info and initial state
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    registry = get_worker_registry()
+    
+    # Parse panel type
+    panel_type_enum = None
+    if request.panel_id:
+        try:
+            panel_type_enum = PanelType(request.panel_type)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid panel type: {request.panel_type}"
+            )
+    
+    try:
+        # Register the remote worker
+        worker = await registry.register_remote_worker(
+            server_url=request.server_url,
+            run_id=request.run_id,
+            panel_id=request.panel_id,
+            panel_type=panel_type_enum or PanelType.MAIN,
+        )
+        
+        logger.info(f"Connected to remote run: {request.run_id} on {request.server_url}")
+        
+        return RemoteConnectResponse(
+            success=True,
+            worker_id=worker.state.worker_id,
+            server_url=request.server_url,
+            run_id=request.run_id,
+            state=worker.state.to_dict(),
+        )
+        
+    except Exception as e:
+        logger.exception(f"Failed to connect to remote: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to connect to remote server: {str(e)}"
+        )
+
+
+@router.post("/remote/disconnect/{worker_id}")
+async def disconnect_remote(worker_id: str):
+    """
+    Disconnect from a remote normal_server run.
+    
+    This disconnects the SSE subscription and unregisters the worker.
+    """
+    registry = get_worker_registry()
+    
+    success = await registry.disconnect_remote_worker(worker_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Remote worker not found: {worker_id}"
+        )
+    
+    return {"success": True, "worker_id": worker_id, "message": "Disconnected"}
+
+
+@router.get("/remote/workers")
+async def list_remote_workers():
+    """
+    List all connected remote workers.
+    
+    Returns information about all active remote connections.
+    """
+    registry = get_worker_registry()
+    remote_workers = registry.get_remote_workers()
+    
+    return {
+        "workers": [
+            {
+                "worker_id": w.state.worker_id,
+                "server_url": w.state.metadata.get("server_url"),
+                "run_id": w.state.run_id,
+                "status": w.state.status.value,
+                "connected": hasattr(w.controller, 'is_connected') and w.controller.is_connected,
+                "bindings": list(w.bindings),
+            }
+            for w in remote_workers
+        ],
+        "count": len(remote_workers),
+    }
+
+
+@router.get("/remote/{worker_id}/state")
+async def get_remote_worker_state(worker_id: str):
+    """Get the current state of a remote worker."""
+    registry = get_worker_registry()
+    worker = registry.get_worker(worker_id)
+    
+    if not worker or worker.state.category.value != "remote":
+        raise HTTPException(
+            status_code=404,
+            detail=f"Remote worker not found: {worker_id}"
+        )
+    
+    # Get state from the remote controller
+    if hasattr(worker.controller, 'get_state'):
+        return worker.controller.get_state()
+    
+    return worker.state.to_dict()
+
+
+@router.get("/remote/{worker_id}/graph")
+async def get_remote_worker_graph(worker_id: str):
+    """Get the graph data for a remote worker."""
+    registry = get_worker_registry()
+    worker = registry.get_worker(worker_id)
+    
+    if not worker or worker.state.category.value != "remote":
+        raise HTTPException(
+            status_code=404,
+            detail=f"Remote worker not found: {worker_id}"
+        )
+    
+    # Get graph from the remote controller
+    if hasattr(worker.controller, 'get_graph_data'):
+        graph_data = worker.controller.get_graph_data()
+        if graph_data:
+            return graph_data
+    
+    raise HTTPException(
+        status_code=404,
+        detail="Graph data not available for this remote worker"
+    )

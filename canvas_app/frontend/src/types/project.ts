@@ -156,3 +156,27 @@ export interface OpenProjectInTabRequest {
   make_active?: boolean;  // Whether to switch to this tab
   is_read_only?: boolean;  // Read-only projects can be viewed and executed, but not modified
 }
+
+// =============================================================================
+// Remote Project Tabs (for remote plans loaded from deployment servers)
+// =============================================================================
+
+/**
+ * Represents a remote project tab (loaded from a deployment server).
+ * These are view-only and managed client-side.
+ */
+export interface RemoteProjectTab {
+  id: string;  // Format: "remote:{server_id}:{plan_id}" or "remote:{server_id}:{plan_id}:{run_id}"
+  name: string;
+  server_id: string;
+  server_name: string;
+  plan_id: string;
+  plan_name: string;
+  is_active: boolean;
+  is_loaded: boolean;  // Always true for remote tabs once loaded
+  node_count: number;
+  edge_count: number;
+  // Optional: bound to a running execution for live updates
+  run_id?: string;
+  is_bound?: boolean;  // true if receiving live updates via binding
+}

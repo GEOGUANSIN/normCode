@@ -217,6 +217,233 @@ async def get_remote_run_result(server_id: str, run_id: str):
 
 
 # =============================================================================
+# Remote Graph & Project Loading
+# =============================================================================
+
+@router.get("/servers/{server_id}/plans/{plan_id}/graph")
+async def get_remote_plan_graph(server_id: str, plan_id: str):
+    """
+    Get the full graph data (concepts + inferences) for a remote plan.
+    Enables Canvas to load and render a plan from a remote server.
+    """
+    try:
+        return deployment_service.get_remote_plan_graph(server_id, plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get plan graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/servers/{server_id}/plans/{plan_id}/canvas-graph")
+async def get_remote_plan_canvas_graph(server_id: str, plan_id: str):
+    """
+    Get the remote plan graph in Canvas-ready GraphData format (nodes + edges).
+    
+    This fetches the raw concepts/inferences from the remote server and
+    transforms them into the GraphData format used by the Canvas visualization.
+    
+    Returns:
+        GraphData-compatible dict with nodes and edges ready for canvas rendering
+    """
+    from services.graph_service import build_graph_from_repositories
+    
+    try:
+        # Fetch raw data from remote server
+        raw_graph = deployment_service.get_remote_plan_graph(server_id, plan_id)
+        
+        concepts = raw_graph.get('concepts', [])
+        inferences = raw_graph.get('inferences', [])
+        
+        # Transform to GraphData format
+        graph_data = build_graph_from_repositories(concepts, inferences)
+        
+        return {
+            "plan_id": plan_id,
+            "plan_name": raw_graph.get('plan_name', plan_id),
+            "server_id": server_id,
+            "nodes": [node.model_dump() for node in graph_data.nodes],
+            "edges": [edge.model_dump() for edge in graph_data.edges],
+            # Include raw data for execution context
+            "concepts_count": len(concepts),
+            "inferences_count": len(inferences),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get canvas graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/servers/{server_id}/plans/{plan_id}/files/{file_path:path}")
+async def get_remote_plan_file(server_id: str, plan_id: str, file_path: str):
+    """Get a specific file from a remote plan's directory."""
+    try:
+        return deployment_service.get_remote_plan_file(server_id, plan_id, file_path)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get plan file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/servers/{server_id}/runs")
+async def list_remote_runs(server_id: str, include_historical: bool = True):
+    """List all runs on a remote server (active + historical)."""
+    try:
+        return deployment_service.list_remote_runs(server_id, include_historical)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to list remote runs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Remote Run Database Inspection
+# =============================================================================
+
+@router.get("/runs/{server_id}/{run_id}/db/overview")
+async def get_remote_run_db_overview(server_id: str, run_id: str):
+    """Get database overview for a remote run."""
+    try:
+        return deployment_service.get_remote_run_db_overview(server_id, run_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get DB overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/executions")
+async def get_remote_run_executions(
+    server_id: str,
+    run_id: str,
+    include_logs: bool = False,
+    limit: int = 500,
+    offset: int = 0,
+):
+    """Get execution history for a remote run."""
+    try:
+        return deployment_service.get_remote_run_executions(
+            server_id, run_id, include_logs, limit, offset
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get executions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/executions/{execution_id}/logs")
+async def get_remote_execution_logs(server_id: str, run_id: str, execution_id: int):
+    """Get logs for a specific execution in a remote run."""
+    try:
+        return deployment_service.get_remote_execution_logs(server_id, run_id, execution_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get execution logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/statistics")
+async def get_remote_run_statistics(server_id: str, run_id: str):
+    """Get statistics for a remote run."""
+    try:
+        return deployment_service.get_remote_run_statistics(server_id, run_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get run statistics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/checkpoints")
+async def list_remote_run_checkpoints(server_id: str, run_id: str):
+    """List checkpoints for a remote run."""
+    try:
+        return deployment_service.list_remote_run_checkpoints(server_id, run_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to list checkpoints: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/checkpoints/{cycle}")
+async def get_remote_checkpoint_state(
+    server_id: str,
+    run_id: str,
+    cycle: int,
+    inference_count: Optional[int] = None,
+):
+    """Get checkpoint state for a remote run."""
+    try:
+        return deployment_service.get_remote_checkpoint_state(
+            server_id, run_id, cycle, inference_count
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get checkpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/blackboard")
+async def get_remote_blackboard_summary(
+    server_id: str,
+    run_id: str,
+    cycle: Optional[int] = None,
+):
+    """Get blackboard summary for a remote run."""
+    try:
+        return deployment_service.get_remote_blackboard_summary(server_id, run_id, cycle)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get blackboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/runs/{server_id}/{run_id}/db/concepts")
+async def get_remote_completed_concepts(
+    server_id: str,
+    run_id: str,
+    cycle: Optional[int] = None,
+):
+    """Get completed concepts for a remote run."""
+    try:
+        return deployment_service.get_remote_completed_concepts(server_id, run_id, cycle)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to get concepts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/runs/{server_id}/{run_id}/resume")
+async def resume_remote_run(
+    server_id: str,
+    run_id: str,
+    cycle: Optional[int] = None,
+    inference_count: Optional[int] = None,
+    llm_model: Optional[str] = None,
+    fork: bool = False,
+):
+    """Resume a run from a checkpoint on a remote server."""
+    try:
+        return deployment_service.resume_remote_run(
+            server_id, run_id, cycle, inference_count, llm_model, fork
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to resume run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
 # Server Building
 # =============================================================================
 
@@ -246,5 +473,146 @@ async def build_server(request: BuildServerRequest):
         return result
     except Exception as e:
         logger.exception(f"Failed to build server: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Remote Run Binding (Mirror remote execution to local canvas)
+# =============================================================================
+
+@router.post("/runs/{server_id}/{run_id}/bind")
+async def bind_remote_run(server_id: str, run_id: str, plan_id: str = "", plan_name: str = ""):
+    """
+    Bind a remote run to the local canvas.
+    
+    This starts streaming execution events from the remote server and relaying
+    them to the local frontend via WebSocket. The canvas will show real-time
+    updates of node statuses, progress, and logs from the remote execution.
+    
+    Args:
+        server_id: ID of the deployment server
+        run_id: ID of the run to bind
+        plan_id: Optional plan ID for display
+        plan_name: Optional plan name for display
+    """
+    from services.remote_run_service import remote_run_service
+    
+    try:
+        server = deployment_service._servers.get(server_id)
+        if not server:
+            raise HTTPException(status_code=404, detail=f"Server not found: {server_id}")
+        
+        success = await remote_run_service.bind_run(
+            server_id=server_id,
+            server_url=server.url,
+            run_id=run_id,
+            plan_id=plan_id,
+            plan_name=plan_name or plan_id,
+        )
+        
+        if success:
+            return {
+                "status": "bound",
+                "run_id": run_id,
+                "server_id": server_id,
+                "message": f"Remote run bound to canvas. Events will be streamed.",
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to bind remote run")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to bind remote run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/runs/{server_id}/{run_id}/unbind")
+async def unbind_remote_run(server_id: str, run_id: str):
+    """
+    Unbind a remote run from the local canvas.
+    
+    Stops streaming events from the remote server for this run.
+    """
+    from services.remote_run_service import remote_run_service
+    
+    try:
+        success = await remote_run_service.unbind_run(run_id)
+        
+        if success:
+            return {
+                "status": "unbound",
+                "run_id": run_id,
+                "server_id": server_id,
+            }
+        else:
+            raise HTTPException(status_code=404, detail=f"Run not bound: {run_id}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to unbind remote run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/bound-runs")
+async def list_bound_runs():
+    """List all remote runs currently bound to the canvas."""
+    from services.remote_run_service import remote_run_service
+    
+    return {
+        "bound_runs": remote_run_service.list_bound_runs(),
+    }
+
+
+# =============================================================================
+# Remote Execution Control (for bound runs)
+# =============================================================================
+
+@router.post("/runs/{server_id}/{run_id}/pause")
+async def pause_remote_run(server_id: str, run_id: str):
+    """Pause a running remote execution."""
+    try:
+        return deployment_service.control_remote_run(server_id, run_id, "pause")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to pause remote run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/runs/{server_id}/{run_id}/continue")
+async def continue_remote_run(server_id: str, run_id: str):
+    """Resume a paused remote execution."""
+    try:
+        return deployment_service.control_remote_run(server_id, run_id, "continue")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to resume remote run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/runs/{server_id}/{run_id}/step")
+async def step_remote_run(server_id: str, run_id: str):
+    """Execute one inference on a remote run then pause."""
+    try:
+        return deployment_service.control_remote_run(server_id, run_id, "step")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to step remote run: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/runs/{server_id}/{run_id}/stop")
+async def stop_remote_run(server_id: str, run_id: str):
+    """Stop a remote execution gracefully."""
+    try:
+        return deployment_service.control_remote_run(server_id, run_id, "stop")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception(f"Failed to stop remote run: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

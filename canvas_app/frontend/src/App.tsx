@@ -191,6 +191,7 @@ function App() {
   // Chat state
   const { isOpen: isChatOpen, togglePanel: toggleChatPanel, controllerStatus } = useChatStore();
   
+  
   // Project state
   const {
     currentProject,
@@ -200,6 +201,8 @@ function App() {
     isLoading: projectLoading,
     openTabs,
     activeTabId,
+    remoteProjectTabs,
+    activeRemoteTabId,
     fetchCurrentProject,
     fetchRecentProjects,
     fetchOpenTabs,
@@ -497,16 +500,20 @@ function App() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left side: Tabs + Main Content (includes ControlPanel when in canvas mode) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Project Tabs Bar - shows when multiple projects are open */}
-          {openTabs.length > 1 && (
+          {/* Project Tabs Bar - shows when multiple projects are open or remote tabs exist */}
+          {(openTabs.length > 1 || remoteProjectTabs.length > 0) && (
             <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
           )}
-          {/* Control Panel - only show in canvas mode when graph is loaded, hide for read-only projects */}
+          {/* Control Panel - show in canvas mode when graph is loaded, hide for read-only projects
+              For remote tabs: only show if it's a bound run (has run_id for live control) */}
           {graphData && viewMode === 'canvas' && !isReadOnlyProject && (
-            <ControlPanel 
-              onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
-              checkpointPanelOpen={showCheckpointPanel}
-            />
+            // Show for local tabs OR remote tabs with bound run_id
+            (!activeRemoteTabId || remoteProjectTabs.find(t => t.id === activeRemoteTabId)?.run_id) && (
+              <ControlPanel 
+                onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
+                checkpointPanelOpen={showCheckpointPanel}
+              />
+            )
           )}
 
           {/* Checkpoint Panel - dropdown below control panel */}

@@ -5,8 +5,8 @@ NormCode Plan Packager
 Creates self-contained deployment packages (.zip) from NormCode projects.
 
 Usage:
-    python pack.py ./test_ncs/testproject.normcode-canvas.json
-    python pack.py ./test_ncs/testproject.normcode-canvas.json --output my-plan.zip
+    python scripts/pack.py ./test_ncs/testproject.normcode-canvas.json
+    python scripts/pack.py ./test_ncs/testproject.normcode-canvas.json --output my-plan.zip
 """
 
 import sys
@@ -18,7 +18,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# Calculate project root (normCode root) - go up from scripts/ to normal_server/ to normCode/
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -259,12 +261,12 @@ def main():
         epilog="""
 Examples:
   Pack a project:
-    python pack.py ./test_ncs/testproject.normcode-canvas.json
-    python pack.py ./test_ncs/testproject.normcode-canvas.json -o my-plan.zip
+    python scripts/pack.py ./test_ncs/testproject.normcode-canvas.json
+    python scripts/pack.py ./test_ncs/testproject.normcode-canvas.json -o my-plan.zip
   
   Unpack a package:
-    python pack.py --unpack my-plan.normcode.zip
-    python pack.py --unpack my-plan.normcode.zip -o ./unpacked/
+    python scripts/pack.py --unpack my-plan.normcode.zip
+    python scripts/pack.py --unpack my-plan.normcode.zip -o ./unpacked/
         """
     )
     

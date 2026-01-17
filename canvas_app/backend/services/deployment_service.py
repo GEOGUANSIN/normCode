@@ -692,6 +692,384 @@ class DeploymentService:
             raise RuntimeError(f"Failed to get run result: {response.text}")
     
     # =========================================================================
+    # Remote Graph & Project Loading
+    # =========================================================================
+    
+    def get_remote_plan_graph(self, server_id: str, plan_id: str) -> Dict[str, Any]:
+        """
+        Get the full graph data (concepts + inferences) for a remote plan.
+        
+        This enables Canvas to load and render a plan from a remote server
+        without needing local files.
+        
+        Args:
+            server_id: Target server ID
+            plan_id: Plan ID to fetch graph for
+            
+        Returns:
+            Dict with plan_id, plan_name, concepts, inferences, provisions
+        """
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(f"{server.url}/api/plans/{plan_id}/graph", timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"Plan not found: {plan_id}")
+        else:
+            raise RuntimeError(f"Failed to get plan graph: {response.text}")
+    
+    def get_remote_plan_file(self, server_id: str, plan_id: str, file_path: str) -> Dict[str, Any]:
+        """
+        Get a specific file from a remote plan's directory.
+        
+        Useful for fetching prompts, paradigms, or other provision files.
+        
+        Args:
+            server_id: Target server ID
+            plan_id: Plan ID
+            file_path: Path to file within plan directory
+            
+        Returns:
+            Dict with path, content, size (and encoding if binary)
+        """
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(
+            f"{server.url}/api/plans/{plan_id}/files/{file_path}",
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"File not found: {file_path}")
+        else:
+            raise RuntimeError(f"Failed to get plan file: {response.text}")
+    
+    def list_remote_runs(self, server_id: str, include_historical: bool = True) -> List[Dict[str, Any]]:
+        """
+        List all runs on a remote server (active + historical).
+        
+        Args:
+            server_id: Target server ID
+            include_historical: Include completed runs from disk
+            
+        Returns:
+            List of run status dictionaries
+        """
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {"include_historical": str(include_historical).lower()}
+        response = requests.get(f"{server.url}/api/runs", params=params, timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to list runs: {response.text}")
+    
+    # =========================================================================
+    # Remote Run Database Inspection
+    # =========================================================================
+    
+    def get_remote_run_db_overview(self, server_id: str, run_id: str) -> Dict[str, Any]:
+        """Get database overview for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(f"{server.url}/api/runs/{run_id}/db/overview", timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"Run or database not found: {run_id}")
+        else:
+            raise RuntimeError(f"Failed to get DB overview: {response.text}")
+    
+    def get_remote_run_executions(
+        self,
+        server_id: str,
+        run_id: str,
+        include_logs: bool = False,
+        limit: int = 500,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """Get execution history for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {
+            "include_logs": str(include_logs).lower(),
+            "limit": limit,
+            "offset": offset,
+        }
+        response = requests.get(
+            f"{server.url}/api/runs/{run_id}/db/executions",
+            params=params,
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to get executions: {response.text}")
+    
+    def get_remote_execution_logs(self, server_id: str, run_id: str, execution_id: int) -> Dict[str, Any]:
+        """Get logs for a specific execution in a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(
+            f"{server.url}/api/runs/{run_id}/db/executions/{execution_id}/logs",
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to get execution logs: {response.text}")
+    
+    def get_remote_run_statistics(self, server_id: str, run_id: str) -> Dict[str, Any]:
+        """Get statistics for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(f"{server.url}/api/runs/{run_id}/db/statistics", timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to get run statistics: {response.text}")
+    
+    def list_remote_run_checkpoints(self, server_id: str, run_id: str) -> Dict[str, Any]:
+        """List checkpoints for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        response = requests.get(f"{server.url}/api/runs/{run_id}/db/checkpoints", timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to list checkpoints: {response.text}")
+    
+    def get_remote_checkpoint_state(
+        self,
+        server_id: str,
+        run_id: str,
+        cycle: int,
+        inference_count: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get checkpoint state for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {}
+        if inference_count is not None:
+            params["inference_count"] = inference_count
+        
+        response = requests.get(
+            f"{server.url}/api/runs/{run_id}/db/checkpoints/{cycle}",
+            params=params,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"Checkpoint not found for cycle {cycle}")
+        else:
+            raise RuntimeError(f"Failed to get checkpoint: {response.text}")
+    
+    def get_remote_blackboard_summary(
+        self,
+        server_id: str,
+        run_id: str,
+        cycle: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get blackboard summary for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {}
+        if cycle is not None:
+            params["cycle"] = cycle
+        
+        response = requests.get(
+            f"{server.url}/api/runs/{run_id}/db/blackboard",
+            params=params,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to get blackboard: {response.text}")
+    
+    def get_remote_completed_concepts(
+        self,
+        server_id: str,
+        run_id: str,
+        cycle: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get completed concepts for a remote run."""
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {}
+        if cycle is not None:
+            params["cycle"] = cycle
+        
+        response = requests.get(
+            f"{server.url}/api/runs/{run_id}/db/concepts",
+            params=params,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise RuntimeError(f"Failed to get concepts: {response.text}")
+    
+    def resume_remote_run(
+        self,
+        server_id: str,
+        run_id: str,
+        cycle: Optional[int] = None,
+        inference_count: Optional[int] = None,
+        llm_model: Optional[str] = None,
+        fork: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Resume a run from a checkpoint on a remote server.
+        
+        Args:
+            server_id: Target server ID
+            run_id: Run to resume from
+            cycle: Checkpoint cycle (latest if not specified)
+            inference_count: Specific inference count within cycle
+            llm_model: Override LLM model
+            fork: Create new run ID if True
+            
+        Returns:
+            New/resumed run status
+        """
+        if not REQUESTS_AVAILABLE:
+            raise ImportError("requests library required")
+        
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        params = {"fork": str(fork).lower()}
+        if cycle is not None:
+            params["cycle"] = cycle
+        if inference_count is not None:
+            params["inference_count"] = inference_count
+        if llm_model:
+            params["llm_model"] = llm_model
+        
+        response = requests.post(
+            f"{server.url}/api/runs/{run_id}/resume",
+            params=params,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"Run or checkpoint not found: {run_id}")
+        else:
+            raise RuntimeError(f"Failed to resume run: {response.text}")
+    
+    def control_remote_run(
+        self,
+        server_id: str,
+        run_id: str,
+        action: str,
+    ) -> Dict[str, Any]:
+        """
+        Send execution control commands to a remote run.
+        
+        Args:
+            server_id: Target server ID
+            run_id: Run to control
+            action: One of "pause", "continue", "step", "stop"
+            
+        Returns:
+            Status response from remote server
+        """
+        server = self._servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server not found: {server_id}")
+        
+        valid_actions = ["pause", "continue", "step", "stop"]
+        if action not in valid_actions:
+            raise ValueError(f"Invalid action: {action}. Must be one of: {valid_actions}")
+        
+        response = requests.post(
+            f"{server.url}/api/runs/{run_id}/{action}",
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            raise ValueError(f"Run not found: {run_id}")
+        elif response.status_code == 400:
+            raise ValueError(response.json().get("detail", f"Cannot {action} run"))
+        else:
+            raise RuntimeError(f"Failed to {action} run: {response.text}")
+    
+    # =========================================================================
     # Server Building
     # =========================================================================
     

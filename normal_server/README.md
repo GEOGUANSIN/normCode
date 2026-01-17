@@ -32,9 +32,12 @@ Built: 2026-01-16 15:56:09
 
 ```
 normcode-server/
-├── start_server.py     # Start script
 ├── server.py           # Main server code
-├── runner.py           # Plan execution
+├── runner.py           # Plan execution (shared module)
+├── start_server.py     # Start server script (frequently used utility)
+├── scripts/            # Utility scripts
+│   └── pack.py         # Plan packager
+├── routes/             # API route modules
 ├── tools/              # Deployment tools
 ├── infra/              # Core NormCode library
 ├── mock_users/         # Test clients

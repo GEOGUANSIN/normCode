@@ -12,7 +12,7 @@ import sys
 import os
 from pathlib import Path
 
-# Add current directory to path
+# Add current directory (normal_server) to path
 SERVER_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SERVER_DIR))
 
@@ -25,3 +25,4 @@ from server import main
 
 if __name__ == "__main__":
     main()
+

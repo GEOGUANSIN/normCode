@@ -10,9 +10,25 @@ import type {
   RemoteRunStatus,
   RemoteRunResult,
   BuildServerResponse,
+  // Remote graph & inspection types
+  RemotePlanGraph,
+  RemoteCanvasGraph,
+  RemoteRunDbOverview,
+  RemoteRunExecutions,
+  RemoteRunStatistics,
+  RemoteRunCheckpoints,
+  RemoteCheckpointState,
+  RemoteBlackboardSummary,
+  RemoteCompletedConcepts,
+  RemoteResumeResult,
+  BoundRemoteRun,
 } from '../types/deployment';
 import { deploymentApi } from '../services/api';
 import { useNotificationStore } from './notificationStore';
+import { useGraphStore } from './graphStore';
+import { useProjectStore } from './projectStore';
+import type { GraphData, GraphNode, GraphEdge } from '../types/graph';
+import type { RemoteProjectTab } from '../types/project';
 
 interface DeploymentState {
   // Server management
@@ -25,11 +41,36 @@ interface DeploymentState {
   // Remote plans on selected server
   remotePlans: RemotePlan[];
   
-  // Active remote runs
+  // Active remote runs (including historical)
   activeRuns: RemoteRunStatus[];
   
   // Run results cache (run_id -> result)
   runResults: Record<string, RemoteRunResult>;
+  
+  // Remote graph cache (plan_id -> graph data)
+  remotePlanGraphs: Record<string, RemotePlanGraph>;
+  
+  // Remote canvas graphs cache (tab_id -> canvas-ready graph data)
+  remoteCanvasGraphs: Record<string, RemoteCanvasGraph>;
+  
+  // Currently loaded remote graph on canvas
+  loadedRemoteGraph: RemoteCanvasGraph | null;
+  
+  // Bound remote runs (mirrored to local canvas)
+  boundRemoteRuns: BoundRemoteRun[];
+  activeBoundRunId: string | null;
+  
+  // Selected remote run for inspection
+  selectedRemoteRunId: string | null;
+  
+  // Remote run inspection data
+  remoteRunDbOverview: RemoteRunDbOverview | null;
+  remoteRunExecutions: RemoteRunExecutions | null;
+  remoteRunStatistics: RemoteRunStatistics | null;
+  remoteRunCheckpoints: RemoteRunCheckpoints | null;
+  remoteCheckpointState: RemoteCheckpointState | null;
+  remoteBlackboard: RemoteBlackboardSummary | null;
+  remoteCompletedConcepts: RemoteCompletedConcepts | null;
   
   // Polling interval ID
   _pollingIntervalId: ReturnType<typeof setInterval> | null;
@@ -39,7 +80,7 @@ interface DeploymentState {
   isDeploying: boolean;
   isBuilding: boolean;
   isPanelOpen: boolean;
-  activeTab: 'servers' | 'deploy' | 'runs' | 'build';
+  activeTab: 'servers' | 'deploy' | 'runs' | 'build' | 'inspect';
   error: string | null;
   lastDeployResult: DeployResult | null;
   lastBuildResult: BuildServerResponse | null;
@@ -50,10 +91,11 @@ interface DeploymentState {
   setServerHealth: (serverId: string, health: ServerHealth) => void;
   setRemotePlans: (plans: RemotePlan[]) => void;
   setPanelOpen: (open: boolean) => void;
-  setActiveTab: (tab: 'servers' | 'deploy' | 'runs') => void;
+  setActiveTab: (tab: 'servers' | 'deploy' | 'runs' | 'build' | 'inspect') => void;
   setError: (error: string | null) => void;
+  setSelectedRemoteRunId: (runId: string | null) => void;
   
-  // Async actions
+  // Async actions - Server management
   fetchServers: () => Promise<void>;
   addServer: (name: string, url: string, description?: string, isDefault?: boolean) => Promise<boolean>;
   removeServer: (serverId: string) => Promise<void>;
@@ -70,6 +112,31 @@ interface DeploymentState {
   stopPolling: () => void;
   buildServer: (options?: { outputDir?: string; includeTestPlans?: boolean; createZip?: boolean }) => Promise<BuildServerResponse | null>;
   
+  // Async actions - Remote graph loading
+  fetchRemotePlanGraph: (serverId: string, planId: string) => Promise<RemotePlanGraph | null>;
+  loadRemotePlanOnCanvas: (serverId: string, planId: string) => Promise<boolean>;
+  loadRemoteRunOnCanvas: (serverId: string, runId: string, planId: string, planName: string, runStatus?: string) => Promise<boolean>;  // Load graph + bind run for live updates
+  loadCachedRemoteGraph: (tabId: string) => boolean;  // Load from cache when switching tabs
+  clearLoadedRemoteGraph: () => void;
+  
+  // Async actions - Remote runs listing (includes historical)
+  fetchRemoteRuns: (serverId: string, includeHistorical?: boolean) => Promise<void>;
+  
+  // Async actions - Remote run inspection
+  fetchRemoteRunDbOverview: (serverId: string, runId: string) => Promise<RemoteRunDbOverview | null>;
+  fetchRemoteRunExecutions: (serverId: string, runId: string, options?: { includeLogs?: boolean; limit?: number; offset?: number }) => Promise<RemoteRunExecutions | null>;
+  fetchRemoteRunStatistics: (serverId: string, runId: string) => Promise<RemoteRunStatistics | null>;
+  fetchRemoteRunCheckpoints: (serverId: string, runId: string) => Promise<RemoteRunCheckpoints | null>;
+  fetchRemoteCheckpointState: (serverId: string, runId: string, cycle: number, inferenceCount?: number) => Promise<RemoteCheckpointState | null>;
+  fetchRemoteBlackboard: (serverId: string, runId: string, cycle?: number) => Promise<RemoteBlackboardSummary | null>;
+  fetchRemoteCompletedConcepts: (serverId: string, runId: string, cycle?: number) => Promise<RemoteCompletedConcepts | null>;
+  resumeRemoteRun: (serverId: string, runId: string, options?: { cycle?: number; inferenceCount?: number; llmModel?: string; fork?: boolean }) => Promise<RemoteResumeResult | null>;
+  
+  // Remote run binding (mirror to local canvas)
+  bindRemoteRun: (serverId: string, runId: string, planId: string, planName: string) => Promise<boolean>;
+  unbindRemoteRun: (serverId: string, runId: string) => Promise<boolean>;
+  fetchBoundRuns: () => Promise<void>;
+  
   // Reset
   reset: () => void;
 }
@@ -82,6 +149,19 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   remotePlans: [],
   activeRuns: [],
   runResults: {},
+  remotePlanGraphs: {},
+  remoteCanvasGraphs: {},
+  loadedRemoteGraph: null,
+  boundRemoteRuns: [],
+  activeBoundRunId: null,
+  selectedRemoteRunId: null,
+  remoteRunDbOverview: null,
+  remoteRunExecutions: null,
+  remoteRunStatistics: null,
+  remoteRunCheckpoints: null,
+  remoteCheckpointState: null,
+  remoteBlackboard: null,
+  remoteCompletedConcepts: null,
   _pollingIntervalId: null,
   isLoading: false,
   isDeploying: false,
@@ -102,6 +182,17 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   setPanelOpen: (open) => set({ isPanelOpen: open }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setError: (error) => set({ error }),
+  setSelectedRemoteRunId: (runId) => set({ 
+    selectedRemoteRunId: runId,
+    // Clear inspection data when changing run
+    remoteRunDbOverview: null,
+    remoteRunExecutions: null,
+    remoteRunStatistics: null,
+    remoteRunCheckpoints: null,
+    remoteCheckpointState: null,
+    remoteBlackboard: null,
+    remoteCompletedConcepts: null,
+  }),
   
   // Fetch all servers
   fetchServers: async () => {
@@ -246,6 +337,10 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
   
   // Start a run on a remote server
   startRemoteRun: async (serverId, planId, llmModel) => {
+    const { remotePlans } = get();
+    const plan = remotePlans.find(p => p.id === planId);
+    const planName = plan?.name || planId;
+    
     try {
       const run = await deploymentApi.startRemoteRun({
         server_id: serverId,
@@ -261,6 +356,18 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
         `Started run ${run.run_id.substring(0, 8)}...`,
         3000
       );
+      
+      // Check if this plan is currently loaded on canvas - if so, auto-bind the run
+      const { activeRemoteTabId, remoteProjectTabs } = useProjectStore.getState();
+      const activeRemoteTab = activeRemoteTabId 
+        ? remoteProjectTabs.find(t => t.id === activeRemoteTabId)
+        : null;
+      
+      if (activeRemoteTab && activeRemoteTab.server_id === serverId && activeRemoteTab.plan_id === planId) {
+        // This run is for the currently active remote tab - bind it automatically
+        console.log(`[deploymentStore] Auto-binding run ${run.run_id} to active remote tab`);
+        get().bindRemoteRun(serverId, run.run_id, planId, planName);
+      }
       
       return run;
     } catch (err) {
@@ -367,6 +474,513 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
     }
   },
   
+  // =========================================================================
+  // Remote Graph Loading
+  // =========================================================================
+  
+  fetchRemotePlanGraph: async (serverId, planId) => {
+    set({ isLoading: true, error: null });
+    try {
+      const graph = await deploymentApi.getRemotePlanGraph(serverId, planId);
+      set((state) => ({
+        remotePlanGraphs: { ...state.remotePlanGraphs, [planId]: graph },
+        isLoading: false,
+      }));
+      return graph;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch plan graph';
+      set({ error: message, isLoading: false });
+      console.error('Failed to fetch remote plan graph:', err);
+      return null;
+    }
+  },
+  
+  loadRemotePlanOnCanvas: async (serverId, planId) => {
+    const { addNotification } = useNotificationStore.getState();
+    const { setGraphData } = useGraphStore.getState();
+    const { servers } = get();
+    const projectStore = useProjectStore.getState();
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Fetch canvas-ready graph (nodes + edges) from remote server
+      const canvasGraph = await deploymentApi.getRemoteCanvasGraph(serverId, planId);
+      
+      // Convert remote graph format to GraphData format for the canvas
+      const graphData: GraphData = {
+        nodes: canvasGraph.nodes.map(n => ({
+          ...n,
+          category: n.category as GraphNode['category'],
+          node_type: n.node_type as GraphNode['node_type'],
+        })) as GraphNode[],
+        edges: canvasGraph.edges.map(e => ({
+          ...e,
+          edge_type: e.edge_type as GraphEdge['edge_type'],
+        })) as GraphEdge[],
+      };
+      
+      // Set the graph in graphStore for canvas rendering
+      setGraphData(graphData);
+      
+      // Store the loaded remote graph metadata and cache it
+      const tabId = `remote:${serverId}:${planId}`;
+      set((state) => ({ 
+        loadedRemoteGraph: canvasGraph, 
+        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [tabId]: canvasGraph },
+        isLoading: false,
+      }));
+      
+      // Create a remote project tab
+      const server = servers.find(s => s.id === serverId);
+      const remoteTab: RemoteProjectTab = {
+        id: `remote:${serverId}:${planId}`,
+        name: canvasGraph.plan_name,
+        server_id: serverId,
+        server_name: server?.name || 'Unknown Server',
+        plan_id: planId,
+        plan_name: canvasGraph.plan_name,
+        is_active: true,
+        is_loaded: true,
+        node_count: canvasGraph.nodes.length,
+        edge_count: canvasGraph.edges.length,
+      };
+      
+      // Add the remote tab to project store
+      projectStore.addRemoteTab(remoteTab);
+      
+      addNotification({
+        type: 'success',
+        title: 'Remote Plan Loaded',
+        message: `Loaded "${canvasGraph.plan_name}" from ${server?.name || 'remote server'}`,
+        duration: 4000,
+      });
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load remote plan';
+      set({ error: message, isLoading: false });
+      console.error('Failed to load remote plan on canvas:', err);
+      
+      addNotification({
+        type: 'error',
+        title: 'Failed to Load',
+        message,
+        duration: 6000,
+      });
+      
+      return false;
+    }
+  },
+  
+  loadRemoteRunOnCanvas: async (serverId, runId, planId, planName, runStatus) => {
+    const { addNotification } = useNotificationStore.getState();
+    const { setGraphData } = useGraphStore.getState();
+    const { servers, bindRemoteRun, fetchBoundRuns, activeRuns } = get();
+    const projectStore = useProjectStore.getState();
+    set({ isLoading: true, error: null });
+    
+    // Check if run is active (can be bound for live updates)
+    const isActiveRun = runStatus === 'running' || runStatus === 'paused' || runStatus === 'pending';
+    
+    try {
+      // 1. Fetch canvas-ready graph (nodes + edges) from remote server
+      const canvasGraph = await deploymentApi.getRemoteCanvasGraph(serverId, planId);
+      
+      // Convert remote graph format to GraphData format for the canvas
+      const graphData: GraphData = {
+        nodes: canvasGraph.nodes.map(n => ({
+          ...n,
+          category: n.category as GraphNode['category'],
+          node_type: n.node_type as GraphNode['node_type'],
+        })) as GraphNode[],
+        edges: canvasGraph.edges.map(e => ({
+          ...e,
+          edge_type: e.edge_type as GraphEdge['edge_type'],
+        })) as GraphEdge[],
+      };
+      
+      // Set the graph in graphStore for canvas rendering
+      setGraphData(graphData);
+      
+      // 2. Only bind for live event streaming if run is active
+      let bindSuccess = false;
+      if (isActiveRun) {
+        bindSuccess = await bindRemoteRun(serverId, runId, planId, planName);
+      }
+      
+      // 3. Store the loaded remote graph metadata and cache it
+      const tabId = `remote:${serverId}:${planId}:${runId}`;
+      set((state) => ({ 
+        loadedRemoteGraph: canvasGraph, 
+        remoteCanvasGraphs: { ...state.remoteCanvasGraphs, [tabId]: canvasGraph },
+        activeBoundRunId: runId,
+        isLoading: false,
+      }));
+      
+      // 4. Create a remote project tab with run binding
+      const server = servers.find(s => s.id === serverId);
+      const remoteTab: RemoteProjectTab = {
+        id: tabId,
+        name: planName || canvasGraph.plan_name,
+        server_id: serverId,
+        server_name: server?.name || 'Unknown Server',
+        plan_id: planId,
+        plan_name: canvasGraph.plan_name,
+        is_active: true,
+        is_loaded: true,
+        node_count: canvasGraph.nodes.length,
+        edge_count: canvasGraph.edges.length,
+        run_id: runId,
+        is_bound: bindSuccess,
+      };
+      
+      // Add the remote tab to project store
+      projectStore.addRemoteTab(remoteTab);
+      
+      // Sync initial execution state to executionStore
+      const { useExecutionStore } = await import('./executionStore');
+      const execStore = useExecutionStore.getState();
+      
+      if (isActiveRun && bindSuccess) {
+        // Refresh bound runs list for active runs
+        await fetchBoundRuns();
+        
+        // Sync from bound run
+        const { boundRemoteRuns } = get();
+        const boundRun = boundRemoteRuns.find(r => r.run_id === runId);
+        if (boundRun) {
+          const statusMap: Record<string, string> = {
+            'connecting': 'idle',
+            'connected': 'running',
+            'running': 'running',
+            'paused': 'paused',
+            'stepping': 'stepping',
+            'completed': 'completed',
+            'failed': 'failed',
+            'stopped': 'idle',
+            'cancelled': 'idle',
+            'error': 'failed',
+          };
+          const execStatus = statusMap[boundRun.status] || 'idle';
+          execStore.setStatus(execStatus as any);
+          execStore.setProgress(
+            boundRun.completed_count,
+            boundRun.total_count,
+            boundRun.cycle_count
+          );
+        }
+        
+        addNotification({
+          type: 'success',
+          title: 'Remote Run Loaded',
+          message: `Loaded "${planName}" with live updates from ${server?.name || 'remote server'}`,
+          duration: 4000,
+        });
+      } else {
+        // For completed/failed runs, sync from activeRuns list
+        const run = activeRuns.find(r => r.run_id === runId);
+        if (run) {
+          const statusMap: Record<string, string> = {
+            'running': 'running',
+            'paused': 'paused',
+            'pending': 'idle',
+            'completed': 'completed',
+            'failed': 'failed',
+            'stopped': 'idle',
+          };
+          const execStatus = statusMap[run.status] || 'completed';
+          execStore.setStatus(execStatus as any);
+          execStore.setProgress(
+            run.progress?.completed_count || 0,
+            run.progress?.total_count || 0,
+            run.progress?.cycle_count || 0
+          );
+        } else if (runStatus) {
+          // Fallback: use the passed runStatus
+          const statusMap: Record<string, string> = {
+            'running': 'running',
+            'paused': 'paused',
+            'pending': 'idle',
+            'completed': 'completed',
+            'failed': 'failed',
+            'stopped': 'idle',
+          };
+          execStore.setStatus((statusMap[runStatus] || 'completed') as any);
+        }
+        
+        addNotification({
+          type: 'success',
+          title: 'Remote Run Loaded',
+          message: `Loaded "${planName}" (${runStatus || 'completed'}) from ${server?.name || 'remote server'}`,
+          duration: 4000,
+        });
+      }
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load remote run';
+      set({ error: message, isLoading: false });
+      console.error('Failed to load remote run on canvas:', err);
+      
+      addNotification({
+        type: 'error',
+        title: 'Failed to Load',
+        message,
+        duration: 6000,
+      });
+      
+      return false;
+    }
+  },
+  
+  loadCachedRemoteGraph: (tabId) => {
+    const { remoteCanvasGraphs } = get();
+    const cachedGraph = remoteCanvasGraphs[tabId];
+    
+    if (!cachedGraph) {
+      console.warn(`No cached graph found for tab: ${tabId}`);
+      return false;
+    }
+    
+    // Convert cached graph to GraphData and set in graphStore
+    const { setGraphData } = useGraphStore.getState();
+    const graphData: GraphData = {
+      nodes: cachedGraph.nodes.map(n => ({
+        ...n,
+        category: n.category as GraphNode['category'],
+        node_type: n.node_type as GraphNode['node_type'],
+      })) as GraphNode[],
+      edges: cachedGraph.edges.map(e => ({
+        ...e,
+        edge_type: e.edge_type as GraphEdge['edge_type'],
+      })) as GraphEdge[],
+    };
+    
+    setGraphData(graphData);
+    set({ loadedRemoteGraph: cachedGraph });
+    return true;
+  },
+  
+  clearLoadedRemoteGraph: () => {
+    const { loadedRemoteGraph } = get();
+    if (!loadedRemoteGraph) return;
+    
+    const projectStore = useProjectStore.getState();
+    const tabId = `remote:${loadedRemoteGraph.server_id}:${loadedRemoteGraph.plan_id}`;
+    projectStore.closeRemoteTab(tabId);
+    set({ loadedRemoteGraph: null });
+  },
+  
+  // =========================================================================
+  // Remote Runs (includes historical)
+  // =========================================================================
+  
+  fetchRemoteRuns: async (serverId, includeHistorical = true) => {
+    set({ isLoading: true });
+    try {
+      const runs = await deploymentApi.listRemoteRuns(serverId, includeHistorical);
+      // Add server_id to each run if not present
+      const runsWithServer = runs.map(r => ({ ...r, server_id: r.server_id || serverId }));
+      set({ activeRuns: runsWithServer, isLoading: false });
+    } catch (err) {
+      console.error('Failed to fetch remote runs:', err);
+      set({ activeRuns: [], isLoading: false });
+    }
+  },
+  
+  // =========================================================================
+  // Remote Run Database Inspection
+  // =========================================================================
+  
+  fetchRemoteRunDbOverview: async (serverId, runId) => {
+    set({ isLoading: true });
+    try {
+      const overview = await deploymentApi.getRemoteRunDbOverview(serverId, runId);
+      set({ remoteRunDbOverview: overview, isLoading: false });
+      return overview;
+    } catch (err) {
+      console.error('Failed to fetch run DB overview:', err);
+      set({ remoteRunDbOverview: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteRunExecutions: async (serverId, runId, options = {}) => {
+    set({ isLoading: true });
+    try {
+      const executions = await deploymentApi.getRemoteRunExecutions(serverId, runId, options);
+      set({ remoteRunExecutions: executions, isLoading: false });
+      return executions;
+    } catch (err) {
+      console.error('Failed to fetch run executions:', err);
+      set({ remoteRunExecutions: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteRunStatistics: async (serverId, runId) => {
+    set({ isLoading: true });
+    try {
+      const statistics = await deploymentApi.getRemoteRunStatistics(serverId, runId);
+      set({ remoteRunStatistics: statistics, isLoading: false });
+      return statistics;
+    } catch (err) {
+      console.error('Failed to fetch run statistics:', err);
+      set({ remoteRunStatistics: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteRunCheckpoints: async (serverId, runId) => {
+    set({ isLoading: true });
+    try {
+      const checkpoints = await deploymentApi.listRemoteRunCheckpoints(serverId, runId);
+      set({ remoteRunCheckpoints: checkpoints, isLoading: false });
+      return checkpoints;
+    } catch (err) {
+      console.error('Failed to fetch run checkpoints:', err);
+      set({ remoteRunCheckpoints: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteCheckpointState: async (serverId, runId, cycle, inferenceCount) => {
+    set({ isLoading: true });
+    try {
+      const state = await deploymentApi.getRemoteCheckpointState(serverId, runId, cycle, inferenceCount);
+      set({ remoteCheckpointState: state, isLoading: false });
+      return state;
+    } catch (err) {
+      console.error('Failed to fetch checkpoint state:', err);
+      set({ remoteCheckpointState: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteBlackboard: async (serverId, runId, cycle) => {
+    set({ isLoading: true });
+    try {
+      const blackboard = await deploymentApi.getRemoteBlackboardSummary(serverId, runId, cycle);
+      set({ remoteBlackboard: blackboard, isLoading: false });
+      return blackboard;
+    } catch (err) {
+      console.error('Failed to fetch blackboard:', err);
+      set({ remoteBlackboard: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  fetchRemoteCompletedConcepts: async (serverId, runId, cycle) => {
+    set({ isLoading: true });
+    try {
+      const concepts = await deploymentApi.getRemoteCompletedConcepts(serverId, runId, cycle);
+      set({ remoteCompletedConcepts: concepts, isLoading: false });
+      return concepts;
+    } catch (err) {
+      console.error('Failed to fetch completed concepts:', err);
+      set({ remoteCompletedConcepts: null, isLoading: false });
+      return null;
+    }
+  },
+  
+  resumeRemoteRun: async (serverId, runId, options = {}) => {
+    set({ isLoading: true });
+    try {
+      const result = await deploymentApi.resumeRemoteRun(serverId, runId, options);
+      
+      useNotificationStore.getState().showSuccess(
+        options.fork ? 'Run Forked' : 'Run Resumed',
+        `${options.fork ? 'Forked' : 'Resumed'} run ${result.run_id.substring(0, 8)}... from cycle ${result.resumed_from.cycle}`,
+        5000
+      );
+      
+      // Refresh runs list
+      get().fetchRemoteRuns(serverId);
+      
+      set({ isLoading: false });
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resume run';
+      useNotificationStore.getState().showError('Resume Failed', message);
+      set({ isLoading: false });
+      return null;
+    }
+  },
+  
+  // =========================================================================
+  // Remote Run Binding (Mirror to Local Canvas)
+  // =========================================================================
+  
+  bindRemoteRun: async (serverId, runId, planId, planName) => {
+    const { addNotification } = useNotificationStore.getState();
+    
+    try {
+      await deploymentApi.bindRemoteRun(serverId, runId, planId, planName);
+      
+      addNotification({
+        type: 'success',
+        title: 'Remote Run Bound',
+        message: `Now mirroring execution from ${planName || runId}`,
+        duration: 4000,
+      });
+      
+      // Refresh bound runs
+      get().fetchBoundRuns();
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to bind remote run';
+      addNotification({
+        type: 'error',
+        title: 'Bind Failed',
+        message,
+        duration: 6000,
+      });
+      return false;
+    }
+  },
+  
+  unbindRemoteRun: async (serverId, runId) => {
+    const { addNotification } = useNotificationStore.getState();
+    
+    try {
+      await deploymentApi.unbindRemoteRun(serverId, runId);
+      
+      addNotification({
+        type: 'info',
+        title: 'Remote Run Unbound',
+        message: 'Stopped mirroring remote execution',
+        duration: 3000,
+      });
+      
+      // Refresh bound runs
+      get().fetchBoundRuns();
+      
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to unbind remote run';
+      addNotification({
+        type: 'error',
+        title: 'Unbind Failed',
+        message,
+        duration: 6000,
+      });
+      return false;
+    }
+  },
+  
+  fetchBoundRuns: async () => {
+    try {
+      const result = await deploymentApi.listBoundRuns();
+      set({ 
+        boundRemoteRuns: result.bound_runs,
+        activeBoundRunId: result.bound_runs.find(r => r.is_active)?.run_id || null,
+      });
+    } catch (err) {
+      console.error('Failed to fetch bound runs:', err);
+    }
+  },
+  
   // Reset store
   reset: () => {
     get().stopPolling();
@@ -374,6 +988,19 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
       remotePlans: [],
       activeRuns: [],
       runResults: {},
+      remotePlanGraphs: {},
+      remoteCanvasGraphs: {},
+      loadedRemoteGraph: null,
+      boundRemoteRuns: [],
+      activeBoundRunId: null,
+      selectedRemoteRunId: null,
+      remoteRunDbOverview: null,
+      remoteRunExecutions: null,
+      remoteRunStatistics: null,
+      remoteRunCheckpoints: null,
+      remoteCheckpointState: null,
+      remoteBlackboard: null,
+      remoteCompletedConcepts: null,
       isLoading: false,
       isDeploying: false,
       isBuilding: false,
