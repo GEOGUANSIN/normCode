@@ -29,7 +29,7 @@ from services.portable_project_service import portable_project_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/portable", tags=["portable"])
+router = APIRouter(tags=["portable"])
 
 
 # =============================================================================
