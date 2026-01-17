@@ -47,7 +47,7 @@ for infra_logger_name in ['infra', 'infra._core', 'infra._agent', 'infra._orches
 # Create FastAPI app
 app = FastAPI(
     title="NormCode Canvas API",
-    version="0.1.0",
+    version="1.0.1-alpha",
     description="Backend for NormCode Graph Canvas Tool - visualize, execute, and debug NormCode plans",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -149,7 +149,7 @@ async def root():
     # In development mode, return API info
     return {
         "name": "NormCode Canvas API",
-        "version": "0.1.0",
+        "version": "1.0.1-alpha",
         "docs": "/docs",
         "websocket": "/ws/events",
     }

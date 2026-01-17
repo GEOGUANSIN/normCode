@@ -31,7 +31,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const totalCount = useExecutionStore((s) => s.totalCount);
   const cycleCount = useExecutionStore((s) => s.cycleCount);
   const currentInference = useExecutionStore((s) => s.currentInference);
-  const setStatus = useExecutionStore((s) => s.setStatus);
   const reset = useExecutionStore((s) => s.reset);
   const verboseLogging = useExecutionStore((s) => s.verboseLogging);
   const setVerboseLogging = useExecutionStore((s) => s.setVerboseLogging);

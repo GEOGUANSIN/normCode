@@ -4,7 +4,7 @@ NormCode Canvas - PyInstaller Spec File
 ========================================
 
 This spec file configures PyInstaller to package the NormCode Canvas 
-application into a standalone Windows executable.
+application into a standalone Windows executable with native window support.
 
 Build command:
     cd build
@@ -15,8 +15,10 @@ Output:
 """
 
 import sys
+import os
+import glob
 from pathlib import Path
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, collect_dynamic_libs
 
 # Paths
 SPEC_DIR = Path(SPECPATH)
@@ -113,12 +115,49 @@ hidden_imports = [
     'encodings',
     'encodings.idna',
     
+    # XML parsing (required for pkg_resources and plistlib)
+    'xml',
+    'xml.parsers',
+    'xml.parsers.expat',
+    'pyexpat',
+    'xml.etree',
+    'xml.etree.ElementTree',
+    'xml.dom',
+    'xml.sax',
+    'plistlib',
+    
     # YAML for settings
     'yaml',
     
     # OpenAI (for infra)
     'openai',
     'httpx',
+    
+    # ===== pywebview for native desktop window =====
+    'webview',
+    'webview.platforms',
+    'webview.platforms.edgechromium',
+    'webview.platforms.winforms',
+    'webview.platforms.cef',
+    'webview.js',
+    'webview.util',
+    'webview.window',
+    'webview.event',
+    'webview.guilib',
+    'webview.menu',
+    'webview.screen',
+    'webview.http',
+    
+    # pythonnet for Windows .NET integration (pywebview dependency)
+    'clr',
+    'clr_loader',
+    'pythonnet',
+    
+    # bottle (used by pywebview internally)
+    'bottle',
+    
+    # proxy_tools (pywebview dependency)
+    'proxy_tools',
 ]
 
 # Add uvicorn submodules explicitly
@@ -138,6 +177,19 @@ try:
     hidden_imports += collect_submodules('starlette')
 except Exception:
     pass
+
+# Add pywebview submodules
+try:
+    hidden_imports += collect_submodules('webview')
+except Exception:
+    pass
+
+# Add clr_loader submodules for pythonnet
+try:
+    hidden_imports += collect_submodules('clr_loader')
+except Exception:
+    pass
+
 
 # Collect all submodules from backend routers, services, schemas
 try:
@@ -171,6 +223,84 @@ datas = [
     (str(CANVAS_APP / "settings.yaml.example"), "."),
 ]
 
+# Collect webview data files (templates, js files, etc.)
+try:
+    datas += collect_data_files('webview')
+except Exception:
+    pass
+
+# Collect clr_loader data files
+try:
+    datas += collect_data_files('clr_loader')
+except Exception:
+    pass
+
+# Binaries - collect native libraries
+binaries = []
+
+# CRITICAL: Include pyexpat and other core DLLs (required for XML parsing, pkg_resources, plistlib)
+# This is especially important for conda environments where DLLs may be in non-standard locations
+try:
+    python_dir = Path(sys.executable).parent
+    
+    # Possible locations for Python extension modules and DLLs
+    search_dirs = [
+        python_dir / "DLLs",
+        python_dir,
+        python_dir / "Library" / "bin",  # Conda location
+        python_dir / "Lib",
+    ]
+    
+    # Critical extension modules that must be included
+    critical_modules = ['pyexpat.pyd', 'pyexpat.cp311-win_amd64.pyd', '_elementtree.pyd']
+    # Critical DLLs
+    critical_dlls = ['libexpat.dll', 'expat.dll']
+    
+    found_pyexpat = False
+    for search_dir in search_dirs:
+        if not search_dir.exists():
+            continue
+        
+        # Look for .pyd files (Python extension modules)
+        for module_name in critical_modules:
+            module_path = search_dir / module_name
+            if module_path.exists() and not found_pyexpat:
+                binaries.append((str(module_path), "."))
+                print(f"Including {module_name} from: {module_path}")
+                if 'pyexpat' in module_name:
+                    found_pyexpat = True
+        
+        # Also look for any pyexpat variant
+        if not found_pyexpat:
+            for pyd in search_dir.glob("pyexpat*.pyd"):
+                binaries.append((str(pyd), "."))
+                print(f"Including pyexpat from: {pyd}")
+                found_pyexpat = True
+                break
+        
+        # Look for DLLs
+        for dll_name in critical_dlls:
+            dll_path = search_dir / dll_name
+            if dll_path.exists():
+                binaries.append((str(dll_path), "."))
+                print(f"Including {dll_name} from: {dll_path}")
+    
+    if not found_pyexpat:
+        print("WARNING: pyexpat.pyd not found in any standard location!")
+        print(f"  Searched: {[str(d) for d in search_dirs if d.exists()]}")
+        
+except Exception as e:
+    print(f"Warning: Error while collecting pyexpat: {e}")
+
+# Try to collect pythonnet runtime binaries
+try:
+    import clr_loader
+    clr_path = Path(clr_loader.__file__).parent
+    for dll in clr_path.rglob('*.dll'):
+        binaries.append((str(dll), str(dll.parent.relative_to(clr_path.parent))))
+except Exception:
+    pass
+
 # Add icon if exists - use absolute path for reliability
 icon_path = RESOURCES_DIR / "icon.ico"
 print(f"Looking for icon at: {icon_path}")
@@ -192,7 +322,7 @@ a = Analysis(
         str(PROJECT_ROOT),
         str(CANVAS_APP / "backend"),
     ],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],
@@ -235,7 +365,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # Enable console for debugging (set to False for release)
+    console=False,  # WINDOWED MODE - no console window
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
@@ -254,4 +384,3 @@ coll = COLLECT(
     upx_exclude=[],
     name='NormCodeCanvas',
 )
-

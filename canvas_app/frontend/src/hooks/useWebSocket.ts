@@ -572,37 +572,37 @@ export function useWebSocket() {
         
         case 'remote:connected':
           console.log('[Remote] Connected to remote run stream:', data.run_id);
-          addLog('info', '', `Connected to remote run: ${data.plan_name || data.run_id}`);
+          addLog({ level: 'info', flowIndex: '', message: `Connected to remote run: ${data.plan_name || data.run_id}` });
           break;
         
         case 'remote:run_started':
           console.log('[Remote] Run started:', data.run_id);
           setStatus('running');
-          addLog('info', '', `Remote run started: ${data.run_id}`);
+          addLog({ level: 'info', flowIndex: '', message: `Remote run started: ${data.run_id}` });
           break;
         
         case 'remote:execution:paused':
           console.log('[Remote] Run paused:', data.run_id);
           setStatus('paused');
-          addLog('info', '', `[Remote] Run paused`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Run paused` });
           break;
         
         case 'remote:execution:resumed':
           console.log('[Remote] Run resumed:', data.run_id);
           setStatus('running');
-          addLog('info', '', `[Remote] Run resumed`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Run resumed` });
           break;
         
         case 'remote:execution:stepping':
           console.log('[Remote] Run stepping:', data.run_id);
           setStatus('stepping');
-          addLog('info', '', `[Remote] Stepping...`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Stepping...` });
           break;
         
         case 'remote:execution:stopped':
           console.log('[Remote] Run stopped:', data.run_id);
           setStatus('idle');
-          addLog('info', '', `[Remote] Run stopped`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Run stopped` });
           break;
         
         case 'remote:node_statuses':
@@ -615,53 +615,52 @@ export function useWebSocket() {
         case 'remote:inference_started':
           setCurrentInference(data.flow_index as string);
           setNodeStatus(data.flow_index as string, 'running');
-          addLog('info', data.flow_index as string, `[Remote] Executing: ${data.concept_name || data.flow_index}`);
+          addLog({ level: 'info', flowIndex: data.flow_index as string, message: `[Remote] Executing: ${data.concept_name || data.flow_index}` });
           break;
         
         case 'remote:inference_completed':
           setNodeStatus(data.flow_index as string, 'completed');
-          addLog('info', data.flow_index as string, `[Remote] Completed in ${(data.duration as number || 0).toFixed(2)}s`);
+          addLog({ level: 'info', flowIndex: data.flow_index as string, message: `[Remote] Completed in ${(data.duration as number || 0).toFixed(2)}s` });
           break;
         
         case 'remote:inference_failed':
         case 'remote:inference_error':
           setNodeStatus(data.flow_index as string, 'failed');
-          addLog('error', data.flow_index as string, `[Remote] Failed: ${data.error || data.status || 'Unknown error'}`);
+          addLog({ level: 'error', flowIndex: data.flow_index as string, message: `[Remote] Failed: ${data.error || data.status || 'Unknown error'}` });
           break;
         
         case 'remote:progress':
-          setProgress({
-            completedCount: data.completed_count as number,
-            totalCount: data.total_count as number,
-            cycleCount: data.cycle_count as number,
-            currentInference: data.current_inference as string | undefined,
-          });
+          setProgress(
+            data.completed_count as number,
+            data.total_count as number,
+            data.cycle_count as number
+          );
           break;
         
         case 'remote:cycle_started':
-          addLog('info', '', `[Remote] Cycle ${data.cycle} started`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Cycle ${data.cycle} started` });
           break;
         
         case 'remote:cycle_completed':
-          addLog('info', '', `[Remote] Cycle ${data.cycle} completed`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Cycle ${data.cycle} completed` });
           break;
         
         case 'remote:run_completed':
           setStatus('completed');
-          addLog('info', '', `[Remote] Run completed successfully`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Run completed successfully` });
           break;
         
         case 'remote:run_failed':
           setStatus('failed');
-          addLog('error', '', `[Remote] Run failed: ${data.error || 'Unknown error'}`);
+          addLog({ level: 'error', flowIndex: '', message: `[Remote] Run failed: ${data.error || 'Unknown error'}` });
           break;
         
         case 'remote:error':
-          addLog('error', '', `[Remote] Error: ${data.error || 'Unknown error'}`);
+          addLog({ level: 'error', flowIndex: '', message: `[Remote] Error: ${data.error || 'Unknown error'}` });
           break;
         
         case 'remote:unbound':
-          addLog('info', '', `[Remote] Disconnected from remote run`);
+          addLog({ level: 'info', flowIndex: '', message: `[Remote] Disconnected from remote run` });
           break;
 
         default:

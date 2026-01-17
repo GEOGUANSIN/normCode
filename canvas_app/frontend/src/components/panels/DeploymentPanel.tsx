@@ -1602,7 +1602,6 @@ function InspectTab({
   const {
     activeRuns,
     selectedRemoteRunId,
-    remoteRunDbOverview,
     remoteRunStatistics,
     remoteRunCheckpoints,
     remoteBlackboard,

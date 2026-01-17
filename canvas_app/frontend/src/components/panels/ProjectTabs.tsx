@@ -50,7 +50,9 @@ function ProjectTab({ tab, isActive, onSwitch, onClose }: ProjectTabProps) {
     >
       {/* Icon based on tab type */}
       {isRemote ? (
-        <Globe size={14} className="text-cyan-500" title={`Remote: ${tab.server_name || 'Unknown Server'}`} />
+        <span title={`Remote: ${tab.server_name || 'Unknown Server'}`}>
+          <Globe size={14} className="text-cyan-500" />
+        </span>
       ) : isCompiler ? (
         <Sparkles size={14} className="text-purple-500" />
       ) : (
@@ -141,7 +143,7 @@ export function ProjectTabs({ onOpenProjectPanel }: ProjectTabsProps) {
     // If this is a remote tab and its graph is loaded, clear it
     const tab = openTabs.find(t => t.id === tabId);
     if (tab?.is_remote && loadedRemoteGraph) {
-      useDeploymentStore.getState().set({ loadedRemoteGraph: null });
+      useDeploymentStore.getState().clearLoadedRemoteGraph();
     }
     await closeTab(tabId);
   };
