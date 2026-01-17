@@ -318,7 +318,7 @@ export function ProjectPanel() {
   if (isProjectPanelOpen) {
     return (
       <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-xl p-6 max-w-xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-slate-200">
+        <div className="bg-white rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-slate-200">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-slate-800">
@@ -912,6 +912,16 @@ export function ProjectPanel() {
                           <span className="text-slate-400">Runs:</span> {previewInfo.runs_count}
                         </div>
                       </div>
+                      {/* Repository files */}
+                      {previewInfo.repositories && Object.keys(previewInfo.repositories).length > 0 && (
+                        <div className="text-xs text-slate-500 pt-1 border-t border-orange-100">
+                          <span className="text-slate-400">Repositories:</span>{' '}
+                          {Object.entries(previewInfo.repositories)
+                            .filter(([, v]) => v)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(', ') || 'None'}
+                        </div>
+                      )}
                       {Object.keys(previewInfo.provisions).length > 0 && (
                         <div className="text-xs text-slate-500">
                           <span className="text-slate-400">Provisions:</span> {Object.keys(previewInfo.provisions).join(', ')}

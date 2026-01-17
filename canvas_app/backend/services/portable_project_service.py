@@ -129,6 +129,7 @@ class PortableProjectService:
                 
                 # Copy repository files
                 repos = config.repositories
+                repositories_included: Dict[str, Optional[str]] = {}
                 for repo_name, repo_path in [
                     ("concepts", repos.concepts),
                     ("inferences", repos.inferences),
@@ -142,6 +143,13 @@ class PortableProjectService:
                             dest_path.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(src_path, dest_path)
                             all_files.append(f"{PROJECT_SUBDIR}/{repo_path}")
+                            repositories_included[repo_name] = repo_path
+                            logger.info(f"Exported {repo_name}: {repo_path}")
+                        else:
+                            logger.warning(f"{repo_name} file not found: {repo_path}")
+                            repositories_included[repo_name] = None
+                    else:
+                        repositories_included[repo_name] = None
                 
                 # 2. Copy provisions
                 provisions_included: Dict[str, str] = {}
@@ -184,6 +192,7 @@ class PortableProjectService:
                     project_name=config.name,
                     project_description=config.description,
                     config_file=config_file,
+                    repositories=repositories_included,
                     files=all_files,
                     has_database=has_database,
                     database_file=f"{DATABASE_SUBDIR}/orchestration.db" if has_database else None,
@@ -520,6 +529,7 @@ class PortableProjectService:
             project_id=manifest.project_id,
             project_name=manifest.project_name,
             project_description=manifest.project_description,
+            repositories=manifest.repositories,
             files_count=files_count,
             has_database=manifest.has_database,
             runs_count=manifest.runs_count,

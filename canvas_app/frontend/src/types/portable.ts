@@ -73,6 +73,7 @@ export interface PortableProjectInfo {
   project_id: string;
   project_name: string;
   project_description: string | null;
+  repositories: Record<string, string | null>;  // e.g., {concepts: "concepts.json", inputs: "inputs.json"}
   files_count: number;
   has_database: boolean;
   runs_count: number;

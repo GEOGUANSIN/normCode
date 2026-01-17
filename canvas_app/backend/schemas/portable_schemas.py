@@ -38,6 +38,10 @@ class PortableManifest(BaseModel):
     project_description: Optional[str] = None
     config_file: str  # The project config filename
     
+    # Repository files (explicit tracking)
+    repositories: Dict[str, Optional[str]] = Field(default_factory=dict)
+    # e.g., {"concepts": "concepts.json", "inferences": "inferences.json", "inputs": "inputs.json"}
+    
     # Content inventory
     files: List[str] = Field(default_factory=list)  # All included files (relative paths)
     
@@ -139,6 +143,10 @@ class PortableProjectInfo(BaseModel):
     project_id: str
     project_name: str
     project_description: Optional[str] = None
+    
+    # Repository files included
+    repositories: Dict[str, Optional[str]] = Field(default_factory=dict)
+    # e.g., {"concepts": "concepts.json", "inferences": "inferences.json", "inputs": "inputs.json"}
     
     # Content summary
     files_count: int = 0
