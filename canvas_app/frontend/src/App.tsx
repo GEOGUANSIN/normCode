@@ -23,6 +23,7 @@ import {
   Sparkles,
   Workflow,
   Rocket,
+  Globe,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -274,7 +275,13 @@ function App() {
           {/* Project Info */}
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-700">{currentProject.name}</span>
-            {isLoaded ? (
+            {/* Remote projects show "Remote" badge instead of Load button */}
+            {isRemoteProject ? (
+              <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 text-xs rounded-full flex items-center gap-1">
+                <Globe size={12} />
+                Remote
+              </span>
+            ) : isLoaded ? (
               <div className="flex items-center gap-1">
                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />

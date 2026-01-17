@@ -127,14 +127,23 @@ async def start_execution():
                     detail="Remote project missing server_url or plan_id"
                 )
             
+            # Get LLM model from the remote project (if configured)
+            llm_model = getattr(active_project, 'remote_llm_model', None) or \
+                        active_project.config.execution.llm_model if active_project.config else None
+            
             # Start a run on the remote server
             # NOTE: normal_server's POST /api/runs automatically starts execution
             # in the background, so the run will already be running when we connect
             import aiohttp
+            run_payload = {"plan_id": plan_id}
+            if llm_model and llm_model != "demo":
+                run_payload["llm_model"] = llm_model
+                logger.info(f"Starting remote run with LLM: {llm_model}")
+            
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{server_url}/api/runs",
-                    json={"plan_id": plan_id}
+                    json=run_payload
                 ) as resp:
                     if resp.status != 200:
                         error = await resp.text()

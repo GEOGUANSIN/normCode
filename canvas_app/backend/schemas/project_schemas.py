@@ -292,3 +292,10 @@ class RemoteProjectInstance(BaseModel):
     is_remote: bool = True  # Always true for remote projects
     run_id: Optional[str] = None  # Associated run ID if started
     worker_id: Optional[str] = None  # Remote proxy worker ID
+    llm_model: Optional[str] = None  # LLM model for remote execution
+
+
+class UpdateRemoteProjectSettingsRequest(BaseModel):
+    """Request to update settings for a remote project."""
+    project_id: str  # The remote project tab ID
+    llm_model: Optional[str] = None  # Update the LLM model

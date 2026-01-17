@@ -7,7 +7,6 @@ import {
   Server,
   Plus,
   Trash2,
-  Edit2,
   Check,
   X,
   Rocket,
@@ -792,7 +791,7 @@ interface RunsTabProps {
   onFetchResult: (serverId: string, runId: string) => Promise<RemoteRunResult | null>;
   onStartPolling: () => void;
   onStopPolling: () => void;
-  onLoadOnCanvas: (serverId: string, planId: string) => Promise<boolean>;
+  onLoadOnCanvas: (serverId: string, planId: string, llmModel?: string) => Promise<boolean>;
   onLoadRunOnCanvas: (serverId: string, runId: string, planId: string, planName: string, runStatus?: string) => Promise<boolean>;
   onBindRun: (serverId: string, runId: string, planId: string, planName: string) => Promise<boolean>;
   boundRunIds: string[];
@@ -920,14 +919,16 @@ function RunsTab({
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (selectedServerId) {
-                          const success = await onLoadOnCanvas(selectedServerId, plan.id);
+                          // Pass the selected LLM model if this plan is selected, otherwise use default
+                          const llmToUse = selectedPlanId === plan.id ? selectedLlmModel : undefined;
+                          const success = await onLoadOnCanvas(selectedServerId, plan.id, llmToUse);
                           if (success) {
                             onClose();
                           }
                         }
                       }}
                       className="px-2 py-1 text-xs bg-violet-500 text-white rounded hover:bg-violet-600 transition-colors flex items-center gap-1"
-                      title="Load this plan on the canvas"
+                      title="Load this plan on the canvas (uses selected LLM model if plan is selected)"
                     >
                       <LayoutGrid className="w-3 h-3" />
                       Canvas
@@ -1094,14 +1095,14 @@ function RunCard({ run, result, isExpanded, onToggle, onRefresh, onBind, onLoadO
                 className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
                   isBound
                     ? 'bg-cyan-100 text-cyan-700 cursor-default'
-                    : run.status === 'running' || run.status === 'paused'
+                    : run.status === 'running'
                       ? 'bg-cyan-600 text-white hover:bg-cyan-700'
                       : 'bg-violet-500 text-white hover:bg-violet-600'
                 }`}
                 title={
                   isBound 
                     ? 'Already viewing on canvas' 
-                    : run.status === 'running' || run.status === 'paused'
+                    : run.status === 'running'
                       ? 'Open on canvas with live updates'
                       : 'View run state on canvas'
                 }

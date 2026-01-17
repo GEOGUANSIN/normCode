@@ -29,6 +29,7 @@ from schemas.project_schemas import (
     # Remote project support
     OpenRemoteProjectRequest,
     RemoteProjectInstance,
+    UpdateRemoteProjectSettingsRequest,
 )
 from services.project_service import project_service
 from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
@@ -626,6 +627,9 @@ async def open_remote_project(request: OpenRemoteProjectRequest):
         
         plan_data = response.json()
         
+        # Determine LLM model to use (request override > plan default)
+        llm_model = request.llm_model or plan_data.get("llm_model", "demo")
+        
         # Create virtual project config from remote plan info
         virtual_config = ProjectConfig(
             id=tab_id,
@@ -638,7 +642,7 @@ async def open_remote_project(request: OpenRemoteProjectRequest):
                 inferences=plan_data.get("inference_repo", "inferences.json"),
             ),
             execution=ExecutionSettings(
-                llm_model=plan_data.get("llm_model", "demo"),
+                llm_model=llm_model,
                 max_cycles=plan_data.get("max_cycles", 50),
                 db_path="remote-orchestration.db",
             ),
@@ -660,6 +664,7 @@ async def open_remote_project(request: OpenRemoteProjectRequest):
             server_name=server.name,
             server_url=server.url,
             plan_id=request.plan_id,
+            remote_llm_model=llm_model,  # Store the LLM model for remote execution
         )
         
         # Add to the tabs service (same system as local projects)
@@ -667,6 +672,14 @@ async def open_remote_project(request: OpenRemoteProjectRequest):
         
         if request.make_active:
             project_service._tabs_service._set_active(tab_id)
+            # Also update the "current" project references so that APIs work correctly
+            # For remote projects, we use the virtual config but can't use a real path
+            project_service.current_config = virtual_config
+            project_service.current_config_file = "remote"
+            # Use None for path since remote projects don't have a local path
+            # This will make is_project_open return False, but that's okay for remote
+            # projects since they can't use local file operations anyway
+            project_service.current_project_path = None
         
         logger.info(f"Opened remote project as tab: {instance.name} from {server.name}")
         
@@ -676,4 +689,38 @@ async def open_remote_project(request: OpenRemoteProjectRequest):
         raise
     except Exception as e:
         logger.exception(f"Failed to open remote project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update-remote-settings", response_model=OpenProjectInstance)
+async def update_remote_project_settings(request: UpdateRemoteProjectSettingsRequest):
+    """
+    Update settings for a remote project (e.g., LLM model).
+    
+    This allows changing the LLM model to use when starting a run on the remote server.
+    """
+    try:
+        # Get the project tab
+        project = project_service._tabs_service.get_project(request.project_id)
+        
+        if not project:
+            raise HTTPException(status_code=404, detail=f"Project not found: {request.project_id}")
+        
+        if not project.is_remote:
+            raise HTTPException(status_code=400, detail="This endpoint is only for remote projects")
+        
+        # Update the LLM model if provided
+        if request.llm_model is not None:
+            project.remote_llm_model = request.llm_model
+            # Also update the execution settings in the virtual config
+            if project.config and project.config.execution:
+                project.config.execution.llm_model = request.llm_model
+            logger.info(f"Updated remote project {request.project_id} LLM model to: {request.llm_model}")
+        
+        return project
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to update remote project settings: {e}")
         raise HTTPException(status_code=500, detail=str(e))

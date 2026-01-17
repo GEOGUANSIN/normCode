@@ -561,6 +561,12 @@ export const projectApi = {
       method: 'POST',
       body: JSON.stringify(request),
     }),
+  
+  updateRemoteSettings: (request: UpdateRemoteProjectSettingsRequest): Promise<OpenProjectInstance> =>
+    fetchJson(`${API_BASE}/project/update-remote-settings`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
 };
 
 // Remote project types
@@ -568,6 +574,12 @@ export interface OpenRemoteProjectRequest {
   server_id: string;
   plan_id: string;
   make_active?: boolean;
+  llm_model?: string;  // LLM model to use for remote execution
+}
+
+export interface UpdateRemoteProjectSettingsRequest {
+  project_id: string;
+  llm_model?: string;
 }
 
 export interface RemoteProjectInstance {
@@ -578,12 +590,13 @@ export interface RemoteProjectInstance {
   server_name: string;
   server_url: string;
   plan_id: string;
-  config: ProjectConfig;
+  config: Record<string, unknown>;  // Project config from remote
   is_loaded: boolean;
   is_active: boolean;
   is_remote: boolean;
   run_id?: string;
   worker_id?: string;
+  llm_model?: string;  // LLM model for remote execution
 }
 
 // Agent endpoints

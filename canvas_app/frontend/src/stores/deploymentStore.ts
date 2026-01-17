@@ -113,7 +113,7 @@ interface DeploymentState {
   
   // Async actions - Remote graph loading
   fetchRemotePlanGraph: (serverId: string, planId: string) => Promise<RemotePlanGraph | null>;
-  loadRemotePlanOnCanvas: (serverId: string, planId: string) => Promise<boolean>;
+  loadRemotePlanOnCanvas: (serverId: string, planId: string, llmModel?: string) => Promise<boolean>;
   loadRemoteRunOnCanvas: (serverId: string, runId: string, planId: string, planName: string, runStatus?: string) => Promise<boolean>;  // Load graph + bind run for live updates
   loadCachedRemoteGraph: (tabId: string) => boolean;  // Load from cache when switching tabs
   clearLoadedRemoteGraph: () => void;
@@ -494,7 +494,7 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
     }
   },
   
-  loadRemotePlanOnCanvas: async (serverId, planId) => {
+  loadRemotePlanOnCanvas: async (serverId, planId, llmModel) => {
     /**
      * Load a remote plan on canvas WITHOUT starting a run.
      * 
@@ -503,12 +503,13 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
      * ControlPanel when ready.
      * 
      * Flow:
-     * 1. Open remote project as a tab
+     * 1. Open remote project as a tab (with LLM model configuration)
      * 2. Fetch and display the graph
-     * 3. Store remote project metadata (server_url, plan_id) for later execution
+     * 3. Store remote project metadata (server_url, plan_id, llm_model) for later execution
      * 
      * When the user clicks "Start" in ControlPanel, the unified execution
-     * system will detect it's a remote project and handle accordingly.
+     * system will detect it's a remote project and handle accordingly,
+     * using the configured LLM model.
      */
     const { addNotification } = useNotificationStore.getState();
     const { setGraphData } = useGraphStore.getState();
@@ -522,13 +523,14 @@ export const useDeploymentStore = create<DeploymentState>((set, get) => ({
       }
       
       // STEP 1: Open the remote project as a regular tab (unified with local projects)
-      console.log(`[Remote] Opening remote project: ${planId} on ${server.name}`);
+      console.log(`[Remote] Opening remote project: ${planId} on ${server.name} with LLM: ${llmModel || 'default'}`);
       const { projectApi } = await import('../services/api');
       
       const remoteProject = await projectApi.openRemote({
         server_id: serverId,
         plan_id: planId,
         make_active: true,
+        llm_model: llmModel,  // Pass the LLM model for remote execution
       });
       
       console.log(`[Remote] Opened remote project as tab: ${remoteProject.name} (id: ${remoteProject.id})`);
