@@ -208,10 +208,12 @@ class PortableProjectService:
                     json.dump(manifest.model_dump(mode='json'), f, indent=2, default=str)
                 
                 # 6. Determine output path
+                # Default to project directory, or custom location if specified
                 if options.output_dir:
                     output_dir = Path(options.output_dir)
                 else:
-                    output_dir = self._get_exports_dir()
+                    # Default to project directory
+                    output_dir = project_dir
                 output_dir.mkdir(parents=True, exist_ok=True)
                 
                 # Generate filename
@@ -387,7 +389,15 @@ class PortableProjectService:
         # Copy log files if requested
         if options.include_logs:
             db_dir = db_path.parent
-            for log_file in db_dir.glob("run_*.log"):
+            logs_dir = db_dir / "logs"
+            
+            # Look for logs in both the logs/ subdirectory (new) and db directory (legacy)
+            log_sources = []
+            if logs_dir.exists():
+                log_sources.extend(logs_dir.glob("run_*.log"))
+            log_sources.extend(db_dir.glob("run_*.log"))  # Legacy location
+            
+            for log_file in log_sources:
                 # Check if this log belongs to an included run
                 if runs_to_include is not None:
                     # Extract run_id from log filename (run_XXXXXXXX_YYYYMMDD_HHMMSS.log)
@@ -741,9 +751,11 @@ class PortableProjectService:
             shutil.copy2(src_db, dest_db)
             runs_imported = manifest.runs_count
         
-        # Copy log files
+        # Copy log files to logs/ subdirectory
+        logs_dest_dir = target_dir / "logs"
+        logs_dest_dir.mkdir(parents=True, exist_ok=True)
         for log_file in db_src_dir.glob("run_*.log"):
-            dest_log = target_dir / log_file.name
+            dest_log = logs_dest_dir / log_file.name
             if not dest_log.exists() or options.overwrite_existing:
                 shutil.copy2(log_file, dest_log)
         

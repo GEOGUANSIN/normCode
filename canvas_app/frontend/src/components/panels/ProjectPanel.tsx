@@ -80,8 +80,12 @@ export function ProjectPanel() {
   const [availableModels, setAvailableModels] = useState<string[]>(['demo']);
   
   // Export/Import state
+  const [exportOutputDir, setExportOutputDir] = useState('');  // Empty = project directory
+  const [exportIncludeDb, setExportIncludeDb] = useState(true);
+  const [exportIncludeLogs, setExportIncludeLogs] = useState(true);
   const [importPath, setImportPath] = useState('');
   const [importTargetDir, setImportTargetDir] = useState('');
+  const [importNewName, setImportNewName] = useState('');  // Empty = keep original name
   const [importOverwrite, setImportOverwrite] = useState(false);
   
   // Portable store
@@ -96,7 +100,7 @@ export function ProjectPanel() {
     error: portableError,
     quickExport,
     previewArchive,
-    quickImport,
+    importProject,
     fetchAvailableExports,
     clearPreview,
     setError: setPortableError,
@@ -779,19 +783,56 @@ export function ProjectPanel() {
                       <div className="text-xs text-slate-500">{projectPath}</div>
                     </div>
                     
-                    <p className="text-xs text-slate-600">
-                      The export will include:
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Output Directory
+                      </label>
+                      <input
+                        type="text"
+                        value={exportOutputDir}
+                        onChange={(e) => setExportOutputDir(e.target.value)}
+                        placeholder={projectPath || 'Project directory (default)'}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Leave empty to export to project directory
+                      </p>
+                    </div>
+                    
+                    <p className="text-xs text-slate-600 mb-2">
+                      The export will always include: project configuration, repositories, and provisions.
                     </p>
-                    <ul className="text-xs text-slate-600 list-disc list-inside space-y-1">
-                      <li>Project configuration</li>
-                      <li>Concept and inference repositories</li>
-                      <li>Provisions (paradigms, prompts, scripts)</li>
-                      <li>Execution database with all runs and checkpoints</li>
-                      <li>Log files</li>
-                    </ul>
+                    
+                    <div className="space-y-2 p-3 bg-white rounded border border-emerald-200">
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={exportIncludeDb}
+                          onChange={(e) => setExportIncludeDb(e.target.checked)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        Include execution database (runs, checkpoints)
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={exportIncludeLogs}
+                          onChange={(e) => setExportIncludeLogs(e.target.checked)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          disabled={!exportIncludeDb}
+                        />
+                        <span className={!exportIncludeDb ? 'text-slate-400' : ''}>
+                          Include log files
+                        </span>
+                      </label>
+                    </div>
                     
                     <button
-                      onClick={() => quickExport(currentProject.id)}
+                      onClick={() => quickExport(currentProject.id, { 
+                        includeDatabase: exportIncludeDb, 
+                        includeLogs: exportIncludeLogs, 
+                        outputDir: exportOutputDir 
+                      })}
                       disabled={isExporting}
                       className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
@@ -935,6 +976,22 @@ export function ProjectPanel() {
                   
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Project Name
+                    </label>
+                    <input
+                      type="text"
+                      value={importNewName}
+                      onChange={(e) => setImportNewName(e.target.value)}
+                      placeholder={previewInfo?.project_name || 'Keep original name'}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Leave empty to keep the original project name
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
                       Target Directory
                     </label>
                     <input
@@ -958,10 +1015,17 @@ export function ProjectPanel() {
                   
                   <button
                     onClick={async () => {
-                      const result = await quickImport(importPath, importTargetDir, importOverwrite);
+                      const result = await importProject(importPath, {
+                        target_directory: importTargetDir,
+                        new_project_name: importNewName || undefined,
+                        overwrite_existing: importOverwrite,
+                        import_database: true,
+                        import_runs: true,
+                      });
                       if (result?.success) {
                         setImportPath('');
                         setImportTargetDir('');
+                        setImportNewName('');
                         clearPreview();
                         // Open the imported project
                         if (result.project_id) {

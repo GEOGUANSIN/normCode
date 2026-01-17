@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def setup_file_logging(db_path: str, run_id: str) -> Optional[logging.FileHandler]:
     """
-    Set up file logging for a run, saved alongside the database file.
+    Set up file logging for a run, saved in a dedicated logs/ subdirectory.
     
     Args:
         db_path: Path to the database file
@@ -31,7 +31,8 @@ def setup_file_logging(db_path: str, run_id: str) -> Optional[logging.FileHandle
     """
     try:
         db_path_obj = Path(db_path)
-        log_dir = db_path_obj.parent
+        # Create logs in a dedicated subdirectory instead of project root
+        log_dir = db_path_obj.parent / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

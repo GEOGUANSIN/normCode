@@ -40,7 +40,7 @@ interface PortableState {
   
   // Export actions
   exportProject: (projectId?: string, options?: ExportOptions) => Promise<ExportResult | null>;
-  quickExport: (projectId?: string, includeDatabase?: boolean) => Promise<ExportResult | null>;
+  quickExport: (projectId?: string, options?: { includeDatabase?: boolean; includeLogs?: boolean; outputDir?: string }) => Promise<ExportResult | null>;
   fetchRunsForExport: (projectId?: string) => Promise<void>;
   fetchAvailableExports: () => Promise<void>;
   
@@ -114,13 +114,15 @@ export const usePortableStore = create<PortableState>((set, get) => ({
   },
   
   // Quick export with defaults
-  quickExport: async (projectId, includeDatabase = true) => {
+  quickExport: async (projectId, options = {}) => {
+    const { includeDatabase = true, includeLogs = true, outputDir } = options;
     set({ isExporting: true, error: null, lastExportResult: null });
     
     try {
-      const result = await portableApi.quickExport({
-        project_id: projectId,
+      const result = await portableApi.exportProject(projectId, {
         include_database: includeDatabase,
+        include_logs: includeLogs,
+        output_dir: outputDir || undefined,  // Empty string -> undefined (use default)
       });
       set({ isExporting: false, lastExportResult: result });
       
