@@ -356,6 +356,41 @@ def collect_normal_server_files(server_dir: Path, dest_prefix: str = "normal_ser
 # Add normal_server files (excluding data, caches, mock_users)
 datas += collect_normal_server_files(CANVAS_APP / "normal_server")
 
+# Helper function to collect built_in_projects files
+def collect_builtin_projects_files(projects_dir: Path, dest_prefix: str = "built_in_projects"):
+    """Collect built-in project files, excluding logs, caches, and databases."""
+    collected = []
+    
+    # Exclude logs, caches
+    exclude_dirs = {'__pycache__', 'logs', '.git', 'node_modules'}
+    exclude_extensions = {'.db', '.sqlite', '.sqlite3', '.pyc', '.pyo', '.log'}
+    
+    for root, dirs, files in os.walk(projects_dir):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        rel_root = Path(root).relative_to(projects_dir)
+        
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Skip excluded extensions (databases, logs, etc.)
+            if file_path.suffix.lower() in exclude_extensions:
+                continue
+            
+            # Build destination path
+            if str(rel_root) == '.':
+                dest = dest_prefix
+            else:
+                dest = f"{dest_prefix}/{rel_root}"
+            
+            collected.append((str(file_path), dest))
+    
+    return collected
+
+# Add built_in_projects files (excluding logs, caches, databases)
+datas += collect_builtin_projects_files(CANVAS_APP / "built_in_projects")
+
 # Collect webview data files (templates, js files, etc.)
 try:
     datas += collect_data_files('webview')

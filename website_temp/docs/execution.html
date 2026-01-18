@@ -8,49 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../nav.css">
     <link rel="stylesheet" href="styles.css">
     <title>Execution Model - NormCode 规范码</title>
 </head>
 <body>
-    <div class="menu-overlay"></div>
-
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-content">
-            <a href="../index.html" class="nav-brand">
-                <img src="../Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
-                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
-            </a>
-            <button class="menu-toggle" aria-label="Toggle navigation menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links">
-                <a href="../index.html" data-i18n="nav.home">Home</a>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-trigger active" data-i18n="nav.docs">
-                        Documentation
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-menu">
-                        <a href="../how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="execution.html" class="active" data-i18n="nav.execution">Execution Model</a>
-                        <a href="compilation.html" data-i18n="nav.compilation">Compilation</a>
-                        <a href="syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
-                        <a href="examples.html" data-i18n="nav.examples">Examples</a>
-                    </div>
-                </div>
-                <a href="../team.html" data-i18n="nav.team">Team</a>
-                <div class="lang-switcher">
-                    <button class="lang-btn active" data-lang="en">EN</button>
-                    <button class="lang-btn" data-lang="zh">中文</button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Navigation will be loaded by load-nav.js -->
 
     <!-- Page Header -->
     <header class="page-header">
@@ -436,6 +399,7 @@
         <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
     </footer>
 
+    <script src="../load-nav.js"></script>
     <script>
         const translations = {
             en: {
@@ -758,7 +722,8 @@
 
         let currentLang = localStorage.getItem('lang') || 'en';
 
-        function setLanguage(lang) {
+        // Expose setLanguage globally so load-nav.js can call it
+        window.setLanguage = function(lang) {
             currentLang = lang;
             localStorage.setItem('lang', lang);
             document.documentElement.lang = lang;
@@ -799,8 +764,8 @@
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
             });
-        }
-
+        };
+        
         setLanguage(currentLang);
 
         document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -809,21 +774,7 @@
             });
         });
 
-        // Mobile menu
-        const menuToggle = document.querySelector('.menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
-        const menuOverlay = document.querySelector('.menu-overlay');
-
-        function toggleMenu(open) {
-            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
-            menuToggle.classList.toggle('active', isOpen);
-            navLinks.classList.toggle('active', isOpen);
-            menuOverlay.classList.toggle('active', isOpen);
-            document.body.style.overflow = isOpen ? 'hidden' : '';
-        }
-
-        menuToggle.addEventListener('click', () => toggleMenu());
-        menuOverlay.addEventListener('click', () => toggleMenu(false));
+        // Mobile menu is handled by load-nav.js
     </script>
 </body>
 </html>
