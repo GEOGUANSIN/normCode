@@ -1,1 +1,0 @@
-result = float(input_1) + float(input_2)

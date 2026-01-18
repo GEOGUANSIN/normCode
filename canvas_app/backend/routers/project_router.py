@@ -712,11 +712,10 @@ async def update_remote_project_settings(request: UpdateRemoteProjectSettingsReq
             raise HTTPException(status_code=400, detail="This endpoint is only for remote projects")
         
         # Update the LLM model if provided
+        # Note: For remote projects, llm_model is stored in remote_llm_model
+        # (ExecutionSettings no longer has llm_model - it's agent-centric)
         if request.llm_model is not None:
             project.remote_llm_model = request.llm_model
-            # Also update the execution settings in the virtual config
-            if project.config and project.config.execution:
-                project.config.execution.llm_model = request.llm_model
             logger.info(f"Updated remote project {request.project_id} LLM model to: {request.llm_model}")
         
         return project

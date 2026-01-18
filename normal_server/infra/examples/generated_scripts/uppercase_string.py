@@ -1,1 +1,0 @@
-result = data_input.upper()

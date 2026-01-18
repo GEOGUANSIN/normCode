@@ -1,8 +1,0 @@
-Instruction: $input
-
-Execute the instruction. Return the output specified only and nothing else.
-
-Output format:
-When the output describes a relation between multiple entities (e.g., entity1 and entity2), return the output as a Python list of dictionaries, where each dictionary represents a relationship instance. For example, if it's a relation between 'a' and 'b', the format should be: `[{"a": "value1", "b": "value2"}, ...]`
-
-Return only the output.
