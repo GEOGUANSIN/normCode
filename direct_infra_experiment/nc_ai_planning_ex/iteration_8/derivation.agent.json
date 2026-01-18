@@ -1,0 +1,38 @@
+{
+  "description": "Agent configuration for Derivation project",
+  "default_agent": "default",
+  "created_at": "2026-01-18T16:10:00Z",
+  "updated_at": "2026-01-18T16:10:00Z",
+  
+  "agents": [
+    {
+      "id": "default",
+      "name": "Derivation Agent",
+      "description": "Default agent for derivation tasks",
+      "tools": {
+        "llm": {
+          "model": "qwen-plus"
+        },
+        "paradigm": {
+          "dir": "provisions/paradigms"
+        },
+        "file_system": {
+          "enabled": true,
+          "base_dir": null
+        },
+        "python_interpreter": {
+          "enabled": true,
+          "timeout": 30
+        },
+        "user_input": {
+          "enabled": true,
+          "mode": "blocking"
+        }
+      }
+    }
+  ],
+  
+  "mappings": [],
+  "llm_providers": []
+}
+

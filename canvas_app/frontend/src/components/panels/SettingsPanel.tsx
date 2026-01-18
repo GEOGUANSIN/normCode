@@ -241,7 +241,6 @@ export function SettingsPanel({ isOpen, onToggle, onOpenAgentPanel }: SettingsPa
   const {
     maxCycles,
     dbPath,
-    agentConfig,
     defaultMaxCycles,
     defaultDbPath,
     setMaxCycles,

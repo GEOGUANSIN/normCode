@@ -89,7 +89,7 @@ class NormCodeApp:
     """Main desktop application using native window."""
     
     def __init__(self):
-        self.port = 8000
+        self.port = 49821  # Use high port to avoid conflicts with common services
         self.url = f"http://localhost:{self.port}"
         self.server_thread = None
         self.server = None
@@ -101,7 +101,7 @@ class NormCodeApp:
     def find_available_port(self):
         """Find an available port for the server."""
         if check_port_in_use(self.port):
-            self.port = find_free_port(8001)
+            self.port = find_free_port(49822)  # Start searching from next port
         self.url = f"http://localhost:{self.port}"
         
     def start_server(self):

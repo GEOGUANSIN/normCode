@@ -49,7 +49,7 @@ class LanguageModel:
         # Load settings (fallback to mock mode if unavailable)
         self.settings = {}
         try:
-            with open(settings_path, 'r') as f:
+            with open(settings_path, 'r', encoding='utf-8') as f:
                 self.settings = yaml.safe_load(f) or {}
         except FileNotFoundError:
             self.mock_mode = True

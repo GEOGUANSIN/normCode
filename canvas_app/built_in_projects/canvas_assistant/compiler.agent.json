@@ -7,24 +7,46 @@
       "id": "compiler",
       "name": "Compiler Agent",
       "description": "Main agent for the NormCode compiler - handles chat interactions and canvas commands",
-      "llm_model": "qwen-plus",
-      "file_system_enabled": true,
-      "file_system_base_dir": null,
-      "python_interpreter_enabled": false,
-      "python_interpreter_timeout": 30,
-      "user_input_enabled": true,
-      "user_input_mode": "async",
-      "paradigm_dir": "provisions/paradigms"
+      "tools": {
+        "llm": {
+          "model": "qwen-plus"
+        },
+        "paradigm": {
+          "dir": "provisions/paradigms"
+        },
+        "file_system": {
+          "enabled": true,
+          "base_dir": null
+        },
+        "python_interpreter": {
+          "enabled": false,
+          "timeout": 30
+        },
+        "user_input": {
+          "enabled": true,
+          "mode": "async"
+        }
+      }
     },
     {
       "id": "classifier",
       "name": "Command Classifier",
       "description": "Lightweight agent for classifying user commands - uses faster model",
-      "llm_model": "qwen-turbo-latest",
-      "file_system_enabled": false,
-      "python_interpreter_enabled": false,
-      "user_input_enabled": false,
-      "user_input_mode": "disabled"
+      "tools": {
+        "llm": {
+          "model": "qwen-turbo-latest"
+        },
+        "file_system": {
+          "enabled": false
+        },
+        "python_interpreter": {
+          "enabled": false
+        },
+        "user_input": {
+          "enabled": false,
+          "mode": "disabled"
+        }
+      }
     }
   ],
   
@@ -53,6 +75,5 @@
   ],
   
   "created_at": "2025-12-28T12:00:00Z",
-  "updated_at": "2025-12-28T12:00:00Z"
+  "updated_at": "2026-01-18T16:10:00Z"
 }
-

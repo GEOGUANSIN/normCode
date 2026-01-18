@@ -1,11 +1,39 @@
 import logging
 import io
+import sys
 from typing import List, Union, Optional
 from datetime import datetime
 import pathlib
 
 from infra._core import Reference, cross_product
 from infra._states import ReferenceRecordLite, BaseStates
+
+
+def get_utf8_stream(stream):
+    """
+    Get a stream configured for UTF-8 encoding.
+    
+    On Windows, the console uses cp1252 by default which can't handle Chinese
+    and other Unicode characters. This reconfigures the stream for UTF-8 encoding
+    with error handling to prevent encoding crashes.
+    
+    Args:
+        stream: The stream to configure (usually sys.stdout or sys.stderr)
+        
+    Returns:
+        The stream (reconfigured in place on Windows)
+    """
+    if sys.platform == "win32":
+        # Use reconfigure() to safely change encoding without replacing streams
+        # This avoids "I/O operation on closed file" errors
+        try:
+            if hasattr(stream, 'reconfigure'):
+                stream.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            # Silently ignore if configuration fails
+            pass
+    return stream
+
 
 def setup_logging(log_file: Optional[str] = None):
     """Setup logging to both console and optionally to a file."""
@@ -19,8 +47,8 @@ def setup_logging(log_file: Optional[str] = None):
     # Clear any existing handlers
     logger.handlers.clear()
     
-    # Console handler
-    console_handler = logging.StreamHandler()
+    # Console handler with UTF-8 encoding for Windows compatibility
+    console_handler = logging.StreamHandler(get_utf8_stream(sys.stdout))
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)

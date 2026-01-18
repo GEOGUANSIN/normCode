@@ -330,7 +330,7 @@ function App() {
           
           {/* Config summary */}
           <span className="text-xs text-slate-400">
-            {currentProject.execution.llm_model} • {currentProject.execution.max_cycles} cycles
+            {currentProject.execution.max_cycles} cycles
           </span>
           
           {/* View Mode Tabs */}

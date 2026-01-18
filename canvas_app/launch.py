@@ -105,6 +105,8 @@ def install_backend_dependencies() -> bool:
             [sys.executable, "-m", "pip", "install", "-r", str(requirements_file)],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             cwd=BACKEND_DIR
         )
         
@@ -130,6 +132,8 @@ def install_frontend_dependencies() -> bool:
             [npm_cmd, "install"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             cwd=FRONTEND_DIR
         )
         
@@ -189,6 +193,8 @@ def kill_process_on_port(port: int) -> bool:
             ["netstat", "-ano"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=10
         )
         
@@ -213,6 +219,8 @@ def kill_process_on_port(port: int) -> bool:
             subprocess.run(
                 ["taskkill", "/T", "/F", "/PID", str(pid)],
                 capture_output=True,
+                encoding='utf-8',
+                errors='replace',
                 timeout=10
             )
         
@@ -252,6 +260,8 @@ def verify_backend_can_start() -> tuple[bool, str]:
              "from main import app; print('OK')"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             cwd=BACKEND_DIR,
             timeout=30
         )
@@ -562,6 +572,8 @@ Examples:
                     subprocess.run(
                         ["taskkill", "/T", "/F", "/PID", str(p.pid)],
                         capture_output=True,
+                        encoding='utf-8',
+                        errors='replace',
                         timeout=10
                     )
                 else:

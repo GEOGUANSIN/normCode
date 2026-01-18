@@ -38,12 +38,13 @@ interface RepositoriesConfig {
 }
 
 interface ExecutionConfig {
-  llm_model: string | null;
   max_cycles: number | null;
   db_path: string | null;
-  base_dir: string | null;
-  paradigm_dir: string | null;
   agent_config: string | null;
+  // Deprecated fields - may exist in old config files
+  llm_model?: string | null;
+  base_dir?: string | null;
+  paradigm_dir?: string | null;
 }
 
 interface ProjectData {
@@ -337,11 +338,35 @@ export function ProjectPreview({ filePath, onClose, onOpenFile }: ProjectPreview
           icon={<Play size={18} />}
         >
           <div className="pt-3 space-y-1">
-            <InfoRow
-              label="LLM Model"
-              value={project.execution.llm_model}
-              icon={<Sparkles size={14} />}
-            />
+            {/* Agent Config - Primary (tool-centric approach) */}
+            {project.execution.agent_config ? (
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 mb-3">
+                <div className="flex items-center gap-2 text-purple-700 font-medium text-sm mb-1">
+                  <Settings size={14} />
+                  Agent Configuration
+                </div>
+                <button
+                  onClick={onOpenFile ? () => onOpenFile(project.execution.agent_config!) : undefined}
+                  className="text-sm text-purple-600 hover:text-purple-800 hover:underline font-mono"
+                >
+                  {project.execution.agent_config}
+                </button>
+                <p className="text-xs text-purple-500 mt-1">
+                  LLM model and paradigm settings are configured per-agent
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
+                <div className="flex items-center gap-2 text-amber-700 font-medium text-sm">
+                  <AlertCircle size={14} />
+                  No Agent Config
+                </div>
+                <p className="text-xs text-amber-600 mt-1">
+                  This project uses legacy configuration. Consider updating to agent-centric settings.
+                </p>
+              </div>
+            )}
+            
             <InfoRow
               label="Max Cycles"
               value={project.execution.max_cycles}
@@ -353,25 +378,35 @@ export function ProjectPreview({ filePath, onClose, onOpenFile }: ProjectPreview
               icon={<Database size={14} />}
               isPath
             />
-            <InfoRow
-              label="Base Directory"
-              value={project.execution.base_dir}
-              icon={<FolderOpen size={14} />}
-              isPath
-            />
-            <InfoRow
-              label="Paradigm Directory"
-              value={project.execution.paradigm_dir}
-              icon={<Cpu size={14} />}
-              isPath
-            />
-            <InfoRow
-              label="Agent Configuration"
-              value={project.execution.agent_config}
-              icon={<Settings size={14} />}
-              isPath
-              onClickPath={project.execution.agent_config && onOpenFile ? () => onOpenFile(project.execution.agent_config!) : undefined}
-            />
+            
+            {/* Deprecated fields - only show if present (legacy configs) */}
+            {(project.execution.llm_model || project.execution.base_dir || project.execution.paradigm_dir) && (
+              <div className="mt-3 pt-3 border-t border-slate-200">
+                <div className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                  <AlertCircle size={10} />
+                  Legacy Settings (deprecated - use agent config instead)
+                </div>
+                <div className="opacity-60">
+                  <InfoRow
+                    label="LLM Model (deprecated)"
+                    value={project.execution.llm_model}
+                    icon={<Sparkles size={14} />}
+                  />
+                  <InfoRow
+                    label="Base Directory (deprecated)"
+                    value={project.execution.base_dir}
+                    icon={<FolderOpen size={14} />}
+                    isPath
+                  />
+                  <InfoRow
+                    label="Paradigm Directory (deprecated)"
+                    value={project.execution.paradigm_dir}
+                    icon={<Cpu size={14} />}
+                    isPath
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </Section>
         

@@ -32,11 +32,33 @@ for fp in possible_frontend_paths:
 from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router, deployment_router, portable_router
 from core.config import settings
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# Configure logging with UTF-8 encoding for Windows console compatibility
+# This ensures Chinese and other Unicode characters display correctly
+import sys
+
+def _setup_utf8_logging():
+    """Setup logging with UTF-8 encoding for Windows compatibility."""
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    # On Windows, reconfigure stdout for UTF-8 encoding
+    if sys.platform == "win32":
+        try:
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stderr, 'reconfigure'):
+                sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+    
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(log_format))
+    
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(handler)
+
+_setup_utf8_logging()
 logger = logging.getLogger(__name__)
 
 # Suppress DEBUG logs from infra module (set to INFO to reduce noise)

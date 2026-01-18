@@ -210,137 +210,195 @@ interface AgentCardProps {
 }
 
 function AgentCard({ agent: rawAgent, isDefault }: AgentCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Default agent starts expanded
+  const [isExpanded, setIsExpanded] = useState(isDefault);
   
   // Normalize to ensure we have tool-centric structure
   const agent = normalizeAgent(rawAgent);
   const { tools } = agent;
   
+  // Count enabled tools
+  const enabledToolsCount = [
+    tools.file_system.enabled,
+    tools.python_interpreter.enabled,
+    tools.user_input.enabled,
+  ].filter(Boolean).length;
+  
   return (
     <div className={`border rounded-lg overflow-hidden ${isDefault ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 bg-white'}`}>
+      {/* Header - always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 flex items-start gap-3 text-left hover:bg-slate-50/50 transition-colors"
+        className="w-full p-4 flex items-start gap-3 text-left hover:bg-slate-50/50 transition-colors"
       >
-        <div className="mt-0.5 text-slate-400">
+        <div className="mt-1 text-slate-400">
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </div>
         
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-          isDefault ? 'bg-emerald-500' : 'bg-slate-700'
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
+          isDefault ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
         }`}>
-          <Bot size={20} className="text-white" />
+          <Bot size={24} className="text-white" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800">{agent.name}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-slate-800 text-lg">{agent.name}</span>
             {isDefault && (
-              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">
-                DEFAULT
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                Default
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <code className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{agent.id}</code>
-            {tools.llm.model && (
-              <span className="text-xs text-purple-600 flex items-center gap-1">
-                <Sparkles size={10} />
-                {tools.llm.model}
-              </span>
-            )}
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <code className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{agent.id}</code>
+            
+            {/* LLM Model Badge */}
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 rounded-full">
+              <Sparkles size={10} className="text-purple-600" />
+              <span className="text-xs text-purple-700 font-medium">{tools.llm.model || 'demo'}</span>
+            </div>
+            
+            {/* Tools Count */}
+            <span className="text-xs text-slate-400">
+              {enabledToolsCount} tool{enabledToolsCount !== 1 ? 's' : ''} enabled
+            </span>
           </div>
           {agent.description && (
-            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{agent.description}</p>
+            <p className="text-sm text-slate-500 mt-2">{agent.description}</p>
           )}
         </div>
         
-        {/* Capability indicators */}
-        <div className="flex items-center gap-1 shrink-0">
-          {tools.file_system.enabled && (
-            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center" title="File System Access">
-              <FolderOpen size={12} className="text-blue-600" />
-            </div>
-          )}
-          {tools.python_interpreter.enabled && (
-            <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center" title="Python Interpreter">
-              <Terminal size={12} className="text-amber-600" />
-            </div>
-          )}
-          {tools.user_input.enabled && (
-            <div className="w-6 h-6 rounded bg-green-100 flex items-center justify-center" title="User Input">
-              <MessageSquare size={12} className="text-green-600" />
-            </div>
-          )}
+        {/* Quick capability icons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.file_system.enabled ? 'bg-blue-100' : 'bg-slate-100'}`} title="File System">
+            <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-300'} />
+          </div>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.python_interpreter.enabled ? 'bg-amber-100' : 'bg-slate-100'}`} title="Python">
+            <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-300'} />
+          </div>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.user_input.enabled ? 'bg-green-100' : 'bg-slate-100'}`} title="User Input">
+            <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-300'} />
+          </div>
         </div>
       </button>
       
+      {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
-          {agent.description && (
-            <p className="text-sm text-slate-600">{agent.description}</p>
-          )}
-          
-          {/* Capabilities Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-300'} />
-              <span className="text-slate-600">File System</span>
-              {tools.file_system.enabled ? (
-                <Check size={12} className="text-green-500 ml-auto" />
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
+        <div className="px-4 pb-4 border-t border-slate-100 space-y-4">
+          {/* LLM Configuration Card */}
+          <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} className="text-purple-600" />
+              <span className="text-sm font-semibold text-purple-800">Language Model</span>
             </div>
-            
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-300'} />
-              <span className="text-slate-600">Python</span>
-              {tools.python_interpreter.enabled ? (
-                <Check size={12} className="text-green-500 ml-auto" />
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-300'} />
-              <span className="text-slate-600">User Input</span>
-              {tools.user_input.enabled ? (
-                <span className="text-green-600 ml-auto font-medium">{tools.user_input.mode}</span>
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
-            </div>
-            
-            {tools.python_interpreter.enabled && (
-              <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-600">Timeout</span>
-                <span className="text-slate-700 ml-auto font-medium">{tools.python_interpreter.timeout}s</span>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-purple-400 block mb-0.5">Model</span>
+                <span className="text-purple-800 font-mono font-medium">{tools.llm.model || 'demo'}</span>
               </div>
-            )}
+              <div>
+                <span className="text-purple-400 block mb-0.5">Temperature</span>
+                <span className="text-purple-800 font-medium">{tools.llm.temperature ?? 'default'}</span>
+              </div>
+              <div>
+                <span className="text-purple-400 block mb-0.5">Max Tokens</span>
+                <span className="text-purple-800 font-medium">{tools.llm.max_tokens ?? 'default'}</span>
+              </div>
+            </div>
           </div>
           
-          {/* Additional paths */}
-          {(tools.file_system.base_dir || tools.paradigm.dir) && (
-            <div className="space-y-1 text-xs">
-              {tools.file_system.base_dir && (
-                <div className="flex items-center gap-2">
-                  <FolderOpen size={12} className="text-slate-400" />
-                  <span className="text-slate-500">Base Dir:</span>
-                  <code className="text-slate-700 truncate">{tools.file_system.base_dir}</code>
-                </div>
-              )}
-              {tools.paradigm.dir && (
-                <div className="flex items-center gap-2">
-                  <Cpu size={12} className="text-slate-400" />
-                  <span className="text-slate-500">Paradigms:</span>
-                  <code className="text-slate-700 truncate">{tools.paradigm.dir}</code>
-                </div>
-              )}
+          {/* Paradigm Configuration */}
+          {tools.paradigm.dir && (
+            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+              <div className="flex items-center gap-2">
+                <Cpu size={14} className="text-indigo-600" />
+                <span className="text-sm font-semibold text-indigo-800">Custom Paradigms</span>
+              </div>
+              <code className="text-xs text-indigo-700 font-mono mt-1 block">{tools.paradigm.dir}</code>
             </div>
           )}
+          
+          {/* Tools Grid */}
+          <div>
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tools & Capabilities</div>
+            <div className="grid grid-cols-3 gap-2">
+              {/* File System */}
+              <div className={`p-3 rounded-lg border ${tools.file_system.enabled ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.file_system.enabled ? 'text-blue-800' : 'text-slate-500'}`}>File System</span>
+                </div>
+                {tools.file_system.enabled ? (
+                  <div className="flex items-center gap-1">
+                    <Check size={10} className="text-green-500" />
+                    <span className="text-[10px] text-green-600">Enabled</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+                {tools.file_system.enabled && tools.file_system.base_dir && (
+                  <div className="mt-1 text-[10px] text-blue-600 font-mono truncate" title={tools.file_system.base_dir}>
+                    {tools.file_system.base_dir}
+                  </div>
+                )}
+              </div>
+              
+              {/* Python Interpreter */}
+              <div className={`p-3 rounded-lg border ${tools.python_interpreter.enabled ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.python_interpreter.enabled ? 'text-amber-800' : 'text-slate-500'}`}>Python</span>
+                </div>
+                {tools.python_interpreter.enabled ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Check size={10} className="text-green-500" />
+                      <span className="text-[10px] text-green-600">Enabled</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      <Clock size={10} className="text-amber-500" />
+                      <span className="text-[10px] text-amber-600">{tools.python_interpreter.timeout}s timeout</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* User Input */}
+              <div className={`p-3 rounded-lg border ${tools.user_input.enabled ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.user_input.enabled ? 'text-green-800' : 'text-slate-500'}`}>User Input</span>
+                </div>
+                {tools.user_input.enabled ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Check size={10} className="text-green-500" />
+                      <span className="text-[10px] text-green-600">Enabled</span>
+                    </div>
+                    <div className="mt-1">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-medium">
+                        {tools.user_input.mode}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
