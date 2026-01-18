@@ -49,7 +49,6 @@ export function useWebSocket() {
   
   // Chat store actions
   const addMessageFromApi = useChatStore((s) => s.addMessageFromApi);
-  const setControllerStatus = useChatStore((s) => s.setControllerStatus);
   const updateControllerInfo = useChatStore((s) => s.updateControllerInfo);
   const setInputRequest = useChatStore((s) => s.setInputRequest);
   const updateBufferStatus = useChatStore((s) => s.updateBufferStatus);
@@ -67,35 +66,51 @@ export function useWebSocket() {
       const eventSource = data.source as string | undefined;
       const isControllerEvent = eventSource === 'controller';
       
-      // Handle controller execution events separately
-      if (isControllerEvent && type.startsWith('execution:')) {
-        // Route controller execution events to chat store
-        switch (type) {
-          case 'execution:started':
-            setControllerStatus('running');
-            break;
-          case 'execution:paused':
-            setControllerStatus('paused', data.inference as string | undefined);
-            break;
-          case 'execution:resumed':
-            setControllerStatus('running');
-            break;
-          case 'execution:completed':
-          case 'execution:stopped':
-            setControllerStatus('connected');
-            break;
-          case 'execution:error':
-            setControllerStatus('error');
-            break;
-          case 'execution:progress':
-            // Update current flow index for controller
-            if (data.current_inference) {
-              setControllerStatus('running', data.current_inference as string);
+      // Filter controller execution events - they should NOT update main execution store
+      // But allow chat:* and canvas:* events through to be processed by the main switch
+      if (isControllerEvent) {
+        // Allow chat:* and canvas:* events through - they need to be processed below
+        // Canvas commands from chat controller should still control the canvas!
+        if (type.startsWith('chat:') || type.startsWith('canvas:')) {
+          // Don't filter - let it fall through to the main switch statement
+        } else {
+          // Handle controller execution events in chat store
+          if (type.startsWith('execution:')) {
+            switch (type) {
+              case 'execution:started':
+                updateControllerInfo({ status: 'running' });
+                break;
+              case 'execution:paused':
+                updateControllerInfo({ 
+                  status: 'paused', 
+                  current_flow_index: data.inference as string | undefined 
+                });
+                break;
+              case 'execution:resumed':
+                updateControllerInfo({ status: 'running' });
+                break;
+              case 'execution:completed':
+              case 'execution:stopped':
+                updateControllerInfo({ status: 'connected', current_flow_index: undefined });
+                break;
+              case 'execution:error':
+                updateControllerInfo({ status: 'error', error: data.error as string | undefined });
+                break;
+              case 'execution:progress':
+                // Update current flow index for controller (partial update)
+                if (data.current_inference) {
+                  updateControllerInfo({ current_flow_index: data.current_inference as string });
+                }
+                break;
             }
-            break;
+          }
+          // Also update chat store for inference events (to keep currentFlowIndex up-to-date)
+          if (type === 'inference:started' && data.flow_index) {
+            updateControllerInfo({ current_flow_index: data.flow_index as string });
+          }
+          // Don't process further - controller execution events are filtered from main execution
+          return;
         }
-        // Don't process further - this event is for the controller, not main execution
-        return;
       }
       
       // Check if this event is for the active project
@@ -667,7 +682,7 @@ export function useWebSocket() {
           console.log('Unknown WebSocket event:', type, data);
       }
     },
-    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, fetchConceptStatuses, setRunMode, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, setControllerStatus, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
+    [setStatus, setNodeStatus, setNodeStatuses, setCurrentInference, setProgress, addLog, addBreakpoint, removeBreakpoint, setRunId, reset, setStepProgress, updateStepProgress, clearStepProgress, fetchConceptStatuses, setRunMode, addToolCall, updateToolCall, addAgent, updateAgent, deleteAgent, addUserInputRequest, removeUserInputRequest, activeProjectId, addMessageFromApi, updateControllerInfo, setInputRequest, addCanvasCommand, updateBufferStatus, clearBuffer]
   );
 
   const [isConnected, setIsConnected] = useState(false);

@@ -400,11 +400,53 @@ class AgentPreviewRequest(BaseModel):
     file_path: str
 
 
+class LLMToolConfig(BaseModel):
+    """LLM tool configuration."""
+    model: str = "demo"
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+
+
+class ParadigmToolConfig(BaseModel):
+    """Paradigm tool configuration."""
+    dir: Optional[str] = None
+
+
+class FileSystemToolConfig(BaseModel):
+    """File system tool configuration."""
+    enabled: bool = True
+    base_dir: Optional[str] = None
+
+
+class PythonInterpreterToolConfig(BaseModel):
+    """Python interpreter tool configuration."""
+    enabled: bool = True
+    timeout: int = 30
+
+
+class UserInputToolConfig(BaseModel):
+    """User input tool configuration."""
+    enabled: bool = True
+    mode: str = "blocking"
+
+
+class AgentToolsConfig(BaseModel):
+    """Tools configuration for an agent."""
+    llm: LLMToolConfig = LLMToolConfig()
+    paradigm: ParadigmToolConfig = ParadigmToolConfig()
+    file_system: FileSystemToolConfig = FileSystemToolConfig()
+    python_interpreter: PythonInterpreterToolConfig = PythonInterpreterToolConfig()
+    user_input: UserInputToolConfig = UserInputToolConfig()
+
+
 class AgentDefinition(BaseModel):
-    """Single agent definition."""
+    """Single agent definition - supports both new and legacy formats."""
     id: str
     name: str
     description: Optional[str] = None
+    # New tool-centric format
+    tools: Optional[AgentToolsConfig] = None
+    # Legacy flat fields (for backwards compatibility)
     llm_model: Optional[str] = None
     file_system_enabled: bool = False
     file_system_base_dir: Optional[str] = None
@@ -473,22 +515,63 @@ async def preview_agent_config(request: AgentPreviewRequest):
         if not isinstance(data, dict):
             raise HTTPException(status_code=400, detail="Agent config must be a JSON object")
         
-        # Parse agents
+        # Parse agents - support both new tool-centric and legacy format
         agents = []
         for agent_data in data.get("agents", []):
-            agents.append(AgentDefinition(
-                id=agent_data.get("id", ""),
-                name=agent_data.get("name", ""),
-                description=agent_data.get("description"),
-                llm_model=agent_data.get("llm_model"),
-                file_system_enabled=agent_data.get("file_system_enabled", False),
-                file_system_base_dir=agent_data.get("file_system_base_dir"),
-                python_interpreter_enabled=agent_data.get("python_interpreter_enabled", False),
-                python_interpreter_timeout=agent_data.get("python_interpreter_timeout", 30),
-                user_input_enabled=agent_data.get("user_input_enabled", False),
-                user_input_mode=agent_data.get("user_input_mode", "disabled"),
-                paradigm_dir=agent_data.get("paradigm_dir"),
-            ))
+            tools_data = agent_data.get("tools")
+            
+            if tools_data:
+                # New tool-centric format
+                llm_data = tools_data.get("llm", {})
+                paradigm_data = tools_data.get("paradigm", {})
+                fs_data = tools_data.get("file_system", {})
+                python_data = tools_data.get("python_interpreter", {})
+                user_input_data = tools_data.get("user_input", {})
+                
+                tools_config = AgentToolsConfig(
+                    llm=LLMToolConfig(
+                        model=llm_data.get("model", "demo"),
+                        temperature=llm_data.get("temperature"),
+                        max_tokens=llm_data.get("max_tokens"),
+                    ),
+                    paradigm=ParadigmToolConfig(
+                        dir=paradigm_data.get("dir"),
+                    ),
+                    file_system=FileSystemToolConfig(
+                        enabled=fs_data.get("enabled", True),
+                        base_dir=fs_data.get("base_dir"),
+                    ),
+                    python_interpreter=PythonInterpreterToolConfig(
+                        enabled=python_data.get("enabled", True),
+                        timeout=python_data.get("timeout", 30),
+                    ),
+                    user_input=UserInputToolConfig(
+                        enabled=user_input_data.get("enabled", True),
+                        mode=user_input_data.get("mode", "blocking"),
+                    ),
+                )
+                
+                agents.append(AgentDefinition(
+                    id=agent_data.get("id", ""),
+                    name=agent_data.get("name", ""),
+                    description=agent_data.get("description"),
+                    tools=tools_config,
+                ))
+            else:
+                # Legacy flat format
+                agents.append(AgentDefinition(
+                    id=agent_data.get("id", ""),
+                    name=agent_data.get("name", ""),
+                    description=agent_data.get("description"),
+                    llm_model=agent_data.get("llm_model"),
+                    file_system_enabled=agent_data.get("file_system_enabled", False),
+                    file_system_base_dir=agent_data.get("file_system_base_dir"),
+                    python_interpreter_enabled=agent_data.get("python_interpreter_enabled", False),
+                    python_interpreter_timeout=agent_data.get("python_interpreter_timeout", 30),
+                    user_input_enabled=agent_data.get("user_input_enabled", False),
+                    user_input_mode=agent_data.get("user_input_mode", "disabled"),
+                    paradigm_dir=agent_data.get("paradigm_dir"),
+                ))
         
         # Parse mappings
         mappings = []

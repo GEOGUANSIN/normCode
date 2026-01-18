@@ -5,6 +5,7 @@ import {
   ChevronRight, ChevronDown, Save, RotateCcw, Layers, Wrench, Workflow, FileCode
 } from 'lucide-react';
 import { useAgentStore, AgentConfig, ToolCallEvent } from '../../stores/agentStore';
+import { useProjectStore } from '../../stores/projectStore';
 
 // ============================================================================
 // API Functions
@@ -714,7 +715,10 @@ export function AgentPanel() {
   const [agentsCollapsed, setAgentsCollapsed] = useState(false);
   const [toolCallsCollapsed, setToolCallsCollapsed] = useState(false);
   
-  // Load agents on mount
+  // Get current project ID to reload agents when project changes
+  const currentProjectId = useProjectStore((s) => s.currentProject?.id);
+  
+  // Load agents on mount AND when project changes
   useEffect(() => {
     const loadAgents = async () => {
       setLoading(true);
@@ -725,6 +729,16 @@ export function AgentPanel() {
           agentMap[agent.id] = agent;
         }
         useAgentStore.setState({ agents: agentMap });
+        
+        // If no agent is selected or the selected agent isn't in the new list,
+        // select the first agent
+        const { selectedAgentId } = useAgentStore.getState();
+        if (!selectedAgentId || !agentMap[selectedAgentId]) {
+          const firstAgent = agentList[0];
+          if (firstAgent) {
+            useAgentStore.setState({ selectedAgentId: firstAgent.id });
+          }
+        }
       } catch (e) {
         console.error('Failed to load agents:', e);
       } finally {
@@ -732,7 +746,7 @@ export function AgentPanel() {
       }
     };
     loadAgents();
-  }, []);
+  }, [currentProjectId]);
   
   const handleNewAgent = () => {
     setEditingAgentId(null);

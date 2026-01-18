@@ -27,6 +27,8 @@ import {
   Settings,
   Check,
   XCircle,
+  Code,
+  FileText,
 } from 'lucide-react';
 
 // =============================================================================
@@ -71,7 +73,8 @@ interface AgentDefinition {
   id: string;
   name: string;
   description: string | null;
-  tools: AgentToolsConfigDef;
+  // New tool-centric format (from API)
+  tools?: AgentToolsConfigDef | null;
   // Legacy fields for backward compatibility (reading old config files)
   llm_model?: string | null;
   file_system_enabled?: boolean;
@@ -83,14 +86,51 @@ interface AgentDefinition {
   paradigm_dir?: string | null;
 }
 
-// Helper to normalize agent (support both new and legacy format)
-function normalizeAgent(agent: AgentDefinition): AgentDefinition {
+// Normalized agent with guaranteed tools structure
+interface NormalizedAgent {
+  id: string;
+  name: string;
+  description: string | null;
+  tools: AgentToolsConfigDef;
+}
+
+// Helper to normalize agent (support both new and legacy format from API)
+function normalizeAgent(agent: AgentDefinition): NormalizedAgent {
   if (agent.tools) {
-    return agent;
+    // New format from API - ensure all nested objects exist with defaults
+    return {
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      tools: {
+        llm: {
+          model: agent.tools.llm?.model || 'demo',
+          temperature: agent.tools.llm?.temperature,
+          max_tokens: agent.tools.llm?.max_tokens,
+        },
+        paradigm: {
+          dir: agent.tools.paradigm?.dir,
+        },
+        file_system: {
+          enabled: agent.tools.file_system?.enabled ?? true,
+          base_dir: agent.tools.file_system?.base_dir,
+        },
+        python_interpreter: {
+          enabled: agent.tools.python_interpreter?.enabled ?? true,
+          timeout: agent.tools.python_interpreter?.timeout ?? 30,
+        },
+        user_input: {
+          enabled: agent.tools.user_input?.enabled ?? true,
+          mode: agent.tools.user_input?.mode || 'blocking',
+        },
+      },
+    };
   }
   // Convert legacy format to tool-centric
   return {
-    ...agent,
+    id: agent.id,
+    name: agent.name,
+    description: agent.description,
     tools: {
       llm: { model: agent.llm_model || 'demo' },
       paradigm: { dir: agent.paradigm_dir || undefined },
@@ -156,6 +196,18 @@ async function fetchAgentPreview(filePath: string): Promise<AgentPreviewData> {
   return response.json();
 }
 
+async function fetchRawFile(filePath: string): Promise<string> {
+  const response = await fetch(`/api/editor/file?path=${encodeURIComponent(filePath)}`);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to load file' }));
+    throw new Error(error.detail || 'Failed to load file');
+  }
+  
+  const data = await response.json();
+  return data.content || '';
+}
+
 // =============================================================================
 // Section Components
 // =============================================================================
@@ -205,16 +257,14 @@ function Section({ title, icon, badge, children, defaultExpanded = true }: Secti
 // =============================================================================
 
 interface AgentCardProps {
-  agent: AgentDefinition;
+  agent: NormalizedAgent;
   isDefault: boolean;
 }
 
-function AgentCard({ agent: rawAgent, isDefault }: AgentCardProps) {
+function AgentCard({ agent, isDefault }: AgentCardProps) {
   // Default agent starts expanded
   const [isExpanded, setIsExpanded] = useState(isDefault);
   
-  // Normalize to ensure we have tool-centric structure
-  const agent = normalizeAgent(rawAgent);
   const { tools } = agent;
   
   // Count enabled tools
@@ -508,10 +558,14 @@ function ProviderCard({ provider }: ProviderCardProps) {
 // Main AgentConfigPreview Component
 // =============================================================================
 
+type ViewMode = 'formatted' | 'raw';
+
 export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProps) {
   const [data, setData] = useState<AgentPreviewData | null>(null);
+  const [rawJson, setRawJson] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('formatted');
 
   // Load data on mount or path change
   useEffect(() => {
@@ -522,8 +576,12 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAgentPreview(filePath);
+      const [result, rawContent] = await Promise.all([
+        fetchAgentPreview(filePath),
+        fetchRawFile(filePath),
+      ]);
       setData(result);
+      setRawJson(rawContent);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load preview');
     } finally {
@@ -598,6 +656,36 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
           </div>
           
           <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('formatted')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'formatted'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                title="Formatted View"
+              >
+                <FileText size={14} />
+                <span>Formatted</span>
+              </button>
+              <button
+                onClick={() => setViewMode('raw')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'raw'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                title="Raw JSON View"
+              >
+                <Code size={14} />
+                <span>JSON</span>
+              </button>
+            </div>
+            
+            <div className="w-px h-6 bg-slate-200" />
+            
             <button
               onClick={loadPreview}
               className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -647,77 +735,105 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
       </div>
       
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {/* Agents Section */}
-        <Section 
-          title="Agents" 
-          icon={<Bot size={18} />}
-          badge={config.agents.length}
-        >
-          <div className="pt-3 space-y-3">
-            {config.agents.map((agent) => (
-              <AgentCard 
-                key={agent.id} 
-                agent={agent} 
-                isDefault={agent.id === config.default_agent}
-              />
-            ))}
-          </div>
-        </Section>
-        
-        {/* Mappings Section */}
-        {config.mappings.length > 0 && (
-          <Section 
-            title="Agent Mappings" 
-            icon={<GitBranch size={18} />}
-            badge={config.mappings.length}
-          >
-            <div className="pt-3 space-y-2">
-              {config.mappings.map((mapping, idx) => (
-                <MappingRow key={idx} mapping={mapping} agents={config.agents} />
-              ))}
-            </div>
-          </Section>
-        )}
-        
-        {/* LLM Providers Section */}
-        {config.llm_providers.length > 0 && (
-          <Section 
-            title="LLM Providers" 
-            icon={<Sparkles size={18} />}
-            badge={config.llm_providers.length}
-          >
-            <div className="pt-3 space-y-2">
-              {config.llm_providers.map((provider, idx) => (
-                <ProviderCard key={idx} provider={provider} />
-              ))}
-            </div>
-          </Section>
-        )}
-        
-        {/* Metadata Section */}
-        <Section 
-          title="Metadata" 
-          icon={<Settings size={18} />}
-          defaultExpanded={false}
-        >
-          <div className="pt-3 space-y-2 text-sm">
-            {config.created_at && (
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-500">Created:</span>
-                <span className="text-slate-700">{formatDate(config.created_at)}</span>
+      <div className="flex-1 overflow-y-auto">
+        {viewMode === 'raw' ? (
+          /* Raw JSON View */
+          <div className="h-full p-4">
+            <div className="h-full bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Code size={14} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-300">Raw JSON</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(rawJson);
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded hover:bg-slate-700 transition-colors"
+                >
+                  Copy
+                </button>
               </div>
-            )}
-            {config.updated_at && (
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-500">Updated:</span>
-                <span className="text-slate-700">{formatDate(config.updated_at)}</span>
-              </div>
-            )}
+              <pre className="p-4 text-sm font-mono text-slate-100 overflow-auto h-[calc(100%-40px)] leading-relaxed">
+                <code>{rawJson || 'Loading...'}</code>
+              </pre>
+            </div>
           </div>
-        </Section>
+        ) : (
+          /* Formatted View */
+          <div className="p-6 space-y-4">
+            {/* Agents Section */}
+            <Section 
+              title="Agents" 
+              icon={<Bot size={18} />}
+              badge={config.agents.length}
+            >
+              <div className="pt-3 space-y-3">
+                {config.agents.map((agent) => (
+                  <AgentCard 
+                    key={agent.id} 
+                    agent={normalizeAgent(agent)} 
+                    isDefault={agent.id === config.default_agent}
+                  />
+                ))}
+              </div>
+            </Section>
+            
+            {/* Mappings Section */}
+            {config.mappings.length > 0 && (
+              <Section 
+                title="Agent Mappings" 
+                icon={<GitBranch size={18} />}
+                badge={config.mappings.length}
+              >
+                <div className="pt-3 space-y-2">
+                  {config.mappings.map((mapping, idx) => (
+                    <MappingRow key={idx} mapping={mapping} agents={config.agents} />
+                  ))}
+                </div>
+              </Section>
+            )}
+            
+            {/* LLM Providers Section */}
+            {config.llm_providers.length > 0 && (
+              <Section 
+                title="LLM Providers" 
+                icon={<Sparkles size={18} />}
+                badge={config.llm_providers.length}
+              >
+                <div className="pt-3 space-y-2">
+                  {config.llm_providers.map((provider, idx) => (
+                    <ProviderCard key={idx} provider={provider} />
+                  ))}
+                </div>
+              </Section>
+            )}
+            
+            {/* Metadata Section */}
+            <Section 
+              title="Metadata" 
+              icon={<Settings size={18} />}
+              defaultExpanded={false}
+            >
+              <div className="pt-3 space-y-2 text-sm">
+                {config.created_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-slate-400" />
+                    <span className="text-slate-500">Created:</span>
+                    <span className="text-slate-700">{formatDate(config.created_at)}</span>
+                  </div>
+                )}
+                {config.updated_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-slate-400" />
+                    <span className="text-slate-500">Updated:</span>
+                    <span className="text-slate-700">{formatDate(config.updated_at)}</span>
+                  </div>
+                )}
+              </div>
+            </Section>
+          </div>
+        )}
       </div>
     </div>
   );

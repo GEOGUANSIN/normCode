@@ -78,6 +78,9 @@ class ExecutionController:
     
     Each ExecutionController is associated with a specific project_id,
     enabling multiple projects to execute simultaneously.
+    
+    IMPORTANT: Agent registry and mapping are project-scoped (not global)
+    to prevent cross-contamination when multiple projects run simultaneously.
     """
     
     # Project association
@@ -90,6 +93,13 @@ class ExecutionController:
     concept_repo: Optional[Any] = None
     inference_repo: Optional[Any] = None
     body: Optional[Any] = None
+    
+    # Project-scoped agent management (NOT global singletons!)
+    # Each project has its own registry and mapping to prevent cross-contamination
+    _agent_registry: Optional[Any] = None  # AgentRegistry instance for this project
+    _agent_mapping: Optional[Any] = None   # AgentMappingService instance for this project
+    _project_agent_config: Optional[Any] = None  # Loaded ProjectAgentConfig
+    _tool_callback_key: Optional[str] = None  # Key for global tool callback (for cleanup)
     
     # Execution state
     status: ExecutionStatus = ExecutionStatus.IDLE
@@ -148,11 +158,24 @@ class ExecutionController:
         self._load_config = None
         self._main_loop = None
         
+        # Initialize project-scoped agent registry and mapping
+        # This ensures they exist even before load_repositories is called
+        from services.agent.registry import AgentRegistry
+        from services.agent.mapping import AgentMappingService
+        
+        self._agent_registry = AgentRegistry(default_base_dir=".")
+        self._agent_mapping = AgentMappingService()
+        
         # Register tool call callback for WebSocket emission
         self._setup_agent_tool_monitoring()
     
     def _setup_agent_tool_monitoring(self):
-        """Set up tool call monitoring to emit events via WebSocket."""
+        """Set up tool call monitoring to emit events via WebSocket.
+        
+        NOTE: We use a unique callback key based on project_id/event_source to prevent
+        controllers from overwriting each other's callbacks. This is critical for
+        multi-project/chat-controller scenarios.
+        """
         from services.agent_service import agent_registry, ToolCallEvent
         
         def emit_tool_event(event: ToolCallEvent):
@@ -160,9 +183,20 @@ class ExecutionController:
             event_type = f"tool:call_{event.status}"
             self._emit_threadsafe(event_type, event.to_dict())
         
-        # Register callback with agent registry
-        agent_registry.register_tool_callback("execution_controller", emit_tool_event)
-        logger.info("Registered tool call monitoring for WebSocket events")
+        # Use unique callback key per controller to prevent overwrites
+        self._tool_callback_key = f"controller_{self.event_source}_{self.project_id or 'default'}"
+        agent_registry.register_tool_callback(self._tool_callback_key, emit_tool_event)
+        logger.info(f"Registered tool call monitoring for WebSocket events (key={self._tool_callback_key})")
+    
+    def _cleanup_agent_tool_monitoring(self):
+        """Clean up tool callback registration."""
+        if hasattr(self, '_tool_callback_key') and self._tool_callback_key:
+            try:
+                from services.agent_service import agent_registry
+                agent_registry.unregister_tool_callback(self._tool_callback_key)
+                logger.info(f"Unregistered tool call monitoring (key={self._tool_callback_key})")
+            except Exception as e:
+                logger.debug(f"Failed to unregister tool callback: {e}")
     
     # =========================================================================
     # Event Emission
@@ -472,30 +506,51 @@ class ExecutionController:
             project_dir = base_dir
         
         # =====================================================================
-        # Agent-Centric Body Creation
+        # Agent-Centric Body Creation (Project-Scoped!)
         # =====================================================================
-        from services.agent_service import agent_registry, agent_mapping, AgentConfig
-        from services.agent.config import AgentToolsConfig, LLMToolConfig, ParadigmToolConfig
+        # IMPORTANT: Each project gets its own AgentRegistry and AgentMappingService
+        # to prevent cross-contamination when multiple projects run simultaneously.
+        # =====================================================================
+        from services.agent.registry import AgentRegistry
+        from services.agent.mapping import AgentMappingService
+        from services.agent.config import AgentConfig, AgentToolsConfig, LLMToolConfig, ParadigmToolConfig
         from services.agent.project_config import project_agent_config_service
         
-        # Update agent registry's base directory
-        agent_registry.update_base_dir(base_dir)
+        # Create project-scoped agent registry and mapping
+        self._agent_registry = AgentRegistry(default_base_dir=base_dir)
+        self._agent_mapping = AgentMappingService()
+        
+        self._add_log("info", "", f"Created project-scoped agent registry for: {project_name or project_id or 'unknown'}")
         
         # Try to load project-specific agent configuration
-        project_agent_config = None
         if agent_config or project_name:
-            project_agent_config = agent_registry.load_project_agents(
+            config, config_path = project_agent_config_service.load_for_project(
                 project_dir=Path(project_dir),
                 agent_config_ref=agent_config,
                 project_name=project_name,
             )
-            if project_agent_config:
-                self._add_log("info", "", f"Loaded agent config with {len(project_agent_config.agents)} agents")
+            if config:
+                self._project_agent_config = config
+                # Register agents into project-scoped registry
+                for agent in config.agents:
+                    self._agent_registry.register(agent)
+                    self._add_log("info", "", f"Loaded agent: {agent.id} ({agent.name})")
+                
+                # Apply mappings
+                if config.mappings:
+                    for rule in config.mappings:
+                        self._agent_mapping.add_rule(rule)
+                
+                # Set default agent
+                if config.default_agent:
+                    self._agent_mapping.default_agent = config.default_agent
+                
+                self._add_log("info", "", f"Loaded agent config with {len(config.agents)} agents from {config_path}")
         
         # If no agent config found, create one and save it to the project
-        if not project_agent_config:
+        if not self._project_agent_config:
             # Create and persist agent config to project directory
-            project_agent_config, agent_config_path = project_agent_config_service.create_default_config(
+            self._project_agent_config, agent_config_path = project_agent_config_service.create_default_config(
                 project_dir=Path(project_dir),
                 project_name=project_name or "Project",
                 default_llm_model="demo",
@@ -503,18 +558,18 @@ class ExecutionController:
             )
             self._add_log("info", "", f"Created agent config: {agent_config_path.name}")
             
-            # Register the agents from the new config
-            for agent in project_agent_config.agents:
-                agent_registry.register(agent)
+            # Register the agents from the new config into project-scoped registry
+            for agent in self._project_agent_config.agents:
+                self._agent_registry.register(agent)
             
             # Set default agent
-            if project_agent_config.default_agent:
-                agent_mapping.default_agent = project_agent_config.default_agent
+            if self._project_agent_config.default_agent:
+                self._agent_mapping.default_agent = self._project_agent_config.default_agent
         
-        # Get the default body from agent registry
-        default_agent_id = agent_mapping.default_agent
-        self.body = agent_registry.get_body(default_agent_id)
-        self._add_log("info", "", f"Using agent '{default_agent_id}' for execution")
+        # Get the default body from project-scoped agent registry
+        default_agent_id = self._agent_mapping.default_agent
+        self.body = self._agent_registry.get_body(default_agent_id)
+        self._add_log("info", "", f"Using agent '{default_agent_id}' for execution (project-scoped)")
         
         # Inject canvas tools into the body
         from .tool_injection import inject_canvas_tools, setup_tool_monitoring
@@ -728,6 +783,9 @@ class ExecutionController:
         run_id = getattr(self.orchestrator, 'run_id', '') if self.orchestrator else ''
         cleanup_file_logging(self._file_log_handler, run_id)
         self._file_log_handler = None
+        
+        # Clean up tool callback registration
+        self._cleanup_agent_tool_monitoring()
 
         self.status = ExecutionStatus.IDLE
         self._sync_status_to_registry()
@@ -833,7 +891,6 @@ class ExecutionController:
     
     async def _run_loop(self):
         """Main execution loop with inference-by-inference control."""
-        from services.agent_service import agent_registry
         from .checkpoint_service import checkpoint_service
         
         try:
@@ -921,8 +978,6 @@ class ExecutionController:
     
     async def _run_cycle_with_events(self) -> bool:
         """Process one cycle with event emission for each inference."""
-        from services.agent_service import agent_registry
-        
         cycle_executions = 0
         next_retries = []
         
@@ -971,29 +1026,33 @@ class ExecutionController:
             # Execute inference
             cycle_executions += 1
             self.current_inference = flow_index
-            agent_registry.set_current_flow_index(flow_index)
+            
+            # Update flow index on project-scoped registry (if exists)
+            if self._agent_registry:
+                self._agent_registry.set_current_flow_index(flow_index)
             
             # =====================================================================
-            # Agent-Centric: Per-inference agent switching
+            # Agent-Centric: Per-inference agent switching (PROJECT-SCOPED)
             # Determine which agent should handle this inference based on mappings
             # =====================================================================
             concept_name = item.inference_entry.concept_to_infer.concept_name
             sequence_type = item.inference_entry.inference_sequence
             
-            from services.agent_service import agent_mapping
-            target_agent_id = agent_mapping.get_agent_for_inference(
-                flow_index=flow_index,
-                concept_name=concept_name,
-                sequence_type=sequence_type,
-            )
-            
-            # Get the body for the target agent
-            target_body = agent_registry.get_body(target_agent_id)
-            
-            # Update orchestrator's body if different from current
-            if self.orchestrator.body is not target_body:
-                self.orchestrator.body = target_body
-                self._add_log("debug", flow_index, f"Switched to agent: {target_agent_id}")
+            # Use project-scoped agent mapping (not global!)
+            if self._agent_mapping and self._agent_registry:
+                target_agent_id = self._agent_mapping.get_agent_for_inference(
+                    flow_index=flow_index,
+                    concept_name=concept_name,
+                    sequence_type=sequence_type,
+                )
+                
+                # Get the body for the target agent from project-scoped registry
+                target_body = self._agent_registry.get_body(target_agent_id)
+                
+                # Update orchestrator's body if different from current
+                if self.orchestrator.body is not target_body:
+                    self.orchestrator.body = target_body
+                    self._add_log("debug", flow_index, f"Switched to agent: {target_agent_id}")
             
             self.node_statuses[flow_index] = NodeStatus.RUNNING
             await self._emit("inference:started", {
@@ -1395,39 +1454,49 @@ class ExecutionController:
             project_dir = base_dir
         
         # =====================================================================
-        # Agent-Centric Body Creation
+        # Agent-Centric Body Creation (Project-Scoped for Resume/Fork)
         # =====================================================================
-        from services.agent_service import agent_registry, agent_mapping
+        from services.agent.registry import AgentRegistry
+        from services.agent.mapping import AgentMappingService
         from services.agent.project_config import project_agent_config_service
         
-        # Update agent registry's base directory
-        agent_registry.update_base_dir(base_dir)
+        # Create project-scoped agent registry and mapping for this resume/fork
+        self._agent_registry = AgentRegistry(default_base_dir=base_dir)
+        self._agent_mapping = AgentMappingService()
         
         # Try to load project-specific agent configuration
-        project_agent_config = None
         if agent_config or project_name:
-            project_agent_config = agent_registry.load_project_agents(
+            config, _ = project_agent_config_service.load_for_project(
                 project_dir=Path(project_dir),
                 agent_config_ref=agent_config,
                 project_name=project_name,
             )
+            if config:
+                self._project_agent_config = config
+                for agent in config.agents:
+                    self._agent_registry.register(agent)
+                if config.mappings:
+                    for rule in config.mappings:
+                        self._agent_mapping.add_rule(rule)
+                if config.default_agent:
+                    self._agent_mapping.default_agent = config.default_agent
         
         # If no agent config found, create one and save it
-        if not project_agent_config:
-            project_agent_config, _ = project_agent_config_service.create_default_config(
+        if not self._project_agent_config:
+            self._project_agent_config, _ = project_agent_config_service.create_default_config(
                 project_dir=Path(project_dir),
                 project_name=project_name or "Project",
                 default_llm_model="demo",
                 paradigm_dir=paradigm_dir,
             )
-            for agent in project_agent_config.agents:
-                agent_registry.register(agent)
-            if project_agent_config.default_agent:
-                agent_mapping.default_agent = project_agent_config.default_agent
+            for agent in self._project_agent_config.agents:
+                self._agent_registry.register(agent)
+            if self._project_agent_config.default_agent:
+                self._agent_mapping.default_agent = self._project_agent_config.default_agent
         
-        # Get the default body from agent registry
-        default_agent_id = agent_mapping.default_agent
-        self.body = agent_registry.get_body(default_agent_id)
+        # Get the default body from project-scoped agent registry
+        default_agent_id = self._agent_mapping.default_agent
+        self.body = self._agent_registry.get_body(default_agent_id)
         
         # Inject canvas tools
         from .tool_injection import inject_canvas_tools, setup_tool_monitoring
