@@ -271,10 +271,11 @@ class PortableProjectService:
         """Copy provision directories (paradigms, prompts, etc.)."""
         provisions_included: Dict[str, str] = {}
         
-        # Find provisions root from paradigm_dir
+        # Find provisions root from paradigm_dir (now in agent config)
         provisions_root = None
-        if config.execution.paradigm_dir:
-            paradigm_path = project_dir / config.execution.paradigm_dir
+        paradigm_dir = self._get_paradigm_dir_from_agent_config(project_dir, config)
+        if paradigm_dir:
+            paradigm_path = project_dir / paradigm_dir
             if paradigm_path.exists():
                 provisions_root = paradigm_path.parent
         
@@ -330,6 +331,53 @@ class PortableProjectService:
                                         all_files.append(f"{PROJECT_SUBDIR}/{f.relative_to(dest_dir)}")
         
         return provisions_included
+    
+    def _get_paradigm_dir_from_agent_config(
+        self,
+        project_dir: Path,
+        config: ProjectConfig,
+    ) -> Optional[str]:
+        """
+        Get paradigm_dir from the project's agent config file.
+        
+        With the agent-centric approach, paradigm_dir is now stored in the agent config,
+        not in ExecutionSettings.
+        """
+        try:
+            # Check if agent_config is specified
+            if config.execution.agent_config:
+                agent_config_path = project_dir / config.execution.agent_config
+                if agent_config_path.exists():
+                    with open(agent_config_path, 'r', encoding='utf-8') as f:
+                        agent_data = json.load(f)
+                    
+                    # Look for paradigm dir in default agent or first agent
+                    agents = agent_data.get('agents', [])
+                    default_agent_id = agent_data.get('default_agent', 'default')
+                    
+                    for agent in agents:
+                        if agent.get('id') == default_agent_id:
+                            # New tool-centric structure
+                            tools = agent.get('tools', {})
+                            paradigm = tools.get('paradigm', {})
+                            if paradigm.get('dir'):
+                                return paradigm['dir']
+                            # Legacy flat structure
+                            if agent.get('paradigm_dir'):
+                                return agent['paradigm_dir']
+                    
+                    # If default not found, try first agent
+                    if agents:
+                        tools = agents[0].get('tools', {})
+                        paradigm = tools.get('paradigm', {})
+                        if paradigm.get('dir'):
+                            return paradigm['dir']
+                        if agents[0].get('paradigm_dir'):
+                            return agents[0]['paradigm_dir']
+        except Exception as e:
+            logger.warning(f"Could not read paradigm_dir from agent config: {e}")
+        
+        return None
     
     def _copy_database(
         self,
@@ -556,6 +604,9 @@ class PortableProjectService:
         """
         Import a portable project archive.
         
+        Creates a dedicated subdirectory inside the target directory using
+        the project name (or new_project_name if provided).
+        
         Args:
             archive_path: Path to the archive (.zip or folder)
             options: Import options
@@ -597,33 +648,57 @@ class PortableProjectService:
                     manifest_data = json.load(f)
                 manifest = PortableManifest(**manifest_data)
                 
-                # Prepare target directory
-                target_dir = Path(options.target_directory)
-                target_dir.mkdir(parents=True, exist_ok=True)
+                # Determine project name first
+                if options.new_project_name:
+                    project_name = options.new_project_name
+                else:
+                    project_name = manifest.project_name
                 
-                # Check for existing project
+                # Create a safe subdirectory name from project name
+                safe_subdir_name = project_name.lower().replace(' ', '-')
+                safe_subdir_name = ''.join(c for c in safe_subdir_name if c.isalnum() or c == '-')
+                if not safe_subdir_name:
+                    safe_subdir_name = 'imported-project'
+                
+                # Target directory is the user-selected location + project subdirectory
+                base_target_dir = Path(options.target_directory)
+                target_dir = base_target_dir / safe_subdir_name
+                
+                # Handle existing directory
                 warnings: List[str] = []
-                existing_config = None
-                for f in target_dir.iterdir():
-                    if f.name.endswith(PROJECT_CONFIG_SUFFIX) or f.name == "normcode-canvas.json":
+                if target_dir.exists():
+                    # Check for existing project config
+                    existing_config = None
+                    for f in target_dir.iterdir():
+                        if f.name.endswith(PROJECT_CONFIG_SUFFIX) or f.name == "normcode-canvas.json":
+                            existing_config = f.name
+                            break
+                    
+                    if existing_config:
                         if not options.overwrite_existing and not options.merge_with_existing:
                             return ImportResult(
                                 success=False,
                                 message=f"Project already exists in {target_dir}. "
                                         "Use overwrite_existing or merge_with_existing option."
                             )
-                        existing_config = f.name
-                        break
+                    else:
+                        # Directory exists but no project config - just append a suffix
+                        counter = 1
+                        original_target = target_dir
+                        while target_dir.exists():
+                            target_dir = base_target_dir / f"{safe_subdir_name}-{counter}"
+                            counter += 1
+                        warnings.append(f"Directory {original_target} existed, using {target_dir} instead")
                 
-                # Determine project name and config file
+                target_dir.mkdir(parents=True, exist_ok=True)
+                logger.info(f"Importing project to subdirectory: {target_dir}")
+                
+                # Generate config filename
                 if options.new_project_name:
-                    project_name = options.new_project_name
-                    # Generate new config filename
                     slug = project_name.lower().replace(' ', '-')
                     slug = ''.join(c for c in slug if c.isalnum() or c == '-')
                     config_file = f"{slug}{PROJECT_CONFIG_SUFFIX}"
                 else:
-                    project_name = manifest.project_name
                     config_file = manifest.config_file
                 
                 # Copy project files

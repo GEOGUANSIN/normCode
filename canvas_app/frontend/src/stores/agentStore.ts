@@ -30,12 +30,21 @@ export interface UserInputToolConfig {
   mode: 'blocking' | 'async' | 'disabled';
 }
 
+// Custom tool config for extensibility
+export interface CustomToolConfig {
+  type_id: string;
+  enabled: boolean;
+  settings: Record<string, unknown>;
+}
+
 export interface AgentToolsConfig {
   llm: LLMToolConfig;
   paradigm: ParadigmToolConfig;
   file_system: FileSystemToolConfig;
   python_interpreter: PythonInterpreterToolConfig;
   user_input: UserInputToolConfig;
+  // Custom/injectable tools
+  custom?: Record<string, CustomToolConfig>;
 }
 
 export interface AgentConfig {
@@ -91,6 +100,7 @@ interface AgentState {
   setAgents: (agents: Record<string, AgentConfig>) => void;
   addAgent: (config: AgentConfig) => void;
   updateAgent: (id: string, updates: Partial<AgentConfig>) => void;
+  updateAgentTools: (id: string, toolUpdates: Partial<AgentToolsConfig>) => void;
   deleteAgent: (id: string) => void;
   
   // Actions - Mappings
@@ -163,6 +173,23 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       agents: {
         ...state.agents,
         [id]: { ...existing, ...updates }
+      }
+    };
+  }),
+  
+  updateAgentTools: (id, toolUpdates) => set((state) => {
+    const existing = state.agents[id];
+    if (!existing) return state;
+    return {
+      agents: {
+        ...state.agents,
+        [id]: {
+          ...existing,
+          tools: {
+            ...existing.tools,
+            ...toolUpdates,
+          }
+        }
       }
     };
   }),

@@ -118,9 +118,9 @@ async def create_project(request: CreateProjectRequest):
             concepts_path=request.concepts_path,
             inferences_path=request.inferences_path,
             inputs_path=request.inputs_path,
-            default_llm_model=request.default_llm_model,  # Agent-centric
             max_cycles=request.max_cycles,
-            paradigm_dir=request.paradigm_dir,
+            # Note: default_llm_model and paradigm_dir are now auto-discovered
+            # and configured via the agent config, not passed from the frontend.
         )
         
         return ProjectResponse(

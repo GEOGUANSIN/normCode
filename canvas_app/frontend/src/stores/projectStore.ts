@@ -72,9 +72,8 @@ interface ProjectState {
       conceptsPath?: string;
       inferencesPath?: string;
       inputsPath?: string;
-      llmModel?: string;
       maxCycles?: number;
-      paradigmDir?: string;
+      // Note: llmModel and paradigmDir are now agent-centric and configured via AgentConfig
     }
   ) => Promise<boolean>;
   saveProject: () => Promise<boolean>;
