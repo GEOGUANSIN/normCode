@@ -503,7 +503,7 @@ function AgentListItem({ agent, isSelected, onSelect, onEdit, onDelete }: AgentL
           )}
         </div>
       </div>
-      <div className="text-xs text-slate-500 ml-4">{agent.llm_model}</div>
+      <div className="text-xs text-slate-500 ml-4">{agent.tools?.llm?.model || 'demo'}</div>
     </div>
   );
 }
@@ -529,12 +529,13 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
     id: '',
     name: '',
     description: '',
-    llm_model: 'qwen-plus',
-    file_system_enabled: true,
-    python_interpreter_enabled: true,
-    python_interpreter_timeout: 30,
-    user_input_enabled: true,
-    user_input_mode: 'blocking',
+    tools: {
+      llm: { model: 'demo' },
+      paradigm: {},
+      file_system: { enabled: true },
+      python_interpreter: { enabled: true, timeout: 30 },
+      user_input: { enabled: true, mode: 'blocking' },
+    },
   });
   
   const [saving, setSaving] = useState(false);
@@ -658,8 +659,14 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
                   </button>
                 </div>
                 <select
-                  value={config.llm_model}
-                  onChange={(e) => setConfig({ ...config, llm_model: e.target.value })}
+                  value={config.tools.llm.model}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    tools: {
+                      ...config.tools,
+                      llm: { ...config.tools.llm, model: e.target.value }
+                    }
+                  })}
                   className="w-full px-3 py-2 border rounded text-sm"
                 >
                   {availableModels.length > 0 ? (
@@ -700,20 +707,32 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={config.file_system_enabled}
-                  onChange={(e) => setConfig({ ...config, file_system_enabled: e.target.checked })}
+                  checked={config.tools.file_system.enabled}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    tools: {
+                      ...config.tools,
+                      file_system: { ...config.tools.file_system, enabled: e.target.checked }
+                    }
+                  })}
                   className="rounded"
                 />
                 <span className="text-sm">File System</span>
               </label>
               
-              {config.file_system_enabled && (
+              {config.tools.file_system.enabled && (
                 <div className="ml-6">
                   <label className="block text-xs text-slate-500 mb-1">Base Directory (optional)</label>
                   <input
                     type="text"
-                    value={config.file_system_base_dir || ''}
-                    onChange={(e) => setConfig({ ...config, file_system_base_dir: e.target.value || undefined })}
+                    value={config.tools.file_system.base_dir || ''}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      tools: {
+                        ...config.tools,
+                        file_system: { ...config.tools.file_system, base_dir: e.target.value || undefined }
+                      }
+                    })}
                     className="w-full px-2 py-1 border rounded text-sm"
                     placeholder="Use project default"
                   />
@@ -723,8 +742,14 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={config.python_interpreter_enabled}
-                  onChange={(e) => setConfig({ ...config, python_interpreter_enabled: e.target.checked })}
+                  checked={config.tools.python_interpreter.enabled}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    tools: {
+                      ...config.tools,
+                      python_interpreter: { ...config.tools.python_interpreter, enabled: e.target.checked }
+                    }
+                  })}
                   className="rounded"
                 />
                 <span className="text-sm">Python Interpreter</span>
@@ -733,8 +758,14 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={config.user_input_enabled}
-                  onChange={(e) => setConfig({ ...config, user_input_enabled: e.target.checked })}
+                  checked={config.tools.user_input.enabled}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    tools: {
+                      ...config.tools,
+                      user_input: { ...config.tools.user_input, enabled: e.target.checked }
+                    }
+                  })}
                   className="rounded"
                 />
                 <span className="text-sm">User Input (Human-in-the-Loop)</span>
@@ -752,8 +783,14 @@ function AgentEditor({ agentId, onClose, onSave }: AgentEditorProps) {
               <label className="block text-sm font-medium mb-1">Custom Paradigm Directory</label>
               <input
                 type="text"
-                value={config.paradigm_dir || ''}
-                onChange={(e) => setConfig({ ...config, paradigm_dir: e.target.value || undefined })}
+                value={config.tools.paradigm.dir || ''}
+                onChange={(e) => setConfig({
+                  ...config,
+                  tools: {
+                    ...config.tools,
+                    paradigm: { ...config.tools.paradigm, dir: e.target.value || undefined }
+                  }
+                })}
                 className="w-full px-3 py-2 border rounded text-sm"
                 placeholder="e.g., provision/paradigm"
               />

@@ -411,18 +411,26 @@ class ExecutionController:
         concepts_path: str,
         inferences_path: str,
         inputs_path: Optional[str] = None,
-        llm_model: str = "demo",
+        llm_model: str = "demo",  # DEPRECATED: kept for backward compat
         base_dir: Optional[str] = None,
         max_cycles: int = 50,
         db_path: Optional[str] = None,
-        paradigm_dir: Optional[str] = None
+        paradigm_dir: Optional[str] = None,
+        agent_config: Optional[str] = None,  # Path to .agent.json file
+        project_dir: Optional[str] = None,  # Project directory for resolving paths
+        project_name: Optional[str] = None,  # Project name for auto-discovery
     ) -> Dict[str, Any]:
-        """Load repositories and create orchestrator."""
+        """Load repositories and create orchestrator.
+        
+        Agent-centric LLM configuration:
+        - If agent_config is provided, loads agents from that file
+        - Otherwise, creates a default agent using llm_model (backward compat)
+        - Body is obtained from AgentRegistry, not created directly
+        """
         import json as json_module
         
         try:
             from infra._orchest._repo import ConceptRepo, InferenceRepo
-            from infra._agent._body import Body
             from infra._orchest._orchestrator import Orchestrator
             from infra._core import set_dev_mode
             set_dev_mode(True)
@@ -459,20 +467,56 @@ class ExecutionController:
         if base_dir is None:
             base_dir = str(Path(concepts_path).parent)
         
-        # Create custom paradigm tool if specified
-        from .paradigm_tool import create_paradigm_tool
-        custom_paradigm_tool = create_paradigm_tool(paradigm_dir, base_dir)
-        if custom_paradigm_tool:
-            self._add_log("info", "", f"Using custom paradigms from: {paradigm_dir}")
+        # Determine project directory for agent config resolution
+        if project_dir is None:
+            project_dir = base_dir
         
-        # Create Body
-        self.body = Body(
-            llm_name=llm_model, 
-            base_dir=base_dir,
-            paradigm_tool=custom_paradigm_tool
-        )
+        # =====================================================================
+        # Agent-Centric Body Creation
+        # =====================================================================
+        from services.agent_service import agent_registry, agent_mapping, AgentConfig
+        from services.agent.config import AgentToolsConfig, LLMToolConfig, ParadigmToolConfig
+        from services.agent.project_config import project_agent_config_service
         
-        # Inject canvas tools
+        # Update agent registry's base directory
+        agent_registry.update_base_dir(base_dir)
+        
+        # Try to load project-specific agent configuration
+        project_agent_config = None
+        if agent_config or project_name:
+            project_agent_config = agent_registry.load_project_agents(
+                project_dir=Path(project_dir),
+                agent_config_ref=agent_config,
+                project_name=project_name,
+            )
+            if project_agent_config:
+                self._add_log("info", "", f"Loaded agent config with {len(project_agent_config.agents)} agents")
+        
+        # If no agent config found, create one and save it to the project
+        if not project_agent_config:
+            # Create and persist agent config to project directory
+            project_agent_config, agent_config_path = project_agent_config_service.create_default_config(
+                project_dir=Path(project_dir),
+                project_name=project_name or "Project",
+                default_llm_model="demo",
+                paradigm_dir=paradigm_dir,
+            )
+            self._add_log("info", "", f"Created agent config: {agent_config_path.name}")
+            
+            # Register the agents from the new config
+            for agent in project_agent_config.agents:
+                agent_registry.register(agent)
+            
+            # Set default agent
+            if project_agent_config.default_agent:
+                agent_mapping.default_agent = project_agent_config.default_agent
+        
+        # Get the default body from agent registry
+        default_agent_id = agent_mapping.default_agent
+        self.body = agent_registry.get_body(default_agent_id)
+        self._add_log("info", "", f"Using agent '{default_agent_id}' for execution")
+        
+        # Inject canvas tools into the body
         from .tool_injection import inject_canvas_tools, setup_tool_monitoring
         canvas_tools = inject_canvas_tools(self.body, self._emit_sync)
         self.user_input_tool = canvas_tools.user_input_tool
@@ -552,16 +596,19 @@ class ExecutionController:
         self.cycle_count = 0
         self.logs = []
         
-        # Store config for restart
+        # Store config for restart (includes agent-centric config)
         self._load_config = {
             "concepts_path": concepts_path,
             "inferences_path": inferences_path,
             "inputs_path": inputs_path,
-            "llm_model": llm_model,
+            "llm_model": llm_model,  # Backward compat
             "base_dir": base_dir,
             "max_cycles": max_cycles,
             "db_path": db_path,
             "paradigm_dir": paradigm_dir,
+            "agent_config": agent_config,
+            "project_dir": project_dir,
+            "project_name": project_name,
         }
         
         await self._emit("execution:loaded", {
@@ -702,11 +749,14 @@ class ExecutionController:
             concepts_path=config["concepts_path"],
             inferences_path=config["inferences_path"],
             inputs_path=config.get("inputs_path"),
-            llm_model=config.get("llm_model", "demo"),
+            llm_model=config.get("llm_model", "demo"),  # Backward compat
             base_dir=config.get("base_dir"),
             max_cycles=config.get("max_cycles", 50),
             db_path=config.get("db_path"),
             paradigm_dir=config.get("paradigm_dir"),
+            agent_config=config.get("agent_config"),
+            project_dir=config.get("project_dir"),
+            project_name=config.get("project_name"),
         )
         
         self.breakpoints = saved_breakpoints
@@ -923,13 +973,36 @@ class ExecutionController:
             self.current_inference = flow_index
             agent_registry.set_current_flow_index(flow_index)
             
+            # =====================================================================
+            # Agent-Centric: Per-inference agent switching
+            # Determine which agent should handle this inference based on mappings
+            # =====================================================================
+            concept_name = item.inference_entry.concept_to_infer.concept_name
+            sequence_type = item.inference_entry.inference_sequence
+            
+            from services.agent_service import agent_mapping
+            target_agent_id = agent_mapping.get_agent_for_inference(
+                flow_index=flow_index,
+                concept_name=concept_name,
+                sequence_type=sequence_type,
+            )
+            
+            # Get the body for the target agent
+            target_body = agent_registry.get_body(target_agent_id)
+            
+            # Update orchestrator's body if different from current
+            if self.orchestrator.body is not target_body:
+                self.orchestrator.body = target_body
+                self._add_log("debug", flow_index, f"Switched to agent: {target_agent_id}")
+            
             self.node_statuses[flow_index] = NodeStatus.RUNNING
             await self._emit("inference:started", {
                 "flow_index": flow_index,
-                "concept_name": item.inference_entry.concept_to_infer.concept_name,
-                "sequence": item.inference_entry.inference_sequence
+                "concept_name": concept_name,
+                "sequence": sequence_type,
+                "agent_id": target_agent_id,
             })
-            self._add_log("info", flow_index, f"Executing: {item.inference_entry.concept_to_infer.concept_name}")
+            self._add_log("info", flow_index, f"Executing: {concept_name} (agent: {target_agent_id})")
             
             try:
                 start_time = time.time()
@@ -1276,16 +1349,21 @@ class ExecutionController:
         concepts_path: str,
         inferences_path: str,
         inputs_path: Optional[str],
-        llm_model: str,
+        llm_model: str,  # DEPRECATED: kept for backward compat
         base_dir: Optional[str],
-        paradigm_dir: Optional[str]
+        paradigm_dir: Optional[str],
+        agent_config: Optional[str] = None,
+        project_dir: Optional[str] = None,
+        project_name: Optional[str] = None,
     ):
-        """Internal helper to load repositories and create body."""
+        """Internal helper to load repositories and create body.
+        
+        Uses AgentRegistry for body creation (agent-centric approach).
+        """
         import json as json_module
         
         try:
             from infra._orchest._repo import ConceptRepo, InferenceRepo
-            from infra._agent._body import Body
         except ImportError as e:
             raise RuntimeError(f"Failed to import infra modules: {e}")
         
@@ -1313,15 +1391,45 @@ class ExecutionController:
         if base_dir is None:
             base_dir = str(Path(concepts_path).parent)
         
-        from .paradigm_tool import create_paradigm_tool
-        custom_paradigm_tool = create_paradigm_tool(paradigm_dir, base_dir)
+        if project_dir is None:
+            project_dir = base_dir
         
-        self.body = Body(
-            llm_name=llm_model, 
-            base_dir=base_dir,
-            paradigm_tool=custom_paradigm_tool
-        )
+        # =====================================================================
+        # Agent-Centric Body Creation
+        # =====================================================================
+        from services.agent_service import agent_registry, agent_mapping
+        from services.agent.project_config import project_agent_config_service
         
+        # Update agent registry's base directory
+        agent_registry.update_base_dir(base_dir)
+        
+        # Try to load project-specific agent configuration
+        project_agent_config = None
+        if agent_config or project_name:
+            project_agent_config = agent_registry.load_project_agents(
+                project_dir=Path(project_dir),
+                agent_config_ref=agent_config,
+                project_name=project_name,
+            )
+        
+        # If no agent config found, create one and save it
+        if not project_agent_config:
+            project_agent_config, _ = project_agent_config_service.create_default_config(
+                project_dir=Path(project_dir),
+                project_name=project_name or "Project",
+                default_llm_model="demo",
+                paradigm_dir=paradigm_dir,
+            )
+            for agent in project_agent_config.agents:
+                agent_registry.register(agent)
+            if project_agent_config.default_agent:
+                agent_mapping.default_agent = project_agent_config.default_agent
+        
+        # Get the default body from agent registry
+        default_agent_id = agent_mapping.default_agent
+        self.body = agent_registry.get_body(default_agent_id)
+        
+        # Inject canvas tools
         from .tool_injection import inject_canvas_tools, setup_tool_monitoring
         canvas_tools = inject_canvas_tools(self.body, self._emit_sync)
         self.user_input_tool = canvas_tools.user_input_tool
@@ -1543,6 +1651,9 @@ class ExecutionController:
             "max_cycles": max_cycles,
             "db_path": db_path,
             "paradigm_dir": paradigm_dir,
+            "agent_config": agent_config if 'agent_config' in locals() else None,
+            "project_dir": project_dir if 'project_dir' in locals() else base_dir,
+            "project_name": project_name if 'project_name' in locals() else None,
         }
         
         await self._emit("execution:loaded", {
@@ -1638,6 +1749,9 @@ class ExecutionController:
             "max_cycles": max_cycles,
             "db_path": db_path,
             "paradigm_dir": paradigm_dir,
+            "agent_config": agent_config if 'agent_config' in locals() else None,
+            "project_dir": project_dir if 'project_dir' in locals() else base_dir,
+            "project_name": project_name if 'project_name' in locals() else None,
         }
         
         await self._emit("execution:loaded", {

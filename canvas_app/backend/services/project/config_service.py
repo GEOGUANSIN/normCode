@@ -134,13 +134,14 @@ class ProjectConfigService:
         concepts_path: Optional[str] = None,
         inferences_path: Optional[str] = None,
         inputs_path: Optional[str] = None,
-        llm_model: str = "demo",
         max_cycles: int = 50,
-        paradigm_dir: Optional[str] = None,
         auto_discover: bool = True,
     ) -> Tuple[ProjectConfig, str, Path]:
         """
         Create a new project configuration file.
+        
+        Agent-centric approach: Also creates a default agent config file.
+        LLM model, paradigm_dir, and base_dir are configured per-agent in the .agent.json file.
         
         Args:
             project_path: Directory where to create the project
@@ -149,9 +150,7 @@ class ProjectConfigService:
             concepts_path: Relative path to concepts.json (auto-discovered if None)
             inferences_path: Relative path to inferences.json (auto-discovered if None)
             inputs_path: Optional relative path to inputs.json (auto-discovered if None)
-            llm_model: LLM model to use
             max_cycles: Max execution cycles
-            paradigm_dir: Optional paradigm directory (auto-discovered if None)
             auto_discover: Whether to auto-discover paths if not provided
             
         Returns:
@@ -173,9 +172,10 @@ class ProjectConfigService:
                 inferences_path = discovered.inferences or "inferences.json"
             if inputs_path is None:
                 inputs_path = discovered.inputs  # Can remain None
-            if paradigm_dir is None:
-                paradigm_dir = discovered.paradigm_dir  # Can remain None
+            # paradigm_dir is now part of agent config
+            paradigm_dir = discovered.paradigm_dir  # Pass to agent config
         else:
+            paradigm_dir = None
             # Use defaults if not auto-discovering
             concepts_path = concepts_path or "concepts.json"
             inferences_path = inferences_path or "inferences.json"
@@ -191,6 +191,26 @@ class ProjectConfigService:
             base_name = config_filename.replace(PROJECT_CONFIG_SUFFIX, '')
             config_filename = f"{base_name}-{project_id}{PROJECT_CONFIG_SUFFIX}"
         
+        # =====================================================================
+        # Agent-Centric: Create default agent config file
+        # All tool settings (LLM, paradigm, file_system) are in the agent config
+        # =====================================================================
+        from services.agent.project_config import project_agent_config_service
+        from services.agent.config import get_agent_config_filename
+        
+        # Create the agent config file with discovered paradigm_dir
+        agent_config, agent_config_path = project_agent_config_service.create_default_config(
+            project_dir=project_dir,
+            project_name=name,
+            default_llm_model="demo",  # Default LLM model for new agents
+            paradigm_dir=paradigm_dir,  # Pass discovered paradigm dir
+        )
+        
+        # Get relative path to agent config
+        agent_config_filename = agent_config_path.name
+        
+        logger.info(f"Created agent config: {agent_config_filename}")
+        
         # Create project config with new ID
         project_id = generate_project_id()
         config = ProjectConfig(
@@ -205,9 +225,8 @@ class ProjectConfigService:
                 inputs=inputs_path,
             ),
             execution=ExecutionSettings(
-                llm_model=llm_model,
                 max_cycles=max_cycles,
-                paradigm_dir=paradigm_dir,
+                agent_config=agent_config_filename,  # Agent tools config
             ),
         )
         
@@ -270,24 +289,8 @@ class ProjectConfigService:
             config.repositories.inputs = discovered.inputs
             config_updated = True
         
-        # Check if paradigm_dir exists, if not try discovered
-        if config.execution.paradigm_dir:
-            paradigm_path = project_dir / config.execution.paradigm_dir
-            if not paradigm_path.exists() and discovered.paradigm_dir:
-                logger.info(f"Updating paradigm_dir from '{config.execution.paradigm_dir}' to discovered '{discovered.paradigm_dir}'")
-                config.execution.paradigm_dir = discovered.paradigm_dir
-                config_updated = True
-        elif discovered.paradigm_dir:
-            # No paradigm_dir set, but we found one
-            config.execution.paradigm_dir = discovered.paradigm_dir
-            config_updated = True
-        
-        # Auto-detect base_dir if not set
-        if not config.execution.base_dir:
-            base_dir = self._detect_base_dir(project_dir, config.repositories)
-            if base_dir:
-                config.execution.base_dir = str(base_dir)
-                config_updated = True
+        # Note: paradigm_dir and base_dir are now configured per-agent in .agent.json
+        # They are no longer stored in ExecutionSettings
         
         # Save updated config if we made changes
         if config_updated:

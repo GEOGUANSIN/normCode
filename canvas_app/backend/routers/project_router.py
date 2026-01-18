@@ -118,7 +118,7 @@ async def create_project(request: CreateProjectRequest):
             concepts_path=request.concepts_path,
             inferences_path=request.inferences_path,
             inputs_path=request.inputs_path,
-            llm_model=request.llm_model,
+            default_llm_model=request.default_llm_model,  # Agent-centric
             max_cycles=request.max_cycles,
             paradigm_dir=request.paradigm_dir,
         )
@@ -320,15 +320,17 @@ async def load_project_repositories():
         execution_controller_registry.set_active(project_id)
         
         # Load repositories using project-specific execution controller
+        # Agent-centric: agent_config is the source of truth for tool configuration
         await controller.load_repositories(
             concepts_path=paths['concepts'],
             inferences_path=paths['inferences'],
             inputs_path=paths.get('inputs'),
-            llm_model=exec_settings.llm_model,
             base_dir=paths['base_dir'],
             max_cycles=exec_settings.max_cycles,
             db_path=exec_settings.db_path,
-            paradigm_dir=exec_settings.paradigm_dir,
+            agent_config=exec_settings.agent_config,
+            project_dir=str(project_service.current_project_path),
+            project_name=config.name,
         )
         
         # Restore breakpoints from project config

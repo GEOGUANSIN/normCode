@@ -501,7 +501,11 @@ function App() {
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={showSettingsPanel} 
-        onToggle={() => setShowSettingsPanel(!showSettingsPanel)} 
+        onToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+        onOpenAgentPanel={() => {
+          setShowSettingsPanel(false);  // Close settings panel
+          setShowAgentPanel(true);       // Open agent panel
+        }}
       />
 
       {/* Main Content Area with Chat Panel */}

@@ -239,14 +239,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           isLoaded: response.is_loaded,
           repositoriesExist: response.repositories_exist,
         });
-        // Sync execution settings to configStore
+        // Sync execution settings to configStore (agent-centric)
         const configStore = useConfigStore.getState();
         const exec = response.config.execution;
-        configStore.setLlmModel(exec.llm_model);
         configStore.setMaxCycles(exec.max_cycles);
         configStore.setDbPath(exec.db_path);
-        configStore.setBaseDir(exec.base_dir || '');
-        configStore.setParadigmDir(exec.paradigm_dir || '');
+        configStore.setAgentConfig(exec.agent_config || '');
       } else {
         set({
           currentProject: null,
@@ -327,14 +325,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         isLoading: false,
         isProjectPanelOpen: false,
       });
-      // Sync execution settings to configStore
+      // Sync execution settings to configStore (agent-centric)
       const configStore = useConfigStore.getState();
       const exec = response.config.execution;
-      configStore.setLlmModel(exec.llm_model);
       configStore.setMaxCycles(exec.max_cycles);
       configStore.setDbPath(exec.db_path);
-      configStore.setBaseDir(exec.base_dir || '');
-      configStore.setParadigmDir(exec.paradigm_dir || '');
+      configStore.setAgentConfig(exec.agent_config || '');
       // Refresh recent projects
       get().fetchRecentProjects();
       return true;
@@ -363,9 +359,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         concepts_path: options.conceptsPath,
         inferences_path: options.inferencesPath,
         inputs_path: options.inputsPath,
-        llm_model: options.llmModel,
         max_cycles: options.maxCycles,
-        paradigm_dir: options.paradigmDir,
       });
       set({
         currentProject: response.config,
@@ -376,14 +370,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         isLoading: false,
         isProjectPanelOpen: false,
       });
-      // Sync execution settings to configStore
+      // Sync execution settings to configStore (agent-centric)
       const configStore = useConfigStore.getState();
       const exec = response.config.execution;
-      configStore.setLlmModel(exec.llm_model);
       configStore.setMaxCycles(exec.max_cycles);
       configStore.setDbPath(exec.db_path);
-      configStore.setBaseDir(exec.base_dir || '');
-      configStore.setParadigmDir(exec.paradigm_dir || '');
+      configStore.setAgentConfig(exec.agent_config || '');
       // Refresh projects lists
       get().fetchRecentProjects();
       get().fetchAllProjects();
@@ -559,14 +551,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           isLoaded: activeTab.is_loaded,
           repositoriesExist: activeTab.repositories_exist,
         });
-        // Sync execution settings
+        // Sync execution settings (agent-centric)
         const configStore = useConfigStore.getState();
         const exec = activeTab.config.execution;
-        configStore.setLlmModel(exec.llm_model);
         configStore.setMaxCycles(exec.max_cycles);
         configStore.setDbPath(exec.db_path);
-        configStore.setBaseDir(exec.base_dir || '');
-        configStore.setParadigmDir(exec.paradigm_dir || '');
+        configStore.setAgentConfig(exec.agent_config || '');
         
         // If the active tab was previously loaded, try to restore the graph
         // This ensures the ControlPanel shows correctly on page refresh
@@ -655,14 +645,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           isLoaded: instance.is_loaded,
           repositoriesExist: instance.repositories_exist,
         });
-        // Sync execution settings
+        // Sync execution settings (agent-centric)
         const configStore = useConfigStore.getState();
         const exec = instance.config.execution;
-        configStore.setLlmModel(exec.llm_model);
         configStore.setMaxCycles(exec.max_cycles);
         configStore.setDbPath(exec.db_path);
-        configStore.setBaseDir(exec.base_dir || '');
-        configStore.setParadigmDir(exec.paradigm_dir || '');
+        configStore.setAgentConfig(exec.agent_config || '');
         
         // Reload graph and execution state to match the new active project
         const executionStore = useExecutionStore.getState();
@@ -820,14 +808,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         isLoading: false,
       });
       
-      // Sync execution settings
+      // Sync execution settings (agent-centric)
       const configStore = useConfigStore.getState();
       const exec = instance.config.execution;
-      configStore.setLlmModel(exec.llm_model);
       configStore.setMaxCycles(exec.max_cycles);
       configStore.setDbPath(exec.db_path);
-      configStore.setBaseDir(exec.base_dir || '');
-      configStore.setParadigmDir(exec.paradigm_dir || '');
+      configStore.setAgentConfig(exec.agent_config || '');
       
       // Reset execution state first
       const executionStore = useExecutionStore.getState();
@@ -977,14 +963,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           repositoriesExist: activeTab.repositories_exist,
         });
         
-        // Sync execution settings
+        // Sync execution settings (agent-centric)
         const configStore = useConfigStore.getState();
         const exec = activeTab.config.execution;
-        configStore.setLlmModel(exec.llm_model);
         configStore.setMaxCycles(exec.max_cycles);
         configStore.setDbPath(exec.db_path);
-        configStore.setBaseDir(exec.base_dir || '');
-        configStore.setParadigmDir(exec.paradigm_dir || '');
+        configStore.setAgentConfig(exec.agent_config || '');
         
         // Reset execution state first
         const executionStore = useExecutionStore.getState();

@@ -1,7 +1,8 @@
 """Agent and Mapping Configuration Dataclasses.
 
 This module contains the core configuration classes for the agent system:
-- AgentConfig: Configuration for a single agent/body
+- AgentConfig: Configuration for a single agent/body (tool-centric design)
+- Tool configuration dataclasses (LLMToolConfig, FileSystemToolConfig, etc.)
 - MappingRule: Rule for mapping inferences to agents
 - LLMProviderRef: Reference to an LLM provider (inline or by ID)
 - ProjectAgentConfig: Project-specific agent configuration file
@@ -17,30 +18,310 @@ from datetime import datetime
 AGENT_CONFIG_SUFFIX = ".agent.json"
 
 
+# =============================================================================
+# Tool Configuration Dataclasses
+# Each tool is a peer - LLM is just another tool like file_system or paradigm
+# =============================================================================
+
+@dataclass
+class LLMToolConfig:
+    """Configuration for the LLM tool."""
+    model: str = "demo"  # Model name (references global LLM settings)
+    temperature: float = 0.0
+    max_tokens: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = {"model": self.model}
+        if self.temperature != 0.0:
+            result["temperature"] = self.temperature
+        if self.max_tokens:
+            result["max_tokens"] = self.max_tokens
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'LLMToolConfig':
+        if data is None:
+            return cls()
+        return cls(
+            model=data.get("model", "demo"),
+            temperature=data.get("temperature", 0.0),
+            max_tokens=data.get("max_tokens"),
+        )
+
+
+@dataclass
+class ParadigmToolConfig:
+    """Configuration for the paradigm tool."""
+    dir: Optional[str] = None  # Custom paradigm directory (relative to project)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = {}
+        if self.dir:
+            result["dir"] = self.dir
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ParadigmToolConfig':
+        if data is None:
+            return cls()
+        return cls(dir=data.get("dir"))
+
+
+@dataclass
+class FileSystemToolConfig:
+    """Configuration for the file system tool."""
+    enabled: bool = True
+    base_dir: Optional[str] = None  # Base directory for file operations
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = {"enabled": self.enabled}
+        if self.base_dir:
+            result["base_dir"] = self.base_dir
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'FileSystemToolConfig':
+        if data is None:
+            return cls()
+        return cls(
+            enabled=data.get("enabled", True),
+            base_dir=data.get("base_dir"),
+        )
+
+
+@dataclass
+class PythonInterpreterToolConfig:
+    """Configuration for the Python interpreter tool."""
+    enabled: bool = True
+    timeout: int = 30  # Execution timeout in seconds
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "timeout": self.timeout,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'PythonInterpreterToolConfig':
+        if data is None:
+            return cls()
+        return cls(
+            enabled=data.get("enabled", True),
+            timeout=data.get("timeout", 30),
+        )
+
+
+@dataclass
+class UserInputToolConfig:
+    """Configuration for the user input tool."""
+    enabled: bool = True
+    mode: str = "blocking"  # blocking, async, disabled
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "mode": self.mode,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'UserInputToolConfig':
+        if data is None:
+            return cls()
+        return cls(
+            enabled=data.get("enabled", True),
+            mode=data.get("mode", "blocking"),
+        )
+
+
+@dataclass
+class CustomToolConfig:
+    """
+    Configuration for a custom/injectable tool.
+    
+    This allows injecting additional tools via JSON configuration.
+    The tool must be registered in the ToolRegistry with the given type_id.
+    
+    Example:
+    {
+        "type_id": "my_custom_parser",
+        "enabled": true,
+        "settings": {
+            "language": "python",
+            "strict_mode": true
+        }
+    }
+    """
+    type_id: str  # Implementation identifier (must be registered in ToolFactory)
+    enabled: bool = True
+    settings: Dict[str, Any] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "type_id": self.type_id,
+            "enabled": self.enabled,
+            "settings": self.settings,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'CustomToolConfig':
+        if data is None:
+            return cls(type_id="unknown")
+        return cls(
+            type_id=data.get("type_id", "unknown"),
+            enabled=data.get("enabled", True),
+            settings=data.get("settings", {}),
+        )
+
+
+@dataclass
+class AgentToolsConfig:
+    """
+    Container for all tool configurations.
+    
+    Architecture:
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                        AgentToolsConfig                             │
+    │                                                                     │
+    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
+    │  │ llm         │  │ file_system │  │ paradigm    │  (core tools)   │
+    │  │  - model    │  │  - base_dir │  │  - dir      │                 │
+    │  │  - temp     │  │  - enabled  │  │             │                 │
+    │  └─────────────┘  └─────────────┘  └─────────────┘                 │
+    │                                                                     │
+    │  ┌─────────────┐  ┌─────────────┐                                  │
+    │  │ python_int. │  │ user_input  │  (core tools)                    │
+    │  │  - timeout  │  │  - mode     │                                  │
+    │  └─────────────┘  └─────────────┘                                  │
+    │                                                                     │
+    │  ┌────────────────────────────────────────────────────────────┐    │
+    │  │ custom: Dict[str, CustomToolConfig]                        │    │
+    │  │   - "my_parser": { type_id: "custom_parser", settings... } │    │
+    │  │   - "rag_tool": { type_id: "rag", settings... }            │    │
+    │  └────────────────────────────────────────────────────────────┘    │
+    └─────────────────────────────────────────────────────────────────────┘
+    
+    Each tool is a peer - LLM is treated the same as file_system, paradigm, etc.
+    Custom tools can be injected via the 'custom' dict.
+    """
+    # Core tools (always available, can be configured)
+    llm: LLMToolConfig = field(default_factory=LLMToolConfig)
+    paradigm: ParadigmToolConfig = field(default_factory=ParadigmToolConfig)
+    file_system: FileSystemToolConfig = field(default_factory=FileSystemToolConfig)
+    python_interpreter: PythonInterpreterToolConfig = field(default_factory=PythonInterpreterToolConfig)
+    user_input: UserInputToolConfig = field(default_factory=UserInputToolConfig)
+    
+    # Custom/injectable tools (extensibility point)
+    # Key is tool name, value is the tool configuration
+    custom: Dict[str, CustomToolConfig] = field(default_factory=dict)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = {
+            "llm": self.llm.to_dict(),
+            "paradigm": self.paradigm.to_dict(),
+            "file_system": self.file_system.to_dict(),
+            "python_interpreter": self.python_interpreter.to_dict(),
+            "user_input": self.user_input.to_dict(),
+        }
+        if self.custom:
+            result["custom"] = {k: v.to_dict() for k, v in self.custom.items()}
+        return result
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'AgentToolsConfig':
+        if data is None:
+            return cls()
+        
+        # Parse custom tools
+        custom_data = data.get("custom", {})
+        custom_tools = {
+            name: CustomToolConfig.from_dict(cfg)
+            for name, cfg in custom_data.items()
+        }
+        
+        return cls(
+            llm=LLMToolConfig.from_dict(data.get("llm")),
+            paradigm=ParadigmToolConfig.from_dict(data.get("paradigm")),
+            file_system=FileSystemToolConfig.from_dict(data.get("file_system")),
+            python_interpreter=PythonInterpreterToolConfig.from_dict(data.get("python_interpreter")),
+            user_input=UserInputToolConfig.from_dict(data.get("user_input")),
+            custom=custom_tools,
+        )
+    
+    def get_tool_names(self) -> List[str]:
+        """Get all configured tool names (core + custom)."""
+        core = ["llm", "paradigm", "file_system", "python_interpreter", "user_input"]
+        return core + list(self.custom.keys())
+
+
 @dataclass
 class AgentConfig:
-    """Configuration for a single agent.
+    """
+    Configuration for a single agent.
     
-    An agent represents a configured Body instance with specific tool
-    settings and LLM configuration.
+    An agent represents a configured Body instance with specific tool settings.
+    All tools (including LLM) are peers within the 'tools' configuration.
+    
+    Example JSON:
+    {
+        "id": "fast-agent",
+        "name": "Fast Agent",
+        "tools": {
+            "llm": { "model": "qwen-turbo" },
+            "paradigm": { "dir": "provisions/paradigms" },
+            "file_system": { "enabled": true, "base_dir": "." },
+            "python_interpreter": { "enabled": false },
+            "user_input": { "enabled": true, "mode": "async" }
+        }
+    }
     """
     id: str
     name: str
     description: str = ""
+    tools: AgentToolsConfig = field(default_factory=AgentToolsConfig)
     
-    # LLM config - references a provider from LLMSettingsService by name/model
-    llm_model: str = "qwen-plus"
+    # =========================================================================
+    # Convenience properties for backward compatibility and easy access
+    # =========================================================================
     
-    # Tool config
-    file_system_enabled: bool = True
-    file_system_base_dir: Optional[str] = None
-    python_interpreter_enabled: bool = True
-    python_interpreter_timeout: int = 30
-    user_input_enabled: bool = True
-    user_input_mode: str = "blocking"  # blocking, async, disabled
+    @property
+    def llm_model(self) -> str:
+        """Get the LLM model (convenience property)."""
+        return self.tools.llm.model
     
-    # Paradigm config
-    paradigm_dir: Optional[str] = None
+    @property
+    def paradigm_dir(self) -> Optional[str]:
+        """Get the paradigm directory (convenience property)."""
+        return self.tools.paradigm.dir
+    
+    @property
+    def file_system_enabled(self) -> bool:
+        """Check if file system is enabled (convenience property)."""
+        return self.tools.file_system.enabled
+    
+    @property
+    def file_system_base_dir(self) -> Optional[str]:
+        """Get file system base directory (convenience property)."""
+        return self.tools.file_system.base_dir
+    
+    @property
+    def python_interpreter_enabled(self) -> bool:
+        """Check if Python interpreter is enabled (convenience property)."""
+        return self.tools.python_interpreter.enabled
+    
+    @property
+    def python_interpreter_timeout(self) -> int:
+        """Get Python interpreter timeout (convenience property)."""
+        return self.tools.python_interpreter.timeout
+    
+    @property
+    def user_input_enabled(self) -> bool:
+        """Check if user input is enabled (convenience property)."""
+        return self.tools.user_input.enabled
+    
+    @property
+    def user_input_mode(self) -> str:
+        """Get user input mode (convenience property)."""
+        return self.tools.user_input.mode
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -48,31 +329,52 @@ class AgentConfig:
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "llm_model": self.llm_model,
-            "file_system_enabled": self.file_system_enabled,
-            "file_system_base_dir": self.file_system_base_dir,
-            "python_interpreter_enabled": self.python_interpreter_enabled,
-            "python_interpreter_timeout": self.python_interpreter_timeout,
-            "user_input_enabled": self.user_input_enabled,
-            "user_input_mode": self.user_input_mode,
-            "paradigm_dir": self.paradigm_dir,
+            "tools": self.tools.to_dict(),
         }
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'AgentConfig':
-        """Create from dictionary."""
+        """Create from dictionary.
+        
+        Supports both new tool-centric format and legacy flat format for
+        backward compatibility.
+        """
+        # Check if using new tools-based format
+        if "tools" in data:
+            return cls(
+                id=data.get("id", ""),
+                name=data.get("name", ""),
+                description=data.get("description", ""),
+                tools=AgentToolsConfig.from_dict(data.get("tools")),
+            )
+        
+        # Legacy format - convert flat fields to tool-centric structure
+        tools = AgentToolsConfig(
+            llm=LLMToolConfig(
+                model=data.get("llm_model", "demo"),
+            ),
+            paradigm=ParadigmToolConfig(
+                dir=data.get("paradigm_dir"),
+            ),
+            file_system=FileSystemToolConfig(
+                enabled=data.get("file_system_enabled", True),
+                base_dir=data.get("file_system_base_dir"),
+            ),
+            python_interpreter=PythonInterpreterToolConfig(
+                enabled=data.get("python_interpreter_enabled", True),
+                timeout=data.get("python_interpreter_timeout", 30),
+            ),
+            user_input=UserInputToolConfig(
+                enabled=data.get("user_input_enabled", True),
+                mode=data.get("user_input_mode", "blocking"),
+            ),
+        )
+        
         return cls(
             id=data.get("id", ""),
             name=data.get("name", ""),
             description=data.get("description", ""),
-            llm_model=data.get("llm_model", "qwen-plus"),
-            file_system_enabled=data.get("file_system_enabled", True),
-            file_system_base_dir=data.get("file_system_base_dir"),
-            python_interpreter_enabled=data.get("python_interpreter_enabled", True),
-            python_interpreter_timeout=data.get("python_interpreter_timeout", 30),
-            user_input_enabled=data.get("user_input_enabled", True),
-            user_input_mode=data.get("user_input_mode", "blocking"),
-            paradigm_dir=data.get("paradigm_dir"),
+            tools=tools,
         )
 
 

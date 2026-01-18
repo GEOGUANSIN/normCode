@@ -53,16 +53,19 @@ async def load_repositories(request: LoadRepositoryRequest):
             str(inferences_path)
         )
         
-        # Load into execution controller
+        # Load into execution controller (agent-centric approach)
         result = await execution_controller.load_repositories(
             concepts_path=str(concepts_path),
             inferences_path=str(inferences_path),
             inputs_path=request.inputs_path,
-            llm_model=request.llm_model,
+            llm_model=request.llm_model,  # Backward compat
             base_dir=request.base_dir,
             max_cycles=request.max_cycles,
             db_path=request.db_path,
             paradigm_dir=request.paradigm_dir,
+            agent_config=request.agent_config,
+            project_dir=request.project_dir,
+            project_name=request.project_name,
         )
         
         return LoadResponse(

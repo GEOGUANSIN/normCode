@@ -383,11 +383,14 @@ class ChatControllerService:
                 concepts_path=str(concepts_path),
                 inferences_path=str(inferences_path),
                 inputs_path=str(inputs_path) if inputs_path else None,
-                llm_model=execution.get("llm_model", "demo"),
+                llm_model=execution.get("llm_model", "demo"),  # Backward compat
                 base_dir=str(project_path),
                 max_cycles=execution.get("max_cycles", 100),
                 db_path=execution.get("db_path"),
                 paradigm_dir=execution.get("paradigm_dir"),
+                agent_config=execution.get("agent_config"),  # Agent-centric config
+                project_dir=str(project_path),
+                project_name=config.get("name"),
             )
             
             # Wire up chat tool to the execution controller

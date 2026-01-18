@@ -1,37 +1,32 @@
 /**
- * Settings Panel for execution configuration
+ * Settings Panel for project execution configuration
+ * 
+ * Note: LLM model, base_dir, and paradigm_dir are now configured per-agent
+ * in the Agent Panel. This panel only shows project-level execution settings.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Settings, RefreshCw, Save, X, Bot, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { executionApi, projectApi } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
 import { useProjectStore } from '../../stores/projectStore';
-import { useLLMStore } from '../../stores/llmStore';
-import { LLMSettingsPanel } from './LLMSettingsPanel';
 
 interface SettingsPanelProps {
   isOpen: boolean;
   onToggle: () => void;
+  onOpenAgentPanel?: () => void;  // Callback to open agent panel
 }
 
-export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
+export function SettingsPanel({ isOpen, onToggle, onOpenAgentPanel }: SettingsPanelProps) {
   const {
-    llmModel,
     maxCycles,
     dbPath,
-    baseDir,
-    paradigmDir,
-    availableModels,
+    agentConfig,
     defaultMaxCycles,
     defaultDbPath,
-    setLlmModel,
     setMaxCycles,
     setDbPath,
-    setBaseDir,
-    setParadigmDir,
-    setAvailableModels,
     setDefaults,
     setLoaded,
   } = useConfigStore();
@@ -40,10 +35,6 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
   
   // Check if current project is read-only (e.g., compiler project)
   const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
-  
-  // LLM settings state
-  const [showLLMSettings, setShowLLMSettings] = useState(false);
-  const { providers, fetchProviders } = useLLMStore();
 
   // Fetch config options from API
   const { data: configData, isLoading } = useQuery({
@@ -52,22 +43,9 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     staleTime: 60000, // Cache for 1 minute
   });
 
-  // Fetch LLM providers on mount
-  useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
-
   // Update store when config is fetched
   useEffect(() => {
     if (configData) {
-      // Merge available models from API with LLM providers
-      const apiModels = configData.available_models || [];
-      const providerNames = providers
-        .filter(p => p.is_enabled)
-        .map(p => p.name);
-      const allModels = [...new Set(['demo', ...apiModels, ...providerNames])];
-      
-      setAvailableModels(allModels);
       setDefaults({
         defaultMaxCycles: configData.default_max_cycles,
         defaultDbPath: configData.default_db_path,
@@ -81,14 +59,11 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
       }
       setLoaded(true);
     }
-  }, [configData, dbPath, maxCycles, providers, setAvailableModels, setDefaults, setDbPath, setMaxCycles, setLoaded]);
+  }, [configData, dbPath, maxCycles, setDefaults, setDbPath, setMaxCycles, setLoaded]);
 
   const handleReset = () => {
-    setLlmModel('demo');
     setMaxCycles(defaultMaxCycles);
     setDbPath(defaultDbPath);
-    setBaseDir('');
-    setParadigmDir('');
   };
 
   // Save settings to project
@@ -98,11 +73,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     try {
       const response = await projectApi.save({
         execution: {
-          llm_model: llmModel,
           max_cycles: maxCycles,
           db_path: dbPath,
-          base_dir: baseDir || undefined,
-          paradigm_dir: paradigmDir || undefined,
         },
       });
       // Update project in store
@@ -114,11 +86,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
 
   // Check if settings differ from project
   const hasUnsavedChanges = currentProject && (
-    llmModel !== currentProject.execution.llm_model ||
     maxCycles !== currentProject.execution.max_cycles ||
-    dbPath !== currentProject.execution.db_path ||
-    baseDir !== (currentProject.execution.base_dir || '') ||
-    paradigmDir !== (currentProject.execution.paradigm_dir || '')
+    dbPath !== currentProject.execution.db_path
   );
 
   // Don't render anything when closed - header button handles toggle
@@ -169,35 +138,29 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <div className="text-sm text-slate-500">Loading configuration...</div>
         ) : (
           <>
-            {/* LLM Model */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-slate-700">
-                  LLM Model
-                </label>
+            {/* Agent Tools Notice */}
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-purple-700">
+                  <Bot size={16} />
+                  <span className="font-medium">LLM, paradigm & tools</span>
+                </div>
                 <button
-                  onClick={() => setShowLLMSettings(true)}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                  onClick={onOpenAgentPanel}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
                 >
-                  <Bot size={12} />
-                  Configure
+                  Configure in Agent Panel
                   <ChevronRight size={12} />
                 </button>
               </div>
-              <select
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
-                {availableModels.map((model) => (
-                  <option key={model} value={model}>
-                    {model === 'demo' ? 'Demo (No LLM)' : model}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                Select the language model for semantic operations
+              <p className="mt-1 text-xs text-purple-600">
+                LLM model, paradigm directory, and file system settings are now configured per-agent in the Agent Panel.
               </p>
+              {agentConfig && (
+                <p className="mt-1 text-xs text-purple-500 font-mono">
+                  Config: {agentConfig}
+                </p>
+              )}
             </div>
 
             {/* Max Cycles */}
@@ -231,56 +194,12 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
               />
               <p className="mt-1 text-xs text-slate-500">
-                SQLite database for checkpointing (relative to base directory)
-              </p>
-            </div>
-
-            {/* Base Directory Override */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Base Directory (optional)
-              </label>
-              <input
-                type="text"
-                value={baseDir}
-                onChange={(e) => setBaseDir(e.target.value)}
-                placeholder="Auto-detect from repository path"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Override base directory for file operations (leave empty to auto-detect)
-              </p>
-            </div>
-
-            {/* Paradigm Directory */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Paradigm Directory (optional)
-              </label>
-              <input
-                type="text"
-                value={paradigmDir}
-                onChange={(e) => setParadigmDir(e.target.value)}
-                placeholder="e.g., provision/paradigm"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Custom paradigm directory for project-specific paradigms (relative to base directory)
+                SQLite database for checkpointing (relative to project directory)
               </p>
             </div>
           </>
         )}
       </div>
-
-      {/* LLM Settings Panel Modal */}
-      <LLMSettingsPanel
-        isOpen={showLLMSettings}
-        onClose={() => {
-          setShowLLMSettings(false);
-          // Refresh providers after closing
-          fetchProviders();
-        }}
-      />
     </div>
   );
 }

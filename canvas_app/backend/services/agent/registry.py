@@ -12,7 +12,10 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable, List
 
-from .config import AgentConfig, ProjectAgentConfig, MappingRule
+from .config import (
+    AgentConfig, ProjectAgentConfig, MappingRule,
+    AgentToolsConfig, LLMToolConfig, ParadigmToolConfig
+)
 from .monitoring import MonitoredToolProxy, ToolCallEvent
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,11 @@ class AgentRegistry:
     
     Usage:
         registry = AgentRegistry(default_base_dir="/path/to/project")
-        registry.register(AgentConfig(id="my-agent", name="My Agent"))
+        registry.register(AgentConfig(
+            id="my-agent",
+            name="My Agent",
+            tools=AgentToolsConfig(llm=LLMToolConfig(model="qwen-turbo"))
+        ))
         body = registry.get_body("my-agent")
     """
     
@@ -42,8 +49,12 @@ class AgentRegistry:
         # Flow index tracking for tool monitoring
         self._current_flow_index: str = ""
         
-        # Create default agent
-        self.register(AgentConfig(id="default", name="Default Agent"))
+        # Create default agent with tool-centric config
+        self.register(AgentConfig(
+            id="default",
+            name="Default Agent",
+            tools=AgentToolsConfig(llm=LLMToolConfig(model="demo"))
+        ))
     
     def register(self, config: AgentConfig) -> None:
         """Register an agent configuration."""
@@ -292,8 +303,12 @@ class AgentRegistry:
         if config is None:
             config = self.get_config("default")
         if config is None:
-            # Create a minimal default
-            config = AgentConfig(id="default", name="Default Agent")
+            # Create a minimal default with tool-centric config
+            config = AgentConfig(
+                id="default",
+                name="Default Agent",
+                tools=AgentToolsConfig(llm=LLMToolConfig(model="demo"))
+            )
         return config
 
 

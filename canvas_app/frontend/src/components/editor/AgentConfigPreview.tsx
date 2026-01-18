@@ -33,18 +33,72 @@ import {
 // Types
 // =============================================================================
 
+// Tool configuration types for tool-centric agent design
+interface LLMToolConfigDef {
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+interface ParadigmToolConfigDef {
+  dir?: string;
+}
+
+interface FileSystemToolConfigDef {
+  enabled: boolean;
+  base_dir?: string;
+}
+
+interface PythonInterpreterToolConfigDef {
+  enabled: boolean;
+  timeout: number;
+}
+
+interface UserInputToolConfigDef {
+  enabled: boolean;
+  mode: string;
+}
+
+interface AgentToolsConfigDef {
+  llm: LLMToolConfigDef;
+  paradigm: ParadigmToolConfigDef;
+  file_system: FileSystemToolConfigDef;
+  python_interpreter: PythonInterpreterToolConfigDef;
+  user_input: UserInputToolConfigDef;
+}
+
 interface AgentDefinition {
   id: string;
   name: string;
   description: string | null;
-  llm_model: string | null;
-  file_system_enabled: boolean;
-  file_system_base_dir: string | null;
-  python_interpreter_enabled: boolean;
-  python_interpreter_timeout: number;
-  user_input_enabled: boolean;
-  user_input_mode: string;
-  paradigm_dir: string | null;
+  tools: AgentToolsConfigDef;
+  // Legacy fields for backward compatibility (reading old config files)
+  llm_model?: string | null;
+  file_system_enabled?: boolean;
+  file_system_base_dir?: string | null;
+  python_interpreter_enabled?: boolean;
+  python_interpreter_timeout?: number;
+  user_input_enabled?: boolean;
+  user_input_mode?: string;
+  paradigm_dir?: string | null;
+}
+
+// Helper to normalize agent (support both new and legacy format)
+function normalizeAgent(agent: AgentDefinition): AgentDefinition {
+  if (agent.tools) {
+    return agent;
+  }
+  // Convert legacy format to tool-centric
+  return {
+    ...agent,
+    tools: {
+      llm: { model: agent.llm_model || 'demo' },
+      paradigm: { dir: agent.paradigm_dir || undefined },
+      file_system: { enabled: agent.file_system_enabled ?? true, base_dir: agent.file_system_base_dir || undefined },
+      python_interpreter: { enabled: agent.python_interpreter_enabled ?? true, timeout: agent.python_interpreter_timeout ?? 30 },
+      user_input: { enabled: agent.user_input_enabled ?? true, mode: agent.user_input_mode || 'blocking' },
+    },
+  };
 }
 
 interface AgentMapping {
@@ -155,8 +209,12 @@ interface AgentCardProps {
   isDefault: boolean;
 }
 
-function AgentCard({ agent, isDefault }: AgentCardProps) {
+function AgentCard({ agent: rawAgent, isDefault }: AgentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Normalize to ensure we have tool-centric structure
+  const agent = normalizeAgent(rawAgent);
+  const { tools } = agent;
   
   return (
     <div className={`border rounded-lg overflow-hidden ${isDefault ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 bg-white'}`}>
@@ -185,10 +243,10 @@ function AgentCard({ agent, isDefault }: AgentCardProps) {
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <code className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{agent.id}</code>
-            {agent.llm_model && (
+            {tools.llm.model && (
               <span className="text-xs text-purple-600 flex items-center gap-1">
                 <Sparkles size={10} />
-                {agent.llm_model}
+                {tools.llm.model}
               </span>
             )}
           </div>
@@ -199,17 +257,17 @@ function AgentCard({ agent, isDefault }: AgentCardProps) {
         
         {/* Capability indicators */}
         <div className="flex items-center gap-1 shrink-0">
-          {agent.file_system_enabled && (
+          {tools.file_system.enabled && (
             <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center" title="File System Access">
               <FolderOpen size={12} className="text-blue-600" />
             </div>
           )}
-          {agent.python_interpreter_enabled && (
+          {tools.python_interpreter.enabled && (
             <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center" title="Python Interpreter">
               <Terminal size={12} className="text-amber-600" />
             </div>
           )}
-          {agent.user_input_enabled && (
+          {tools.user_input.enabled && (
             <div className="w-6 h-6 rounded bg-green-100 flex items-center justify-center" title="User Input">
               <MessageSquare size={12} className="text-green-600" />
             </div>
@@ -226,9 +284,9 @@ function AgentCard({ agent, isDefault }: AgentCardProps) {
           {/* Capabilities Grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <FolderOpen size={14} className={agent.file_system_enabled ? 'text-blue-600' : 'text-slate-300'} />
+              <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-300'} />
               <span className="text-slate-600">File System</span>
-              {agent.file_system_enabled ? (
+              {tools.file_system.enabled ? (
                 <Check size={12} className="text-green-500 ml-auto" />
               ) : (
                 <XCircle size={12} className="text-slate-300 ml-auto" />
@@ -236,9 +294,9 @@ function AgentCard({ agent, isDefault }: AgentCardProps) {
             </div>
             
             <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <Terminal size={14} className={agent.python_interpreter_enabled ? 'text-amber-600' : 'text-slate-300'} />
+              <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-300'} />
               <span className="text-slate-600">Python</span>
-              {agent.python_interpreter_enabled ? (
+              {tools.python_interpreter.enabled ? (
                 <Check size={12} className="text-green-500 ml-auto" />
               ) : (
                 <XCircle size={12} className="text-slate-300 ml-auto" />
@@ -246,39 +304,39 @@ function AgentCard({ agent, isDefault }: AgentCardProps) {
             </div>
             
             <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <MessageSquare size={14} className={agent.user_input_enabled ? 'text-green-600' : 'text-slate-300'} />
+              <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-300'} />
               <span className="text-slate-600">User Input</span>
-              {agent.user_input_enabled ? (
-                <span className="text-green-600 ml-auto font-medium">{agent.user_input_mode}</span>
+              {tools.user_input.enabled ? (
+                <span className="text-green-600 ml-auto font-medium">{tools.user_input.mode}</span>
               ) : (
                 <XCircle size={12} className="text-slate-300 ml-auto" />
               )}
             </div>
             
-            {agent.python_interpreter_enabled && (
+            {tools.python_interpreter.enabled && (
               <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
                 <Clock size={14} className="text-slate-400" />
                 <span className="text-slate-600">Timeout</span>
-                <span className="text-slate-700 ml-auto font-medium">{agent.python_interpreter_timeout}s</span>
+                <span className="text-slate-700 ml-auto font-medium">{tools.python_interpreter.timeout}s</span>
               </div>
             )}
           </div>
           
           {/* Additional paths */}
-          {(agent.file_system_base_dir || agent.paradigm_dir) && (
+          {(tools.file_system.base_dir || tools.paradigm.dir) && (
             <div className="space-y-1 text-xs">
-              {agent.file_system_base_dir && (
+              {tools.file_system.base_dir && (
                 <div className="flex items-center gap-2">
                   <FolderOpen size={12} className="text-slate-400" />
                   <span className="text-slate-500">Base Dir:</span>
-                  <code className="text-slate-700 truncate">{agent.file_system_base_dir}</code>
+                  <code className="text-slate-700 truncate">{tools.file_system.base_dir}</code>
                 </div>
               )}
-              {agent.paradigm_dir && (
+              {tools.paradigm.dir && (
                 <div className="flex items-center gap-2">
                   <Cpu size={12} className="text-slate-400" />
                   <span className="text-slate-500">Paradigms:</span>
-                  <code className="text-slate-700 truncate">{agent.paradigm_dir}</code>
+                  <code className="text-slate-700 truncate">{tools.paradigm.dir}</code>
                 </div>
               )}
             </div>

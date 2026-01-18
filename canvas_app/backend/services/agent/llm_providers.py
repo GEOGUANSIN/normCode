@@ -431,13 +431,16 @@ class LLMSettingsService:
         
         # Try to make a test call
         try:
-            from openai import OpenAI
+            from openai import OpenAI, APIConnectionError, APITimeoutError, AuthenticationError
             
             start_time = time.time()
             
+            # Use shorter timeout for test
             client = OpenAI(
                 api_key=config.api_key or "not-needed",
                 base_url=config.base_url,
+                timeout=30.0,  # 30 second timeout for test
+                max_retries=1,  # Only 1 retry for test
             )
             
             response = client.chat.completions.create(
@@ -456,11 +459,45 @@ class LLMSettingsService:
                 "response_preview": content,
                 "latency_ms": latency_ms,
             }
-            
-        except Exception as e:
+        
+        except AuthenticationError as e:
             return {
                 "success": False,
-                "message": f"Connection failed: {str(e)}",
+                "message": f"Authentication failed: Invalid API key. Please check your API key.",
+                "error_type": "auth",
+            }
+        except APIConnectionError as e:
+            # More detailed connection error info
+            error_detail = str(e)
+            if "getaddrinfo" in error_detail or "DNS" in error_detail.upper():
+                hint = "DNS resolution failed. Check your network connection."
+            elif "timeout" in error_detail.lower():
+                hint = "Connection timed out. The API server may be unreachable."
+            elif "proxy" in error_detail.lower():
+                hint = "Proxy error. Check your network proxy settings."
+            elif "ssl" in error_detail.lower() or "certificate" in error_detail.lower():
+                hint = "SSL/TLS error. There may be a certificate issue."
+            else:
+                hint = f"Network error: {error_detail}"
+            
+            return {
+                "success": False,
+                "message": f"Connection failed: {hint}",
+                "error_type": "connection",
+                "base_url": config.base_url,
+            }
+        except APITimeoutError as e:
+            return {
+                "success": False,
+                "message": "Request timed out. The API server is not responding in time.",
+                "error_type": "timeout",
+            }
+        except Exception as e:
+            error_type = type(e).__name__
+            return {
+                "success": False,
+                "message": f"Connection failed ({error_type}): {str(e)}",
+                "error_type": "unknown",
             }
     
     def import_from_settings_yaml(self, settings_path: Optional[str] = None) -> int:

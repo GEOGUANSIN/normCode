@@ -119,13 +119,16 @@ class ProjectService:
         concepts_path: Optional[str] = None,
         inferences_path: Optional[str] = None,
         inputs_path: Optional[str] = None,
-        llm_model: str = "demo",
+        llm_model: str = "demo",  # DEPRECATED: kept for backward compat
+        default_llm_model: Optional[str] = None,  # For auto-created agent
         max_cycles: int = 50,
         paradigm_dir: Optional[str] = None,
         auto_discover: bool = True,
     ) -> Tuple[ProjectConfig, str]:
         """
         Create a new project configuration file.
+        
+        Agent-centric: Also creates a default agent config file.
         
         Args:
             project_path: Directory where to create the project
@@ -134,7 +137,8 @@ class ProjectService:
             concepts_path: Relative path to concepts.json (auto-discovered if None)
             inferences_path: Relative path to inferences.json (auto-discovered if None)
             inputs_path: Optional relative path to inputs.json (auto-discovered if None)
-            llm_model: LLM model to use
+            llm_model: DEPRECATED - kept for backward compat
+            default_llm_model: LLM model for the auto-created default agent
             max_cycles: Max execution cycles
             paradigm_dir: Optional paradigm directory (auto-discovered if None)
             auto_discover: Whether to auto-discover paths if not provided
@@ -150,6 +154,7 @@ class ProjectService:
             inferences_path=inferences_path,
             inputs_path=inputs_path,
             llm_model=llm_model,
+            default_llm_model=default_llm_model,
             max_cycles=max_cycles,
             paradigm_dir=paradigm_dir,
             auto_discover=auto_discover,

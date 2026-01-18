@@ -1,19 +1,19 @@
 /**
- * Configuration store for execution settings
+ * Configuration store for project execution settings
+ * 
+ * Note: LLM model, base_dir, and paradigm_dir are now configured per-agent
+ * in the Agent Panel. This store only holds project-level execution settings.
  */
 
 import { create } from 'zustand';
 
 interface ConfigState {
-  // Current configuration values
-  llmModel: string;
+  // Project execution settings
   maxCycles: number;
   dbPath: string;
-  baseDir: string;
-  paradigmDir: string;
+  agentConfig: string;  // Path to .agent.json file
   
-  // Available options (fetched from API)
-  availableModels: string[];
+  // Defaults (fetched from API)
   defaultMaxCycles: number;
   defaultDbPath: string;
   
@@ -21,24 +21,18 @@ interface ConfigState {
   isLoaded: boolean;
   
   // Actions
-  setLlmModel: (model: string) => void;
   setMaxCycles: (cycles: number) => void;
   setDbPath: (path: string) => void;
-  setBaseDir: (dir: string) => void;
-  setParadigmDir: (dir: string) => void;
-  setAvailableModels: (models: string[]) => void;
+  setAgentConfig: (config: string) => void;
   setDefaults: (defaults: { defaultMaxCycles: number; defaultDbPath: string }) => void;
   setLoaded: (loaded: boolean) => void;
   reset: () => void;
 }
 
 const DEFAULT_STATE = {
-  llmModel: 'demo',
   maxCycles: 50,
   dbPath: 'orchestration.db',
-  baseDir: '',
-  paradigmDir: '',
-  availableModels: ['demo'],
+  agentConfig: '',  // Path to .agent.json file
   defaultMaxCycles: 50,
   defaultDbPath: 'orchestration.db',
   isLoaded: false,
@@ -47,12 +41,9 @@ const DEFAULT_STATE = {
 export const useConfigStore = create<ConfigState>((set) => ({
   ...DEFAULT_STATE,
   
-  setLlmModel: (model) => set({ llmModel: model }),
   setMaxCycles: (cycles) => set({ maxCycles: cycles }),
   setDbPath: (path) => set({ dbPath: path }),
-  setBaseDir: (dir) => set({ baseDir: dir }),
-  setParadigmDir: (dir) => set({ paradigmDir: dir }),
-  setAvailableModels: (models) => set({ availableModels: models }),
+  setAgentConfig: (config) => set({ agentConfig: config }),
   setDefaults: (defaults) => set({ 
     defaultMaxCycles: defaults.defaultMaxCycles,
     defaultDbPath: defaults.defaultDbPath,

@@ -599,19 +599,45 @@ export interface RemoteProjectInstance {
   llm_model?: string;  // LLM model for remote execution
 }
 
-// Agent endpoints
+// Agent endpoints - Tool configuration types (tool-centric design)
+export interface LLMToolConfigApi {
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface ParadigmToolConfigApi {
+  dir?: string;
+}
+
+export interface FileSystemToolConfigApi {
+  enabled: boolean;
+  base_dir?: string;
+}
+
+export interface PythonInterpreterToolConfigApi {
+  enabled: boolean;
+  timeout: number;
+}
+
+export interface UserInputToolConfigApi {
+  enabled: boolean;
+  mode: 'blocking' | 'async' | 'disabled';
+}
+
+export interface AgentToolsConfigApi {
+  llm: LLMToolConfigApi;
+  paradigm: ParadigmToolConfigApi;
+  file_system: FileSystemToolConfigApi;
+  python_interpreter: PythonInterpreterToolConfigApi;
+  user_input: UserInputToolConfigApi;
+}
+
 export interface AgentConfigApi {
   id: string;
   name: string;
   description: string;
-  llm_model: string;
-  file_system_enabled: boolean;
-  file_system_base_dir?: string;
-  python_interpreter_enabled: boolean;
-  python_interpreter_timeout: number;
-  user_input_enabled: boolean;
-  user_input_mode: 'blocking' | 'async' | 'disabled';
-  paradigm_dir?: string;
+  tools: AgentToolsConfigApi;
 }
 
 export interface MappingRuleApi {

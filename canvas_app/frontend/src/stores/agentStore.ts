@@ -4,18 +4,45 @@ import { create } from 'zustand';
 // Types
 // ============================================================================
 
+// Tool configuration types (tool-centric design)
+export interface LLMToolConfig {
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface ParadigmToolConfig {
+  dir?: string;
+}
+
+export interface FileSystemToolConfig {
+  enabled: boolean;
+  base_dir?: string;
+}
+
+export interface PythonInterpreterToolConfig {
+  enabled: boolean;
+  timeout: number;
+}
+
+export interface UserInputToolConfig {
+  enabled: boolean;
+  mode: 'blocking' | 'async' | 'disabled';
+}
+
+export interface AgentToolsConfig {
+  llm: LLMToolConfig;
+  paradigm: ParadigmToolConfig;
+  file_system: FileSystemToolConfig;
+  python_interpreter: PythonInterpreterToolConfig;
+  user_input: UserInputToolConfig;
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
   description: string;
-  llm_model: string;
-  file_system_enabled: boolean;
-  file_system_base_dir?: string;
-  python_interpreter_enabled: boolean;
-  python_interpreter_timeout: number;
-  user_input_enabled: boolean;
-  user_input_mode: 'blocking' | 'async' | 'disabled';
-  paradigm_dir?: string;
+  tools: AgentToolsConfig;
 }
 
 export interface MappingRule {
@@ -98,12 +125,13 @@ const defaultAgent: AgentConfig = {
   id: 'default',
   name: 'Default Agent',
   description: 'Default agent using configured LLM',
-  llm_model: 'qwen-plus',
-  file_system_enabled: true,
-  python_interpreter_enabled: true,
-  python_interpreter_timeout: 30,
-  user_input_enabled: true,
-  user_input_mode: 'blocking',
+  tools: {
+    llm: { model: 'demo' },
+    paradigm: {},
+    file_system: { enabled: true },
+    python_interpreter: { enabled: true, timeout: 30 },
+    user_input: { enabled: true, mode: 'blocking' },
+  },
 };
 
 // ============================================================================
