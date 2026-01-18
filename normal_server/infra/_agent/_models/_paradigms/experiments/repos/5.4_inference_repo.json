@@ -1,0 +1,19 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{file_path}",
+        "function_concept": "::{%(composition)}(Ask user for file path)",
+        "value_concepts": [
+            "{prompt}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForFilePath-o_FileLocation",
+            "value_order": {
+                "{prompt}<:{prompt}>": 0
+            }
+        }
+    }
+]

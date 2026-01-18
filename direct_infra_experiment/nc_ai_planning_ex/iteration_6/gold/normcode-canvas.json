@@ -3,14 +3,14 @@
   "name": "\u9ec4\u91d1\u6295\u8d44\u5efa\u8bae",
   "description": "\u4e2d\u6587\u7248",
   "created_at": "2025-12-21T16:30:00.046487",
-  "updated_at": "2026-01-12T14:06:04.008759",
+  "updated_at": "2026-01-16T16:33:45.295603",
   "repositories": {
     "concepts": "repos\\gold_chinese.concept.json",
     "inferences": "repos\\gold_chinese.inference.json",
     "inputs": null
   },
   "execution": {
-    "llm_model": "Alibaba Cloud (DashScope) - qwen-plus",
+    "llm_model": "qwen-plus",
     "max_cycles": 50,
     "db_path": "orchestration.db",
     "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_6\\gold\\repos",

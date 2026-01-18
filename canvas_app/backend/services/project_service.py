@@ -526,9 +526,16 @@ class ProjectService:
         instance = self._tabs_service.switch_to_project(project_id)
         
         # Update "current" project references
-        self.current_project_path = Path(instance.directory)
-        self.current_config = instance.config
-        self.current_config_file = instance.config_file
+        # For remote projects, the directory is a virtual path like "remote://..."
+        # so we can't convert it to a real Path
+        if instance.is_remote:
+            self.current_project_path = None
+            self.current_config = instance.config
+            self.current_config_file = "remote"
+        else:
+            self.current_project_path = Path(instance.directory)
+            self.current_config = instance.config
+            self.current_config_file = instance.config_file
         
         return instance
     
@@ -548,9 +555,15 @@ class ProjectService:
         if new_active_id:
             active_project = self._tabs_service.get_project(new_active_id)
             if active_project:
-                self.current_project_path = Path(active_project.directory)
-                self.current_config = active_project.config
-                self.current_config_file = active_project.config_file
+                # Handle remote projects (they don't have a local path)
+                if active_project.is_remote:
+                    self.current_project_path = None
+                    self.current_config = active_project.config
+                    self.current_config_file = "remote"
+                else:
+                    self.current_project_path = Path(active_project.directory)
+                    self.current_config = active_project.config
+                    self.current_config_file = active_project.config_file
         else:
             self.current_project_path = None
             self.current_config = None

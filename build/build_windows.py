@@ -3,18 +3,19 @@
 NormCode Canvas - Windows Build Script
 =======================================
 
-This script automates the build process for creating a Windows executable.
+This script automates the build process for creating a Windows desktop application.
 It is fully self-contained and will install required dependencies automatically.
 
 Steps:
-1. Installs required Python packages (PyInstaller, etc.)
+1. Installs required Python packages (PyInstaller, pywebview, etc.)
 2. Installs backend Python dependencies
 3. Builds the frontend (npm run build)
 4. Packages everything with PyInstaller
 5. Optionally creates an installer with Inno Setup
 
 Usage:
-    python build_windows.py              # Full build
+    python build_windows.py              # Full build (windowed mode)
+    python build_windows.py --debug      # Build with console for debugging
     python build_windows.py --skip-frontend  # Skip frontend build
     python build_windows.py --installer  # Also create installer
     python build_windows.py --clean      # Clean build artifacts first
@@ -25,6 +26,7 @@ import subprocess
 import sys
 import shutil
 import argparse
+import re
 from pathlib import Path
 
 # Paths
@@ -35,11 +37,16 @@ FRONTEND_DIR = CANVAS_APP / "frontend"
 BACKEND_DIR = CANVAS_APP / "backend"
 DIST_DIR = BUILD_DIR / "dist"
 WORK_DIR = BUILD_DIR / "build"
+RELEASE_DIR = BUILD_DIR / "release"
 
 # Required Python packages for building
 BUILD_REQUIREMENTS = [
     "pyinstaller",
-    "pillow",  # For icon conversion if needed
+    "pillow",           # For icon conversion if needed
+    "pywebview[cef]",   # Native desktop window with CEF fallback
+    "bottle",           # Used internally by pywebview
+    "pythonnet",        # Windows .NET integration for pywebview EdgeChromium
+    "clr-loader",       # .NET runtime loader for pythonnet
 ]
 
 # Required icon sizes for Windows (all contexts: taskbar, explorer, etc.)
@@ -106,10 +113,25 @@ def pip_install(packages: list, quiet: bool = False) -> bool:
 
 def check_package_installed(package_name: str) -> bool:
     """Check if a Python package is installed."""
+    # Handle package names with extras like "pywebview[cef]"
+    base_name = package_name.split("[")[0].replace("-", "_")
     try:
-        __import__(package_name.replace("-", "_").split("[")[0])
+        __import__(base_name)
         return True
     except ImportError:
+        # Special cases
+        if base_name == "pywebview":
+            try:
+                __import__("webview")
+                return True
+            except ImportError:
+                return False
+        elif base_name == "clr_loader":
+            try:
+                __import__("clr_loader")
+                return True
+            except ImportError:
+                return False
         return False
 
 
@@ -119,10 +141,10 @@ def install_build_requirements():
     
     missing = []
     for pkg in BUILD_REQUIREMENTS:
-        pkg_import = pkg.replace("-", "_").split("[")[0]
-        if pkg_import == "pyinstaller":
-            pkg_import = "PyInstaller"
-        if not check_package_installed(pkg_import):
+        pkg_check = pkg.split("[")[0].replace("-", "_")
+        if pkg_check == "pyinstaller":
+            pkg_check = "PyInstaller"
+        if not check_package_installed(pkg_check):
             missing.append(pkg)
     
     if missing:
@@ -216,6 +238,7 @@ def check_requirements():
     print_step("Checking system requirements...")
     
     errors = []
+    warnings = []
     
     # Check Python version
     py_version = sys.version_info
@@ -230,6 +253,26 @@ def check_requirements():
     except ImportError:
         errors.append("PyInstaller not available (installation may have failed)")
     
+    # Check pywebview
+    try:
+        import webview
+        # pywebview doesn't have __version__, check via pkg_resources or importlib
+        try:
+            from importlib.metadata import version
+            wv_version = version("pywebview")
+        except Exception:
+            wv_version = "installed"
+        print(f"  pywebview: {wv_version}")
+    except ImportError:
+        errors.append("pywebview not available (installation may have failed)")
+    
+    # Check pythonnet/clr
+    try:
+        import clr_loader
+        print(f"  clr_loader: available")
+    except ImportError:
+        warnings.append("clr_loader not available - EdgeChromium may not work, will fallback to CEF")
+    
     # Check Node.js / npm
     npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
     npm_path = shutil.which(npm_cmd)
@@ -241,6 +284,11 @@ def check_requirements():
             errors.append("npm found but failed to get version")
     else:
         errors.append("npm not found. Install Node.js from https://nodejs.org/")
+    
+    if warnings:
+        print("\n[WARN] Warnings:")
+        for w in warnings:
+            print(f"   - {w}")
     
     if errors:
         print("\n[ERROR] Missing requirements:")
@@ -330,26 +378,31 @@ def ensure_icon():
             
             # Open source PNG
             source = Image.open(png_path)
+            print(f"  Source image size: {source.size[0]}x{source.size[1]}")
             
             # Convert to RGBA if needed
             if source.mode != 'RGBA':
                 source = source.convert('RGBA')
             
-            # Create icons at all required sizes
+            # Create high-quality icons at all required sizes (largest first for best quality)
+            # Sort sizes descending so we resize from source for each, not chain resize
+            sorted_sizes = sorted(ICON_SIZES, reverse=True)
             icons = []
-            for size in ICON_SIZES:
+            for size in sorted_sizes:
+                # Always resize from the original source for best quality
                 resized = source.resize((size, size), Image.Resampling.LANCZOS)
                 icons.append(resized)
             
-            # Save as ICO with all sizes
+            # Save as ICO - use append_images only, NOT sizes parameter
+            # The sizes parameter causes internal resizing which degrades quality
+            # when we already have properly pre-resized images
             icons[0].save(
                 icon_path,
                 format='ICO',
-                sizes=[(s, s) for s in ICON_SIZES],
                 append_images=icons[1:]
             )
             
-            print(f"  [OK] Created icon.ico with sizes: {ICON_SIZES}")
+            print(f"  [OK] Created icon.ico with sizes: {sorted_sizes}")
             return True
             
         except ImportError:
@@ -365,14 +418,33 @@ def ensure_icon():
     return True
 
 
-def build_exe():
+def set_console_mode(spec_file: Path, console: bool):
+    """Update the spec file to set console mode."""
+    content = spec_file.read_text()
+    
+    # Replace console=True/False
+    if console:
+        content = re.sub(r'console=False', 'console=True', content)
+    else:
+        content = re.sub(r'console=True', 'console=False', content)
+    
+    spec_file.write_text(content)
+
+
+def build_exe(debug: bool = False):
     """Build the executable using PyInstaller."""
     print_step("Building executable with PyInstaller...")
+    
+    if debug:
+        print("  [DEBUG MODE] Console window will be visible for debugging")
     
     spec_file = BUILD_DIR / "normcode.spec"
     if not spec_file.exists():
         print(f"  [ERROR] Spec file not found: {spec_file}")
         return False
+    
+    # Set console mode based on debug flag
+    set_console_mode(spec_file, console=debug)
     
     # Run PyInstaller
     cmd = [
@@ -395,6 +467,31 @@ def build_exe():
         return False
     
     print(f"  [OK] Executable created: {exe_path}")
+    return True
+
+
+def copy_to_release():
+    """Copy the built application to the release folder."""
+    print_step("Copying to release folder...")
+    
+    dist_folder = DIST_DIR / "NormCodeCanvas"
+    if not dist_folder.exists():
+        print("  [ERROR] Distribution folder not found")
+        return False
+    
+    # Create release directory
+    RELEASE_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Copy executable to release (single-file access point)
+    exe_src = dist_folder / "NormCodeCanvas.exe"
+    exe_dst = RELEASE_DIR / "NormCodeCanvas.exe"
+    
+    if exe_dst.exists():
+        exe_dst.unlink()
+    
+    shutil.copy2(exe_src, exe_dst)
+    print(f"  [OK] Copied executable to: {exe_dst}")
+    
     return True
 
 
@@ -472,13 +569,48 @@ def create_portable_zip():
     return True
 
 
+def check_webview2_runtime():
+    """Check if WebView2 runtime is installed (for EdgeChromium)."""
+    print_step("Checking WebView2 Runtime...")
+    
+    try:
+        import winreg
+        
+        # Check both 32-bit and 64-bit registry locations
+        paths = [
+            r"SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
+            r"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
+        ]
+        
+        for path in paths:
+            try:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
+                version, _ = winreg.QueryValueEx(key, "pv")
+                winreg.CloseKey(key)
+                print(f"  [OK] WebView2 Runtime found: {version}")
+                return True
+            except WindowsError:
+                continue
+        
+        print("  [WARN] WebView2 Runtime not found")
+        print("  [WARN] Users may need to install it from:")
+        print("         https://developer.microsoft.com/en-us/microsoft-edge/webview2/")
+        print("  [INFO] The app will fallback to CEF if WebView2 is not available")
+        return True  # Not a fatal error, CEF will be used as fallback
+        
+    except Exception as e:
+        print(f"  [INFO] Could not check WebView2 status: {e}")
+        return True  # Continue anyway
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Build NormCode Canvas for Windows",
+        description="Build NormCode Canvas Desktop Application for Windows",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python build_windows.py                    # Full build
+  python build_windows.py                    # Full build (windowed, no console)
+  python build_windows.py --debug            # Build with console for debugging
   python build_windows.py --clean            # Clean and rebuild
   python build_windows.py --portable         # Build + create ZIP
   python build_windows.py --installer        # Build + create installer
@@ -496,11 +628,14 @@ Examples:
                         help="Clean build artifacts before building")
     parser.add_argument("--portable", action="store_true",
                         help="Create portable ZIP distribution")
+    parser.add_argument("--debug", action="store_true",
+                        help="Build with console window for debugging")
     args = parser.parse_args()
     
-    print_header("NormCode Canvas - Windows Build")
+    print_header("NormCode Canvas - Desktop App Build")
     print(f"  Project Root: {PROJECT_ROOT}")
     print(f"  Build Dir: {BUILD_DIR}")
+    print(f"  Mode: {'Debug (with console)' if args.debug else 'Release (windowed)'}")
     
     # Clean if requested
     if args.clean:
@@ -508,7 +643,7 @@ Examples:
     
     # Install dependencies
     if not args.skip_deps:
-        # Install build tools (PyInstaller, etc.)
+        # Install build tools (PyInstaller, pywebview, etc.)
         if not install_build_requirements():
             print("\n[ERROR] Failed to install build requirements")
             sys.exit(1)
@@ -521,6 +656,9 @@ Examples:
     # Check system requirements
     if not check_requirements():
         sys.exit(1)
+    
+    # Check WebView2 runtime (informational only)
+    check_webview2_runtime()
     
     # Build frontend
     if not args.skip_frontend:
@@ -536,12 +674,15 @@ Examples:
     ensure_icon()
     
     # Build executable
-    if not build_exe():
+    if not build_exe(debug=args.debug):
         print("\n[ERROR] Executable build failed")
         sys.exit(1)
     
     # Copy additional files
     copy_settings_example()
+    
+    # Copy to release folder
+    copy_to_release()
     
     # Create installer if requested
     if args.installer:
@@ -555,6 +696,7 @@ Examples:
     print_header("Build Complete!")
     print(f"\n  Output: {DIST_DIR / 'NormCodeCanvas'}")
     print(f"  Executable: {DIST_DIR / 'NormCodeCanvas' / 'NormCodeCanvas.exe'}")
+    print(f"  Release: {RELEASE_DIR / 'NormCodeCanvas.exe'}")
     
     if args.portable:
         print(f"  Portable ZIP: {DIST_DIR / 'NormCodeCanvas-Portable.zip'}")
@@ -565,7 +707,9 @@ Examples:
         if installers:
             print(f"  Installer: {installers[0]}")
     
-    print("\n  Run the executable to start NormCode Canvas!")
+    print("\n  The app will open in a native desktop window (no browser needed)!")
+    if args.debug:
+        print("  [DEBUG MODE] Console window will show logs for debugging.")
 
 
 if __name__ == "__main__":

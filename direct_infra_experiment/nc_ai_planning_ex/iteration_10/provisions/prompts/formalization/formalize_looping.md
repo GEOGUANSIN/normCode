@@ -1,75 +1,155 @@
 # Formalize Looping Operator
 
-Apply looping `*` formalization syntax to this operator concept.
+Transform a natural language iteration into formal looping `*` syntax.
 
 ## Input
 
-The concept line to formalize:
+You are given a parsed concept line from an `.ncds` file that has been judged as **looping** type:
+
 ```json
 $input_1
 ```
 
-## Looping Syntax Rules
+The input includes:
+- `flow_index`: The hierarchical address for this step (e.g., "1.1")
+- `content`: The full line including marker (e.g., `"<= for each concept line in concept lines"`)
+- `depth`: Indentation level (0 = root, 1 = first child, etc.)
+- `type`: Line type (usually "main" for concepts)
+- `inference_marker`: The marker found (`<=` for functional concepts)
 
-Looping operators iterate over collections.
+## What Formalization Does
 
-### Operator Markers
+**Formalization (Phase 2)** adds structural annotations to natural language. For looping:
 
-| Marker | Meaning |
-|--------|---------|
-| `*.` | Iterate (for each) |
+1. **Extract the iteration pattern** - Strip the `<=` marker and parse
+2. **Identify collection and item** - What to iterate over, what each element is called
+3. **Construct loop syntax** - With source, target, axis, and index
+4. **Add flow index annotation** - Use the `flow_index` from input
+5. **Add sequence type annotation** - `?{sequence}: looping`
+6. **Calculate indentation** - Use `depth × 4 spaces`
+
+## Indentation Rule
+
+The formalized line MUST include proper indentation based on the `depth` field:
+
+- **Indentation = depth × 4 spaces**
+- `depth: 0` → No indentation (root level)
+- `depth: 1` → 4 spaces
+- `depth: 2` → 8 spaces
+- `depth: 3` → 12 spaces
+
+## Looping Syntax
 
 ### Format
 ```
-<= *. %>([collection]) %<({result}) %:({current_item}) %@(loop_index)
-    | %{sequence}: looping
-<- [collection]
-<* {current_item}<$([collection])*>
+[INDENTATION]<= *. %>([collection]) %<({result}) %:({item}) %@(1) | ?{flow_index}: X.X.X | ?{sequence}: looping
 ```
 
-### Syntax Components
+### Components
 
-| Component | Meaning |
-|-----------|---------|
-| `%>([collection])` | The collection to iterate over |
-| `%<({result})` | What each iteration produces |
-| `%:({current_item})` | The loop variable name |
-| `%@(1)` | Loop index (usually 1) |
+| Component | Meaning | Example |
+|-----------|---------|---------|
+| Indentation | Hierarchy level | 4 spaces per depth |
+| `<=` | Functional concept marker | Already in input |
+| `*.` | Iterate operator | Always `*.` |
+| `%>([collection])` | Source collection | `%>([concept lines])` |
+| `%<({result})` | What each iteration produces | `%<({processed line})` |
+| `%:({item})` | Loop variable (current element) | `%:({concept line})` |
+| `%@(1)` | Loop index (1 for outermost) | `%@(1)` |
+| `?{flow_index}:` | Step address | `?{flow_index}: 1.1` |
+| `?{sequence}:` | Sequence type | `?{sequence}: looping` |
 
-### Key Annotations
+### Pattern Recognition
 
-1. **`%{sequence}: looping`** - Required sequence type marker
+| Natural Language | Collection | Item |
+|-----------------|------------|------|
+| "for each X in Y" | Y | X |
+| "iterate over X" | X | (singular of X) |
+| "loop through X" | X | (singular of X) |
 
-### Context Concept
-The current loop item must be marked with `<*` and include
-the source annotation `<$([collection])*>`:
+## Examples
 
-```
-<* {current_item}<$([collection])*>
-    | %{ref_axes}: [_none_axis]
-    | %{ref_element}: element_type
-```
-
-### Example
-```
-<= *. %>([concept lines]) %<({.ncd file written}) %:({concept line}) %@(1)
-    /: Loop processes lines sequentially
-    | %{sequence}: looping
-
-<- [concept lines]
-<* {concept line}<$([concept lines])*>
-    | %{ref_axes}: [_none_axis]
-    | %{ref_element}: dict
-```
-
-## Output
-
-Return the formalized line(s) as a JSON object:
-
+**Input (depth 1):**
 ```json
 {
-  "formalized_line": "The complete formalized line with sequence annotation",
-  "annotations_added": ["sequence"]
+  "flow_index": "1.1",
+  "content": "<= for each concept line in concept lines",
+  "depth": 1,
+  "type": "main",
+  "inference_marker": "<="
 }
 ```
 
+**Output:**
+```
+    <= *. %>([concept lines]) %<({processed}) %:({concept line}) %@(1) | ?{flow_index}: 1.1 | ?{sequence}: looping
+```
+(4 spaces indentation for depth 1)
+
+**Explanation**: 
+- Collection: `[concept lines]`
+- Item: `{concept line}`
+- Result: `{processed}` (generic, refined by child inferences)
+
+---
+
+**Input (depth 2):**
+```json
+{
+  "flow_index": "2.1",
+  "content": "<= iterate over parsed lines",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<="
+}
+```
+
+**Output:**
+```
+        <= *. %>([parsed lines]) %<({result}) %:({parsed line}) %@(1) | ?{flow_index}: 2.1 | ?{sequence}: looping
+```
+(8 spaces indentation for depth 2)
+
+**Explanation**:
+- Collection: `[parsed lines]`
+- Item: `{parsed line}` (singular of collection)
+
+---
+
+**Input (depth 2):**
+```json
+{
+  "flow_index": "1.2.1",
+  "content": "<= loop through documents",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<="
+}
+```
+
+**Output:**
+```
+        <= *. %>([documents]) %<({result}) %:({document}) %@(1) | ?{flow_index}: 1.2.1 | ?{sequence}: looping
+```
+(8 spaces indentation for depth 2)
+
+**Explanation**:
+- Collection: `[documents]`
+- Item: `{document}` (singular of "documents")
+
+## Output
+
+Return JSON with your reasoning and the formalized line:
+
+```json
+{
+  "thinking": "Explain: 1) what collection was identified, 2) what the loop item name is, 3) the indentation calculated",
+  "result": "[INDENTATION]<= *. %>([collection]) %<({result}) %:({item}) %@(1) | ?{flow_index}: X.X.X | ?{sequence}: looping"
+}
+```
+
+**Important**: 
+- The `result` must be the complete formalized line as a single string
+- Include the correct indentation (depth × 4 spaces) at the START of the line
+- Include BOTH `?{flow_index}:` AND `?{sequence}: looping` annotations
+- Collection uses `[...]` (relation), item uses `{...}` (object)

@@ -29,7 +29,7 @@ for fp in possible_frontend_paths:
         _frontend_dist = fp
         break
 
-from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router
+from routers import repository_router, graph_router, execution_router, websocket_router, project_router, editor_router, checkpoint_router, agent_router, llm_router, chat_router, db_inspector_router, deployment_router, portable_router
 from core.config import settings
 
 # Configure logging
@@ -47,7 +47,7 @@ for infra_logger_name in ['infra', 'infra._core', 'infra._agent', 'infra._orches
 # Create FastAPI app
 app = FastAPI(
     title="NormCode Canvas API",
-    version="0.1.0",
+    version="1.0.1-alpha",
     description="Backend for NormCode Graph Canvas Tool - visualize, execute, and debug NormCode plans",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -118,6 +118,20 @@ app.include_router(
     tags=["db-inspector"]
 )
 
+# Include deployment router
+app.include_router(
+    deployment_router.router,
+    prefix="/api/deployment",
+    tags=["deployment"]
+)
+
+# Include portable project router
+app.include_router(
+    portable_router.router,
+    prefix="/api/portable",
+    tags=["portable"]
+)
+
 # Mount frontend static files if available (production mode)
 if _frontend_dist:
     # Mount assets directory for JS, CSS, etc.
@@ -135,7 +149,7 @@ async def root():
     # In development mode, return API info
     return {
         "name": "NormCode Canvas API",
-        "version": "0.1.0",
+        "version": "1.0.1-alpha",
         "docs": "/docs",
         "websocket": "/ws/events",
     }

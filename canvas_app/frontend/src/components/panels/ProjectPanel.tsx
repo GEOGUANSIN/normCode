@@ -2,6 +2,7 @@
  * ProjectPanel - Project management UI
  * Provides open project, create project, and recent projects functionality.
  * Supports multiple projects per directory.
+ * Supports export/import of portable project archives.
  */
 import { useState, useEffect } from 'react';
 import { 
@@ -15,18 +16,26 @@ import {
   RefreshCw,
   Search,
   File,
-  Trash2
+  Trash2,
+  Download,
+  Upload,
+  Package,
+  FileArchive,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
+import { usePortableStore } from '../../stores/portableStore';
 import { executionApi, projectApi } from '../../services/api';
 import type { ExecutionConfig } from '../../types/execution';
 import type { RegisteredProject, DiscoveredPathsResponse } from '../../types/project';
 
-type TabType = 'open' | 'create' | 'recent' | 'all';
+type TabType = 'open' | 'create' | 'recent' | 'all' | 'export' | 'import';
 
 export function ProjectPanel() {
   const {
     currentProject,
+    projectPath,
     recentProjects,
     allProjects,
     isProjectPanelOpen,
@@ -69,6 +78,33 @@ export function ProjectPanel() {
   
   // Available models
   const [availableModels, setAvailableModels] = useState<string[]>(['demo']);
+  
+  // Export/Import state
+  const [exportOutputDir, setExportOutputDir] = useState('');  // Empty = project directory
+  const [exportIncludeDb, setExportIncludeDb] = useState(true);
+  const [exportIncludeLogs, setExportIncludeLogs] = useState(true);
+  const [importPath, setImportPath] = useState('');
+  const [importTargetDir, setImportTargetDir] = useState('');
+  const [importNewName, setImportNewName] = useState('');  // Empty = keep original name
+  const [importOverwrite, setImportOverwrite] = useState(false);
+  
+  // Portable store
+  const {
+    isExporting,
+    isImporting,
+    isPreviewing,
+    lastExportResult,
+    lastImportResult,
+    previewInfo,
+    availableExports,
+    error: portableError,
+    quickExport,
+    previewArchive,
+    importProject,
+    fetchAvailableExports,
+    clearPreview,
+    setError: setPortableError,
+  } = usePortableStore();
 
   // Fetch config on mount
   useEffect(() => {
@@ -78,6 +114,13 @@ export function ProjectPanel() {
       setAvailableModels(config.available_models);
     }).catch(console.error);
   }, [fetchRecentProjects, fetchAllProjects]);
+  
+  // Fetch available exports when import tab is active
+  useEffect(() => {
+    if (activeTab === 'import') {
+      fetchAvailableExports();
+    }
+  }, [activeTab, fetchAvailableExports]);
 
   // Discover paths in directory
   const handleDiscoverPaths = async () => {
@@ -279,11 +322,15 @@ export function ProjectPanel() {
   if (isProjectPanelOpen) {
     return (
       <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-xl p-6 max-w-xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-slate-200">
+        <div className="bg-white rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-slate-200">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-slate-800">
-              {activeTab === 'open' ? 'Open Project' : activeTab === 'create' ? 'Create Project' : 'Recent Projects'}
+              {activeTab === 'open' ? 'Open Project' : 
+               activeTab === 'create' ? 'Create Project' : 
+               activeTab === 'export' ? 'Export Project' :
+               activeTab === 'import' ? 'Import Project' :
+               'Recent Projects'}
             </h2>
             <button
               onClick={() => setProjectPanelOpen(false)}
@@ -338,6 +385,29 @@ export function ProjectPanel() {
             >
               <Folder className="w-4 h-4 inline mr-2" />
               All ({allProjects.length})
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={() => setActiveTab('export')}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === 'export'
+                  ? 'text-emerald-600 border-b-2 border-emerald-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Download className="w-4 h-4 inline mr-1" />
+              Export
+            </button>
+            <button
+              onClick={() => setActiveTab('import')}
+              className={`px-4 py-2 text-sm font-medium ${
+                activeTab === 'import'
+                  ? 'text-orange-600 border-b-2 border-orange-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Upload className="w-4 h-4 inline mr-1" />
+              Import
             </button>
           </div>
 
@@ -690,6 +760,358 @@ export function ProjectPanel() {
                     </div>
                   ))}
                 </>
+              )}
+            </div>
+          )}
+          
+          {/* Export Tab */}
+          {activeTab === 'export' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <Package className="w-6 h-6 text-emerald-600" />
+                  <div>
+                    <h3 className="font-medium text-emerald-800">Export Current Project</h3>
+                    <p className="text-xs text-emerald-600">Create a portable archive with all project data</p>
+                  </div>
+                </div>
+                
+                {currentProject ? (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-white rounded border border-emerald-200">
+                      <div className="text-sm font-medium text-slate-800">{currentProject.name}</div>
+                      <div className="text-xs text-slate-500">{projectPath}</div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Output Directory
+                      </label>
+                      <input
+                        type="text"
+                        value={exportOutputDir}
+                        onChange={(e) => setExportOutputDir(e.target.value)}
+                        placeholder={projectPath || 'Project directory (default)'}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Leave empty to export to project directory
+                      </p>
+                    </div>
+                    
+                    <p className="text-xs text-slate-600 mb-2">
+                      The export will always include: project configuration, repositories, and provisions.
+                    </p>
+                    
+                    <div className="space-y-2 p-3 bg-white rounded border border-emerald-200">
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={exportIncludeDb}
+                          onChange={(e) => setExportIncludeDb(e.target.checked)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        Include execution database (runs, checkpoints)
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={exportIncludeLogs}
+                          onChange={(e) => setExportIncludeLogs(e.target.checked)}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          disabled={!exportIncludeDb}
+                        />
+                        <span className={!exportIncludeDb ? 'text-slate-400' : ''}>
+                          Include log files
+                        </span>
+                      </label>
+                    </div>
+                    
+                    <button
+                      onClick={() => quickExport(currentProject.id, { 
+                        includeDatabase: exportIncludeDb, 
+                        includeLogs: exportIncludeLogs, 
+                        outputDir: exportOutputDir 
+                      })}
+                      disabled={isExporting}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Exporting...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          Export Project
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Open a project first to export it.</p>
+                )}
+              </div>
+              
+              {/* Last export result */}
+              {lastExportResult && (
+                <div className={`p-3 rounded-lg border ${
+                  lastExportResult.success 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {lastExportResult.success ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      lastExportResult.success ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {lastExportResult.success ? 'Export Successful' : 'Export Failed'}
+                    </span>
+                  </div>
+                  {lastExportResult.output_path && (
+                    <p className="text-xs text-slate-600 break-all">{lastExportResult.output_path}</p>
+                  )}
+                  {lastExportResult.success && lastExportResult.archive_size && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {lastExportResult.files_count} files, {(lastExportResult.archive_size / 1024).toFixed(1)} KB
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Import Tab */}
+          {activeTab === 'import' && (
+            <div className="space-y-4">
+              {portableError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {portableError}
+                  <button onClick={() => setPortableError(null)} className="ml-2 text-red-500 hover:text-red-700">×</button>
+                </div>
+              )}
+              
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <FileArchive className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-medium text-orange-800">Import Portable Project</h3>
+                    <p className="text-xs text-orange-600">Restore a project from a portable archive</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Archive Path
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={importPath}
+                        onChange={(e) => { setImportPath(e.target.value); clearPreview(); }}
+                        placeholder="C:\path\to\project.normcode-portable.zip"
+                        className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                      />
+                      <button
+                        onClick={() => previewArchive(importPath)}
+                        disabled={isPreviewing || !importPath.trim()}
+                        className="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        {isPreviewing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Preview info */}
+                  {previewInfo && (
+                    <div className="p-3 bg-white rounded border border-orange-200 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-orange-500" />
+                        <span className="font-medium text-slate-800">{previewInfo.project_name}</span>
+                      </div>
+                      {previewInfo.project_description && (
+                        <p className="text-xs text-slate-500">{previewInfo.project_description}</p>
+                      )}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="text-slate-600">
+                          <span className="text-slate-400">Files:</span> {previewInfo.files_count}
+                        </div>
+                        <div className="text-slate-600">
+                          <span className="text-slate-400">Size:</span> {(previewInfo.archive_size / 1024).toFixed(1)} KB
+                        </div>
+                        <div className="text-slate-600">
+                          <span className="text-slate-400">Database:</span> {previewInfo.has_database ? 'Yes' : 'No'}
+                        </div>
+                        <div className="text-slate-600">
+                          <span className="text-slate-400">Runs:</span> {previewInfo.runs_count}
+                        </div>
+                      </div>
+                      {/* Repository files */}
+                      {previewInfo.repositories && Object.keys(previewInfo.repositories).length > 0 && (
+                        <div className="text-xs text-slate-500 pt-1 border-t border-orange-100">
+                          <span className="text-slate-400">Repositories:</span>{' '}
+                          {Object.entries(previewInfo.repositories)
+                            .filter(([, v]) => v)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(', ') || 'None'}
+                        </div>
+                      )}
+                      {Object.keys(previewInfo.provisions).length > 0 && (
+                        <div className="text-xs text-slate-500">
+                          <span className="text-slate-400">Provisions:</span> {Object.keys(previewInfo.provisions).join(', ')}
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-400">
+                        Exported: {new Date(previewInfo.exported_at).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Project Name
+                    </label>
+                    <input
+                      type="text"
+                      value={importNewName}
+                      onChange={(e) => setImportNewName(e.target.value)}
+                      placeholder={previewInfo?.project_name || 'Keep original name'}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Leave empty to keep the original project name
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Target Directory
+                    </label>
+                    <input
+                      type="text"
+                      value={importTargetDir}
+                      onChange={(e) => setImportTargetDir(e.target.value)}
+                      placeholder="C:\path\to\import\location"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                    />
+                  </div>
+                  
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={importOverwrite}
+                      onChange={(e) => setImportOverwrite(e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    Overwrite existing files
+                  </label>
+                  
+                  <button
+                    onClick={async () => {
+                      const result = await importProject(importPath, {
+                        target_directory: importTargetDir,
+                        new_project_name: importNewName || undefined,
+                        overwrite_existing: importOverwrite,
+                        import_database: true,
+                        import_runs: true,
+                      });
+                      if (result?.success) {
+                        setImportPath('');
+                        setImportTargetDir('');
+                        setImportNewName('');
+                        clearPreview();
+                        // Open the imported project
+                        if (result.project_id) {
+                          await openProjectAction(result.project_path || undefined, result.config_file || undefined, result.project_id);
+                        }
+                      }
+                    }}
+                    disabled={isImporting || !importPath.trim() || !importTargetDir.trim()}
+                    className="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isImporting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Import Project
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Last import result */}
+              {lastImportResult && (
+                <div className={`p-3 rounded-lg border ${
+                  lastImportResult.success 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {lastImportResult.success ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    )}
+                    <span className={`text-sm font-medium ${
+                      lastImportResult.success ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {lastImportResult.success ? 'Import Successful' : 'Import Failed'}
+                    </span>
+                  </div>
+                  {lastImportResult.project_path && (
+                    <p className="text-xs text-slate-600 break-all">{lastImportResult.project_path}</p>
+                  )}
+                  {lastImportResult.success && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {lastImportResult.files_imported} files, {lastImportResult.runs_imported} runs imported
+                    </p>
+                  )}
+                  {lastImportResult.warnings.length > 0 && (
+                    <div className="mt-2 text-xs text-amber-600">
+                      {lastImportResult.warnings.slice(0, 3).map((w, i) => (
+                        <div key={i}>⚠ {w}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Available exports */}
+              {availableExports.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                    <FileArchive className="w-4 h-4" />
+                    Recent Exports
+                  </h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {availableExports.map((exp, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImportPath(exp.path)}
+                        className="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
+                      >
+                        <div className="text-sm text-slate-800 truncate">{exp.filename}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-2">
+                          {exp.project_name && <span>{exp.project_name}</span>}
+                          {exp.exported_at && <span>• {new Date(exp.exported_at).toLocaleDateString()}</span>}
+                          {exp.size && <span>• {(exp.size / 1024).toFixed(1)} KB</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}

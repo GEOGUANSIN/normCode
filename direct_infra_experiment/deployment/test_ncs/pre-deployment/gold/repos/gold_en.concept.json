@@ -1,0 +1,683 @@
+[
+    {
+        "id": "c-final-output",
+        "concept_name": ":<:({investment decision})",
+        "type": ":<:",
+        "flow_indices": [
+            "1"
+        ],
+        "description": "Final output marker - the investment decision to be returned",
+        "is_final_concept": true,
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "investment decision (投资决策)"
+    },
+    {
+        "id": "c-price-data",
+        "concept_name": "[price data]",
+        "type": "[]",
+        "flow_indices": [
+            "1.2",
+            "1.6.2.2"
+        ],
+        "axis_name": "_none_axis",
+        "description": "Price data retrieved from market sources",
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "price data (价格数据)"
+    },
+    {
+        "id": "c-news-data",
+        "concept_name": "[news data]",
+        "type": "[]",
+        "flow_indices": [
+            "1.3",
+            "1.6.3.2"
+        ],
+        "axis_name": "_none_axis",
+        "description": "News data retrieved from text sources",
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "news data (新闻数据)"
+    },
+    {
+        "id": "c-theoretical-framework",
+        "concept_name": "{theoretical framework}",
+        "type": "{}",
+        "flow_indices": [
+            "1.4",
+            "1.7.3",
+            "1.8.3"
+        ],
+        "axis_name": "_none_axis",
+        "description": "Theoretical framework from domain experts",
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "theoretical framework (理论框架)"
+    },
+    {
+        "id": "c-investor-risk-profile",
+        "concept_name": "{investor risk profile}",
+        "type": "{}",
+        "flow_indices": [
+            "1.5",
+            "1.10.2",
+            "1.10.3.2.3",
+            "1.10.3.3.3"
+        ],
+        "axis_name": "_none_axis",
+        "description": "Investor constraints including risk tolerance, position size, stop-loss, and horizon",
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "investor risk profile (投资者风险偏好)"
+    },
+    {
+        "id": "c-validated-signal",
+        "concept_name": "{validated signal}",
+        "type": "{}",
+        "flow_indices": [
+            "1.6",
+            "1.7.2",
+            "1.8.2",
+            "1.10.3.2.2",
+            "1.10.3.3.2",
+            "1.10.3.4.2"
+        ],
+        "axis_name": "signal",
+        "description": "Unified signals from quantitative and narrative analysis plus theoretical framework",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "validated signal (验证信号)"
+    },
+    {
+        "id": "c-quantitative-signal",
+        "concept_name": "{quantitative signal}",
+        "type": "{}",
+        "flow_indices": [
+            "1.6.2"
+        ],
+        "axis_name": "quantitative_signal",
+        "description": "Price-based technical indicators",
+        "reference_axis_names": [
+            "quantitative_signal"
+        ],
+        "natural_name": "quantitative signal (量化信号)"
+    },
+    {
+        "id": "c-narrative-signal",
+        "concept_name": "{narrative signal}",
+        "type": "{}",
+        "flow_indices": [
+            "1.6.3"
+        ],
+        "axis_name": "narrative_signal",
+        "description": "Sentiment and themes extracted from news",
+        "reference_axis_names": [
+            "narrative_signal"
+        ],
+        "natural_name": "narrative signal (叙事信号)"
+    },
+    {
+        "id": "c-signals-surpass",
+        "concept_name": "<signals surpass theoretical expectations>",
+        "type": "<>",
+        "flow_indices": [
+            "1.7",
+            "1.9.2.2"
+        ],
+        "axis_name": "signal",
+        "description": "Truth mask: which signals exceed theoretical predictions (bullish)",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "signals surpass theoretical expectations (信号超出理论预期)"
+    },
+    {
+        "id": "c-signals-deviate",
+        "concept_name": "<signals deviate from theoretical expectations>",
+        "type": "<>",
+        "flow_indices": [
+            "1.8",
+            "1.9.2.3"
+        ],
+        "axis_name": "signal",
+        "description": "Truth mask: which signals fall below theoretical predictions (bearish)",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "signals deviate from theoretical expectations (信号偏离理论预期)"
+    },
+    {
+        "id": "c-signals-neutral",
+        "concept_name": "<signals are neutral>",
+        "type": "<>",
+        "flow_indices": [
+            "1.9"
+        ],
+        "axis_name": "signal",
+        "description": "Truth mask: which signals are neither bullish nor bearish",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "signals are neutral (信号中性)"
+    },
+    {
+        "id": "c-signal-status",
+        "concept_name": "<signal status>",
+        "type": "<>",
+        "flow_indices": [
+            "1.9.2"
+        ],
+        "axis_name": "signal",
+        "description": "Grouped truth markers (surpass + deviate) for neutral evaluation",
+        "reference_axis_names": [
+            "status_type",
+            "signal"
+        ],
+        "natural_name": "signal status (信号状态)"
+    },
+    {
+        "id": "c-investment-decision",
+        "concept_name": "{investment decision}",
+        "type": "{}",
+        "flow_indices": [
+            "1.10"
+        ],
+        "axis_name": "_none_axis",
+        "description": "Final synthesized investment decision with action, rationale, and confidence",
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "investment decision (投资决策)"
+    },
+    {
+        "id": "c-all-recommendations",
+        "concept_name": "[all recommendations]",
+        "type": "[]",
+        "flow_indices": [
+            "1.10.3"
+        ],
+        "axis_name": "recommendation",
+        "description": "Collection of all recommendation branches (bullish, bearish, neutral)",
+        "reference_axis_names": [
+            "recommendation"
+        ],
+        "natural_name": "all recommendations (所有建议)"
+    },
+    {
+        "id": "c-bullish-recommendation",
+        "concept_name": "{bullish recommendation}",
+        "type": "{}",
+        "flow_indices": [
+            "1.10.3.2"
+        ],
+        "axis_name": "signal",
+        "description": "Buy recommendation with position sizing (filtered by bullish signals)",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "bullish recommendation (看涨建议)"
+    },
+    {
+        "id": "c-bearish-recommendation",
+        "concept_name": "{bearish recommendation}",
+        "type": "{}",
+        "flow_indices": [
+            "1.10.3.3"
+        ],
+        "axis_name": "signal",
+        "description": "Sell recommendation with position sizing (filtered by bearish signals)",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "bearish recommendation (看跌建议)"
+    },
+    {
+        "id": "c-neutral-recommendation",
+        "concept_name": "{neutral recommendation}",
+        "type": "{}",
+        "flow_indices": [
+            "1.10.3.4"
+        ],
+        "axis_name": "signal",
+        "description": "Hold recommendation (filtered by neutral signals)",
+        "reference_axis_names": [
+            "signal"
+        ],
+        "natural_name": "neutral recommendation (中性建议)"
+    },
+    {
+        "id": "c-ground-price-data",
+        "concept_name": "{simulated data: price data}",
+        "type": "{}",
+        "flow_indices": [
+            "1.2.2"
+        ],
+        "description": "Ground concept: file path for simulated price data",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{file_location}price(provision/data/price_data.json)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "simulated data: price data (模拟数据：价格数据)"
+    },
+    {
+        "id": "c-ground-news-data",
+        "concept_name": "{simulated data: news data}",
+        "type": "{}",
+        "flow_indices": [
+            "1.3.2"
+        ],
+        "description": "Ground concept: file path for simulated news data",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{file_location}news(provision/data/news_data.json)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "simulated data: news data (模拟数据：新闻数据)"
+    },
+    {
+        "id": "c-ground-theoretical-framework",
+        "concept_name": "{simulated data: theoretical framework}",
+        "type": "{}",
+        "flow_indices": [
+            "1.4.2"
+        ],
+        "description": "Ground concept: file path for simulated theoretical framework",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{file_location}theory(provision/data/theoretical_framework.json)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "simulated data: theoretical framework (模拟数据：理论框架)"
+    },
+    {
+        "id": "c-ground-investor-risk-profile",
+        "concept_name": "{simulated data: investor risk profile}",
+        "type": "{}",
+        "flow_indices": [
+            "1.5.2"
+        ],
+        "description": "Ground concept: file path for simulated investor risk profile",
+        "is_ground_concept": true,
+        "reference_data": [
+            "%{file_location}risk(provision/data/investor_risk_profile.json)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "simulated data: investor risk profile (模拟数据：投资者风险偏好)"
+    },
+    {
+        "id": "fc-assign-investment-decision",
+        "concept_name": "$. %>({investment decision})",
+        "type": "$.",
+        "flow_indices": [
+            "1.1"
+        ],
+        "description": "Functional: specification assignment for final output",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "$. %>({investment decision})"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "investment decision (投资决策)"
+    },
+    {
+        "id": "fc-retrieve-price-data",
+        "concept_name": ":%(composition):{paradigm}(retrieve price data from market sources)",
+        "type": "({})",
+        "flow_indices": [
+            "1.2.1"
+        ],
+        "description": "Functional: retrieve price data using file load paradigm",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":%(composition):{paradigm}(retrieve price data from market sources)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "retrieve price data from market sources (从市场来源获取价格数据)"
+    },
+    {
+        "id": "fc-retrieve-news-data",
+        "concept_name": ":%(composition):{paradigm}(retrieve news data from text sources)",
+        "type": "({})",
+        "flow_indices": [
+            "1.3.1"
+        ],
+        "description": "Functional: retrieve news data using file load paradigm",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":%(composition):{paradigm}(retrieve news data from text sources)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "retrieve news data from text sources (从文本来源获取新闻数据)"
+    },
+    {
+        "id": "fc-obtain-theoretical-framework",
+        "concept_name": ":%(composition):{paradigm}(obtain theoretical framework from domain experts)",
+        "type": "({})",
+        "flow_indices": [
+            "1.4.1"
+        ],
+        "description": "Functional: obtain theoretical framework using file load paradigm",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":%(composition):{paradigm}(obtain theoretical framework from domain experts)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "obtain theoretical framework from domain experts (从领域专家获取理论框架)"
+    },
+    {
+        "id": "fc-collect-investor-constraints",
+        "concept_name": ":%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.5.1"
+        ],
+        "description": "Functional: collect investor risk profile using file load paradigm",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":%(composition):{paradigm}(collect investor constraints: {1}<$({risk tolerance})%>, {2}<$({max position size})%>, {3}<$({stop-loss rules})%>, {4}<$({investment horizon})%>)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "collect investor constraints: risk tolerance, max position size, stop-loss rules, investment horizon (收集投资者约束：风险承受能力、最大持仓、止损规则、投资期限)"
+    },
+    {
+        "id": "fc-group-validated-signal",
+        "concept_name": "&[#] %>[{quantitative signal}, {narrative signal}] %+(signal)",
+        "type": "&[#]",
+        "flow_indices": [
+            "1.6.1"
+        ],
+        "description": "Functional: grouping across to unify signals with per-reference collapse",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "_"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "group of quantitative signal and narrative signal (量化信号和叙事信号组)"
+    },
+    {
+        "id": "fc-compute-quantitative-signal",
+        "concept_name": ":%(composition):(compute price-based indicators from {1}<$([price data])%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.6.2.1"
+        ],
+        "description": "Functional: compute technical indicators via Python script",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}script(provision/scripts/technical_analysis.py)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "compute price-based indicators from price data (根据价格数据计算价格指标)"
+    },
+    {
+        "id": "fc-extract-narrative-signal",
+        "concept_name": ":%(composition):(extract sentiment and themes from {1}<$([news data])%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.6.3.1"
+        ],
+        "description": "Functional: extract sentiment via LLM prompt",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/sentiment_extraction.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "extract sentiment and themes from news data (从新闻数据提取情绪和主题)"
+    },
+    {
+        "id": "fc-evaluate-bullish",
+        "concept_name": ":%(composition):({1}<$({validated signal})%> exceeds predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+        "type": "<{}>",
+        "flow_indices": [
+            "1.7.1"
+        ],
+        "description": "Functional judgement: evaluate if signals exceed theory (bullish)",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/bullish_evaluation.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "validated signal exceeds predictions of theoretical framework (验证信号超出理论框架预测)"
+    },
+    {
+        "id": "fc-evaluate-bearish",
+        "concept_name": ":%(composition):({1}<$({validated signal})%> falls below predictions of {2}<$({theoretical framework})%>) <For Each {validated signal} True>",
+        "type": "<{}>",
+        "flow_indices": [
+            "1.8.1"
+        ],
+        "description": "Functional judgement: evaluate if signals fall below theory (bearish)",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/bearish_evaluation.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "validated signal falls below predictions of theoretical framework (验证信号低于理论框架预测)"
+    },
+    {
+        "id": "fc-evaluate-neutral",
+        "concept_name": ":%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>",
+        "type": "<{}>",
+        "flow_indices": [
+            "1.9.1"
+        ],
+        "description": "Functional judgement: evaluate if signals are neutral (neither bullish nor bearish)",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            ":%(composition):({1}<$(<signal status>)%>) <For Each {signal} where ALL {status_type} False>"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "signal status (信号状态)"
+    },
+    {
+        "id": "fc-group-signal-status",
+        "concept_name": "&[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>",
+        "type": "&[#]",
+        "flow_indices": [
+            "1.9.2.1"
+        ],
+        "description": "Functional: grouping truth masks with signal axis protected (legacy mode)",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "&[#] %>[<signals surpass theoretical expectations>, <signals deviate from theoretical expectations>] %^<$!={signal}>"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "group of signals surpass theoretical expectations and signals deviate from theoretical expectations (信号超出理论预期和信号偏离理论预期组)"
+    },
+    {
+        "id": "fc-synthesize-final-decision",
+        "concept_name": ":%(composition):(synthesize final decision from {1}<$([all recommendations])%> constrained by {2}<$({investor risk profile})%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.10.1"
+        ],
+        "description": "Functional: synthesize final decision via LLM",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/final_synthesis.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "synthesize final decision from all recommendations constrained by investor risk profile (根据投资者风险偏好约束综合所有建议得出最终决定)"
+    },
+    {
+        "id": "fc-group-all-recommendations",
+        "concept_name": "&[{}] %>[{bullish recommendation}, {bearish recommendation}, {neutral recommendation}] %+(recommendation)",
+        "type": "&[{}]",
+        "flow_indices": [
+            "1.10.3.1"
+        ],
+        "description": "Functional: grouping recommendations into annotated dict with per-reference collapse",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "_"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "bundle of bullish recommendation and bearish recommendation and neutral recommendation (看涨建议、看跌建议和中性建议包)"
+    },
+    {
+        "id": "fc-generate-bullish-recommendation",
+        "concept_name": ":%(composition):(generate buy recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.10.3.2.1"
+        ],
+        "description": "Functional: generate buy recommendation via LLM",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/buy_recommendation.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "generate buy recommendation with position sizing from validated signal and investor risk profile (根据验证信号和投资者风险偏好生成带仓位管理的买入建议)"
+    },
+    {
+        "id": "fc-timing-bullish",
+        "concept_name": "@:' (<signals surpass theoretical expectations>)",
+        "type": "@:'",
+        "flow_indices": [
+            "1.10.3.2.1.1"
+        ],
+        "description": "Functional: timing gate for bullish branch",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "@:' (<signals surpass theoretical expectations>)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "signals surpass theoretical expectations (信号超出理论预期)"
+    },
+    {
+        "id": "fc-generate-bearish-recommendation",
+        "concept_name": ":%(composition):(generate sell recommendation with position sizing from {1}<$({validated signal})%> and {2}<$({investor risk profile})%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.10.3.3.1"
+        ],
+        "description": "Functional: generate sell recommendation via LLM",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/sell_recommendation.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "generate sell recommendation with position sizing from validated signal and investor risk profile (根据验证信号和投资者风险偏好生成带仓位管理的卖出建议)"
+    },
+    {
+        "id": "fc-timing-bearish",
+        "concept_name": "@:' (<signals deviate from theoretical expectations>)",
+        "type": "@:'",
+        "flow_indices": [
+            "1.10.3.3.1.1"
+        ],
+        "description": "Functional: timing gate for bearish branch",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "@:' (<signals deviate from theoretical expectations>)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "signals deviate from theoretical expectations (信号偏离理论预期)"
+    },
+    {
+        "id": "fc-generate-neutral-recommendation",
+        "concept_name": ":%(composition):(generate hold recommendation from {1}<$({validated signal})%>)",
+        "type": "({})",
+        "flow_indices": [
+            "1.10.3.4.1"
+        ],
+        "description": "Functional: generate hold recommendation via LLM",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "%{file_location}prompt(provision/prompts/hold_recommendation.md)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "generate hold recommendation from validated signal (根据验证信号生成持有建议)"
+    },
+    {
+        "id": "fc-timing-neutral",
+        "concept_name": "@:' (<signals are neutral>)",
+        "type": "@:'",
+        "flow_indices": [
+            "1.10.3.4.1.1"
+        ],
+        "description": "Functional: timing gate for neutral branch",
+        "is_ground_concept": true,
+        "is_invariant": true,
+        "reference_data": [
+            "@:' (<signals are neutral>)"
+        ],
+        "reference_axis_names": [
+            "_none_axis"
+        ],
+        "natural_name": "signals are neutral (信号中性)"
+    }
+]

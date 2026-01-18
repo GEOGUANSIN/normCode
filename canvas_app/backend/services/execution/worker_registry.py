@@ -53,6 +53,7 @@ class WorkerCategory(str, Enum):
     ASSISTANT = "assistant"       # AI assistant controller
     BACKGROUND = "background"     # Background/scheduled tasks
     EPHEMERAL = "ephemeral"       # Temporary workers (e.g., one-shot runs)
+    REMOTE = "remote"             # Remote worker on normal_server
 
 
 class PanelType(str, Enum):
@@ -158,10 +159,15 @@ class RegisteredWorker:
     A registered worker with its controller and state.
     """
     state: WorkerState
-    controller: "ExecutionController"
+    controller: Optional["ExecutionController"] = None  # None for remote workers
     
     # Panel bindings (which panels are viewing this worker)
     bindings: Set[str] = field(default_factory=set)  # Set of panel_ids
+    
+    @property
+    def is_remote(self) -> bool:
+        """Check if this is a remote worker (no local controller)."""
+        return self.controller is None
 
 
 # =============================================================================
@@ -201,7 +207,7 @@ class WorkerRegistry:
     def register_worker(
         self,
         worker_id: str,
-        controller: "ExecutionController",
+        controller: Optional["ExecutionController"],
         category: WorkerCategory,
         name: str = "",
         project_id: Optional[str] = None,
@@ -213,6 +219,8 @@ class WorkerRegistry:
         
         Workers start as HIDDEN (no panel bindings).
         Bind a panel to make them VISIBLE.
+        
+        For remote workers, controller can be None.
         """
         if worker_id in self._workers:
             raise ValueError(f"Worker '{worker_id}' already registered")
@@ -234,10 +242,11 @@ class WorkerRegistry:
         
         self._workers[worker_id] = worker
         
-        # Link controller's project_id
-        controller.project_id = project_id
+        # Link controller's project_id (if controller exists)
+        if controller is not None:
+            controller.project_id = project_id
         
-        logger.info(f"Registered worker: {worker_id} (category={category.value})")
+        logger.info(f"Registered worker: {worker_id} (category={category.value}, remote={controller is None})")
         self._notify_state_change(worker_id, state)
         
         return worker
@@ -617,6 +626,120 @@ class WorkerRegistry:
                 callback(panel_id, old_worker, new_worker)
             except Exception as e:
                 logger.error(f"Binding change callback error: {e}")
+    
+    # =========================================================================
+    # Remote Worker Support
+    # =========================================================================
+    
+    async def register_remote_worker(
+        self,
+        server_url: str,
+        run_id: str,
+        panel_id: Optional[str] = None,
+        panel_type: PanelType = PanelType.MAIN,
+    ) -> "RegisteredWorker":
+        """
+        Register a remote worker connected to a normal_server.
+        
+        This creates a RemoteExecutionController that connects to the specified
+        server and run, then registers it as a worker in this registry.
+        
+        Args:
+            server_url: Base URL of the normal_server (e.g., http://localhost:8080)
+            run_id: The run ID to connect to on the remote server
+            panel_id: Optional panel to bind this worker to immediately
+            panel_type: Type of panel if binding
+            
+        Returns:
+            The registered worker
+        """
+        from services.remote_execution_controller import (
+            RemoteExecutionController,
+            create_remote_controller,
+        )
+        
+        # Create unique worker_id for this remote connection
+        worker_id = f"remote-{run_id}"
+        
+        # Check if already registered
+        if worker_id in self._workers:
+            existing = self._workers[worker_id]
+            logger.info(f"Remote worker {worker_id} already registered")
+            return existing
+        
+        # Create event callback to emit through registry
+        async def emit_event(event_type: str, data: Dict[str, Any]):
+            self.route_event(worker_id, event_type, data)
+        
+        # Create and connect the remote controller
+        controller = await create_remote_controller(server_url, run_id, emit_event)
+        
+        # Get initial state from controller
+        state = controller.get_state()
+        
+        # Register the worker
+        worker_state = WorkerState(
+            worker_id=worker_id,
+            category=WorkerCategory.REMOTE,
+            name=f"Remote: {run_id[:8]}",
+            run_id=run_id,
+            metadata={
+                "server_url": server_url,
+                "remote": True,
+            },
+        )
+        
+        # Update state from controller
+        worker_state.status = WorkerStatus(state["status"]) if state["status"] in [s.value for s in WorkerStatus] else WorkerStatus.IDLE
+        worker_state.completed_count = state.get("completed_count", 0)
+        worker_state.total_count = state.get("total_count", 0)
+        worker_state.cycle_count = state.get("cycle_count", 0)
+        worker_state.current_inference = state.get("current_inference")
+        
+        # Create registered worker (controller cast to match type, but it's a RemoteExecutionController)
+        worker = RegisteredWorker(
+            state=worker_state,
+            controller=controller,  # type: ignore - RemoteExecutionController has compatible interface
+        )
+        
+        self._workers[worker_id] = worker
+        
+        logger.info(f"Registered remote worker: {worker_id} → {server_url}/runs/{run_id}")
+        self._notify_state_change(worker_id, worker_state)
+        
+        # Optionally bind to a panel immediately
+        if panel_id:
+            self.bind_panel(panel_id, panel_type, worker_id)
+        
+        return worker
+    
+    async def disconnect_remote_worker(self, worker_id: str) -> bool:
+        """
+        Disconnect and unregister a remote worker.
+        
+        Args:
+            worker_id: The worker ID (e.g., "remote-abc123")
+            
+        Returns:
+            True if worker was found and disconnected
+        """
+        worker = self._workers.get(worker_id)
+        if not worker:
+            return False
+        
+        # Disconnect the remote controller
+        if worker.controller and hasattr(worker.controller, 'disconnect'):
+            try:
+                await worker.controller.disconnect()
+            except Exception as e:
+                logger.warning(f"Error disconnecting remote worker: {e}")
+        
+        # Unregister
+        return self.unregister_worker(worker_id)
+    
+    def get_remote_workers(self) -> List["RegisteredWorker"]:
+        """Get all remote workers."""
+        return [w for w in self._workers.values() if w.state.category == WorkerCategory.REMOTE]
     
     # =========================================================================
     # Cleanup

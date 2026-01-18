@@ -8,7 +8,7 @@
  * - Viewing run statistics
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Database,
   ChevronDown,
@@ -493,6 +493,8 @@ export function OrchestratorDBInspector({
               formatDate={formatDate}
               getStatusColor={getStatusColor}
               getStatusIcon={getStatusIcon}
+              runId={selectedRun}
+              dbPath={dbPath}
             />
           )}
           
@@ -603,13 +605,120 @@ function ExecutionsView({
   formatDate,
   getStatusColor,
   getStatusIcon,
+  runId,
+  dbPath,
 }: {
   executions: ExecutionRecord[];
   statistics: RunStatistics | null;
   formatDate: (s: string | null) => string;
   getStatusColor: (s: string) => string;
   getStatusIcon: (s: string) => React.ReactNode;
+  runId: string | null;
+  dbPath: string;
 }) {
+  // Track which executions are expanded
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  // Cache for loaded logs
+  const [logsCache, setLogsCache] = useState<Record<number, string>>({});
+  // Track loading states
+  const [loadingLogs, setLoadingLogs] = useState<Set<number>>(new Set());
+  
+  // Selection state for export
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null);
+  
+  // Compute export directory: same folder as db, with subfolder logs_run_{run_id}
+  const getExportDir = () => {
+    if (!dbPath || !runId) return '';
+    // Get parent directory of the database file
+    const pathSeparator = dbPath.includes('\\') ? '\\' : '/';
+    const parts = dbPath.split(pathSeparator);
+    parts.pop(); // Remove the db filename
+    const parentDir = parts.join(pathSeparator);
+    // Create logs folder name with short run_id
+    const shortRunId = runId.slice(0, 8);
+    return `${parentDir}${pathSeparator}logs_run_${shortRunId}`;
+  };
+  
+  const toggleExpand = async (execId: number) => {
+    const newExpanded = new Set(expandedIds);
+    
+    if (newExpanded.has(execId)) {
+      newExpanded.delete(execId);
+    } else {
+      newExpanded.add(execId);
+      
+      // Fetch logs if not cached
+      if (!logsCache[execId] && runId && dbPath) {
+        setLoadingLogs(prev => new Set(prev).add(execId));
+        try {
+          const result = await dbInspectorApi.getExecutionLogs(runId, execId, dbPath);
+          setLogsCache(prev => ({ ...prev, [execId]: result.log_content || '(No logs available)' }));
+        } catch (e) {
+          console.error('Failed to load logs:', e);
+          setLogsCache(prev => ({ ...prev, [execId]: '(Failed to load logs)' }));
+        } finally {
+          setLoadingLogs(prev => {
+            const next = new Set(prev);
+            next.delete(execId);
+            return next;
+          });
+        }
+      }
+    }
+    
+    setExpandedIds(newExpanded);
+  };
+  
+  const toggleSelect = (execId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(execId)) {
+      newSelected.delete(execId);
+    } else {
+      newSelected.add(execId);
+    }
+    setSelectedIds(newSelected);
+  };
+  
+  const selectAll = () => {
+    setSelectedIds(new Set(executions.map(e => e.id)));
+  };
+  
+  const selectNone = () => {
+    setSelectedIds(new Set());
+  };
+  
+  const handleExport = async () => {
+    const exportDir = getExportDir();
+    if (!runId || !dbPath || !exportDir) return;
+    
+    setIsExporting(true);
+    setExportResult(null);
+    
+    try {
+      const result = await dbInspectorApi.exportLogs(
+        runId,
+        dbPath,
+        exportDir,
+        selectedIds.size > 0 ? Array.from(selectedIds) : []
+      );
+      setExportResult({
+        success: true,
+        message: `Exported ${result.exported_count} log files to ${result.output_dir}`
+      });
+    } catch (e) {
+      console.error('Failed to export logs:', e);
+      setExportResult({
+        success: false,
+        message: e instanceof Error ? e.message : 'Failed to export logs'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  
   return (
     <div className="space-y-4">
       {statistics && (
@@ -655,17 +764,93 @@ function ExecutionsView({
         </div>
       )}
       
+      {/* Export Controls */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4">
+        <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+          <FolderOpen className="w-4 h-4 text-indigo-600" />
+          Export Logs
+        </h3>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <div className="text-xs text-slate-500 mb-1">Export to:</div>
+            <div className="px-3 py-1.5 text-xs border border-slate-200 rounded-md bg-slate-50 font-mono text-slate-600 truncate" title={getExportDir()}>
+              {getExportDir() || '(No run selected)'}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span>
+              {selectedIds.size === 0 
+                ? `Export all (${executions.length})`
+                : `Export selected (${selectedIds.size})`
+              }
+            </span>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={isExporting || !runId || !dbPath}
+            className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <FolderOpen className="w-3.5 h-3.5" />
+                Export Logs
+              </>
+            )}
+          </button>
+        </div>
+        {exportResult && (
+          <div className={`mt-2 p-2 rounded-md text-xs ${
+            exportResult.success 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}>
+            {exportResult.message}
+          </div>
+        )}
+      </div>
+      
       <div className="bg-white rounded-lg border border-slate-200">
-        <div className="px-4 py-3 border-b border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-indigo-600" />
-            Execution History ({executions.length})
-          </h3>
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-indigo-600" />
+              Execution History ({executions.length})
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">Click row to view logs • Use checkboxes to select for export</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={selectAll}
+              className="px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded"
+            >
+              Select All
+            </button>
+            <button
+              onClick={selectNone}
+              className="px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 rounded"
+            >
+              Clear
+            </button>
+          </div>
         </div>
         <div className="max-h-[500px] overflow-auto">
           <table className="w-full text-xs">
-            <thead className="bg-slate-50 sticky top-0">
+            <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>
+                <th className="px-2 py-2 text-left text-slate-600 font-medium w-8">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === executions.length && executions.length > 0}
+                    onChange={(e) => e.target.checked ? selectAll() : selectNone()}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </th>
+                <th className="px-2 py-2 text-left text-slate-600 font-medium w-6"></th>
                 <th className="px-3 py-2 text-left text-slate-600 font-medium">ID</th>
                 <th className="px-3 py-2 text-left text-slate-600 font-medium">Cycle</th>
                 <th className="px-3 py-2 text-left text-slate-600 font-medium">Flow Index</th>
@@ -676,27 +861,84 @@ function ExecutionsView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {executions.map((exec) => (
-                <tr key={exec.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 font-mono text-slate-500">{exec.id}</td>
-                  <td className="px-3 py-2">{exec.cycle}</td>
-                  <td className="px-3 py-2 font-mono">{exec.flow_index}</td>
-                  <td className="px-3 py-2">{exec.inference_type || '—'}</td>
-                  <td className="px-3 py-2 font-mono truncate max-w-[150px]" title={exec.concept_inferred}>
-                    {exec.concept_inferred || '—'}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${getStatusColor(exec.status)}`}>
-                      {getStatusIcon(exec.status)}
-                      {exec.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-slate-500">{formatDate(exec.timestamp ?? null)}</td>
-                </tr>
-              ))}
+              {executions.map((exec) => {
+                const isExpanded = expandedIds.has(exec.id);
+                const isLoading = loadingLogs.has(exec.id);
+                const logContent = logsCache[exec.id];
+                const isSelected = selectedIds.has(exec.id);
+                
+                return (
+                  <React.Fragment key={exec.id}>
+                    <tr 
+                      className={`hover:bg-slate-50 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50/50' : ''}`}
+                      onClick={() => toggleExpand(exec.id)}
+                    >
+                      <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          onClick={(e) => toggleSelect(exec.id, e)}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-slate-400">
+                        {isExpanded ? (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        )}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-slate-500">{exec.id}</td>
+                      <td className="px-3 py-2">{exec.cycle}</td>
+                      <td className="px-3 py-2 font-mono">{exec.flow_index}</td>
+                      <td className="px-3 py-2">{exec.inference_type || '—'}</td>
+                      <td className="px-3 py-2 font-mono truncate max-w-[150px]" title={exec.concept_inferred}>
+                        {exec.concept_inferred || '—'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${getStatusColor(exec.status)}`}>
+                          {getStatusIcon(exec.status)}
+                          {exec.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-500">{formatDate(exec.timestamp ?? null)}</td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-slate-50/50">
+                        <td colSpan={9} className="px-4 py-3">
+                          <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                            <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-2">
+                              <FileText className="w-3.5 h-3.5 text-slate-500" />
+                              <span className="text-xs font-medium text-slate-600">Execution Logs</span>
+                              {isLoading && <Loader2 className="w-3 h-3 text-indigo-500 animate-spin ml-auto" />}
+                            </div>
+                            <div className="p-3 max-h-64 overflow-auto">
+                              {isLoading ? (
+                                <div className="flex items-center justify-center py-4 text-slate-400 text-xs">
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                  Loading logs...
+                                </div>
+                              ) : logContent ? (
+                                <pre className="text-[11px] font-mono text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+                                  {logContent}
+                                </pre>
+                              ) : (
+                                <div className="text-xs text-slate-400 italic text-center py-4">
+                                  No logs available
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
               {executions.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-slate-400">
+                  <td colSpan={9} className="px-3 py-8 text-center text-slate-400">
                     No executions found
                   </td>
                 </tr>

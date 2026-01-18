@@ -22,6 +22,8 @@ import {
   Save,
   Sparkles,
   Workflow,
+  Rocket,
+  Globe,
 } from 'lucide-react';
 import { GraphCanvas } from './components/graph/GraphCanvas';
 import { ControlPanel } from './components/panels/ControlPanel';
@@ -37,6 +39,7 @@ import { WorkersPanel } from './components/panels/WorkersPanel';
 import { UserInputModal } from './components/panels/UserInputModal';
 import { ProjectTabs } from './components/panels/ProjectTabs';
 import { ChatPanel } from './components/panels/ChatPanel';
+import { DeploymentPanel } from './components/panels/DeploymentPanel';
 import { ToastContainer } from './components/common/ToastNotification';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGraphStore } from './stores/graphStore';
@@ -171,6 +174,7 @@ function App() {
   const [showCheckpointPanel, setShowCheckpointPanel] = useState(false);
   const [showAgentPanel, setShowAgentPanel] = useState(false);
   const [showWorkersPanel, setShowWorkersPanel] = useState(false);
+  const [showDeploymentPanel, setShowDeploymentPanel] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [detailPanelFullscreen, setDetailPanelFullscreen] = useState(false);
   const [showRepoPathsModal, setShowRepoPathsModal] = useState(false);
@@ -188,6 +192,7 @@ function App() {
   // Chat state
   const { isOpen: isChatOpen, togglePanel: toggleChatPanel, controllerStatus } = useChatStore();
   
+  
   // Project state
   const {
     currentProject,
@@ -197,6 +202,7 @@ function App() {
     isLoading: projectLoading,
     openTabs,
     activeTabId,
+    remoteProjectTabs,
     fetchCurrentProject,
     fetchRecentProjects,
     fetchOpenTabs,
@@ -207,8 +213,10 @@ function App() {
   } = useProjectStore();
   
   // Check if current project is read-only (compiler project)
+  // Remote projects are "read-only" in terms of editing, but can still be executed
   const activeTab = openTabs.find(tab => tab.id === activeTabId);
   const isReadOnlyProject = activeTab?.is_read_only ?? false;
+  const isRemoteProject = activeTab?.is_remote ?? false;
 
   // Fetch project state on startup
   useEffect(() => {
@@ -267,7 +275,13 @@ function App() {
           {/* Project Info */}
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-700">{currentProject.name}</span>
-            {isLoaded ? (
+            {/* Remote projects show "Remote" badge instead of Load button */}
+            {isRemoteProject ? (
+              <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 text-xs rounded-full flex items-center gap-1">
+                <Globe size={12} />
+                Remote
+              </span>
+            ) : isLoaded ? (
               <div className="flex items-center gap-1">
                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -428,6 +442,15 @@ function App() {
             <Settings size={18} />
           </button>
           
+          {/* Deploy */}
+          <button
+            onClick={() => setShowDeploymentPanel(true)}
+            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            title="Deploy Project"
+          >
+            <Rocket size={18} />
+          </button>
+          
           {/* Project settings */}
           <button
             onClick={() => setProjectPanelOpen(true)}
@@ -485,12 +508,16 @@ function App() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left side: Tabs + Main Content (includes ControlPanel when in canvas mode) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Project Tabs Bar - shows when multiple projects are open */}
-          {openTabs.length > 1 && (
+          {/* Project Tabs Bar - shows when multiple projects are open or remote tabs exist */}
+          {(openTabs.length > 1 || remoteProjectTabs.length > 0) && (
             <ProjectTabs onOpenProjectPanel={() => setProjectPanelOpen(true)} />
           )}
-          {/* Control Panel - only show in canvas mode when graph is loaded, hide for read-only projects */}
-          {graphData && viewMode === 'canvas' && !isReadOnlyProject && (
+          {/* Control Panel - show in canvas mode when graph is loaded
+              Read-only projects hide the control panel UNLESS they are remote projects
+              (remote projects are read-only for editing but can still be executed)
+              Remote execution is handled through the unified worker system - remote proxy workers
+              show up in WorkersPanel and ControlPanel uses the bound worker's API */}
+          {graphData && viewMode === 'canvas' && (!isReadOnlyProject || isRemoteProject) && (
             <ControlPanel 
               onCheckpointToggle={() => setShowCheckpointPanel(!showCheckpointPanel)}
               checkpointPanelOpen={showCheckpointPanel}
@@ -609,6 +636,12 @@ function App() {
 
       {/* User Input Modal (human-in-the-loop) */}
       <UserInputModal />
+
+      {/* Deployment Panel */}
+      <DeploymentPanel
+        isOpen={showDeploymentPanel}
+        onClose={() => setShowDeploymentPanel(false)}
+      />
 
       {/* Toast Notifications - prominent alerts for errors/warnings */}
       <ToastContainer />

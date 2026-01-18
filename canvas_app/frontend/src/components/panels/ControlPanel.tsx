@@ -1,5 +1,14 @@
 /**
  * Control Panel for execution commands
+ * 
+ * UNIFIED RELAY ARCHITECTURE:
+ * The ControlPanel simply uses executionApi for all commands. The backend
+ * automatically routes to either:
+ * - Local ExecutionController (for local projects)
+ * - RemoteProxyExecutor (for remote projects)
+ * 
+ * Events come through the same WebSocket for both local and remote execution,
+ * so the frontend doesn't need to know or care about the difference.
  */
 
 import { useState } from 'react';
@@ -15,12 +24,13 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: ControlPanelProps = {}) {
+  // All execution state comes from executionStore (updated via WebSocket events)
+  // This works for both local and remote execution - the backend relays remote events
   const status = useExecutionStore((s) => s.status);
   const completedCount = useExecutionStore((s) => s.completedCount);
   const totalCount = useExecutionStore((s) => s.totalCount);
   const cycleCount = useExecutionStore((s) => s.cycleCount);
   const currentInference = useExecutionStore((s) => s.currentInference);
-  const setStatus = useExecutionStore((s) => s.setStatus);
   const reset = useExecutionStore((s) => s.reset);
   const verboseLogging = useExecutionStore((s) => s.verboseLogging);
   const setVerboseLogging = useExecutionStore((s) => s.setVerboseLogging);
@@ -37,16 +47,22 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
 
   const isRunning = status === 'running';
   const isPaused = status === 'paused';
+  const isStepping = status === 'stepping';
   const isIdle = status === 'idle';
   const isCompleted = status === 'completed';
   const isFailed = status === 'failed';
 
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
+  // =========================================================================
+  // UNIFIED COMMAND HANDLERS
+  // Just use executionApi - the backend routes to local or remote automatically
+  // =========================================================================
+  
   const handleStart = async () => {
     try {
       await executionApi.start();
-      setStatus('running');
+      // State updates come via WebSocket events
     } catch (e) {
       console.error('Failed to start:', e);
     }
@@ -55,7 +71,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const handlePause = async () => {
     try {
       await executionApi.pause();
-      setStatus('paused');
     } catch (e) {
       console.error('Failed to pause:', e);
     }
@@ -64,7 +79,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const handleResume = async () => {
     try {
       await executionApi.resume();
-      setStatus('running');
     } catch (e) {
       console.error('Failed to resume:', e);
     }
@@ -73,7 +87,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const handleStep = async () => {
     try {
       await executionApi.step();
-      setStatus('stepping');
     } catch (e) {
       console.error('Failed to step:', e);
     }
@@ -82,7 +95,6 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   const handleStop = async () => {
     try {
       await executionApi.stop();
-      setStatus('idle');
     } catch (e) {
       console.error('Failed to stop:', e);
     }
@@ -99,6 +111,7 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   };
 
   const handleToggleVerbose = async () => {
+    
     setIsTogglingVerbose(true);
     try {
       const newState = !verboseLogging;
@@ -125,16 +138,16 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
   };
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 py-2 relative z-10">
+    <div className="border-b px-4 py-2 relative z-10 bg-white border-slate-200">
       <div className="flex items-center gap-4">
         {/* Execution controls */}
         <div className="flex items-center gap-1">
           {/* Play/Resume button */}
-          {(isIdle || isPaused || isCompleted || isFailed) && (
+          {(isIdle || isPaused || isStepping || isCompleted || isFailed) && (
             <button
-              onClick={isPaused ? handleResume : handleStart}
-              className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
-              title={isPaused ? 'Resume' : 'Run'}
+              onClick={isPaused || isStepping ? handleResume : handleStart}
+              className="p-2 rounded-lg text-white transition-colors bg-green-500 hover:bg-green-600"
+              title={isPaused || isStepping ? 'Resume' : 'Run'}
             >
               <Play size={18} />
             </button>
@@ -179,7 +192,7 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
             <SkipForward size={18} />
           </button>
 
-          {/* Reset/Restart button - available after completion or when not idle */}
+          {/* Reset/Restart button */}
           <button
             onClick={handleRestart}
             disabled={isIdle && !isCompleted && !isFailed}
@@ -207,6 +220,8 @@ export function ControlPanel({ onCheckpointToggle, checkpointPanelOpen }: Contro
                 ? 'bg-green-500 animate-pulse'
                 : isPaused
                 ? 'bg-yellow-500'
+                : isStepping
+                ? 'bg-blue-500 animate-pulse'
                 : isCompleted
                 ? 'bg-green-500'
                 : isFailed

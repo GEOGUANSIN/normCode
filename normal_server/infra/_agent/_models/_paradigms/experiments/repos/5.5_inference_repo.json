@@ -1,0 +1,19 @@
+[
+    {
+        "flow_info": {
+            "flow_index": "1"
+        },
+        "inference_sequence": "imperative_in_composition",
+        "concept_to_infer": "{user_confirmation}",
+        "function_concept": "::{%(composition)}(Ask user for confirmation)",
+        "value_concepts": [
+            "{prompt}<:{prompt}>"
+        ],
+        "working_interpretation": {
+            "paradigm": "h_UserPrompt-c_AskForConfirmation-o_Boolean",
+            "value_order": {
+                "{prompt}<:{prompt}>": 0
+            }
+        }
+    }
+]

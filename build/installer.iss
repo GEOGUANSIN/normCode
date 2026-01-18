@@ -11,7 +11,7 @@
 ;   build/output/NormCodeCanvasSetup.exe
 
 #define MyAppName "NormCode Canvas"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1-alpha"
 #define MyAppPublisher "NormCode"
 #define MyAppURL "https://github.com/normcode"
 #define MyAppExeName "NormCodeCanvas.exe"

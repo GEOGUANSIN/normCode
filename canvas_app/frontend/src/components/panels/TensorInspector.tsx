@@ -387,7 +387,7 @@ function ItemModal({ index, axisName, item, onClose }: ItemModalProps) {
   }
   
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50" onClick={onClose}>
       <div 
         className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col m-4"
         onClick={(e) => e.stopPropagation()}
@@ -477,6 +477,17 @@ function OneDView({ data, axisName }: { data: unknown[]; axisName: string }) {
   const handleExpand = (index: number, item: unknown) => {
     setModalItem({ index, item });
   };
+  
+  // Guard against non-array data
+  if (!Array.isArray(data)) {
+    return (
+      <div className="text-sm text-slate-600 p-3 bg-slate-50 rounded border border-slate-200">
+        <pre className="font-mono text-xs whitespace-pre-wrap break-words">
+          {typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data)}
+        </pre>
+      </div>
+    );
+  }
   
   // Handle empty collection
   if (data.length === 0) {

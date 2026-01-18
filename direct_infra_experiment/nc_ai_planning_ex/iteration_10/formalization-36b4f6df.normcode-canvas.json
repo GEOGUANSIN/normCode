@@ -3,7 +3,7 @@
   "name": "Formalization",
   "description": null,
   "created_at": "2026-01-12T22:56:44.762878",
-  "updated_at": "2026-01-13T16:31:12.243505",
+  "updated_at": "2026-01-15T15:39:11.209012",
   "repositories": {
     "concepts": "repos\\concept_repo.json",
     "inferences": "repos\\inference_repo.json",
@@ -11,7 +11,7 @@
   },
   "execution": {
     "llm_model": "qwen-plus",
-    "max_cycles": 50,
+    "max_cycles": 500,
     "db_path": "orchestration.db",
     "base_dir": "C:\\Users\\ProgU\\PycharmProjects\\normCode\\direct_infra_experiment\\nc_ai_planning_ex\\iteration_10\\repos",
     "paradigm_dir": "provisions\\paradigms",

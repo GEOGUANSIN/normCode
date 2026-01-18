@@ -1,0 +1,7 @@
+Your task is to write a Python script that multiplies two numbers.
+
+The script will have two numbers injected into its global scope as variables named `input_1` and `input_2`. IMPORTANT: These variables will be strings, so you must convert them to numbers (e.g., integers or floats) before performing any calculations.
+
+Your script must assign the final product of these two numbers to a variable named `result`.
+
+Do not include any example usage or print statements. Only provide the raw code for the multiplication.

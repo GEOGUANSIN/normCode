@@ -19,12 +19,17 @@ from schemas.project_schemas import (
     UpdateRepositoriesRequest,
     DiscoverPathsRequest,
     DiscoveredPathsResponse,
+    RepositoryPaths,
     # Multi-project (tabs) support
     OpenProjectInstance,
     OpenProjectsResponse,
     SwitchProjectRequest,
     CloseProjectRequest,
     OpenProjectInTabRequest,
+    # Remote project support
+    OpenRemoteProjectRequest,
+    RemoteProjectInstance,
+    UpdateRemoteProjectSettingsRequest,
 )
 from services.project_service import project_service
 from services.execution_service import execution_controller, execution_controller_registry, get_execution_controller
@@ -565,3 +570,157 @@ async def get_active_project_tab():
     Returns None if no project is currently active.
     """
     return project_service.get_active_project()
+
+
+# =============================================================================
+# Remote Project Support
+# =============================================================================
+
+@router.post("/open-remote", response_model=OpenProjectInstance)
+async def open_remote_project(request: OpenRemoteProjectRequest):
+    """
+    Open a remote project from a deployment server as a regular project tab.
+    
+    This fetches the plan's manifest from the remote server and creates
+    a virtual project that is added to the normal tab system alongside local projects.
+    
+    Flow:
+    1. Fetch plan details from remote server
+    2. Create virtual ProjectConfig from remote plan info
+    3. Add as a tab using the standard tabs service
+    4. Return OpenProjectInstance (same as local projects)
+    
+    The frontend should then:
+    1. Start a run on the remote server
+    2. Connect a remote proxy worker for execution
+    """
+    from services.deployment_service import deployment_service
+    from datetime import datetime
+    
+    try:
+        # Get the deployment server
+        servers = deployment_service.get_servers()
+        server = next((s for s in servers if s.id == request.server_id), None)
+        
+        if not server:
+            raise HTTPException(status_code=404, detail=f"Server not found: {request.server_id}")
+        
+        # Generate unique tab ID for this remote project
+        tab_id = f"remote:{request.server_id}:{request.plan_id}"
+        
+        # Check if already open - if so, just switch to it
+        existing = project_service._tabs_service.get_project(tab_id)
+        if existing:
+            if request.make_active:
+                project_service._tabs_service.switch_to_project(tab_id)
+            logger.info(f"Remote project already open, switching to tab: {tab_id}")
+            return project_service._tabs_service.get_project(tab_id)
+        
+        # Fetch plan details from the remote server
+        import requests as req
+        response = req.get(f"{server.url}/api/plans/{request.plan_id}", timeout=10)
+        
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Plan not found: {request.plan_id}")
+        elif response.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Failed to fetch plan: {response.text}")
+        
+        plan_data = response.json()
+        
+        # Determine LLM model to use (request override > plan default)
+        llm_model = request.llm_model or plan_data.get("llm_model", "demo")
+        
+        # Create virtual project config from remote plan info
+        virtual_config = ProjectConfig(
+            id=tab_id,
+            name=plan_data.get("name", request.plan_id),
+            description=plan_data.get("description"),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            repositories=RepositoryPaths(
+                concepts=plan_data.get("concept_repo", "concepts.json"),
+                inferences=plan_data.get("inference_repo", "inferences.json"),
+            ),
+            execution=ExecutionSettings(
+                llm_model=llm_model,
+                max_cycles=plan_data.get("max_cycles", 50),
+                db_path="remote-orchestration.db",
+            ),
+        )
+        
+        # Create OpenProjectInstance with remote fields populated
+        instance = OpenProjectInstance(
+            id=tab_id,
+            name=plan_data.get("name", request.plan_id),
+            directory=f"remote://{server.url}",  # Virtual directory
+            config_file="remote",  # Indicator that this is remote
+            config=virtual_config,
+            is_loaded=False,
+            repositories_exist=True,  # Remote repos exist on the server
+            is_active=request.make_active,
+            is_read_only=True,  # Remote projects are read-only (can execute but not modify)
+            is_remote=True,
+            server_id=request.server_id,
+            server_name=server.name,
+            server_url=server.url,
+            plan_id=request.plan_id,
+            remote_llm_model=llm_model,  # Store the LLM model for remote execution
+        )
+        
+        # Add to the tabs service (same system as local projects)
+        project_service._tabs_service._open_projects[tab_id] = instance
+        
+        if request.make_active:
+            project_service._tabs_service._set_active(tab_id)
+            # Also update the "current" project references so that APIs work correctly
+            # For remote projects, we use the virtual config but can't use a real path
+            project_service.current_config = virtual_config
+            project_service.current_config_file = "remote"
+            # Use None for path since remote projects don't have a local path
+            # This will make is_project_open return False, but that's okay for remote
+            # projects since they can't use local file operations anyway
+            project_service.current_project_path = None
+        
+        logger.info(f"Opened remote project as tab: {instance.name} from {server.name}")
+        
+        return instance
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to open remote project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update-remote-settings", response_model=OpenProjectInstance)
+async def update_remote_project_settings(request: UpdateRemoteProjectSettingsRequest):
+    """
+    Update settings for a remote project (e.g., LLM model).
+    
+    This allows changing the LLM model to use when starting a run on the remote server.
+    """
+    try:
+        # Get the project tab
+        project = project_service._tabs_service.get_project(request.project_id)
+        
+        if not project:
+            raise HTTPException(status_code=404, detail=f"Project not found: {request.project_id}")
+        
+        if not project.is_remote:
+            raise HTTPException(status_code=400, detail="This endpoint is only for remote projects")
+        
+        # Update the LLM model if provided
+        if request.llm_model is not None:
+            project.remote_llm_model = request.llm_model
+            # Also update the execution settings in the virtual config
+            if project.config and project.config.execution:
+                project.config.execution.llm_model = request.llm_model
+            logger.info(f"Updated remote project {request.project_id} LLM model to: {request.llm_model}")
+        
+        return project
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Failed to update remote project settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

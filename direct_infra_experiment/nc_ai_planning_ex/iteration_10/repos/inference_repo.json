@@ -90,11 +90,12 @@
       "flow_info": {
         "flow_index": "1.7"
       },
-      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_Literal",
+      "paradigm": "v_ScriptLocation-h_Literal-c_Execute-o_ListLiteral",
       "body_faculty": "python_interpreter",
       "value_order": {
         "[parsed lines]": 1
-      }
+      },
+      "output_axis_name": "concept line"
     }
   },
   {
@@ -119,7 +120,7 @@
         "marker": "every",
         "loop_index": 1,
         "LoopBaseConcept": "[concept lines]",
-        "CurrentLoopBaseConcept": "{concept line}*1",
+        "CurrentLoopBaseConcept": "{concept line}",
         "group_base": "concept line",
         "ConceptToInfer": [
           "{.ncd file written}"
@@ -149,9 +150,6 @@
       "syntax": {
         "marker": ".",
         "assign_source": [
-          "{current .ncd content}",
-          "{formalized line}",
-          "{updated .ncd content}",
           "{.ncd file written}"
         ]
       }
@@ -217,7 +215,6 @@
       "syntax": {
         "marker": ".",
         "assign_source": [
-          "{concept type}",
           "{object formalized}",
           "{relation formalized}",
           "{proposition formalized}",
@@ -260,7 +257,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is object type>",
-    "function_concept": "::(check if concept type equals object)<{ALL True}>",
+    "function_concept": "::(check if concept type equals object)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"object\"}"
@@ -276,6 +273,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"object\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -285,7 +288,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is relation type>",
-    "function_concept": "::(check if concept type equals relation)<{ALL True}>",
+    "function_concept": "::(check if concept type equals relation)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"relation\"}"
@@ -301,6 +304,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"relation\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -310,7 +319,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is proposition type>",
-    "function_concept": "::(check if concept type equals proposition)<{ALL True}>",
+    "function_concept": "::(check if concept type equals proposition)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"proposition\"}"
@@ -326,6 +335,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"proposition\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -335,7 +350,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is imperative type>",
-    "function_concept": "::(check if concept type equals imperative)<{ALL True}>",
+    "function_concept": "::(check if concept type equals imperative)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"imperative\"}"
@@ -351,6 +366,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"imperative\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -360,7 +381,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is judgement type>",
-    "function_concept": "::(check if concept type equals judgement)<{ALL True}>",
+    "function_concept": "::(check if concept type equals judgement)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"judgement\"}"
@@ -376,6 +397,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"judgement\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -385,7 +412,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is assigning type>",
-    "function_concept": "::(check if concept type equals assigning)<{ALL True}>",
+    "function_concept": "::(check if concept type equals assigning)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"assigning\"}"
@@ -401,6 +428,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"assigning\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -410,7 +443,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is grouping type>",
-    "function_concept": "::(check if concept type equals grouping)<{ALL True}>",
+    "function_concept": "::(check if concept type equals grouping)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"grouping\"}"
@@ -426,6 +459,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"grouping\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -435,7 +474,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is timing type>",
-    "function_concept": "::(check if concept type equals timing)<{ALL True}>",
+    "function_concept": "::(check if concept type equals timing)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"timing\"}"
@@ -451,6 +490,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"timing\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -460,7 +505,7 @@
     },
     "inference_sequence": "judgement_in_composition",
     "concept_to_infer": "<is looping type>",
-    "function_concept": "::(check if concept type equals looping)<{ALL True}>",
+    "function_concept": "::(check if concept type equals looping)<ALL True>",
     "value_concepts": [
       "{concept type}",
       "{expected_type: \"looping\"}"
@@ -476,6 +521,12 @@
       "value_order": {
         "{concept type}": 1,
         "{expected_type: \"looping\"}": 2
+      },
+      "assertion_condition": {
+        "quantifiers": {
+          "axis": "all"
+        },
+        "condition": true
       }
     }
   },
@@ -675,7 +726,7 @@
     "flow_info": {
       "flow_index": "1.8.1.3.16"
     },
-    "inference_sequence": "judgement_in_composition",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{judgement formalized}",
     "function_concept": "::(formalize according to ::<> judgement syntax)",
     "value_concepts": [
@@ -723,7 +774,7 @@
     "flow_info": {
       "flow_index": "1.8.1.3.17"
     },
-    "inference_sequence": "assigning",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{assigning formalized}",
     "function_concept": "::(formalize according to $ assigning syntax)",
     "value_concepts": [
@@ -735,9 +786,10 @@
       "flow_info": {
         "flow_index": "1.8.1.3.17"
       },
-      "syntax": {
-        "marker": "",
-        "assign_source": null
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{concept line}": 1
       }
     }
   },
@@ -770,7 +822,7 @@
     "flow_info": {
       "flow_index": "1.8.1.3.18"
     },
-    "inference_sequence": "grouping",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{grouping formalized}",
     "function_concept": "::(formalize according to & grouping syntax)",
     "value_concepts": [
@@ -782,10 +834,10 @@
       "flow_info": {
         "flow_index": "1.8.1.3.18"
       },
-      "syntax": {
-        "marker": "in",
-        "sources": [],
-        "create_axis": null
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{concept line}": 1
       }
     }
   },
@@ -818,7 +870,7 @@
     "flow_info": {
       "flow_index": "1.8.1.3.19"
     },
-    "inference_sequence": "timing",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{timing formalized}",
     "function_concept": "::(formalize according to @ timing syntax)",
     "value_concepts": [
@@ -830,11 +882,11 @@
       "flow_info": {
         "flow_index": "1.8.1.3.19"
       },
-      "syntax": {
-        "marker": "if",
-        "condition": null
-      },
-      "blackboard": null
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{concept line}": 1
+      }
     }
   },
   {
@@ -866,7 +918,7 @@
     "flow_info": {
       "flow_index": "1.8.1.3.20"
     },
-    "inference_sequence": "looping",
+    "inference_sequence": "imperative_in_composition",
     "concept_to_infer": "{looping formalized}",
     "function_concept": "::(formalize according to * looping syntax)",
     "value_concepts": [
@@ -878,13 +930,10 @@
       "flow_info": {
         "flow_index": "1.8.1.3.20"
       },
-      "syntax": {
-        "marker": "every",
-        "loop_index": 1,
-        "LoopBaseConcept": null,
-        "CurrentLoopBaseConcept": null,
-        "group_base": null,
-        "ConceptToInfer": []
+      "paradigm": "v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Literal",
+      "body_faculty": "llm",
+      "value_order": {
+        "{concept line}": 1
       }
     }
   },

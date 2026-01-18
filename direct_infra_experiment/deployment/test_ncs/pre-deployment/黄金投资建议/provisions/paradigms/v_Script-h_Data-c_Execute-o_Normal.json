@@ -1,0 +1,186 @@
+{
+  "metadata": {
+    "description": "Reads a Python script (vertical input), executes its main() function with horizontal data as parameters, and returns the result wrapped in Normal format.",
+    "inputs": {
+      "vertical": "Path to the Python script file (passed directly as string from MFP, may be perception-wrapped).",
+      "horizontal": {
+        "input_1": "Primary data to pass to the script's main() function.",
+        "input_n": "Additional inputs are collected and passed as function parameters."
+      }
+    },
+    "outputs": {
+      "type": "Normal",
+      "description": "The return value of the script's main() function."
+    }
+  },
+  "env_spec": {
+    "tools": [
+      {
+        "tool_name": "composition_tool",
+        "affordances": [
+          {
+            "affordance_name": "compose",
+            "call_code": "result = tool.compose(plan=params['plan'], return_key=params.get('return_key'))"
+          }
+        ]
+      },
+      {
+        "tool_name": "formatter_tool",
+        "affordances": [
+          {
+            "affordance_name": "get",
+            "call_code": "result = tool.get"
+          },
+          {
+            "affordance_name": "get_value",
+            "call_code": "result = params['dictionary'].get(params['key'])",
+            "static_params": {}
+          },
+          {
+            "affordance_name": "wrap",
+            "call_code": "result = tool.wrap"
+          },
+          {
+            "affordance_name": "collect_script_inputs",
+            "call_code": "result = tool.collect_script_inputs"
+          }
+        ]
+      },
+      {
+        "tool_name": "file_system",
+        "affordances": [
+          {
+            "affordance_name": "read",
+            "call_code": "result = tool.read(location=params['filepath'])"
+          }
+        ]
+      },
+      {
+        "tool_name": "python_interpreter",
+        "affordances": [
+          {
+            "affordance_name": "create_function_executor",
+            "call_code": "result = tool.create_function_executor(script_code=params['script_code'], function_name=params['function_name'])"
+          }
+        ]
+      },
+      {
+        "tool_name": "perception_router",
+        "affordances": [
+          {
+            "affordance_name": "strip_sign",
+            "call_code": "result = tool.strip_sign(params['token'])"
+          }
+        ]
+      }
+    ]
+  },
+  "sequence_spec": {
+    "steps": [
+      {
+        "step_index": 1,
+        "affordance": "formatter_tool.get",
+        "params": {},
+        "result_key": "dict_get_fn"
+      },
+      {
+        "step_index": 2,
+        "affordance": "perception_router.strip_sign",
+        "params": {
+          "token": {
+            "__type__": "MetaValue",
+            "key": "states.vertical"
+          }
+        },
+        "result_key": "raw_script_path"
+      },
+      {
+        "step_index": 3,
+        "affordance": "file_system.read",
+        "params": {
+          "filepath": {
+            "__type__": "MetaValue",
+            "key": "raw_script_path"
+          }
+        },
+        "result_key": "read_result"
+      },
+      {
+        "step_index": 4,
+        "affordance": "formatter_tool.get_value",
+        "params": {
+          "dictionary": {
+            "__type__": "MetaValue",
+            "key": "read_result"
+          },
+          "key": "content"
+        },
+        "result_key": "script_code"
+      },
+      {
+        "step_index": 5,
+        "affordance": "python_interpreter.create_function_executor",
+        "params": {
+          "script_code": {
+            "__type__": "MetaValue",
+            "key": "script_code"
+          },
+          "function_name": "main"
+        },
+        "result_key": "executor_fn"
+      },
+      {
+        "step_index": 6,
+        "affordance": "formatter_tool.collect_script_inputs",
+        "params": {},
+        "result_key": "collect_inputs_fn"
+      },
+      {
+        "step_index": 7,
+        "affordance": "formatter_tool.wrap",
+        "params": {},
+        "result_key": "wrap_fn"
+      },
+      {
+        "step_index": 8,
+        "affordance": "composition_tool.compose",
+        "params": {
+          "plan": [
+            {
+              "output_key": "script_inputs",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "collect_inputs_fn"
+              },
+              "params": {
+                "all_inputs": "__initial_input__"
+              }
+            },
+            {
+              "output_key": "execution_result",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "executor_fn"
+              },
+              "params": {
+                "__positional__": "script_inputs"
+              }
+            },
+            {
+              "output_key": "wrapped_result",
+              "function": {
+                "__type__": "MetaValue",
+                "key": "wrap_fn"
+              },
+              "params": {
+                "__positional__": "execution_result"
+              }
+            }
+          ],
+          "return_key": "wrapped_result"
+        },
+        "result_key": "instruction_fn"
+      }
+    ]
+  }
+}

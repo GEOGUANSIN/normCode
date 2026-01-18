@@ -1,65 +1,143 @@
 # Formalize Judgement Concept
 
-Apply judgement `::<{}>` formalization syntax to this function concept.
+Transform a natural language evaluation into formal judgement syntax with truth assertion.
 
 ## Input
 
-The concept line to formalize:
+You are given a parsed concept line from an `.ncds` file that has been judged as **judgement** type:
+
 ```json
 $input_1
 ```
 
-## Judgement Syntax Rules
+The input includes:
+- `flow_index`: The hierarchical address for this step (e.g., "1.2.1")
+- `content`: The full line including marker (e.g., `"<= check if concept type equals object"`)
+- `depth`: Indentation level (0 = root, 1 = first child, etc.)
+- `type`: Line type (usually "main" for concepts)
+- `inference_marker`: The marker found (`<=` for functional concepts)
 
-Judgements represent evaluations that return boolean using `::<{}>` syntax.
+## What Formalization Does
+
+**Formalization (Phase 2)** adds structural annotations to natural language. For judgements:
+
+1. **Extract the evaluation** - Strip the `<=` marker from content
+2. **Wrap in `::()` syntax** - Same wrapper as imperative
+3. **Add truth assertion** - Append `<{quantifier}>` to specify how to collapse results
+4. **Add flow index annotation** - Use the `flow_index` from input
+5. **Add sequence type annotation** - `?{sequence}: judgement`
+6. **Calculate indentation** - Use `depth × 4 spaces`
+
+**Note**: Paradigms, provisions, and resource paths are added later in Post-Formalization (Phase 3). Do NOT add those here.
+
+## Indentation Rule
+
+The formalized line MUST include proper indentation based on the `depth` field:
+
+- **Indentation = depth × 4 spaces**
+- `depth: 0` → No indentation (root level)
+- `depth: 1` → 4 spaces
+- `depth: 2` → 8 spaces
+- `depth: 3` → 12 spaces
+
+## Judgement Syntax
 
 ### Format
 ```
-<= ::(description)<{quantifier condition}>
-    | %{norm_input}: paradigm-name
-    | %{v_input_norm}: prompt_location|script_location
-    | %{v_input_provision}: provisions/path/to/resource
-    | %{h_input_norm}: Literal
-    | %{body_faculty}: llm|python_interpreter
+[INDENTATION]<= ::(evaluation description)<{truth assertion}> | ?{flow_index}: X.X.X | ?{sequence}: judgement
 ```
 
-### Quantifier Conditions
+### Truth Assertions
 
-Add after the description in `<{}>`:
-- `<{ALL True}>` - All elements must be true
-- `<{ANY True}>` - At least one element true
-- `<{ALL False}>` - All elements must be false
+| Assertion | Meaning | When to Use |
+|-----------|---------|-------------|
+| `<{ALL True}>` | All elements must be true | Single check, must fully pass |
+| `<{ANY True}>` | At least one element true | Any match is enough |
+| `<{ALL False}>` | All elements must be false | Negative check |
 
-### Required Annotations
+**Default**: Use `<{ALL True}>` for most single-element checks.
 
-Same as imperative, but paradigm should output boolean:
-- `v_PromptLocation-h_Literal-c_GenerateThinkJson-o_Boolean` for LLM
-- `v_ScriptLocation-h_Literal-c_Execute-o_Boolean` for Python
+### Components
 
-### Example
-```
-<= ::(check if concept type equals object)<{ALL True}>
-    | %{norm_input}: v_ScriptLocation-h_Literal-c_Execute-o_Boolean
-    | %{v_input_norm}: script_location
-    | %{v_input_provision}: provisions/scripts/check_type.py
-    | %{v_function_name}: check_type
-    | %{h_input_norm}: Literal
-    | %{body_faculty}: python_interpreter
-```
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| Indentation | Hierarchy level | 4 spaces per depth |
+| `<=` | Functional concept marker | Already in input |
+| `::(...)` | Evaluation wrapper | `::(check if valid)` |
+| `<{...}>` | Truth assertion | `<{ALL True}>` |
+| `?{flow_index}:` | Step address | `?{flow_index}: 1.2.1` |
+| `?{sequence}:` | Sequence type | `?{sequence}: judgement` |
 
-### Key Difference from Imperative
-- Uses `o_Boolean` paradigms (not `o_Literal`)
-- Often includes quantifier condition `<{ALL True}>`
-- Output is always a proposition (truth value)
+## Examples
 
-## Output
-
-Return the formalized line(s) as a JSON object:
-
+**Input (depth 2):**
 ```json
 {
-  "formalized_line": "The complete formalized line with all paradigm annotations",
-  "annotations_added": ["list of annotation keys added"]
+  "flow_index": "1.2.1",
+  "content": "<= check if concept type equals object",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<="
 }
 ```
 
+**Output:**
+```
+        <= ::(check if concept type equals object)<{ALL True}> | ?{flow_index}: 1.2.1 | ?{sequence}: judgement
+```
+(8 spaces indentation for depth 2)
+
+---
+
+**Input (depth 3):**
+```json
+{
+  "flow_index": "2.3.1",
+  "content": "<= judge what type of concept this line is",
+  "depth": 3,
+  "type": "main",
+  "inference_marker": "<="
+}
+```
+
+**Output:**
+```
+            <= ::(judge what type of concept this line is)<{ALL True}> | ?{flow_index}: 2.3.1 | ?{sequence}: judgement
+```
+(12 spaces indentation for depth 3)
+
+---
+
+**Input (depth 2):**
+```json
+{
+  "flow_index": "1.1.2",
+  "content": "<= validate input format",
+  "depth": 2,
+  "type": "main",
+  "inference_marker": "<="
+}
+```
+
+**Output:**
+```
+        <= ::(validate input format)<{ALL True}> | ?{flow_index}: 1.1.2 | ?{sequence}: judgement
+```
+(8 spaces indentation for depth 2)
+
+## Output
+
+Return JSON with your reasoning and the formalized line:
+
+```json
+{
+  "thinking": "Explain: 1) what evaluation was extracted, 2) what truth assertion was chosen and why, 3) the indentation calculated",
+  "result": "[INDENTATION]<= ::(evaluation description)<{truth assertion}> | ?{flow_index}: X.X.X | ?{sequence}: judgement"
+}
+```
+
+**Important**: 
+- The `result` must be the complete formalized line as a single string
+- Include the correct indentation (depth × 4 spaces) at the START of the line
+- The truth assertion `<{...}>` comes IMMEDIATELY after the closing `)` with NO space
+- Include BOTH `?{flow_index}:` AND `?{sequence}: judgement` annotations

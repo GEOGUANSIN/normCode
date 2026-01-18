@@ -5,6 +5,16 @@ from .execution_schemas import (
     NodeStatus,
     ExecutionState,
 )
+from .portable_schemas import (
+    ExportScope,
+    PortableManifest,
+    ExportOptions,
+    ImportOptions,
+    ExportResult,
+    ImportResult,
+    PortableProjectInfo,
+    RunInfo,
+)
 
 __all__ = [
     "GraphNode",
@@ -14,4 +24,13 @@ __all__ = [
     "ExecutionStatus",
     "NodeStatus",
     "ExecutionState",
+    # Portable schemas
+    "ExportScope",
+    "PortableManifest",
+    "ExportOptions",
+    "ImportOptions",
+    "ExportResult",
+    "ImportResult",
+    "PortableProjectInfo",
+    "RunInfo",
 ]
