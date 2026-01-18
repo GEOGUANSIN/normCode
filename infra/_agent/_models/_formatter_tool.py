@@ -8,6 +8,9 @@ from string import Template
 import json
 import uuid
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 class FormatterTool:
     """A tool with methods for various data formatting and extraction tasks."""
@@ -158,7 +161,7 @@ class FormatterTool:
         
         if hasattr(self, 'perception_router'):
             wrapped_data = self.perception_router.encode_sign(data, effective_type)
-            print(f">>> MIA step: Encoded sign -> {wrapped_data}")
+            logger.debug("MIA step: Encoded sign -> %s", wrapped_data)
             return wrapped_data
 
         # Fallback
@@ -167,7 +170,7 @@ class FormatterTool:
             wrapped_data = f"%{{{effective_type}}}{unique_code}({data})"
         else:
             wrapped_data = f"%{unique_code}({data})"
-        print(f">>> MIA step: Wrapped data -> {wrapped_data}")
+        logger.debug("MIA step: Wrapped data -> %s", wrapped_data)
         return wrapped_data
 
     def wrap_list(self, data_list: list | tuple, type: str | None = None) -> list[str]:

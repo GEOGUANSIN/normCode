@@ -19,6 +19,9 @@ from typing import Optional, Tuple
 from .config import (
     ProjectAgentConfig,
     AgentConfig,
+    AgentToolsConfig,
+    LLMToolConfig,
+    ParadigmToolConfig,
     MappingRule,
     LLMProviderRef,
     AGENT_CONFIG_SUFFIX,
@@ -172,6 +175,7 @@ class ProjectAgentConfigService:
         project_dir: Path,
         project_name: str,
         default_llm_model: str = "demo",
+        paradigm_dir: Optional[str] = None,
     ) -> Tuple[ProjectAgentConfig, Path]:
         """
         Create a default agent config for a project.
@@ -180,16 +184,22 @@ class ProjectAgentConfigService:
             project_dir: The project directory
             project_name: Project name
             default_llm_model: Default LLM model to use
+            paradigm_dir: Optional paradigm directory
             
         Returns:
             Tuple of (config, config_path)
         """
-        # Create default agent
+        # Create default agent with tool-centric structure
+        tools = AgentToolsConfig(
+            llm=LLMToolConfig(model=default_llm_model),
+            paradigm=ParadigmToolConfig(dir=paradigm_dir),
+        )
+        
         default_agent = AgentConfig(
             id="default",
             name=f"{project_name} Agent",
             description=f"Default agent for {project_name}",
-            llm_model=default_llm_model,
+            tools=tools,
         )
         
         config = ProjectAgentConfig(

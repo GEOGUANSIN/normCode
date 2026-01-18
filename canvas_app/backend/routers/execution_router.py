@@ -128,8 +128,8 @@ async def start_execution():
                 )
             
             # Get LLM model from the remote project (if configured)
-            llm_model = getattr(active_project, 'remote_llm_model', None) or \
-                        active_project.config.execution.llm_model if active_project.config else None
+            # Note: llm_model is now agent-centric, so we only use remote_llm_model here
+            llm_model = getattr(active_project, 'remote_llm_model', None)
             
             # Start a run on the remote server
             # NOTE: normal_server's POST /api/runs automatically starts execution

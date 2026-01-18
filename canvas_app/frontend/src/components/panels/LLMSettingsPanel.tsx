@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Bot,
   Plus,
@@ -69,9 +70,10 @@ export function LLMSettingsPanel({ isOpen, onClose }: LLMSettingsPanelProps) {
 
   if (!isOpen) return null;
 
-  return (
+  // Use portal to render at document.body level to avoid z-index stacking context issues
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -208,7 +210,8 @@ export function LLMSettingsPanel({ isOpen, onClose }: LLMSettingsPanelProps) {
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

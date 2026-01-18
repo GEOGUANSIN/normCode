@@ -1,37 +1,250 @@
 /**
- * Settings Panel for execution configuration
+ * Settings Panel for project execution configuration
+ * 
+ * Includes:
+ * - Agent Summary (selected agent info)
+ * - Runtime Capabilities (read-only introspection)
+ * - Execution Settings (max cycles, db path)
  */
 
-import { useEffect, useState } from 'react';
-import { Settings, RefreshCw, Save, X, Bot, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { 
+  Settings, RefreshCw, Save, X, Bot, ChevronRight, ChevronDown,
+  Cpu, Wrench, FileCode, Workflow, Layers, Loader2
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { executionApi, projectApi } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
 import { useProjectStore } from '../../stores/projectStore';
-import { useLLMStore } from '../../stores/llmStore';
-import { LLMSettingsPanel } from './LLMSettingsPanel';
+import { useAgentStore } from '../../stores/agentStore';
+
+// ============================================================================
+// Agent Summary Card
+// ============================================================================
+
+interface AgentSummaryCardProps {
+  onOpenAgentPanel?: () => void;
+}
+
+function AgentSummaryCard({ onOpenAgentPanel }: AgentSummaryCardProps) {
+  const agents = useAgentStore(s => s.agents);
+  const selectedAgentId = useAgentStore(s => s.selectedAgentId);
+  const defaultAgentId = useAgentStore(s => s.defaultAgent);
+  
+  const agentId = selectedAgentId || defaultAgentId;
+  const agent = agentId ? agents[agentId] : null;
+  
+  if (!agent) {
+    return (
+      <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+        No agent selected
+      </div>
+    );
+  }
+  
+  return (
+    <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Bot size={16} className="text-purple-600" />
+          <span className="font-semibold text-sm text-purple-800">{agent.name}</span>
+        </div>
+        <button
+          onClick={onOpenAgentPanel}
+          className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
+        >
+          Edit
+          <ChevronRight size={12} />
+        </button>
+      </div>
+      
+      {/* Tool Summary */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Cpu size={12} className="text-blue-500" />
+          <span className="font-mono">{agent.tools.llm.model}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <FileCode size={12} className={agent.tools.file_system.enabled ? 'text-green-500' : 'text-slate-300'} />
+          <span>File System {agent.tools.file_system.enabled ? '✓' : '✗'}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Wrench size={12} className={agent.tools.python_interpreter.enabled ? 'text-yellow-500' : 'text-slate-300'} />
+          <span>Python {agent.tools.python_interpreter.enabled ? '✓' : '✗'}</span>
+        </div>
+        {agent.tools.paradigm.dir && (
+          <div className="flex items-center gap-1.5 text-slate-600 col-span-2">
+            <Workflow size={12} className="text-indigo-500" />
+            <span className="font-mono truncate">{agent.tools.paradigm.dir}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Runtime Capabilities Card
+// ============================================================================
+
+interface AgentCapabilities {
+  agent_id: string;
+  tools: Array<{ name: string; enabled: boolean; methods: string[]; description: string }>;
+  paradigms: Array<{ name: string; is_custom: boolean }>;
+  sequences: Array<{ name: string; category: string }>;
+  paradigm_dir: string | null;
+  agent_frame_model: string;
+}
+
+function RuntimeCapabilitiesCard() {
+  const selectedAgentId = useAgentStore(s => s.selectedAgentId);
+  const defaultAgentId = useAgentStore(s => s.defaultAgent);
+  const agentId = selectedAgentId || defaultAgentId;
+  
+  const [capabilities, setCapabilities] = useState<AgentCapabilities | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  
+  useEffect(() => {
+    if (!agentId) {
+      setCapabilities(null);
+      return;
+    }
+    
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/agents/${agentId}/capabilities`);
+        if (res.ok) {
+          setCapabilities(await res.json());
+        }
+      } catch (e) {
+        console.error('Failed to load capabilities:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [agentId]);
+  
+  if (loading) {
+    return (
+      <div className="p-3 border rounded-lg flex items-center justify-center">
+        <Loader2 size={16} className="animate-spin text-slate-400" />
+      </div>
+    );
+  }
+  
+  if (!capabilities) {
+    return null;
+  }
+  
+  const enabledTools = capabilities.tools.filter(t => t.enabled);
+  const customParadigms = capabilities.paradigms.filter(p => p.is_custom);
+  
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div 
+        className="px-3 py-2 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <Layers size={14} className="text-green-500" />
+          <span>Runtime Capabilities</span>
+          <span className="text-[10px] text-slate-400 font-normal bg-slate-200 px-1 rounded">read-only</span>
+        </div>
+        <div className="text-xs text-slate-500">
+          {enabledTools.length} tools • {capabilities.sequences?.length || 0} sequences
+        </div>
+      </div>
+      
+      {expanded && (
+        <div className="p-3 space-y-3 text-xs">
+          {/* Tools */}
+          <div>
+            <div className="font-semibold text-slate-600 mb-1 flex items-center gap-1">
+              <Wrench size={10} />
+              Tools ({enabledTools.length} enabled)
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {enabledTools.map(tool => (
+                <span 
+                  key={tool.name}
+                  className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-mono"
+                  title={tool.description}
+                >
+                  {tool.name}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          {/* Sequences */}
+          <div>
+            <div className="font-semibold text-slate-600 mb-1 flex items-center gap-1">
+              <Workflow size={10} />
+              Sequences ({capabilities.sequences?.length || 0})
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {capabilities.sequences?.slice(0, 10).map(seq => (
+                <span 
+                  key={seq.name}
+                  className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded font-mono"
+                >
+                  {seq.name}
+                </span>
+              ))}
+              {(capabilities.sequences?.length || 0) > 10 && (
+                <span className="text-slate-400">+{capabilities.sequences.length - 10} more</span>
+              )}
+            </div>
+          </div>
+          
+          {/* Paradigms */}
+          <div>
+            <div className="font-semibold text-slate-600 mb-1 flex items-center gap-1">
+              <FileCode size={10} />
+              Paradigms
+              {customParadigms.length > 0 && (
+                <span className="text-green-600 bg-green-100 px-1 rounded">
+                  {customParadigms.length} custom
+                </span>
+              )}
+            </div>
+            <div className="text-slate-500">
+              {capabilities.paradigms.length} total
+              {capabilities.paradigm_dir && (
+                <span className="ml-2 font-mono text-indigo-600">
+                  ({capabilities.paradigm_dir})
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Settings Panel Props
+// ============================================================================
 
 interface SettingsPanelProps {
   isOpen: boolean;
   onToggle: () => void;
+  onOpenAgentPanel?: () => void;  // Callback to open agent panel
 }
 
-export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
+export function SettingsPanel({ isOpen, onToggle, onOpenAgentPanel }: SettingsPanelProps) {
   const {
-    llmModel,
     maxCycles,
     dbPath,
-    baseDir,
-    paradigmDir,
-    availableModels,
     defaultMaxCycles,
     defaultDbPath,
-    setLlmModel,
     setMaxCycles,
     setDbPath,
-    setBaseDir,
-    setParadigmDir,
-    setAvailableModels,
     setDefaults,
     setLoaded,
   } = useConfigStore();
@@ -40,10 +253,6 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
   
   // Check if current project is read-only (e.g., compiler project)
   const isReadOnly = openTabs.find(t => t.id === activeTabId)?.is_read_only ?? false;
-  
-  // LLM settings state
-  const [showLLMSettings, setShowLLMSettings] = useState(false);
-  const { providers, fetchProviders } = useLLMStore();
 
   // Fetch config options from API
   const { data: configData, isLoading } = useQuery({
@@ -52,22 +261,9 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     staleTime: 60000, // Cache for 1 minute
   });
 
-  // Fetch LLM providers on mount
-  useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
-
   // Update store when config is fetched
   useEffect(() => {
     if (configData) {
-      // Merge available models from API with LLM providers
-      const apiModels = configData.available_models || [];
-      const providerNames = providers
-        .filter(p => p.is_enabled)
-        .map(p => p.name);
-      const allModels = [...new Set(['demo', ...apiModels, ...providerNames])];
-      
-      setAvailableModels(allModels);
       setDefaults({
         defaultMaxCycles: configData.default_max_cycles,
         defaultDbPath: configData.default_db_path,
@@ -81,14 +277,11 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
       }
       setLoaded(true);
     }
-  }, [configData, dbPath, maxCycles, providers, setAvailableModels, setDefaults, setDbPath, setMaxCycles, setLoaded]);
+  }, [configData, dbPath, maxCycles, setDefaults, setDbPath, setMaxCycles, setLoaded]);
 
   const handleReset = () => {
-    setLlmModel('demo');
     setMaxCycles(defaultMaxCycles);
     setDbPath(defaultDbPath);
-    setBaseDir('');
-    setParadigmDir('');
   };
 
   // Save settings to project
@@ -98,11 +291,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
     try {
       const response = await projectApi.save({
         execution: {
-          llm_model: llmModel,
           max_cycles: maxCycles,
           db_path: dbPath,
-          base_dir: baseDir || undefined,
-          paradigm_dir: paradigmDir || undefined,
         },
       });
       // Update project in store
@@ -114,11 +304,8 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
 
   // Check if settings differ from project
   const hasUnsavedChanges = currentProject && (
-    llmModel !== currentProject.execution.llm_model ||
     maxCycles !== currentProject.execution.max_cycles ||
-    dbPath !== currentProject.execution.db_path ||
-    baseDir !== (currentProject.execution.base_dir || '') ||
-    paradigmDir !== (currentProject.execution.paradigm_dir || '')
+    dbPath !== currentProject.execution.db_path
   );
 
   // Don't render anything when closed - header button handles toggle
@@ -169,118 +356,56 @@ export function SettingsPanel({ isOpen, onToggle }: SettingsPanelProps) {
           <div className="text-sm text-slate-500">Loading configuration...</div>
         ) : (
           <>
-            {/* LLM Model */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-slate-700">
-                  LLM Model
-                </label>
-                <button
-                  onClick={() => setShowLLMSettings(true)}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
-                >
-                  <Bot size={12} />
-                  Configure
-                  <ChevronRight size={12} />
-                </button>
+            {/* Agent Summary */}
+            <AgentSummaryCard onOpenAgentPanel={onOpenAgentPanel} />
+
+            {/* Runtime Capabilities */}
+            <RuntimeCapabilitiesCard />
+
+            {/* Execution Settings */}
+            <div className="border-t pt-4">
+              <div className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
+                Execution Settings
               </div>
-              <select
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              >
-                {availableModels.map((model) => (
-                  <option key={model} value={model}>
-                    {model === 'demo' ? 'Demo (No LLM)' : model}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                Select the language model for semantic operations
-              </p>
-            </div>
+              
+              {/* Max Cycles */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Max Cycles
+                </label>
+                <input
+                  type="number"
+                  value={maxCycles}
+                  onChange={(e) => setMaxCycles(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
+                  min={1}
+                  max={1000}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Maximum cycles before stopping (1-1000)
+                </p>
+              </div>
 
-            {/* Max Cycles */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Max Cycles
-              </label>
-              <input
-                type="number"
-                value={maxCycles}
-                onChange={(e) => setMaxCycles(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
-                min={1}
-                max={1000}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Maximum execution cycles before stopping (1-1000)
-              </p>
-            </div>
-
-            {/* Database Path */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Database Path
-              </label>
-              <input
-                type="text"
-                value={dbPath}
-                onChange={(e) => setDbPath(e.target.value)}
-                placeholder="orchestration.db"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                SQLite database for checkpointing (relative to base directory)
-              </p>
-            </div>
-
-            {/* Base Directory Override */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Base Directory (optional)
-              </label>
-              <input
-                type="text"
-                value={baseDir}
-                onChange={(e) => setBaseDir(e.target.value)}
-                placeholder="Auto-detect from repository path"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Override base directory for file operations (leave empty to auto-detect)
-              </p>
-            </div>
-
-            {/* Paradigm Directory */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Paradigm Directory (optional)
-              </label>
-              <input
-                type="text"
-                value={paradigmDir}
-                onChange={(e) => setParadigmDir(e.target.value)}
-                placeholder="e.g., provision/paradigm"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Custom paradigm directory for project-specific paradigms (relative to base directory)
-              </p>
+              {/* Database Path */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Database Path
+                </label>
+                <input
+                  type="text"
+                  value={dbPath}
+                  onChange={(e) => setDbPath(e.target.value)}
+                  placeholder="orchestration.db"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  SQLite database for checkpointing
+                </p>
+              </div>
             </div>
           </>
         )}
       </div>
-
-      {/* LLM Settings Panel Modal */}
-      <LLMSettingsPanel
-        isOpen={showLLMSettings}
-        onClose={() => {
-          setShowLLMSettings(false);
-          // Refresh providers after closing
-          fetchProviders();
-        }}
-      />
     </div>
   );
 }

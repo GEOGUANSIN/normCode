@@ -27,24 +27,118 @@ import {
   Settings,
   Check,
   XCircle,
+  Code,
+  FileText,
 } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
+// Tool configuration types for tool-centric agent design
+interface LLMToolConfigDef {
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+interface ParadigmToolConfigDef {
+  dir?: string;
+}
+
+interface FileSystemToolConfigDef {
+  enabled: boolean;
+  base_dir?: string;
+}
+
+interface PythonInterpreterToolConfigDef {
+  enabled: boolean;
+  timeout: number;
+}
+
+interface UserInputToolConfigDef {
+  enabled: boolean;
+  mode: string;
+}
+
+interface AgentToolsConfigDef {
+  llm: LLMToolConfigDef;
+  paradigm: ParadigmToolConfigDef;
+  file_system: FileSystemToolConfigDef;
+  python_interpreter: PythonInterpreterToolConfigDef;
+  user_input: UserInputToolConfigDef;
+}
+
 interface AgentDefinition {
   id: string;
   name: string;
   description: string | null;
-  llm_model: string | null;
-  file_system_enabled: boolean;
-  file_system_base_dir: string | null;
-  python_interpreter_enabled: boolean;
-  python_interpreter_timeout: number;
-  user_input_enabled: boolean;
-  user_input_mode: string;
-  paradigm_dir: string | null;
+  // New tool-centric format (from API)
+  tools?: AgentToolsConfigDef | null;
+  // Legacy fields for backward compatibility (reading old config files)
+  llm_model?: string | null;
+  file_system_enabled?: boolean;
+  file_system_base_dir?: string | null;
+  python_interpreter_enabled?: boolean;
+  python_interpreter_timeout?: number;
+  user_input_enabled?: boolean;
+  user_input_mode?: string;
+  paradigm_dir?: string | null;
+}
+
+// Normalized agent with guaranteed tools structure
+interface NormalizedAgent {
+  id: string;
+  name: string;
+  description: string | null;
+  tools: AgentToolsConfigDef;
+}
+
+// Helper to normalize agent (support both new and legacy format from API)
+function normalizeAgent(agent: AgentDefinition): NormalizedAgent {
+  if (agent.tools) {
+    // New format from API - ensure all nested objects exist with defaults
+    return {
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      tools: {
+        llm: {
+          model: agent.tools.llm?.model || 'demo',
+          temperature: agent.tools.llm?.temperature,
+          max_tokens: agent.tools.llm?.max_tokens,
+        },
+        paradigm: {
+          dir: agent.tools.paradigm?.dir,
+        },
+        file_system: {
+          enabled: agent.tools.file_system?.enabled ?? true,
+          base_dir: agent.tools.file_system?.base_dir,
+        },
+        python_interpreter: {
+          enabled: agent.tools.python_interpreter?.enabled ?? true,
+          timeout: agent.tools.python_interpreter?.timeout ?? 30,
+        },
+        user_input: {
+          enabled: agent.tools.user_input?.enabled ?? true,
+          mode: agent.tools.user_input?.mode || 'blocking',
+        },
+      },
+    };
+  }
+  // Convert legacy format to tool-centric
+  return {
+    id: agent.id,
+    name: agent.name,
+    description: agent.description,
+    tools: {
+      llm: { model: agent.llm_model || 'demo' },
+      paradigm: { dir: agent.paradigm_dir || undefined },
+      file_system: { enabled: agent.file_system_enabled ?? true, base_dir: agent.file_system_base_dir || undefined },
+      python_interpreter: { enabled: agent.python_interpreter_enabled ?? true, timeout: agent.python_interpreter_timeout ?? 30 },
+      user_input: { enabled: agent.user_input_enabled ?? true, mode: agent.user_input_mode || 'blocking' },
+    },
+  };
 }
 
 interface AgentMapping {
@@ -102,6 +196,18 @@ async function fetchAgentPreview(filePath: string): Promise<AgentPreviewData> {
   return response.json();
 }
 
+async function fetchRawFile(filePath: string): Promise<string> {
+  const response = await fetch(`/api/editor/file?path=${encodeURIComponent(filePath)}`);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Failed to load file' }));
+    throw new Error(error.detail || 'Failed to load file');
+  }
+  
+  const data = await response.json();
+  return data.content || '';
+}
+
 // =============================================================================
 // Section Components
 // =============================================================================
@@ -151,138 +257,198 @@ function Section({ title, icon, badge, children, defaultExpanded = true }: Secti
 // =============================================================================
 
 interface AgentCardProps {
-  agent: AgentDefinition;
+  agent: NormalizedAgent;
   isDefault: boolean;
 }
 
 function AgentCard({ agent, isDefault }: AgentCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Default agent starts expanded
+  const [isExpanded, setIsExpanded] = useState(isDefault);
+  
+  const { tools } = agent;
+  
+  // Count enabled tools
+  const enabledToolsCount = [
+    tools.file_system.enabled,
+    tools.python_interpreter.enabled,
+    tools.user_input.enabled,
+  ].filter(Boolean).length;
   
   return (
     <div className={`border rounded-lg overflow-hidden ${isDefault ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 bg-white'}`}>
+      {/* Header - always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 flex items-start gap-3 text-left hover:bg-slate-50/50 transition-colors"
+        className="w-full p-4 flex items-start gap-3 text-left hover:bg-slate-50/50 transition-colors"
       >
-        <div className="mt-0.5 text-slate-400">
+        <div className="mt-1 text-slate-400">
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </div>
         
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-          isDefault ? 'bg-emerald-500' : 'bg-slate-700'
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
+          isDefault ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-600 to-slate-800'
         }`}>
-          <Bot size={20} className="text-white" />
+          <Bot size={24} className="text-white" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800">{agent.name}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-slate-800 text-lg">{agent.name}</span>
             {isDefault && (
-              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">
-                DEFAULT
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wide">
+                Default
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <code className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{agent.id}</code>
-            {agent.llm_model && (
-              <span className="text-xs text-purple-600 flex items-center gap-1">
-                <Sparkles size={10} />
-                {agent.llm_model}
-              </span>
-            )}
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <code className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono">{agent.id}</code>
+            
+            {/* LLM Model Badge */}
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 rounded-full">
+              <Sparkles size={10} className="text-purple-600" />
+              <span className="text-xs text-purple-700 font-medium">{tools.llm.model || 'demo'}</span>
+            </div>
+            
+            {/* Tools Count */}
+            <span className="text-xs text-slate-400">
+              {enabledToolsCount} tool{enabledToolsCount !== 1 ? 's' : ''} enabled
+            </span>
           </div>
           {agent.description && (
-            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{agent.description}</p>
+            <p className="text-sm text-slate-500 mt-2">{agent.description}</p>
           )}
         </div>
         
-        {/* Capability indicators */}
-        <div className="flex items-center gap-1 shrink-0">
-          {agent.file_system_enabled && (
-            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center" title="File System Access">
-              <FolderOpen size={12} className="text-blue-600" />
-            </div>
-          )}
-          {agent.python_interpreter_enabled && (
-            <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center" title="Python Interpreter">
-              <Terminal size={12} className="text-amber-600" />
-            </div>
-          )}
-          {agent.user_input_enabled && (
-            <div className="w-6 h-6 rounded bg-green-100 flex items-center justify-center" title="User Input">
-              <MessageSquare size={12} className="text-green-600" />
-            </div>
-          )}
+        {/* Quick capability icons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.file_system.enabled ? 'bg-blue-100' : 'bg-slate-100'}`} title="File System">
+            <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-300'} />
+          </div>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.python_interpreter.enabled ? 'bg-amber-100' : 'bg-slate-100'}`} title="Python">
+            <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-300'} />
+          </div>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tools.user_input.enabled ? 'bg-green-100' : 'bg-slate-100'}`} title="User Input">
+            <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-300'} />
+          </div>
         </div>
       </button>
       
+      {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
-          {agent.description && (
-            <p className="text-sm text-slate-600">{agent.description}</p>
-          )}
-          
-          {/* Capabilities Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <FolderOpen size={14} className={agent.file_system_enabled ? 'text-blue-600' : 'text-slate-300'} />
-              <span className="text-slate-600">File System</span>
-              {agent.file_system_enabled ? (
-                <Check size={12} className="text-green-500 ml-auto" />
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
+        <div className="px-4 pb-4 border-t border-slate-100 space-y-4">
+          {/* LLM Configuration Card */}
+          <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} className="text-purple-600" />
+              <span className="text-sm font-semibold text-purple-800">Language Model</span>
             </div>
-            
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <Terminal size={14} className={agent.python_interpreter_enabled ? 'text-amber-600' : 'text-slate-300'} />
-              <span className="text-slate-600">Python</span>
-              {agent.python_interpreter_enabled ? (
-                <Check size={12} className="text-green-500 ml-auto" />
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-              <MessageSquare size={14} className={agent.user_input_enabled ? 'text-green-600' : 'text-slate-300'} />
-              <span className="text-slate-600">User Input</span>
-              {agent.user_input_enabled ? (
-                <span className="text-green-600 ml-auto font-medium">{agent.user_input_mode}</span>
-              ) : (
-                <XCircle size={12} className="text-slate-300 ml-auto" />
-              )}
-            </div>
-            
-            {agent.python_interpreter_enabled && (
-              <div className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-600">Timeout</span>
-                <span className="text-slate-700 ml-auto font-medium">{agent.python_interpreter_timeout}s</span>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-purple-400 block mb-0.5">Model</span>
+                <span className="text-purple-800 font-mono font-medium">{tools.llm.model || 'demo'}</span>
               </div>
-            )}
+              <div>
+                <span className="text-purple-400 block mb-0.5">Temperature</span>
+                <span className="text-purple-800 font-medium">{tools.llm.temperature ?? 'default'}</span>
+              </div>
+              <div>
+                <span className="text-purple-400 block mb-0.5">Max Tokens</span>
+                <span className="text-purple-800 font-medium">{tools.llm.max_tokens ?? 'default'}</span>
+              </div>
+            </div>
           </div>
           
-          {/* Additional paths */}
-          {(agent.file_system_base_dir || agent.paradigm_dir) && (
-            <div className="space-y-1 text-xs">
-              {agent.file_system_base_dir && (
-                <div className="flex items-center gap-2">
-                  <FolderOpen size={12} className="text-slate-400" />
-                  <span className="text-slate-500">Base Dir:</span>
-                  <code className="text-slate-700 truncate">{agent.file_system_base_dir}</code>
-                </div>
-              )}
-              {agent.paradigm_dir && (
-                <div className="flex items-center gap-2">
-                  <Cpu size={12} className="text-slate-400" />
-                  <span className="text-slate-500">Paradigms:</span>
-                  <code className="text-slate-700 truncate">{agent.paradigm_dir}</code>
-                </div>
-              )}
+          {/* Paradigm Configuration */}
+          {tools.paradigm.dir && (
+            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+              <div className="flex items-center gap-2">
+                <Cpu size={14} className="text-indigo-600" />
+                <span className="text-sm font-semibold text-indigo-800">Custom Paradigms</span>
+              </div>
+              <code className="text-xs text-indigo-700 font-mono mt-1 block">{tools.paradigm.dir}</code>
             </div>
           )}
+          
+          {/* Tools Grid */}
+          <div>
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tools & Capabilities</div>
+            <div className="grid grid-cols-3 gap-2">
+              {/* File System */}
+              <div className={`p-3 rounded-lg border ${tools.file_system.enabled ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <FolderOpen size={14} className={tools.file_system.enabled ? 'text-blue-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.file_system.enabled ? 'text-blue-800' : 'text-slate-500'}`}>File System</span>
+                </div>
+                {tools.file_system.enabled ? (
+                  <div className="flex items-center gap-1">
+                    <Check size={10} className="text-green-500" />
+                    <span className="text-[10px] text-green-600">Enabled</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+                {tools.file_system.enabled && tools.file_system.base_dir && (
+                  <div className="mt-1 text-[10px] text-blue-600 font-mono truncate" title={tools.file_system.base_dir}>
+                    {tools.file_system.base_dir}
+                  </div>
+                )}
+              </div>
+              
+              {/* Python Interpreter */}
+              <div className={`p-3 rounded-lg border ${tools.python_interpreter.enabled ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Terminal size={14} className={tools.python_interpreter.enabled ? 'text-amber-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.python_interpreter.enabled ? 'text-amber-800' : 'text-slate-500'}`}>Python</span>
+                </div>
+                {tools.python_interpreter.enabled ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Check size={10} className="text-green-500" />
+                      <span className="text-[10px] text-green-600">Enabled</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      <Clock size={10} className="text-amber-500" />
+                      <span className="text-[10px] text-amber-600">{tools.python_interpreter.timeout}s timeout</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* User Input */}
+              <div className={`p-3 rounded-lg border ${tools.user_input.enabled ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageSquare size={14} className={tools.user_input.enabled ? 'text-green-600' : 'text-slate-400'} />
+                  <span className={`text-sm font-medium ${tools.user_input.enabled ? 'text-green-800' : 'text-slate-500'}`}>User Input</span>
+                </div>
+                {tools.user_input.enabled ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Check size={10} className="text-green-500" />
+                      <span className="text-[10px] text-green-600">Enabled</span>
+                    </div>
+                    <div className="mt-1">
+                      <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-medium">
+                        {tools.user_input.mode}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <XCircle size={10} className="text-slate-400" />
+                    <span className="text-[10px] text-slate-400">Disabled</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -392,10 +558,14 @@ function ProviderCard({ provider }: ProviderCardProps) {
 // Main AgentConfigPreview Component
 // =============================================================================
 
+type ViewMode = 'formatted' | 'raw';
+
 export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProps) {
   const [data, setData] = useState<AgentPreviewData | null>(null);
+  const [rawJson, setRawJson] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('formatted');
 
   // Load data on mount or path change
   useEffect(() => {
@@ -406,8 +576,12 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchAgentPreview(filePath);
+      const [result, rawContent] = await Promise.all([
+        fetchAgentPreview(filePath),
+        fetchRawFile(filePath),
+      ]);
       setData(result);
+      setRawJson(rawContent);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load preview');
     } finally {
@@ -482,6 +656,36 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
           </div>
           
           <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('formatted')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'formatted'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                title="Formatted View"
+              >
+                <FileText size={14} />
+                <span>Formatted</span>
+              </button>
+              <button
+                onClick={() => setViewMode('raw')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  viewMode === 'raw'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                title="Raw JSON View"
+              >
+                <Code size={14} />
+                <span>JSON</span>
+              </button>
+            </div>
+            
+            <div className="w-px h-6 bg-slate-200" />
+            
             <button
               onClick={loadPreview}
               className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -531,77 +735,105 @@ export function AgentConfigPreview({ filePath, onClose }: AgentConfigPreviewProp
       </div>
       
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {/* Agents Section */}
-        <Section 
-          title="Agents" 
-          icon={<Bot size={18} />}
-          badge={config.agents.length}
-        >
-          <div className="pt-3 space-y-3">
-            {config.agents.map((agent) => (
-              <AgentCard 
-                key={agent.id} 
-                agent={agent} 
-                isDefault={agent.id === config.default_agent}
-              />
-            ))}
-          </div>
-        </Section>
-        
-        {/* Mappings Section */}
-        {config.mappings.length > 0 && (
-          <Section 
-            title="Agent Mappings" 
-            icon={<GitBranch size={18} />}
-            badge={config.mappings.length}
-          >
-            <div className="pt-3 space-y-2">
-              {config.mappings.map((mapping, idx) => (
-                <MappingRow key={idx} mapping={mapping} agents={config.agents} />
-              ))}
-            </div>
-          </Section>
-        )}
-        
-        {/* LLM Providers Section */}
-        {config.llm_providers.length > 0 && (
-          <Section 
-            title="LLM Providers" 
-            icon={<Sparkles size={18} />}
-            badge={config.llm_providers.length}
-          >
-            <div className="pt-3 space-y-2">
-              {config.llm_providers.map((provider, idx) => (
-                <ProviderCard key={idx} provider={provider} />
-              ))}
-            </div>
-          </Section>
-        )}
-        
-        {/* Metadata Section */}
-        <Section 
-          title="Metadata" 
-          icon={<Settings size={18} />}
-          defaultExpanded={false}
-        >
-          <div className="pt-3 space-y-2 text-sm">
-            {config.created_at && (
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-500">Created:</span>
-                <span className="text-slate-700">{formatDate(config.created_at)}</span>
+      <div className="flex-1 overflow-y-auto">
+        {viewMode === 'raw' ? (
+          /* Raw JSON View */
+          <div className="h-full p-4">
+            <div className="h-full bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Code size={14} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-300">Raw JSON</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(rawJson);
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded hover:bg-slate-700 transition-colors"
+                >
+                  Copy
+                </button>
               </div>
-            )}
-            {config.updated_at && (
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-slate-500">Updated:</span>
-                <span className="text-slate-700">{formatDate(config.updated_at)}</span>
-              </div>
-            )}
+              <pre className="p-4 text-sm font-mono text-slate-100 overflow-auto h-[calc(100%-40px)] leading-relaxed">
+                <code>{rawJson || 'Loading...'}</code>
+              </pre>
+            </div>
           </div>
-        </Section>
+        ) : (
+          /* Formatted View */
+          <div className="p-6 space-y-4">
+            {/* Agents Section */}
+            <Section 
+              title="Agents" 
+              icon={<Bot size={18} />}
+              badge={config.agents.length}
+            >
+              <div className="pt-3 space-y-3">
+                {config.agents.map((agent) => (
+                  <AgentCard 
+                    key={agent.id} 
+                    agent={normalizeAgent(agent)} 
+                    isDefault={agent.id === config.default_agent}
+                  />
+                ))}
+              </div>
+            </Section>
+            
+            {/* Mappings Section */}
+            {config.mappings.length > 0 && (
+              <Section 
+                title="Agent Mappings" 
+                icon={<GitBranch size={18} />}
+                badge={config.mappings.length}
+              >
+                <div className="pt-3 space-y-2">
+                  {config.mappings.map((mapping, idx) => (
+                    <MappingRow key={idx} mapping={mapping} agents={config.agents} />
+                  ))}
+                </div>
+              </Section>
+            )}
+            
+            {/* LLM Providers Section */}
+            {config.llm_providers.length > 0 && (
+              <Section 
+                title="LLM Providers" 
+                icon={<Sparkles size={18} />}
+                badge={config.llm_providers.length}
+              >
+                <div className="pt-3 space-y-2">
+                  {config.llm_providers.map((provider, idx) => (
+                    <ProviderCard key={idx} provider={provider} />
+                  ))}
+                </div>
+              </Section>
+            )}
+            
+            {/* Metadata Section */}
+            <Section 
+              title="Metadata" 
+              icon={<Settings size={18} />}
+              defaultExpanded={false}
+            >
+              <div className="pt-3 space-y-2 text-sm">
+                {config.created_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-slate-400" />
+                    <span className="text-slate-500">Created:</span>
+                    <span className="text-slate-700">{formatDate(config.created_at)}</span>
+                  </div>
+                )}
+                {config.updated_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-slate-400" />
+                    <span className="text-slate-500">Updated:</span>
+                    <span className="text-slate-700">{formatDate(config.updated_at)}</span>
+                  </div>
+                )}
+              </div>
+            </Section>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -286,6 +286,72 @@ class DeploymentService:
             )
     
     # =========================================================================
+    # Agent Config Helpers (for agent-centric approach)
+    # =========================================================================
+    
+    def _get_agent_config_data(
+        self,
+        project_dir: Path,
+        config,  # ProjectConfig
+    ) -> Dict[str, Any]:
+        """
+        Get data from the project's agent config file.
+        
+        Returns paradigm_dir, llm_model, and default_agent from the agent config.
+        """
+        result = {
+            "paradigm_dir": None,
+            "llm_model": "demo",
+            "default_agent": "default",
+        }
+        
+        try:
+            if config.execution.agent_config:
+                agent_config_path = project_dir / config.execution.agent_config
+                if agent_config_path.exists():
+                    with open(agent_config_path, 'r', encoding='utf-8') as f:
+                        agent_data = json.load(f)
+                    
+                    agents = agent_data.get('agents', [])
+                    default_agent_id = agent_data.get('default_agent', 'default')
+                    result["default_agent"] = default_agent_id
+                    
+                    # Find default agent
+                    for agent in agents:
+                        if agent.get('id') == default_agent_id:
+                            # New tool-centric structure
+                            tools = agent.get('tools', {})
+                            
+                            # Get paradigm dir
+                            paradigm = tools.get('paradigm', {})
+                            if paradigm.get('dir'):
+                                result["paradigm_dir"] = paradigm['dir']
+                            elif agent.get('paradigm_dir'):  # Legacy
+                                result["paradigm_dir"] = agent['paradigm_dir']
+                            
+                            # Get LLM model
+                            llm = tools.get('llm', {})
+                            if llm.get('model'):
+                                result["llm_model"] = llm['model']
+                            elif agent.get('llm_model'):  # Legacy
+                                result["llm_model"] = agent['llm_model']
+                            
+                            break
+                    
+                    # Fallback to first agent if default not found
+                    if not result["paradigm_dir"] and agents:
+                        tools = agents[0].get('tools', {})
+                        paradigm = tools.get('paradigm', {})
+                        if paradigm.get('dir'):
+                            result["paradigm_dir"] = paradigm['dir']
+                        if tools.get('llm', {}).get('model'):
+                            result["llm_model"] = tools['llm']['model']
+        except Exception as e:
+            logger.warning(f"Could not read agent config: {e}")
+        
+        return result
+    
+    # =========================================================================
     # Plan Packaging
     # =========================================================================
     
@@ -359,6 +425,11 @@ class DeploymentService:
         except Exception as e:
             logger.warning(f"Failed to analyze concepts: {e}")
         
+        # Get agent config data (paradigm_dir, llm_model are now agent-centric)
+        agent_data = self._get_agent_config_data(project_dir, config)
+        paradigm_dir = agent_data["paradigm_dir"]
+        llm_model = agent_data["llm_model"]
+        
         # Create manifest
         manifest = {
             "name": config.name or config.id,
@@ -370,7 +441,7 @@ class DeploymentService:
             },
             "inputs": inputs,
             "outputs": outputs,
-            "default_agent": config.execution.llm_model,
+            "default_agent": llm_model,  # Agent-centric: use LLM from agent config
         }
         
         # Create temp directory for packaging
@@ -395,8 +466,8 @@ class DeploymentService:
             # The paradigm_dir is usually something like "provision/paradigm" or "provisions/paradigms"
             # We want to copy the entire parent directory
             provisions_root = None
-            if config.execution.paradigm_dir:
-                paradigm_path = project_dir / config.execution.paradigm_dir
+            if paradigm_dir:
+                paradigm_path = project_dir / paradigm_dir
                 if paradigm_path.exists():
                     # The parent of paradigm dir is the provisions root
                     provisions_root = paradigm_path.parent
@@ -417,9 +488,9 @@ class DeploymentService:
                         # Copy files like manifest.json
                         shutil.copy2(subdir, provisions_dir / subdir.name)
             else:
-                # Fallback: Copy paradigm directory if it exists
-                if config.execution.paradigm_dir:
-                    paradigm_path = project_dir / config.execution.paradigm_dir
+                # Fallback: Copy paradigm directory if it exists (from agent config)
+                if paradigm_dir:
+                    paradigm_path = project_dir / paradigm_dir
                     if paradigm_path.exists():
                         paradigms_dest = provisions_dir / "paradigms"
                         shutil.copytree(paradigm_path, paradigms_dest, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
@@ -1275,27 +1346,29 @@ demo:
         """
         # Find the deployment server source directory
         # We're in canvas_app/backend/services/deployment_service.py
-        # The deployment server source is at custom_server2/ from project root
+        # The deployment server source is at canvas_app/normal_server/
         canvas_app_dir = Path(__file__).resolve().parents[2]
         project_root = canvas_app_dir.parent
         
-        # Use custom_server2 as the primary source (the actual working deployment server)
-        custom_server_dir = project_root / "custom_server2"
+        # Primary source: canvas_app/normal_server (co-located with canvas_app)
+        normal_server_dir = canvas_app_dir / "normal_server"
         
-        # Fallback to direct_infra_experiment/deployment for legacy support
-        legacy_deployment_dir = project_root / "direct_infra_experiment" / "deployment"
+        # Fallback to project_root/normal_server (legacy location)
+        legacy_normal_server = project_root / "normal_server"
         
         # Determine which source to use
-        if custom_server_dir.exists():
-            server_source_dir = custom_server_dir
-            tools_dir = custom_server_dir / "tools"
-            mock_users_dir = custom_server_dir / "mock_users"
-        elif legacy_deployment_dir.exists():
-            server_source_dir = legacy_deployment_dir / "deploy_operators"
-            tools_dir = legacy_deployment_dir / "tools"
-            mock_users_dir = legacy_deployment_dir / "mock_users"
+        if normal_server_dir.exists():
+            server_source_dir = normal_server_dir
+            tools_dir = normal_server_dir / "tools"
+            mock_users_dir = normal_server_dir / "mock_users"
+            logger.info(f"Using normal_server as deployment source: {normal_server_dir}")
+        elif legacy_normal_server.exists():
+            server_source_dir = legacy_normal_server
+            tools_dir = legacy_normal_server / "tools"
+            mock_users_dir = legacy_normal_server / "mock_users"
+            logger.info(f"Using legacy normal_server location: {legacy_normal_server}")
         else:
-            raise FileNotFoundError("No deployment server source found (custom_server2 or deployment)")
+            raise FileNotFoundError(f"Deployment server source not found at {normal_server_dir}")
         
         infra_dir = project_root / "infra"
         
@@ -1314,23 +1387,41 @@ demo:
                 shutil.rmtree(output_dir)
             output_dir.mkdir(parents=True)
             
-            # 1. Copy deploy_operators (server.py, runner.py)
-            if deploy_operators_dir.exists():
-                for py_file in deploy_operators_dir.glob("*.py"):
+            # 1. Copy server files (server.py, runner.py, start_server.py, etc.)
+            if server_source_dir.exists():
+                for py_file in server_source_dir.glob("*.py"):
                     if py_file.name != "__init__.py":
                         shutil.copy2(py_file, output_dir / py_file.name)
                         files_included.append(py_file.name)
                 
+                # Copy routes directory if it exists
+                routes_dir = server_source_dir / "routes"
+                if routes_dir.exists():
+                    self._copy_directory(routes_dir, output_dir / "routes", exclude_patterns=["__pycache__", ".pyc"])
+                    files_included.append("routes/")
+                
+                # Copy service directory if it exists
+                service_dir = server_source_dir / "service"
+                if service_dir.exists():
+                    self._copy_directory(service_dir, output_dir / "service", exclude_patterns=["__pycache__", ".pyc"])
+                    files_included.append("service/")
+                
                 # Copy settings.yaml if exists
-                settings_src = deploy_operators_dir / "settings.yaml"
+                settings_src = server_source_dir / "settings.yaml"
                 if settings_src.exists():
                     config_dir = output_dir / "data" / "config"
                     config_dir.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(settings_src, config_dir / "settings.yaml")
                 else:
                     self._create_default_settings(output_dir)
+                
+                # Copy requirements.txt if exists
+                requirements_src = server_source_dir / "requirements.txt"
+                if requirements_src.exists():
+                    shutil.copy2(requirements_src, output_dir / "requirements.txt")
+                    files_included.append("requirements.txt")
             else:
-                raise FileNotFoundError(f"deploy_operators directory not found: {deploy_operators_dir}")
+                raise FileNotFoundError(f"Server source directory not found: {server_source_dir}")
             
             # 2. Copy tools directory
             if tools_dir.exists():

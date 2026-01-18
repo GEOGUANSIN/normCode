@@ -45,7 +45,7 @@ export function CheckpointPanel({ isOpen, onToggle }: CheckpointPanelProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null); // Track which run is pending delete confirmation
   
   const { currentProject, projectPath, setIsLoaded } = useProjectStore();
-  const { llmModel, maxCycles, dbPath, paradigmDir } = useConfigStore();
+  const { maxCycles, dbPath } = useConfigStore();
   const { setGraphData } = useGraphStore();
   const { setProgress, setNodeStatuses, setRunId } = useExecutionStore();
   
@@ -202,10 +202,8 @@ export function CheckpointPanel({ isOpen, onToggle }: CheckpointPanelProps) {
         run_id: selectedRun,
         cycle: selectedCheckpoint ?? undefined,
         mode: reconciliationMode,
-        llm_model: llmModel,
         base_dir: projectPath,
         max_cycles: maxCycles,
-        paradigm_dir: paradigmDir || undefined,
       });
       
       if (result.success) {
@@ -242,10 +240,8 @@ export function CheckpointPanel({ isOpen, onToggle }: CheckpointPanelProps) {
         new_run_id: customRunId.trim() || undefined, // Use custom or auto-generate
         cycle: selectedCheckpoint ?? undefined,
         mode: reconciliationMode,
-        llm_model: llmModel,
         base_dir: projectPath,
         max_cycles: maxCycles,
-        paradigm_dir: paradigmDir || undefined,
       });
 
       if (result.success) {

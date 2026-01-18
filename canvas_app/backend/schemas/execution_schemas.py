@@ -71,15 +71,24 @@ class NodeStatus(str, Enum):
 
 
 class LoadRepositoryRequest(BaseModel):
-    """Request to load repository files."""
+    """Request to load repository files.
+    
+    Agent-centric LLM configuration:
+    - agent_config is the primary way to configure LLM (points to .agent.json)
+    - llm_model is deprecated but kept for backward compatibility
+    """
     concepts_path: str
     inferences_path: str
     inputs_path: Optional[str] = None
-    llm_model: str = "demo"
+    llm_model: str = "demo"  # DEPRECATED: Use agent_config instead
     base_dir: Optional[str] = None
     max_cycles: int = Field(default=DEFAULT_MAX_CYCLES, ge=1, le=1000)
     db_path: Optional[str] = None  # Defaults to base_dir/orchestration.db
-    paradigm_dir: Optional[str] = None  # Custom paradigm directory (e.g., provision/paradigm)
+    paradigm_dir: Optional[str] = None  # Custom paradigm directory
+    # Agent-centric config
+    agent_config: Optional[str] = None  # Path to .agent.json file
+    project_dir: Optional[str] = None  # Project directory for resolving paths
+    project_name: Optional[str] = None  # Project name for auto-discovery
 
 
 class ExecutionConfig(BaseModel):

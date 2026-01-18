@@ -22,7 +22,7 @@ export function LoadPanel({ onClose, onOpenSettings }: LoadPanelProps) {
   const [inputsPath, setInputsPath] = useState('');
 
   // Get config from store
-  const { llmModel, maxCycles, dbPath, baseDir, paradigmDir } = useConfigStore();
+  const { maxCycles, dbPath } = useConfigStore();
 
   const setGraphData = useGraphStore((s) => s.setGraphData);
   const setProgress = useExecutionStore((s) => s.setProgress);
@@ -63,11 +63,8 @@ export function LoadPanel({ onClose, onOpenSettings }: LoadPanelProps) {
       concepts_path: conceptsPath,
       inferences_path: inferencesPath,
       inputs_path: inputsPath || undefined,
-      llm_model: llmModel,
       max_cycles: maxCycles,
       db_path: dbPath || undefined,
-      base_dir: baseDir || undefined,
-      paradigm_dir: paradigmDir || undefined,
     });
   };
 
@@ -166,19 +163,11 @@ export function LoadPanel({ onClose, onOpenSettings }: LoadPanelProps) {
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
               <div>
-                <span className="text-slate-400">Model:</span> {llmModel === 'demo' ? 'Demo (No LLM)' : llmModel}
-              </div>
-              <div>
                 <span className="text-slate-400">Max Cycles:</span> {maxCycles}
               </div>
               <div className="col-span-2">
                 <span className="text-slate-400">Database:</span> {dbPath || 'orchestration.db'}
               </div>
-              {paradigmDir && (
-                <div className="col-span-2">
-                  <span className="text-slate-400">Paradigms:</span> {paradigmDir}
-                </div>
-              )}
             </div>
           </div>
 

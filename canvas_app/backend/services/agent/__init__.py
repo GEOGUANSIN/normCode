@@ -14,6 +14,15 @@ backward-compatible facades to these modules.
 """
 
 from .config import (
+    # Tool configuration dataclasses (tool-centric design)
+    LLMToolConfig,
+    ParadigmToolConfig,
+    FileSystemToolConfig,
+    PythonInterpreterToolConfig,
+    UserInputToolConfig,
+    CustomToolConfig,  # For injectable custom tools
+    AgentToolsConfig,
+    # Agent and project configuration
     AgentConfig,
     MappingRule,
     LLMProviderRef,
@@ -28,6 +37,15 @@ from .llm_providers import LLMSettingsService, llm_settings_service
 from .project_config import ProjectAgentConfigService, project_agent_config_service
 
 __all__ = [
+    # Tool configuration (tool-centric design)
+    'LLMToolConfig',
+    'ParadigmToolConfig',
+    'FileSystemToolConfig',
+    'PythonInterpreterToolConfig',
+    'UserInputToolConfig',
+    'CustomToolConfig',
+    'AgentToolsConfig',
+    
     # Config dataclasses
     'AgentConfig',
     'MappingRule',

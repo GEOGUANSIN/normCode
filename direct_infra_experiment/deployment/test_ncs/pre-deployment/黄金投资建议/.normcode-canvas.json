@@ -1,0 +1,19 @@
+{
+  "id": "gold-investment-advice-cn",
+  "name": "黄金投资建议",
+  "description": "中文版黄金投资建议项目",
+  "created_at": "2026-01-18T15:00:00.000Z",
+  "updated_at": "2026-01-18T15:00:00.000Z",
+  "repositories": {
+    "concepts": "concept_repo.json",
+    "inferences": "inference_repo.json",
+    "inputs": null
+  },
+  "execution": {
+    "max_cycles": 50,
+    "db_path": "orchestration.db",
+    "agent_config": "黄金投资建议.agent.json"
+  },
+  "breakpoints": []
+}
+

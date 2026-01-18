@@ -118,9 +118,9 @@ async def create_project(request: CreateProjectRequest):
             concepts_path=request.concepts_path,
             inferences_path=request.inferences_path,
             inputs_path=request.inputs_path,
-            llm_model=request.llm_model,
             max_cycles=request.max_cycles,
-            paradigm_dir=request.paradigm_dir,
+            # Note: default_llm_model and paradigm_dir are now auto-discovered
+            # and configured via the agent config, not passed from the frontend.
         )
         
         return ProjectResponse(
@@ -320,15 +320,17 @@ async def load_project_repositories():
         execution_controller_registry.set_active(project_id)
         
         # Load repositories using project-specific execution controller
+        # Agent-centric: agent_config is the source of truth for tool configuration
         await controller.load_repositories(
             concepts_path=paths['concepts'],
             inferences_path=paths['inferences'],
             inputs_path=paths.get('inputs'),
-            llm_model=exec_settings.llm_model,
             base_dir=paths['base_dir'],
             max_cycles=exec_settings.max_cycles,
             db_path=exec_settings.db_path,
-            paradigm_dir=exec_settings.paradigm_dir,
+            agent_config=exec_settings.agent_config,
+            project_dir=str(project_service.current_project_path),
+            project_name=config.name,
         )
         
         # Restore breakpoints from project config
@@ -710,11 +712,10 @@ async def update_remote_project_settings(request: UpdateRemoteProjectSettingsReq
             raise HTTPException(status_code=400, detail="This endpoint is only for remote projects")
         
         # Update the LLM model if provided
+        # Note: For remote projects, llm_model is stored in remote_llm_model
+        # (ExecutionSettings no longer has llm_model - it's agent-centric)
         if request.llm_model is not None:
             project.remote_llm_model = request.llm_model
-            # Also update the execution settings in the virtual config
-            if project.config and project.config.execution:
-                project.config.execution.llm_model = request.llm_model
             logger.info(f"Updated remote project {request.project_id} LLM model to: {request.llm_model}")
         
         return project

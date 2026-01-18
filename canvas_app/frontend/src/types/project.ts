@@ -9,11 +9,9 @@ export interface RepositoryPaths {
 }
 
 export interface ExecutionSettings {
-  llm_model: string;
   max_cycles: number;
   db_path: string;
-  base_dir?: string;
-  paradigm_dir?: string;
+  agent_config?: string;  // Path to .agent.json file (agent tool configs)
 }
 
 export interface ProjectConfig {
@@ -84,9 +82,7 @@ export interface CreateProjectRequest {
   concepts_path?: string;
   inferences_path?: string;
   inputs_path?: string;
-  llm_model?: string;
   max_cycles?: number;
-  paradigm_dir?: string;
 }
 
 export interface SaveProjectRequest {

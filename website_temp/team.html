@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="nav.css">
     <title>Team - NormCode 规范码</title>
     <style>
         * {
@@ -36,210 +37,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.97);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 0.75rem 2rem;
-        }
-
-        nav .nav-content {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-        }
-
-        nav .logo-small {
-            height: 28px;
-        }
-
-        nav .company-name {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: -0.01em;
-        }
-
-        nav .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-        }
-
-        /* Mobile menu toggle */
-        .menu-toggle {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            z-index: 1001;
-        }
-
-        .menu-toggle span {
-            display: block;
-            width: 22px;
-            height: 2px;
-            background: var(--text-primary);
-            transition: all 0.2s ease;
-        }
-
-        .menu-toggle.active span:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-
-        .menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .menu-toggle.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(5px, -5px);
-        }
-
-        .menu-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .menu-overlay.active {
-            display: block;
-            opacity: 1;
-        }
-
-        nav a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.925rem;
-            transition: color 0.15s ease;
-        }
-
-        nav a:hover, nav a.active {
-            color: var(--accent);
-        }
-
-        /* Docs dropdown */
-        .nav-dropdown {
-            position: relative;
-        }
-
-        .nav-dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.925rem;
-            transition: color 0.15s ease;
-            background: none;
-            border: none;
-            padding: 0;
-            font-family: inherit;
-        }
-
-        .nav-dropdown-trigger:hover,
-        .nav-dropdown-trigger.active {
-            color: var(--accent);
-        }
-
-        .nav-dropdown-trigger svg {
-            width: 14px;
-            height: 14px;
-            transition: transform 0.2s ease;
-        }
-
-        .nav-dropdown:hover .nav-dropdown-trigger svg {
-            transform: rotate(180deg);
-        }
-
-        .nav-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 0.5rem);
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--bg-white);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.5rem;
-            min-width: 200px;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.15s ease, visibility 0.15s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .nav-dropdown:hover .nav-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .nav-dropdown-menu a {
-            display: block;
-            padding: 0.6rem 0.85rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            border-radius: 4px;
-            transition: all 0.1s ease;
-        }
-
-        .nav-dropdown-menu a:hover {
-            background: rgba(77, 163, 255, 0.1);
-            color: var(--accent);
-        }
-
-        .lang-switcher {
-            display: flex;
-            gap: 0.25rem;
-            margin-left: 1.5rem;
-        }
-
-        .lang-btn {
-            padding: 0.35rem 0.7rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.15s ease;
-        }
-
-        .lang-btn:hover {
-            border-color: var(--text-secondary);
-            color: var(--text-secondary);
-        }
-
-        .lang-btn.active {
-            background: var(--text-primary);
-            color: white;
-            border-color: var(--text-primary);
-        }
 
         /* Page Header */
         .page-header {
@@ -495,26 +292,6 @@
                 right: 0;
             }
 
-            .nav-dropdown-menu {
-                position: static;
-                transform: none;
-                opacity: 1;
-                visibility: visible;
-                box-shadow: none;
-                border: none;
-                padding: 0;
-                margin-top: 0.5rem;
-                background: transparent;
-            }
-
-            .nav-dropdown-menu a {
-                padding: 0.4rem 0.6rem;
-            }
-
-            .lang-switcher {
-                margin-left: 0;
-                margin-top: 1rem;
-            }
 
             .page-header {
                 padding: 2rem 1.5rem;
@@ -544,45 +321,7 @@
     </style>
 </head>
 <body>
-    <div class="menu-overlay"></div>
-
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-content">
-            <a href="index.html" class="nav-brand">
-                <img src="Psylensai_log_raw.png" alt="Psylens.AI" class="logo-small">
-                <span class="company-name" data-i18n="nav.companyName">Psylens.AI</span>
-            </a>
-            <button class="menu-toggle" aria-label="Toggle navigation menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <div class="nav-links">
-                <a href="index.html" data-i18n="nav.home">Home</a>
-                <div class="nav-dropdown">
-                    <button class="nav-dropdown-trigger" data-i18n="nav.docs">
-                        Documentation
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-                    <div class="nav-dropdown-menu">
-                        <a href="how-it-works.html" data-i18n="nav.overview">Overview</a>
-                        <a href="docs/execution.html" data-i18n="nav.execution">Execution Model</a>
-                        <a href="docs/compilation.html" data-i18n="nav.compilation">Compilation</a>
-                        <a href="docs/syntax.html" data-i18n="nav.syntax">Syntax Reference</a>
-                        <a href="docs/examples.html" data-i18n="nav.examples">Examples</a>
-                    </div>
-                </div>
-                <a href="team.html" class="active" data-i18n="nav.team">Team</a>
-                <div class="lang-switcher">
-                    <button class="lang-btn active" data-lang="en">EN</button>
-                    <button class="lang-btn" data-lang="zh">中文</button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Navigation will be loaded by load-nav.js -->
 
     <!-- Page Header -->
     <header class="page-header">
@@ -686,6 +425,7 @@
         <p><strong>NormCode 规范码</strong> · <a href="https://github.com/GEOGUANSIN/normCode" target="_blank">GitHub</a> · <a href="https://arxiv.org/abs/2512.10563" target="_blank" data-i18n="footer.paper">Paper</a></p>
     </footer>
 
+    <script src="load-nav.js"></script>
     <script>
         const translations = {
             en: {
@@ -786,7 +526,8 @@
 
         let currentLang = localStorage.getItem('lang') || 'en';
 
-        function setLanguage(lang) {
+        // Expose setLanguage globally so load-nav.js can call it
+        window.setLanguage = function(lang) {
             currentLang = lang;
             localStorage.setItem('lang', lang);
             document.documentElement.lang = lang;
@@ -823,8 +564,8 @@
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
             });
-        }
-
+        };
+        
         setLanguage(currentLang);
 
         document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -833,21 +574,7 @@
             });
         });
 
-        // Mobile menu
-        const menuToggle = document.querySelector('.menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
-        const menuOverlay = document.querySelector('.menu-overlay');
-
-        function toggleMenu(open) {
-            const isOpen = open !== undefined ? open : !navLinks.classList.contains('active');
-            menuToggle.classList.toggle('active', isOpen);
-            navLinks.classList.toggle('active', isOpen);
-            menuOverlay.classList.toggle('active', isOpen);
-            document.body.style.overflow = isOpen ? 'hidden' : '';
-        }
-
-        menuToggle.addEventListener('click', () => toggleMenu());
-        menuOverlay.addEventListener('click', () => toggleMenu(false));
+        // Mobile menu is handled by load-nav.js
     </script>
 </body>
 </html>

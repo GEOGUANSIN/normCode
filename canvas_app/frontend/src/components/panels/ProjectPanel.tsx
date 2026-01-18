@@ -26,8 +26,7 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { usePortableStore } from '../../stores/portableStore';
-import { executionApi, projectApi } from '../../services/api';
-import type { ExecutionConfig } from '../../types/execution';
+import { projectApi } from '../../services/api';
 import type { RegisteredProject, DiscoveredPathsResponse } from '../../types/project';
 
 type TabType = 'open' | 'create' | 'recent' | 'all' | 'export' | 'import';
@@ -67,17 +66,12 @@ export function ProjectPanel() {
   const [conceptsPath, setConceptsPath] = useState('concepts.json');
   const [inferencesPath, setInferencesPath] = useState('inferences.json');
   const [inputsPath, setInputsPath] = useState('');
-  const [paradigmDir, setParadigmDir] = useState('');
-  const [llmModel, setLlmModel] = useState('demo');
   const [maxCycles, setMaxCycles] = useState(50);
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   // Discovery state
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveredPaths, setDiscoveredPaths] = useState<DiscoveredPathsResponse | null>(null);
-  
-  // Available models
-  const [availableModels, setAvailableModels] = useState<string[]>(['demo']);
   
   // Export/Import state
   const [exportOutputDir, setExportOutputDir] = useState('');  // Empty = project directory
@@ -110,9 +104,6 @@ export function ProjectPanel() {
   useEffect(() => {
     fetchRecentProjects();
     fetchAllProjects();
-    executionApi.getConfig().then((config: ExecutionConfig) => {
-      setAvailableModels(config.available_models);
-    }).catch(console.error);
   }, [fetchRecentProjects, fetchAllProjects]);
   
   // Fetch available exports when import tab is active
@@ -144,21 +135,16 @@ export function ProjectPanel() {
       if (discovered.inputs) {
         setInputsPath(discovered.inputs);
       }
-      if (discovered.paradigm_dir) {
-        setParadigmDir(discovered.paradigm_dir);
-        // Show advanced settings if paradigm dir was discovered
-        setShowAdvanced(true);
-      }
       
       // Show message about what was discovered
       const foundItems = [];
       if (discovered.concepts) foundItems.push('concepts');
       if (discovered.inferences) foundItems.push('inferences');
       if (discovered.inputs) foundItems.push('inputs');
-      if (discovered.paradigm_dir) foundItems.push('paradigm dir');
+      if (discovered.paradigm_dir) foundItems.push('paradigm (for agent)');
       
       if (foundItems.length === 0) {
-        setError('No repository files or paradigm directories found in this directory');
+        setError('No repository files found in this directory');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to discover paths');
@@ -214,9 +200,9 @@ export function ProjectPanel() {
       conceptsPath: conceptsPath || 'concepts.json',
       inferencesPath: inferencesPath || 'inferences.json',
       inputsPath: inputsPath || undefined,
-      paradigmDir: paradigmDir || undefined,
-      llmModel,
       maxCycles,
+      // Note: paradigm_dir and llm_model are now configured per-agent, not per-project.
+      // A default agent config will be auto-created with these settings detected from discovery.
     });
     if (success) {
       setCreatePath('');
@@ -625,53 +611,33 @@ export function ProjectPanel() {
                       }`}
                     />
                   </div>
+                  
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
-                      Paradigm Directory (optional)
-                      {discoveredPaths?.paradigm_dir_exists && paradigmDir === discoveredPaths.paradigm_dir && (
-                        <span className="text-xs text-green-600 font-normal">(discovered)</span>
-                      )}
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Max Cycles
                     </label>
                     <input
-                      type="text"
-                      value={paradigmDir}
-                      onChange={(e) => setParadigmDir(e.target.value)}
-                      placeholder="provision/paradigm"
-                      className={`w-full px-3 py-2 bg-white border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                        discoveredPaths?.paradigm_dir_exists && paradigmDir === discoveredPaths.paradigm_dir 
-                          ? 'border-green-400 bg-green-50' 
-                          : 'border-slate-300'
-                      }`}
+                      type="number"
+                      value={maxCycles}
+                      onChange={(e) => setMaxCycles(parseInt(e.target.value) || 50)}
+                      min={1}
+                      max={1000}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        LLM Model
-                      </label>
-                      <select
-                        value={llmModel}
-                        onChange={(e) => setLlmModel(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      >
-                        {availableModels.map((model) => (
-                          <option key={model} value={model}>{model}</option>
-                        ))}
-                      </select>
+                  
+                  {/* Agent-centric note */}
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="text-xs text-purple-700">
+                      <span className="font-semibold">💡 Note:</span> LLM model and paradigm directory are now configured per-agent.
+                      A default agent will be created automatically and can be customized in the Agent Panel after project creation.
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Max Cycles
-                      </label>
-                      <input
-                        type="number"
-                        value={maxCycles}
-                        onChange={(e) => setMaxCycles(parseInt(e.target.value) || 50)}
-                        min={1}
-                        max={1000}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      />
-                    </div>
+                    {discoveredPaths?.paradigm_dir_exists && discoveredPaths.paradigm_dir && (
+                      <div className="mt-2 text-xs text-green-600">
+                        ✓ Discovered paradigm directory: <span className="font-mono">{discoveredPaths.paradigm_dir}</span> 
+                        (will be set in default agent)
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -992,15 +958,20 @@ export function ProjectPanel() {
                   
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Target Directory
+                      Import Location
                     </label>
                     <input
                       type="text"
                       value={importTargetDir}
                       onChange={(e) => setImportTargetDir(e.target.value)}
-                      placeholder="C:\path\to\import\location"
+                      placeholder="C:\path\to\projects"
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
                     />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Project will be created in a subdirectory: <span className="font-mono text-orange-600">
+                        {importTargetDir ? `${importTargetDir}\\${(importNewName || previewInfo?.project_name || 'project').toLowerCase().replace(/\s+/g, '-')}` : '(select location)'}
+                      </span>
+                    </p>
                   </div>
                   
                   <label className="flex items-center gap-2 text-sm text-slate-700">

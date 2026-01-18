@@ -208,20 +208,188 @@ try:
 except Exception:
     pass
 
+# Collect normal_server modules
+try:
+    sys.path.insert(0, str(CANVAS_APP / "normal_server"))
+    hidden_imports += collect_submodules('routes')
+    hidden_imports += collect_submodules('service')
+    hidden_imports += collect_submodules('tools')
+except Exception:
+    pass
+
 # Data files to include
 datas = [
     # Frontend dist (pre-built static files)
     (str(CANVAS_APP / "frontend" / "dist"), "frontend/dist"),
     
-    # Backend source code (needed for dynamic imports)
-    (str(CANVAS_APP / "backend"), "backend"),
-    
-    # Infra module
-    (str(PROJECT_ROOT / "infra"), "infra"),
-    
     # Settings example
     (str(CANVAS_APP / "settings.yaml.example"), "."),
 ]
+
+# Helper function to collect backend files while excluding data/cache
+def collect_backend_files(backend_dir: Path, dest_prefix: str = "backend"):
+    """Collect backend Python files, excluding databases, caches, and data files."""
+    collected = []
+    
+    # Patterns to exclude
+    exclude_patterns = {
+        '*.db',           # Database files
+        '*.sqlite',       # SQLite databases
+        '*.sqlite3',      # SQLite databases
+        '__pycache__',    # Python cache directories
+        '*.pyc',          # Compiled Python files
+        '*.pyo',          # Optimized Python files
+        '.git',           # Git directory
+        '.gitignore',     # Git ignore file
+        'data',           # Data directories
+        'logs',           # Log directories
+        '*.log',          # Log files
+        'llm-settings.json',  # Runtime LLM settings (user data)
+        'settings.yaml',  # Runtime settings in tools (user data)
+    }
+    
+    exclude_dirs = {'__pycache__', 'data', 'logs', '.git', 'node_modules'}
+    exclude_extensions = {'.db', '.sqlite', '.sqlite3', '.pyc', '.pyo', '.log'}
+    exclude_files = {'llm-settings.json', 'settings.yaml'}
+    
+    for root, dirs, files in os.walk(backend_dir):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        rel_root = Path(root).relative_to(backend_dir)
+        
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Skip excluded extensions
+            if file_path.suffix.lower() in exclude_extensions:
+                continue
+            
+            # Skip excluded files (but only in tools directory)
+            if file in exclude_files and 'tools' in str(rel_root):
+                continue
+            
+            # Build destination path
+            if str(rel_root) == '.':
+                dest = dest_prefix
+            else:
+                dest = f"{dest_prefix}/{rel_root}"
+            
+            collected.append((str(file_path), dest))
+    
+    return collected
+
+# Add backend files (excluding databases and caches)
+datas += collect_backend_files(CANVAS_APP / "backend")
+
+# Helper function to collect infra module (excluding data/cache)
+def collect_infra_files(infra_dir: Path, dest_prefix: str = "infra"):
+    """Collect infra Python files, excluding databases, caches, and data files."""
+    collected = []
+    
+    exclude_dirs = {'__pycache__', 'data', 'logs', '.git', 'node_modules', 'examples', 'tests'}
+    exclude_extensions = {'.db', '.sqlite', '.sqlite3', '.pyc', '.pyo', '.log'}
+    
+    for root, dirs, files in os.walk(infra_dir):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        rel_root = Path(root).relative_to(infra_dir)
+        
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Skip excluded extensions
+            if file_path.suffix.lower() in exclude_extensions:
+                continue
+            
+            # Build destination path
+            if str(rel_root) == '.':
+                dest = dest_prefix
+            else:
+                dest = f"{dest_prefix}/{rel_root}"
+            
+            collected.append((str(file_path), dest))
+    
+    return collected
+
+# Add infra files (excluding databases and caches)
+datas += collect_infra_files(PROJECT_ROOT / "infra")
+
+# Helper function to collect normal_server files (excluding data/cache/mock_users)
+def collect_normal_server_files(server_dir: Path, dest_prefix: str = "normal_server"):
+    """Collect normal_server Python files, excluding databases, caches, data, and mock files."""
+    collected = []
+    
+    # Exclude mock_users (testing), data, scripts, infra (use project root infra instead), __pycache__
+    exclude_dirs = {'__pycache__', 'data', 'logs', '.git', 'node_modules', 'mock_users', 'scripts', 'infra'}
+    exclude_extensions = {'.db', '.sqlite', '.sqlite3', '.pyc', '.pyo', '.log'}
+    exclude_files = {'settings.yaml'}  # Runtime settings
+    
+    for root, dirs, files in os.walk(server_dir):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        rel_root = Path(root).relative_to(server_dir)
+        
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Skip excluded extensions
+            if file_path.suffix.lower() in exclude_extensions:
+                continue
+            
+            # Skip settings.yaml in tools directory
+            if file in exclude_files and 'tools' in str(rel_root):
+                continue
+            
+            # Build destination path
+            if str(rel_root) == '.':
+                dest = dest_prefix
+            else:
+                dest = f"{dest_prefix}/{rel_root}"
+            
+            collected.append((str(file_path), dest))
+    
+    return collected
+
+# Add normal_server files (excluding data, caches, mock_users)
+datas += collect_normal_server_files(CANVAS_APP / "normal_server")
+
+# Helper function to collect built_in_projects files
+def collect_builtin_projects_files(projects_dir: Path, dest_prefix: str = "built_in_projects"):
+    """Collect built-in project files, excluding logs, caches, and databases."""
+    collected = []
+    
+    # Exclude logs, caches
+    exclude_dirs = {'__pycache__', 'logs', '.git', 'node_modules'}
+    exclude_extensions = {'.db', '.sqlite', '.sqlite3', '.pyc', '.pyo', '.log'}
+    
+    for root, dirs, files in os.walk(projects_dir):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        
+        rel_root = Path(root).relative_to(projects_dir)
+        
+        for file in files:
+            file_path = Path(root) / file
+            
+            # Skip excluded extensions (databases, logs, etc.)
+            if file_path.suffix.lower() in exclude_extensions:
+                continue
+            
+            # Build destination path
+            if str(rel_root) == '.':
+                dest = dest_prefix
+            else:
+                dest = f"{dest_prefix}/{rel_root}"
+            
+            collected.append((str(file_path), dest))
+    
+    return collected
+
+# Add built_in_projects files (excluding logs, caches, databases)
+datas += collect_builtin_projects_files(CANVAS_APP / "built_in_projects")
 
 # Collect webview data files (templates, js files, etc.)
 try:

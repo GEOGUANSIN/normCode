@@ -67,14 +67,21 @@ def setup_logging(level=logging.INFO, log_file=None):
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
     
-    # Console handler
+    # Console handler with UTF-8 encoding for Windows compatibility
+    # On Windows, reconfigure stdout for UTF-8 to handle Chinese and Unicode
+    if sys.platform == "win32":
+        try:
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     
-    # File handler (optional)
+    # File handler (optional) with UTF-8 encoding
     if log_file:
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     

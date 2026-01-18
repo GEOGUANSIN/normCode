@@ -4,18 +4,54 @@ import { create } from 'zustand';
 // Types
 // ============================================================================
 
+// Tool configuration types (tool-centric design)
+export interface LLMToolConfig {
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface ParadigmToolConfig {
+  dir?: string;
+}
+
+export interface FileSystemToolConfig {
+  enabled: boolean;
+  base_dir?: string;
+}
+
+export interface PythonInterpreterToolConfig {
+  enabled: boolean;
+  timeout: number;
+}
+
+export interface UserInputToolConfig {
+  enabled: boolean;
+  mode: 'blocking' | 'async' | 'disabled';
+}
+
+// Custom tool config for extensibility
+export interface CustomToolConfig {
+  type_id: string;
+  enabled: boolean;
+  settings: Record<string, unknown>;
+}
+
+export interface AgentToolsConfig {
+  llm: LLMToolConfig;
+  paradigm: ParadigmToolConfig;
+  file_system: FileSystemToolConfig;
+  python_interpreter: PythonInterpreterToolConfig;
+  user_input: UserInputToolConfig;
+  // Custom/injectable tools
+  custom?: Record<string, CustomToolConfig>;
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
   description: string;
-  llm_model: string;
-  file_system_enabled: boolean;
-  file_system_base_dir?: string;
-  python_interpreter_enabled: boolean;
-  python_interpreter_timeout: number;
-  user_input_enabled: boolean;
-  user_input_mode: 'blocking' | 'async' | 'disabled';
-  paradigm_dir?: string;
+  tools: AgentToolsConfig;
 }
 
 export interface MappingRule {
@@ -64,6 +100,7 @@ interface AgentState {
   setAgents: (agents: Record<string, AgentConfig>) => void;
   addAgent: (config: AgentConfig) => void;
   updateAgent: (id: string, updates: Partial<AgentConfig>) => void;
+  updateAgentTools: (id: string, toolUpdates: Partial<AgentToolsConfig>) => void;
   deleteAgent: (id: string) => void;
   
   // Actions - Mappings
@@ -98,12 +135,13 @@ const defaultAgent: AgentConfig = {
   id: 'default',
   name: 'Default Agent',
   description: 'Default agent using configured LLM',
-  llm_model: 'qwen-plus',
-  file_system_enabled: true,
-  python_interpreter_enabled: true,
-  python_interpreter_timeout: 30,
-  user_input_enabled: true,
-  user_input_mode: 'blocking',
+  tools: {
+    llm: { model: 'demo' },
+    paradigm: {},
+    file_system: { enabled: true },
+    python_interpreter: { enabled: true, timeout: 30 },
+    user_input: { enabled: true, mode: 'blocking' },
+  },
 };
 
 // ============================================================================
@@ -135,6 +173,23 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       agents: {
         ...state.agents,
         [id]: { ...existing, ...updates }
+      }
+    };
+  }),
+  
+  updateAgentTools: (id, toolUpdates) => set((state) => {
+    const existing = state.agents[id];
+    if (!existing) return state;
+    return {
+      agents: {
+        ...state.agents,
+        [id]: {
+          ...existing,
+          tools: {
+            ...existing.tools,
+            ...toolUpdates,
+          }
+        }
       }
     };
   }),

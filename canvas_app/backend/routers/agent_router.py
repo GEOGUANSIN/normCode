@@ -6,6 +6,7 @@ Provides endpoints for:
 - Accessing tool call history
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional, Union
 from pathlib import Path
@@ -17,6 +18,8 @@ from services.agent_service import (
 )
 from core.events import event_emitter
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/agents", tags=["agents"])
 
 
@@ -24,34 +27,60 @@ router = APIRouter(prefix="/api/agents", tags=["agents"])
 # Pydantic Models for API
 # ============================================================================
 
+# Tool configuration models (matching dataclasses in config.py)
+class LLMToolConfigModel(BaseModel):
+    """LLM tool configuration."""
+    model: str = "demo"
+    temperature: float = 0.0
+    max_tokens: Optional[int] = None
+
+
+class ParadigmToolConfigModel(BaseModel):
+    """Paradigm tool configuration."""
+    dir: Optional[str] = None
+
+
+class FileSystemToolConfigModel(BaseModel):
+    """File system tool configuration."""
+    enabled: bool = True
+    base_dir: Optional[str] = None
+
+
+class PythonInterpreterToolConfigModel(BaseModel):
+    """Python interpreter tool configuration."""
+    enabled: bool = True
+    timeout: int = 30
+
+
+class UserInputToolConfigModel(BaseModel):
+    """User input tool configuration."""
+    enabled: bool = True
+    mode: str = "blocking"
+
+
+class AgentToolsConfigModel(BaseModel):
+    """Container for all tool configurations."""
+    llm: LLMToolConfigModel = LLMToolConfigModel()
+    paradigm: ParadigmToolConfigModel = ParadigmToolConfigModel()
+    file_system: FileSystemToolConfigModel = FileSystemToolConfigModel()
+    python_interpreter: PythonInterpreterToolConfigModel = PythonInterpreterToolConfigModel()
+    user_input: UserInputToolConfigModel = UserInputToolConfigModel()
+
+
 class AgentConfigRequest(BaseModel):
-    """Request body for creating/updating an agent."""
+    """Request body for creating/updating an agent (tool-centric design)."""
     id: str
     name: str
     description: str = ""
-    llm_model: str = "qwen-plus"
-    file_system_enabled: bool = True
-    file_system_base_dir: Optional[str] = None
-    python_interpreter_enabled: bool = True
-    python_interpreter_timeout: int = 30
-    user_input_enabled: bool = True
-    user_input_mode: str = "blocking"
-    paradigm_dir: Optional[str] = None
+    tools: AgentToolsConfigModel = AgentToolsConfigModel()
 
 
 class AgentConfigResponse(BaseModel):
-    """Response for agent configuration."""
+    """Response for agent configuration (tool-centric design)."""
     id: str
     name: str
     description: str
-    llm_model: str
-    file_system_enabled: bool
-    file_system_base_dir: Optional[str]
-    python_interpreter_enabled: bool
-    python_interpreter_timeout: int
-    user_input_enabled: bool
-    user_input_mode: str
-    paradigm_dir: Optional[str]
+    tools: dict  # Tool configuration dictionary
 
 
 class MappingRuleRequest(BaseModel):
@@ -83,20 +112,78 @@ class ToolCallResponse(BaseModel):
 
 
 # ============================================================================
-# Agent CRUD Endpoints
+# Agent CRUD Endpoints (Project-Aware)
 # ============================================================================
+
+def _get_project_agents():
+    """
+    Get agents from the active project's scoped registry if available,
+    otherwise fall back to the global registry.
+    
+    This ensures the UI shows the agents that are actually in use by the project.
+    """
+    from services.execution_service import execution_controller_registry
+    
+    # Get active project from the execution controller registry (not tabs service!)
+    # This ensures we use the same active project ID that controllers use
+    active_project_id = execution_controller_registry.get_active_project_id()
+    logger.info(f"[Agent API] Active project ID (from controller registry): {active_project_id}")
+    
+    if active_project_id:
+        try:
+            controller = execution_controller_registry.get_controller(active_project_id)
+            logger.info(f"[Agent API] Controller: {controller is not None}, has _agent_registry: {hasattr(controller, '_agent_registry') if controller else 'N/A'}")
+            
+            if controller and hasattr(controller, '_agent_registry') and controller._agent_registry:
+                agents = controller._agent_registry.list_agents()
+                logger.info(f"[Agent API] Using project-scoped registry, agents: {[a.id for a in agents]}")
+                return agents
+            else:
+                logger.info(f"[Agent API] Controller exists but no valid _agent_registry")
+        except Exception as e:
+            logger.warning(f"[Agent API] Could not get project-scoped agents: {e}")
+    
+    # Fall back to global registry
+    agents = agent_registry.list_agents()
+    logger.info(f"[Agent API] Using global registry, agents: {[a.id for a in agents]}")
+    return agents
+
+
+def _get_project_agent(agent_id: str):
+    """
+    Get a specific agent from the active project's scoped registry if available.
+    """
+    from services.execution_service import execution_controller_registry
+    
+    # Get active project from the execution controller registry (not tabs service!)
+    active_project_id = execution_controller_registry.get_active_project_id()
+    if active_project_id:
+        try:
+            controller = execution_controller_registry.get_controller(active_project_id)
+            if controller and hasattr(controller, '_agent_registry') and controller._agent_registry:
+                config = controller._agent_registry.get_config(agent_id)
+                if config:
+                    return config
+        except Exception as e:
+            logger.debug(f"Could not get project-scoped agent '{agent_id}': {e}")
+    
+    # Fall back to global registry
+    return agent_registry.get_config(agent_id)
+
 
 @router.get("", response_model=List[AgentConfigResponse])
 async def list_agents():
-    """List all registered agents."""
-    agents = agent_registry.list_agents()
-    return [AgentConfigResponse(**a.to_dict()) for a in agents]
+    """List all registered agents for the active project."""
+    agents = _get_project_agents()
+    result = [AgentConfigResponse(**a.to_dict()) for a in agents]
+    logger.info(f"[Agent API] Returning {len(result)} agents: {[r.id for r in result]}")
+    return result
 
 
 @router.get("/{agent_id}", response_model=AgentConfigResponse)
 async def get_agent(agent_id: str):
-    """Get a specific agent configuration."""
-    config = agent_registry.get_config(agent_id)
+    """Get a specific agent configuration from the active project."""
+    config = _get_project_agent(agent_id)
     if config is None:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
     return AgentConfigResponse(**config.to_dict())
@@ -104,23 +191,136 @@ async def get_agent(agent_id: str):
 
 @router.post("", response_model=AgentConfigResponse)
 async def create_or_update_agent(request: AgentConfigRequest):
-    """Create or update an agent configuration."""
+    """Create or update an agent configuration (tool-centric design).
+    
+    This is project-aware: if there's an active project with a scoped registry,
+    the agent is registered there. Otherwise, it falls back to the global registry.
+    """
+    from services.agent.config import (
+        AgentToolsConfig, LLMToolConfig, ParadigmToolConfig,
+        FileSystemToolConfig, PythonInterpreterToolConfig, UserInputToolConfig
+    )
+    from services.execution_service import execution_controller_registry
+    
+    # Build tools config from request
+    tools = AgentToolsConfig(
+        llm=LLMToolConfig(
+            model=request.tools.llm.model,
+            temperature=request.tools.llm.temperature,
+            max_tokens=request.tools.llm.max_tokens,
+        ),
+        paradigm=ParadigmToolConfig(
+            dir=request.tools.paradigm.dir,
+        ),
+        file_system=FileSystemToolConfig(
+            enabled=request.tools.file_system.enabled,
+            base_dir=request.tools.file_system.base_dir,
+        ),
+        python_interpreter=PythonInterpreterToolConfig(
+            enabled=request.tools.python_interpreter.enabled,
+            timeout=request.tools.python_interpreter.timeout,
+        ),
+        user_input=UserInputToolConfig(
+            enabled=request.tools.user_input.enabled,
+            mode=request.tools.user_input.mode,
+        ),
+    )
+    
     config = AgentConfig(
         id=request.id,
         name=request.name,
         description=request.description,
-        llm_model=request.llm_model,
-        file_system_enabled=request.file_system_enabled,
-        file_system_base_dir=request.file_system_base_dir,
-        python_interpreter_enabled=request.python_interpreter_enabled,
-        python_interpreter_timeout=request.python_interpreter_timeout,
-        user_input_enabled=request.user_input_enabled,
-        user_input_mode=request.user_input_mode,
-        paradigm_dir=request.paradigm_dir,
+        tools=tools,
     )
     
-    is_new = request.id not in agent_registry.configs
-    agent_registry.register(config)
+    # Try to use project-scoped registry first
+    target_registry = agent_registry  # Default to global
+    active_project_id = execution_controller_registry.get_active_project_id()
+    if active_project_id:
+        try:
+            controller = execution_controller_registry.get_controller(active_project_id)
+            if controller and hasattr(controller, '_agent_registry') and controller._agent_registry:
+                target_registry = controller._agent_registry
+                logger.info(f"Using project-scoped registry for agent '{request.id}'")
+        except Exception as e:
+            logger.debug(f"Could not get project-scoped registry: {e}")
+    
+    is_new = request.id not in target_registry.configs
+    
+    # Register the config in the target registry (this invalidates cached body)
+    target_registry.register(config)
+    
+    # =========================================================================
+    # Immediately recreate the Body with new tool configuration
+    # This ensures tools are reconfigured before next use
+    # =========================================================================
+    try:
+        # Force recreation of the body with new config (use target_registry, not global)
+        new_body = target_registry.get_body(request.id)
+        logger.info(f"Recreated body for agent '{request.id}' with new tool config")
+        
+        # Update the execution controller's body if this is the active agent
+        active_controller = execution_controller_registry.get_controller(active_project_id) if active_project_id else None
+        
+        # Check if this agent is the default for the project
+        is_default_agent = False
+        if active_controller and hasattr(active_controller, '_agent_mapping') and active_controller._agent_mapping:
+            is_default_agent = active_controller._agent_mapping.default_agent == request.id
+        
+        if active_controller and is_default_agent:
+            # Re-inject canvas tools into the new body
+            from services.execution.tool_injection import inject_canvas_tools, setup_tool_monitoring
+            canvas_tools = inject_canvas_tools(new_body, active_controller._emit_sync)
+            active_controller.body = new_body
+            active_controller.user_input_tool = canvas_tools.user_input_tool
+            active_controller.chat_tool = canvas_tools.chat_tool
+            active_controller.canvas_tool = canvas_tools.canvas_tool
+            active_controller.parser_tool = canvas_tools.parser_tool
+            
+            setup_tool_monitoring(
+                new_body,
+                lambda: active_controller.current_inference or "",
+                active_controller._emit_threadsafe
+            )
+            logger.info(f"Updated active execution controller with new body for agent '{request.id}'")
+    except Exception as e:
+        logger.warning(f"Could not recreate body for agent '{request.id}': {e}")
+    
+    # =========================================================================
+    # Save to project's .agent.json file if project is loaded
+    # =========================================================================
+    try:
+        from services.project_service import project_service
+        from services.agent.project_config import project_agent_config_service
+        
+        if project_service.current_project_path:
+            # Load existing agent config or create new one
+            config_path = project_agent_config_service.get_agent_config_path(
+                project_dir=project_service.current_project_path,
+                project_name=project_service.current_project.name if project_service.current_project else None,
+            )
+            
+            if config_path:
+                # Load, update, and save
+                project_config = project_agent_config_service.load_config(config_path)
+                
+                # Find and update the agent in the project config
+                agent_found = False
+                for i, agent in enumerate(project_config.agents):
+                    if agent.id == request.id:
+                        project_config.agents[i] = config
+                        agent_found = True
+                        break
+                
+                # If not found, add it
+                if not agent_found:
+                    project_config.agents.append(config)
+                
+                # Save back to file
+                project_agent_config_service.save_config(project_config, config_path)
+                logger.info(f"Saved agent '{request.id}' to project config: {config_path}")
+    except Exception as e:
+        logger.warning(f"Could not save agent config to project file: {e}")
     
     # Emit event
     event_type = "agent:registered" if is_new else "agent:updated"
@@ -568,10 +768,10 @@ def _list_paradigms_from_dir(paradigm_dir: Optional[str]) -> List[dict]:
 @router.get("/{agent_id}/capabilities", response_model=AgentCapabilitiesResponse)
 async def get_agent_capabilities(agent_id: str):
     """Get the tools and paradigms available to an agent."""
-    if agent_id not in agent_registry.configs:
+    # Use project-aware agent lookup
+    config = _get_project_agent(agent_id)
+    if config is None:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
-    
-    config = agent_registry.configs[agent_id]
     
     # Get effective paradigm_dir - check agent config first, then project config
     effective_paradigm_dir = config.paradigm_dir

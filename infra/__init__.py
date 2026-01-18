@@ -6,6 +6,43 @@ It includes core components, agent framework, state management, syntax processin
 for building intelligent agent systems with formal reasoning capabilities.
 """
 
+# ============================================================================
+# Windows Console UTF-8 Encoding Fix
+# ============================================================================
+# On Windows, the console defaults to cp1252 encoding which can't handle Chinese
+# and other Unicode characters. This fix must run before any print() or logging
+# calls to ensure proper encoding support.
+import sys
+
+def _configure_utf8_console():
+    """
+    Configure Windows console for UTF-8 encoding.
+    
+    This fixes 'UnicodeEncodeError' when printing Chinese or other non-ASCII
+    characters to the Windows console. Uses 'replace' error handling to
+    substitute unencodable characters instead of crashing.
+    
+    Uses reconfigure() method (Python 3.7+) which is the safe way to change
+    encoding without replacing the stream object.
+    """
+    if sys.platform == "win32":
+        try:
+            # Use reconfigure() to safely change encoding without replacing streams
+            # This avoids "I/O operation on closed file" errors
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stderr, 'reconfigure'):
+                sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            # Silently ignore if configuration fails (e.g., in some IDEs or
+            # when stdout/stderr are not standard streams)
+            pass
+
+# Apply UTF-8 encoding fix on module import
+_configure_utf8_console()
+
+# ============================================================================
+
 # Core components
 from infra._core import (
     Concept, Reference, Inference,

@@ -40,13 +40,17 @@ class RepositoryPaths(BaseModel):
 
 
 class ExecutionSettings(BaseModel):
-    """Execution configuration settings."""
-    llm_model: str = "demo"
+    """Execution configuration settings.
+    
+    LLM model, base_dir, and paradigm_dir are now configured per-agent in
+    the .agent.json file. This class only holds project-level execution settings.
+    """
     max_cycles: int = Field(default=50, ge=1, le=1000)
     db_path: str = "orchestration.db"
-    base_dir: Optional[str] = None  # Base directory for file operations (auto-detected if not set)
-    paradigm_dir: Optional[str] = None  # e.g., "provision/paradigm"
-    agent_config: Optional[str] = None  # Path to .agent.json file (relative to project dir)
+    
+    # Path to .agent.json file (relative to project dir)
+    # This is the source of truth for agent and tool configuration
+    agent_config: Optional[str] = None
 
 
 class ProjectConfig(BaseModel):
@@ -136,10 +140,10 @@ class CreateProjectRequest(BaseModel):
     concepts_path: Optional[str] = "concepts.json"
     inferences_path: Optional[str] = "inferences.json"
     inputs_path: Optional[str] = None
-    # Initial execution settings
-    llm_model: str = "demo"
+    # Execution settings
     max_cycles: int = 50
-    paradigm_dir: Optional[str] = None
+    # Agent configuration - if not provided, a default agent config will be auto-created
+    agent_config: Optional[str] = None
 
 
 class SaveProjectRequest(BaseModel):
